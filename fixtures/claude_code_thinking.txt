@@ -1,0 +1,14 @@
+❯ Read the full contents of crates/core/src/vte/classifier.rs and tell me how many tests it has.
+
+❯ Tool loaded.
+
+● Reading 1 file… (ctrl+o to expand)
+  ⎿  crates/core/src/vte/classifier.rs
+
+✻ Composing… (thinking)
+  ⎿  Tip: Run /terminal-setup to enable convenient terminal integration
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪─
+❯
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+esc to interrupt

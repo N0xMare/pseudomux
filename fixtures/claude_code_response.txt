@@ -1,0 +1,23 @@
+❯ What is 2+2? Answer in exactly one word, nothing else.
+
+● 4
+
+❯ List the files in the current directory using a tool call.
+
+❯ Tool loaded.
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● The results are truncated due to the large number of files. Here are the top-level files and directories:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● The * glob recurses into everything including target/. Here are the top-level entries:
+
+  - apps/ — pmux CLI app
+  - crates/ — core, protocol, adapters, service
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+? for shortcuts

@@ -1,0 +1,15 @@
+[package]
+name = "pseudomux-adapters"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "TUI adapter implementations (Claude Code, OpenCode, Shell) for pseudomux"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+pseudomux-core = { path = "../core" }

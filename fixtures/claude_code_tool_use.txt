@@ -1,0 +1,14 @@
+❯ List the files in the current directory using a tool call.
+
+❯ Tool loaded.
+
+  Searching for 1 pattern… (ctrl+o to expand)
+  ⎿  "*"
+
+✻ Osmosing… (thinking)
+  ⎿  Tip: Name your conversations with /rename to find them easily in /resume later
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪─
+❯
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+esc to interrupt

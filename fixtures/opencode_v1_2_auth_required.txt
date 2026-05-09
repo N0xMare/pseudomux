@@ -1,0 +1,3 @@
+Authentication required
+Please login to continue
+Run opencode auth login

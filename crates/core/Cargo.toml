@@ -1,0 +1,23 @@
+[package]
+name = "pseudomux-core"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core PTY management, VTE screen model, and session lifecycle for pseudomux"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+portable-pty = { workspace = true }
+vt100 = { workspace = true }
+libc = { workspace = true }

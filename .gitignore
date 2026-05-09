@@ -1,0 +1,17 @@
+/target
+**/*.swp
+.DS_Store
+.pseudomux/
+*.log
+
+# Python client build artifacts
+**/__pycache__/
+**/*.pyc
+
+# TypeScript client build + deps
+clients/typescript/dist/
+clients/typescript/node_modules/
+clients/typescript/package-lock.json
+
+# Local Claude Code session data
+.claude/

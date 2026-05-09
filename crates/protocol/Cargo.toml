@@ -1,0 +1,17 @@
+[package]
+name = "pseudomux-protocol"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "IPC message types and DTOs for pseudomux daemon communication"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+pseudomux-core = { path = "../core" }

@@ -1,0 +1,19 @@
+{
+  "name": "pmux-client",
+  "version": "0.1.0",
+  "description": "TypeScript client for the pseudomux PTY multiplexer (pmuxd HTTP API)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "files": ["dist", "src"],
+  "keywords": ["pmux", "pseudomux", "claude-code", "pty", "agent"],
+  "license": "MIT OR Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

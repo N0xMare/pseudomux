@@ -1,0 +1,27 @@
+[package]
+name = "pmux"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI client for pseudomux PTY multiplexer"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true, features = ["codec"] }
+bytes = { workspace = true }
+futures = { workspace = true }
+pseudomux-service = { path = "../../crates/service" }
+pseudomux-adapters = { path = "../../crates/adapters" }
+pseudomux-core = { path = "../../crates/core" }
+pseudomux-protocol = { path = "../../crates/protocol" }
+dirs = { workspace = true }
+toml = { workspace = true }
