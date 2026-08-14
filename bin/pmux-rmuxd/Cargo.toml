@@ -1,0 +1,25 @@
+[package]
+name = "pmux-rmuxd"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Private, configuration-free rmux sidecar for pmux"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+pseudomux-rmux = { path = "../../crates/rmux" }
+rmux-server = { workspace = true, default-features = false }
+rmux-sdk = { workspace = true, default-features = false }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+rmux-client = { workspace = true }
+sha2 = { workspace = true }
+tempfile = { workspace = true }

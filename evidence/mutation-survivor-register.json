@@ -1,0 +1,2760 @@
+{
+ "dispositions": [
+  "KILLED",
+  "EQUIVALENT",
+  "ACCEPTED",
+  "REMOVED"
+ ],
+ "entries": [
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1813,
+    "name": "crates/protocol/src/v1.rs:1813:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1815,
+    "name": "crates/protocol/src/v1.rs:1815:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 3,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1816,
+    "name": "crates/protocol/src/v1.rs:1816:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 4,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1817,
+    "name": "crates/protocol/src/v1.rs:1817:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 5,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1818,
+    "name": "crates/protocol/src/v1.rs:1818:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 6,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 1818,
+    "name": "crates/protocol/src/v1.rs:1818:21: replace * with + in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "+"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1815,
+    "name": "crates/protocol/src/v1.rs:1815:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 3,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "-="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1816,
+    "name": "crates/protocol/src/v1.rs:1816:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 4,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "-="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test v1_golden",
+    "test": "every_typed_method_sends_exact_golden_requests_and_accepts_matching_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1817,
+    "name": "crates/protocol/src/v1.rs:1817:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 5,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "-="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1818,
+    "name": "crates/protocol/src/v1.rs:1818:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 6,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "-="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test v1_golden",
+    "test": "every_typed_method_sends_exact_golden_requests_and_accepts_matching_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1819,
+    "name": "crates/protocol/src/v1.rs:1819:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 7,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "-="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-protocol --test v1_wire",
+    "test": "an_agent_start_emits_the_agent_and_omits_every_path_the_agent_supplies"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 1818,
+    "name": "crates/protocol/src/v1.rs:1818:21: replace * with / in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "/"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-client --test fake_uds",
+    "test": "every_typed_method_rejects_contextually_mismatched_results"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "<impl Serialize for StartSessionRequest>::serialize",
+   "genre": "UnaryOperator",
+   "observed_at": {
+    "column": 31,
+    "line": 1819,
+    "name": "crates/protocol/src/v1.rs:1819:31: delete ! in <impl Serialize for StartSessionRequest>::serialize",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "agent_supplied_start_paths::exhaustive",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 1583,
+    "name": "crates/protocol/src/v1.rs:1583:9: replace agent_supplied_start_paths::exhaustive with ()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`exhaustive` is a `#[allow(unused)] fn` that is never called; its body is a `..`-free destructuring of AgentSpec whose entire effect is to stop compiling when a field is added. Replacing the body with `()` removes a COMPILE-TIME check and changes nothing a test can execute. It is not deletable: the check is the reason the function exists.",
+   "replacement": "()"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/protocol/src/v1.rs",
+   "function": "validate_opaque_json",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 26,
+    "line": 287,
+    "name": "crates/protocol/src/v1.rs:287:26: replace > with >= in validate_opaque_json",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Unreachable. The `as_u64` arm is entered only when `as_i64` returned None, which for serde_json means the value exceeds i64::MAX -- and every such value is strictly greater than MAX_SAFE_JSON_INTEGER (2^53-1), so `value > MAX` and `value >= MAX` are both unconditionally true there. Deletion was considered and refused: the comparison is CORRECT, and the implication that makes it dead crosses a crate boundary into serde_json's as_i64/as_u64 contract rather than being local the way the four clauses deleted in the guard phase were.",
+   "replacement": ">="
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/agent.rs",
+   "function": "AgentStore::advance_head",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 1209,
+    "name": "crates/service/src/agent.rs:1209:9: replace AgentStore::advance_head -> Result<(), ErrorBody> with Ok(())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real, and NEWLY surviving: the run this register ratchets from counted it caught, and the sole catcher its logs name is `a_terminal_is_created_at_the_requested_geometry_and_not_the_rmux_default`, a real-PTY test with no relationship to the agent store. Replaced with `Ok(())` the head pointer never moves, so `published_head` keeps naming an older version and `pmux agent` reports a stored version that is not the newest one published. `AgentStore` is a struct over a directory and this module already has tests that build one.",
+   "replacement": "Ok(())"
+  },
+  {
+   "closeable": "fault-injection",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/agent.rs",
+   "function": "publish_version_exclusively",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 23,
+    "line": 1383,
+    "name": "crates/service/src/agent.rs:1383:23: replace match guard error.kind() == std::io::ErrorKind::AlreadyExists with true in publish_version_exclusively",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real. The guard `error.kind() == AlreadyExists` read as `true` reports EVERY hard_link failure as IdConflict -- 'a stored version is immutable and is never rewritten' -- which tells an operator the opposite of what happened for ENOSPC, EPERM or EXDEV. Not closed here because forcing a non-AlreadyExists hard_link failure AFTER a successful private temporary create in the same directory needs a filesystem fault injector; every cheap way to break the link (a read-only parent, a missing parent) breaks the create first.",
+   "replacement": "true"
+  },
+  {
+   "closeable": "unobservable-on-this-host",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/agent.rs",
+   "function": "sync_parent_directory",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 1432,
+    "name": "crates/service/src/agent.rs:1432:5: replace sync_parent_directory with ()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real and, by its own documented account, unobservable. The doc comment states it: against process death the directory entry is already visible to every later reader, so the store's crash harness cannot see this call; only power loss can, and nothing in this tree can stage one. Risk left open: the one link in the durability chain without a checked barrier has no check.",
+   "replacement": "()"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/claude_launch.rs",
+   "function": "is_executable",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 1343,
+    "name": "crates/service/src/claude_launch.rs:1343:5: replace is_executable -> bool with false",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host: the `#[cfg(not(unix))]` arm, whose body is `true`. See resource_key.",
+   "replacement": "false"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/claude_launch.rs",
+   "function": "resource_key",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 1091,
+    "name": "crates/service/src/claude_launch.rs:1091:5: replace resource_key -> ResourceKey with Default::default()",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host. The mutated body is the `#[cfg(not(unix))]` arm; cargo-mutants patches source text without evaluating cfg, so the mutant builds, every test passes, and the tool counts it as missed. The `#[cfg(unix)]` sibling's mutants are caught.",
+   "replacement": "Default::default()"
+  },
+  {
+   "closeable": "compile-time-only",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 65,
+    "line": 161,
+    "name": "crates/service/src/driver_io.rs:161:65: replace + with *",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "COMMIT_LOOP_SAMPLING_PERIOD_MS is read by nothing at runtime: its only two readers are the `const assert!`s inside SCREEN_QUIET_FOR, and both assertions still pass under either mutant because both are `>=` floors that a larger or a smaller nominal period clears. So no test can distinguish it. Risk left open, and it is the house bug in a guard: the compile-time check that protects the post-marker catch window computes the period from an expression a mutation can make wrong, and it would keep passing.",
+   "replacement": "*"
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 43,
+    "line": 39,
+    "name": "crates/service/src/driver_io.rs:39:43: replace * with +",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "A module-level constant's own arithmetic. Closing it means observing the bound: for MAX_TRANSCRIPT_READ_BYTES (64 * 1024 * 1024) the two `*`-to-`+` mutants land at 66,560 and 1,048,640 bytes, so proving the real bound needs a real append past both -- about 2 MiB of JSONL parsed once per mutant by a gate that runs the suite ~1,650 times. MAX_ROTATION_ANCHOR_BYTES (64 * 1024 -> 1,088) is the cheap one of the family and is the same shape.",
+   "replacement": "+"
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 50,
+    "line": 39,
+    "name": "crates/service/src/driver_io.rs:39:50: replace * with +",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "A module-level constant's own arithmetic. Closing it means observing the bound: for MAX_TRANSCRIPT_READ_BYTES (64 * 1024 * 1024) the two `*`-to-`+` mutants land at 66,560 and 1,048,640 bytes, so proving the real bound needs a real append past both -- about 2 MiB of JSONL parsed once per mutant by a gate that runs the suite ~1,650 times. MAX_ROTATION_ANCHOR_BYTES (64 * 1024 -> 1,088) is the cheap one of the family and is the same shape.",
+   "replacement": "+"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 45,
+    "line": 201,
+    "name": "crates/service/src/driver_io.rs:201:45: replace * with +",
+    "run": "recorded"
+   },
+   "occurrence": 4,
+   "reason": "MEASURED DRIFT, not a product change. This mutant's disposition moved between the two full-scope runs and its SOLE catcher in the run that caught it was a test that needs a real rmux sidecar or a real PTY: crates/service/tests/bounded_soak.rs::repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue. The mutant itself is one of the constant-arithmetic sites this register already carries as not guard-critical: it changes a byte budget computed from two constants, and no accept/refuse decision reads it. Closing it is one assertion on the computed constant.",
+   "replacement": "+"
+  },
+  {
+   "closeable": "compile-time-only",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 65,
+    "line": 161,
+    "name": "crates/service/src/driver_io.rs:161:65: replace + with -",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "COMMIT_LOOP_SAMPLING_PERIOD_MS again, the other operator. See the `*` sibling: read only by two `const assert!`s, both of which still pass.",
+   "replacement": "-"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+   "genre": "StructField",
+   "observed_at": {
+    "column": 17,
+    "line": 2039,
+    "name": "crates/service/src/driver_io.rs:2039:17: delete field lifecycle_expected from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+   "genre": "StructField",
+   "observed_at": {
+    "column": 17,
+    "line": 2040,
+    "name": "crates/service/src/driver_io.rs:2040:17: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+   "genre": "StructField",
+   "observed_at": {
+    "column": 25,
+    "line": 2064,
+    "name": "crates/service/src/driver_io.rs:2064:25: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+    "run": "recorded"
+   },
+   "occurrence": 5,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+   "genre": "StructField",
+   "observed_at": {
+    "column": 25,
+    "line": 2065,
+    "name": "crates/service/src/driver_io.rs:2065:25: delete field lifecycle_hook_at_ms from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+    "run": "recorded"
+   },
+   "occurrence": 6,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "closeable": "seam",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::interrupt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 30,
+    "line": 2142,
+    "name": "crates/service/src/driver_io.rs:2142:30: replace < with <= in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "MEASURED DRIFT, not a product change. This mutant's disposition moved between the two full-scope runs and its SOLE catcher in the run that caught it was a test that needs a real rmux sidecar or a real PTY: crates/service/tests/bounded_soak.rs::repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue. Unlike its two siblings at this site -- `==` and `>`, which never enter the loop and so report RecoveryFailed for a screen that DID recover -- `<=` differs from `<` only when the clock reads exactly the deadline instant. The FakeTerminal test that closes the siblings therefore does not distinguish this one; closing it needs an injectable clock, which is why this is `seam` and they are `cheap`. STILL OPEN, and NOT reachable by the seam that closed the other twenty-one `seam` rows: `crate::runtime::SessionRuntime` makes a `NativeService` constructible without an rmux sidecar, and this mutant is not behind a `NativeService` at all -- it is behind a clock. `RmuxTerminalControl` reads `Instant::now()` directly, so distinguishing `<` from `<=` needs the deadline instant to be produced on demand, which means an injectable clock in `driver_io.rs`. Deliberately not built here: `driver_io.rs` is inside the mutation gate's FULL_GLOBS and this one mutant does not justify moving a second measured file.",
+   "replacement": "<="
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::interrupt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 30,
+    "line": 2142,
+    "name": "crates/service/src/driver_io.rs:2142:30: replace < with == in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real and mis-classified as diagnostic in the guard phase. `while Instant::now() < deadline` read as `==` or `>` never enters the loop, so an interrupt that DID recover the screen is reported RecoveryFailed -- and a RecoveryFailed instance is destroyed rather than reused, which is the availability failure this work exists to remove. Closing it is a FakeTerminal serving a Ready screen and one assertion that the recovery is RecoveredToReady; the fake is already in this module. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "=="
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::interrupt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 30,
+    "line": 2142,
+    "name": "crates/service/src/driver_io.rs:2142:30: replace < with > in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real and mis-classified as diagnostic in the guard phase. `while Instant::now() < deadline` read as `==` or `>` never enters the loop, so an interrupt that DID recover the screen is reported RecoveryFailed -- and a RecoveryFailed instance is destroyed rather than reused, which is the availability failure this work exists to remove. Closing it is a FakeTerminal serving a Ready screen and one assertion that the recovery is RecoveredToReady; the fake is already in this module. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": ">"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_fence_that_is_not_the_proven_frame_never_sends_enter"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 1983,
+    "name": "crates/service/src/driver_io.rs:1983:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_fence_that_is_not_the_proven_frame_never_sends_enter"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "<impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 1989,
+    "name": "crates/service/src/driver_io.rs:1989:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::poll_sync",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 25,
+    "line": 3061,
+    "name": "crates/service/src/driver_io.rs:3061:25: replace < with > in FileTranscriptSource::poll_sync",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.len < state.cursor.next_offset()` read as `>` refuses exactly the poll where the file has grown past the cursor and admits the truncation it exists to catch. The cheap witness is a transcript whose final line is UNTERMINATED: the cursor stops at the last complete record, so `len > next_offset` holds with no concurrent writer at all, and the mutant answers SchemaDrift where the driver must answer `has_partial_line: true`. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": ">"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 20,
+    "line": 2603,
+    "name": "crates/service/src/driver_io.rs:2603:20: replace += with *= in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "`offset += chunk.len()` read as `*=` pins the byte offset at zero, so every row this proof parses is reported at SourceLocation byte_offset 0. Nothing refuses on it -- it is a diagnostic -- but the diagnostic is what an operator reads to find the row that failed, and it would name the first byte of the file for all of them. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_third_preamble_user_row_is_refused_by_the_user_row_budget"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 31,
+    "line": 2681,
+    "name": "crates/service/src/driver_io.rs:2681:31: replace += with *= in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 3,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "*="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_successor_written_with_carriage_returns_is_still_proven_inert"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 43,
+    "line": 2594,
+    "name": "crates/service/src/driver_io.rs:2594:43: replace - with + in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "+"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 49,
+    "line": 2592,
+    "name": "crates/service/src/driver_io.rs:2592:49: replace - with / in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Both `- 1` slices read as `/ 1`: the first keeps the record's trailing `\\n` and the second keeps the `\\r` of a CRLF record. Both bytes are JSON whitespace, which serde_json tolerates after a complete value. The equivalence rests on that tolerance and is recorded as resting on it: a parser made strict about trailing bytes would make this observable, and should.",
+   "replacement": "/"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 43,
+    "line": 2594,
+    "name": "crates/service/src/driver_io.rs:2594:43: replace - with / in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Both `- 1` slices read as `/ 1`: the first keeps the record's trailing `\\n` and the second keeps the `\\r` of a CRLF record. Both bytes are JSON whitespace, which serde_json tolerates after a complete value. The equivalence rests on that tolerance and is recorded as resting on it: a parser made strict about trailing bytes would make this observable, and should.",
+   "replacement": "/"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_assert_empty_byte_budget_refuses_rather_than_judging_a_prefix"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 18,
+    "line": 2555,
+    "name": "crates/service/src/driver_io.rs:2555:18: replace > with == in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "=="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_successor_at_exactly_the_row_budget_is_admitted"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 2583,
+    "name": "crates/service/src/driver_io.rs:2583:21: replace > with == in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 3,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "=="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_assert_empty_byte_budget_refuses_rather_than_judging_a_prefix"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 18,
+    "line": 2555,
+    "name": "crates/service/src/driver_io.rs:2555:18: replace > with >= in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ">="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_successor_at_exactly_the_row_budget_is_admitted"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::prove_transcript_inert",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 2583,
+    "name": "crates/service/src/driver_io.rs:2583:21: replace > with >= in FileTranscriptSource::prove_transcript_inert",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ">="
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::read_available",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 3115,
+    "name": "crates/service/src/driver_io.rs:3115:21: replace > with == in FileTranscriptSource::read_available",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`read_len > MAX_TRANSCRIPT_READ_BYTES` read as `>=` or `==` refuses an append of exactly the bound. Observing acceptance there costs a real 64 MiB of parsed JSONL per suite run. The remedy is the one already applied to the rotation scan in this phase: make the bound a parameter of the function and give the production caller the constant.",
+   "replacement": "=="
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::read_available",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 21,
+    "line": 3115,
+    "name": "crates/service/src/driver_io.rs:3115:21: replace > with >= in FileTranscriptSource::read_available",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`read_len > MAX_TRANSCRIPT_READ_BYTES` read as `>=` or `==` refuses an append of exactly the bound. Observing acceptance there costs a real 64 MiB of parsed JSONL per suite run. The remedy is the one already applied to the rotation scan in this phase: make the bound a parameter of the function and give the production caller the constant.",
+   "replacement": ">="
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::read_observed_range",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 32,
+    "line": 3154,
+    "name": "crates/service/src/driver_io.rs:3154:32: replace < with > in FileTranscriptSource::read_observed_range",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The truncation fences either side of the read: `opened_metadata.len < read_to` and `read_metadata.len < update.next_offset`, each read as `>`, admit a transcript truncated under the cursor and refuse a healthy one. This was classified as needing fault injection; it does not. `read_observed_range` takes the metadata as a PARAMETER, so a test calls it with a `metadata.len` larger than the file on disk and never has to win a race. What is missing is a `TailState` fixture. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": ">"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::read_observed_range",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 30,
+    "line": 3191,
+    "name": "crates/service/src/driver_io.rs:3191:30: replace < with > in FileTranscriptSource::read_observed_range",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "The truncation fences either side of the read: `opened_metadata.len < read_to` and `read_metadata.len < update.next_offset`, each read as `>`, admit a transcript truncated under the cursor and refuse a healthy one. This was classified as needing fault injection; it does not. `read_observed_range` takes the metadata as a PARAMETER, so a test calls it with a `metadata.len` larger than the file on disk and never has to win a race. What is missing is a `TailState` fixture.",
+   "replacement": ">"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_rotation_ledger_remembers_its_bound_and_retires_the_oldest_first"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::record_rotation",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 31,
+    "line": 2408,
+    "name": "crates/service/src/driver_io.rs:2408:31: replace > with == in FileTranscriptSource::record_rotation",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "=="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_rotation_ledger_remembers_its_bound_and_retires_the_oldest_first"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::record_rotation",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 31,
+    "line": 2408,
+    "name": "crates/service/src/driver_io.rs:2408:31: replace > with >= in FileTranscriptSource::record_rotation",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ">="
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "FileTranscriptSource::seek_to_observed_eof",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 25,
+    "line": 2927,
+    "name": "crates/service/src/driver_io.rs:2927:25: replace > with >= in FileTranscriptSource::seek_to_observed_eof",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.len > 0` read as `>= 0` is unconditionally true for a u64, so an EMPTY transcript takes the branch and evaluates `metadata.len - 1`, which underflows. Under --profile mutants, which this gate PROVES has overflow-checks live, that is a panic in the daemon's arm path. Closing it is one arm against a zero-length file. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": ">="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "RmuxTerminalControl::resize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 1920,
+    "name": "crates/service/src/driver_io.rs:1920:17: replace == with != in RmuxTerminalControl::resize",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "RmuxTerminalControl::resize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 30,
+    "line": 1920,
+    "name": "crates/service/src/driver_io.rs:1920:30: replace == with != in RmuxTerminalControl::resize",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "RmuxTerminalControl::resize",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 22,
+    "line": 1920,
+    "name": "crates/service/src/driver_io.rs:1920:22: replace || with && in RmuxTerminalControl::resize",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "active_editor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 86,
+    "line": 553,
+    "name": "crates/service/src/driver_io.rs:553:86: replace == with != in active_editor",
+    "run": "recorded"
+   },
+   "occurrence": 5,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_cursor_outside_the_reported_grid_resolves_no_editor"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "active_editor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 501,
+    "name": "crates/service/src/driver_io.rs:501:9: replace || with && in active_editor",
+    "run": "recorded"
+   },
+   "occurrence": 3,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "active_editor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 302,
+    "name": "crates/service/src/driver_io.rs:302:9: replace || with && in active_editor",
+    "run": "prior"
+   },
+   "occurrence": 5,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 4012,
+    "name": "crates/service/src/driver_io.rs:4012:9: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 4017,
+    "name": "crates/service/src/driver_io.rs:4017:9: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 4,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 4023,
+    "name": "crates/service/src/driver_io.rs:4023:9: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 7,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 9,
+    "line": 4028,
+    "name": "crates/service/src/driver_io.rs:4028:9: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 9,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 68,
+    "line": 4030,
+    "name": "crates/service/src/driver_io.rs:4030:68: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 12,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 72,
+    "line": 4033,
+    "name": "crates/service/src/driver_io.rs:4033:72: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 13,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 4043,
+    "name": "crates/service/src/driver_io.rs:4043:13: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 17,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 4044,
+    "name": "crates/service/src/driver_io.rs:4044:13: replace || with && in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 18,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 4036,
+    "name": "crates/service/src/driver_io.rs:4036:13: replace && with || in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 5,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "blocking_screen",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 38,
+    "line": 4044,
+    "name": "crates/service/src/driver_io.rs:4044:38: replace && with || in blocking_screen",
+    "run": "recorded"
+   },
+   "occurrence": 8,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "composer_head",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 28,
+    "line": 457,
+    "name": "crates/service/src/driver_io.rs:457:28: replace match guard separator.is_whitespace() with true in composer_head",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "true"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "list_transcripts",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 3367,
+    "name": "crates/service/src/driver_io.rs:3367:17: replace += with *= in list_transcripts",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "*="
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "list_transcripts",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 20,
+    "line": 3368,
+    "name": "crates/service/src/driver_io.rs:3368:20: replace > with == in list_transcripts",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "=="
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "list_transcripts",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 20,
+    "line": 3368,
+    "name": "crates/service/src/driver_io.rs:3368:20: replace > with >= in list_transcripts",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": ">="
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "list_transcripts",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 3379,
+    "name": "crates/service/src/driver_io.rs:3379:13: replace && with || in list_transcripts",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "||"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "normalize_path",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 3990,
+    "name": "crates/service/src/driver_io.rs:3990:5: replace normalize_path -> String with \"xyzzy\".into()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real, and NEWLY surviving: caught in the prior run only by `repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue` and `a_terminal_resize_after_creation_is_delivered_and_not_silently_clamped`, both of which `docs/testing.md` has MEASURED as drifting. It is a pure two-line function -- `path.to_string_lossy().nfc().collect()` -- and every candidate cwd goes through it on the way to a project slug, so returning a constant makes every session locate the same transcript directory. A one-call test with a decomposed Unicode path closes it.",
+   "replacement": "\"xyzzy\".into()"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "normalize_path",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 3990,
+    "name": "crates/service/src/driver_io.rs:3990:5: replace normalize_path -> String with String::new()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real, and NEWLY surviving: caught in the prior run only by `repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue` and `a_terminal_resize_after_creation_is_delivered_and_not_silently_clamped`, both of which `docs/testing.md` has MEASURED as drifting. It is a pure two-line function -- `path.to_string_lossy().nfc().collect()` -- and every candidate cwd goes through it on the way to a project slug, so returning a constant makes every session locate the same transcript directory. A one-call test with a decomposed Unicode path closes it.",
+   "replacement": "String::new()"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "platform_file_metadata",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4092,
+    "name": "crates/service/src/driver_io.rs:4092:5: replace platform_file_metadata -> DriverResult<FileMetadata> with DriverResult::from(Default::default())",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host: the `#[cfg(not(unix))]` arm. Four of the run's missed mutants are this one function, and they are an artefact of the tool's cfg blindness rather than a gap in the tests.",
+   "replacement": "DriverResult::from(Default::default())"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "platform_file_metadata",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4092,
+    "name": "crates/service/src/driver_io.rs:4092:5: replace platform_file_metadata -> DriverResult<FileMetadata> with DriverResult::from_iter([Default::default()])",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host: the `#[cfg(not(unix))]` arm. Four of the run's missed mutants are this one function, and they are an artefact of the tool's cfg blindness rather than a gap in the tests.",
+   "replacement": "DriverResult::from_iter([Default::default()])"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "platform_file_metadata",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4092,
+    "name": "crates/service/src/driver_io.rs:4092:5: replace platform_file_metadata -> DriverResult<FileMetadata> with DriverResult::new()",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host: the `#[cfg(not(unix))]` arm. Four of the run's missed mutants are this one function, and they are an artefact of the tool's cfg blindness rather than a gap in the tests.",
+   "replacement": "DriverResult::new()"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "platform_file_metadata",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4092,
+    "name": "crates/service/src/driver_io.rs:4092:5: replace platform_file_metadata -> DriverResult<FileMetadata> with DriverResult::new(Default::default())",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Not compiled on this host: the `#[cfg(not(unix))]` arm. Four of the run's missed mutants are this one function, and they are an artefact of the tool's cfg blindness rather than a gap in the tests.",
+   "replacement": "DriverResult::new(Default::default())"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "prompt_glyph_col",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 44,
+    "line": 427,
+    "name": "crates/service/src/driver_io.rs:427:44: replace || with && in prompt_glyph_col",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "&&"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "prove_stable_empty_editor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 46,
+    "line": 1126,
+    "name": "crates/service/src/driver_io.rs:1126:46: replace && with || in prove_stable_empty_editor",
+    "run": "prior"
+   },
+   "occurrence": 2,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "||"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "proven_composer_row",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 55,
+    "line": 1618,
+    "name": "crates/service/src/driver_io.rs:1618:55: replace < with <= in proven_composer_row",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`row < frame.len()` read as `<=` indexes one past the frame, where `row_text` answers `\"\"`. An empty row fails the same composer predicate the in-range refusal fails, and both return `composer_not_rendered`, so no caller can tell them apart. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "<="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_successor_written_with_carriage_returns_is_still_proven_inert"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "read_rotation_anchor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 35,
+    "line": 3669,
+    "name": "crates/service/src/driver_io.rs:3669:35: replace - with + in read_rotation_anchor",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "+"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "read_rotation_anchor",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 35,
+    "line": 3669,
+    "name": "crates/service/src/driver_io.rs:3669:35: replace - with / in read_rotation_anchor",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`line = &line[..line.len() - 1]` strips a trailing CR before `serde_json::from_slice`; the mutant makes it `line.len() / 1`, which IS `line.len()`, so the CR is left on. MEASURED rather than argued, by a probe test written and removed: `serde_json::from_slice::<Value>` accepts a trailing U+000D and returns a value EQUAL to the one it returns without it, because CR is JSON whitespace (RFC 8259 `ws`). `line` is read by nothing else in the function, so no caller can observe the difference, and a row that is exactly `\\r` is `unparseable_row` with the strip and without it. The strip stays because it states the intent for a reader and for any future parser that is not whitespace-tolerant -- neither of which a test can assert.",
+   "replacement": "/"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "rendered_prompt_is_proven",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 55,
+    "line": 1273,
+    "name": "crates/service/src/driver_io.rs:1273:55: replace && with || in rendered_prompt_is_proven",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "selected_row_colour",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 46,
+    "line": 1685,
+    "name": "crates/service/src/driver_io.rs:1685:46: replace + with * in selected_row_colour",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`cells.iter().take(last_glyph + 1)` read as `- 1` or `* 1` changes which cells the uniform-colour reduction sees: `- 1` drops the last glyph (so a row whose only differently-coloured cell is its last is reported uniform) and on a single-cell row underflows. It decides whether a rendered row is the SELECTED one, which is how the minified cell reads a modal; the fixtures for it already exist in this module's styled-screen tests. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "*"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "selected_row_colour",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 46,
+    "line": 1685,
+    "name": "crates/service/src/driver_io.rs:1685:46: replace + with - in selected_row_colour",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`cells.iter().take(last_glyph + 1)` read as `- 1` or `* 1` changes which cells the uniform-colour reduction sees: `- 1` drops the last glyph (so a row whose only differently-coloured cell is its last is reported uniform) and on a single-cell row underflows. It decides whether a rendered row is the SELECTED one, which is how the minified cell reads a modal; the fixtures for it already exist in this module's styled-screen tests.",
+   "replacement": "-"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "validate_prompt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 572,
+    "name": "crates/service/src/driver_io.rs:572:13: replace || with && in validate_prompt",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "&&"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "validate_prompt",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 13,
+    "line": 573,
+    "name": "crates/service/src/driver_io.rs:573:13: replace || with && in validate_prompt",
+    "run": "prior"
+   },
+   "occurrence": 2,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "&&"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_turn_deadline_domain_admits_the_last_safe_integer"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "validate_turn_deadline_domain",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 25,
+    "line": 838,
+    "name": "crates/service/src/driver_io.rs:838:25: replace > with >= in validate_turn_deadline_domain",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ">="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::a_preamble_written_row_by_row_is_not_settled_until_it_stops_growing"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "wait_for_stable_control_render",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 58,
+    "line": 1456,
+    "name": "crates/service/src/driver_io.rs:1456:58: replace == with != in wait_for_stable_control_render",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_control_render_gate_refuses_a_frame_the_fence_already_saw"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "wait_for_stable_control_render",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 35,
+    "line": 1452,
+    "name": "crates/service/src/driver_io.rs:1452:35: replace && with || in wait_for_stable_control_render",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "driver_io::tests::the_control_render_gate_refuses_a_frame_the_fence_already_saw"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/driver_io.rs",
+   "function": "wait_for_stable_control_render",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 77,
+    "line": 1452,
+    "name": "crates/service/src/driver_io.rs:1452:77: replace && with || in wait_for_stable_control_render",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/native.rs",
+   "function": "<impl Drop for IdleReaper>::drop",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 766,
+    "name": "crates/service/src/native.rs:766:9: replace <impl Drop for IdleReaper>::drop with ()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "See Drop for SessionLifecycle: the same two effects, which the compiler's own drop glue already performs in the same order.",
+   "replacement": "()"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/native.rs",
+   "function": "<impl Drop for SessionLifecycle>::drop",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 736,
+    "name": "crates/service/src/native.rs:736:9: replace <impl Drop for SessionLifecycle>::drop with ()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "EQUIVALENT, and this is the argument rather than a difficulty report. Emptying this `Drop` body does not skip the field drops that follow it: `shutdown: Option<oneshot::Sender<()>>` and `task: Option<JoinHandle<()>>` are still dropped, in declaration order, which is the order the body itself uses. `request_shutdown` differs from dropping the sender only in what the receiver resolves TO -- `Ok(())` rather than `Err(RecvError)` -- and the owner task's `tokio::select!` arm is `_ = &mut shutdown_requested => break`, which discards it; both spellings wake the same task and break the same loop, after which `hybrid.shutdown().await` runs and the tracked-task permit is released either way. `drop(self.task.take())` and the field drop of the same `Option` are the same operation on a `JoinHandle`, which detaches rather than aborts. So no observation distinguishes the two programs, and the previous disposition -- ACCEPTED, closeable by `seam`, on the strength of the soak test having caught it once -- was reading a MEASURED DRIFT as evidence of observability. Expect this mutant to survive every run.",
+   "replacement": "()"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_writable_attach_is_refused_when_the_backend_is_another_generations"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::attach",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 55,
+    "line": 2040,
+    "name": "crates/service/src/native.rs:2040:55: replace == with != in NativeService::attach",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.generation_id == request.generation_id` read as `!=` grants a WRITABLE attach onto the terminal of a different process incarnation. Killed by `native::tests::seam::a_writable_attach_is_refused_when_the_backend_is_another_generations`, which puts the registry and the session map into the one state that makes the fence observable -- an actor at the live generation, metadata at a superseded one -- and requires `stale_session_generation`. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_clear_boundary_is_the_pair_of_the_generation_the_caller_named"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_boundary",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 55,
+    "line": 1976,
+    "name": "crates/service/src/native.rs:1976:55: replace == with != in NativeService::clear_boundary",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.generation_id == generation_id` read as `!=` hands `/clear` the terminal and transcript of a DIFFERENT process incarnation. Killed by `native::tests::seam::a_clear_boundary_is_the_pair_of_the_generation_the_caller_named`, which asserts both directions: the live generation is served and a generation the session does not have is refused. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_session",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 29,
+    "line": 1934,
+    "name": "crates/service/src/native.rs:1934:29: replace > with < in NativeService::clear_session",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`deadline_unix_ms > MAX_SAFE_JSON_INTEGER` read as `<` refuses every ordinary deadline and admits the one value outside the domain. Killed by `native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it`. The refusing half is reachable only through the deadline the service SYNTHESISES: `deadline_unix_ms` is serialised through `optional_safe_u64`, so `validate_native_request` refuses a wire value above the domain first, while `now + default_clear_timeout_ms` saturates past it. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "<"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_session",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 29,
+    "line": 1934,
+    "name": "crates/service/src/native.rs:1934:29: replace > with == in NativeService::clear_session",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`deadline_unix_ms > MAX_SAFE_JSON_INTEGER` read as `==` refuses exactly the top of the domain and admits everything above it. Killed by `native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it`, whose two halves -- the top admitted, a synthesised deadline past it refused -- are exactly the two this mutation inverts. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "=="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_session",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 29,
+    "line": 1934,
+    "name": "crates/service/src/native.rs:1934:29: replace > with >= in NativeService::clear_session",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`deadline_unix_ms > MAX_SAFE_JSON_INTEGER` read as `>=` refuses a deadline AT the top of the protocol's safe-integer domain, which is a value protocol v1 represents. Killed by `native::tests::seam::the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_deadline_past_it`, which sends exactly `MAX_SAFE_JSON_INTEGER` and requires it past the guard. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": ">="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::the_default_clear_deadline_is_read_from_the_configuration"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_timeout_ms",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 1994,
+    "name": "crates/service/src/native.rs:1994:9: replace NativeService::clear_timeout_ms -> u64 with 0",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The accessor for the deadline a `/clear` gets when its caller supplies none; read as `0` every pooled clear is handed a deadline it cannot meet. Killed by `native::tests::seam::the_default_clear_deadline_is_read_from_the_configuration`, which builds the service with a distinctive `default_clear_timeout_ms` and requires the accessor to return it. THE TEST STATES THE ACCESSOR AND NOT ITS USE: the pool's clear is the only caller, and the deadline it computes is first read past `clear_and_rebind`'s transcript watch, which needs a rotating transcript on disk. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "0"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::the_default_clear_deadline_is_read_from_the_configuration"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::clear_timeout_ms",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 1994,
+    "name": "crates/service/src/native.rs:1994:9: replace NativeService::clear_timeout_ms -> u64 with 1",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The sibling of the `0` row and the same test kills it: `native::tests::seam::the_default_clear_deadline_is_read_from_the_configuration` configures a value that is neither of the two constants a mutation substitutes, so the assertion cannot pass by coincidence. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "1"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::diagnose",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 56,
+    "line": 2193,
+    "name": "crates/service/src/native.rs:2193:56: replace == with != in NativeService::diagnose",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.owner == SessionOwner::Caller` read as `!=` puts a POOL instance's session id and generation id into `DaemonDiagnosis::sessions`, which any client may ask for -- a disclosure boundary that was crossed live once already. Killed by `native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them`, which diagnoses a daemon holding one caller session and one pool instance and requires the published list to be exactly the caller's. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::diagnose",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 51,
+    "line": 2205,
+    "name": "crates/service/src/native.rs:2205:51: replace == with != in NativeService::diagnose",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "`metadata.owner == SessionOwner::Pool` read as `!=` counts a CALLER's terminal as one of the pool's in the pool health layer. Killed by `native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them`, which scripts the sidecar to report the pool's private terminal and not the caller's, so `instance_terminals_present` separates the two owners by more than a row count. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::pool",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 934,
+    "name": "crates/service/src/native.rs:934:9: replace NativeService::pool -> Option<&Arc<Pool>> with None",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The pool accessor read as `None` disables every pool sweep and every pool census the service performs, and reports a daemon that was given a pool as one that has none. Killed by `native::tests::seam::a_diagnosis_names_caller_sessions_and_counts_pool_instances_without_naming_them`, which starts a real `Pool` with an EMPTY warm set -- so no Claude is minted -- and requires the pool layer's evidence to report `configured: true` with the census beside it. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "None"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_successor_published_while_the_reaper_was_in_flight_is_not_removed_by_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::reap_idle_sessions",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 52,
+    "line": 1024,
+    "name": "crates/service/src/native.rs:1024:52: replace == with != in NativeService::reap_idle_sessions",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`metadata.owner == SessionOwner::Caller` read as `!=` makes the idle reaper enumerate the POOL's instances and skip the caller sessions it exists to expire. Killed by `native::tests::seam::the_idle_reaper_expires_caller_sessions_and_enumerates_no_pool_instance`, which holds one session of each owner past its TTL and requires the caller's to be gone, tombstoned, and the pool's to be untouched and still addressable as the pool's. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_successor_published_while_the_reaper_was_in_flight_is_not_removed_by_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::reap_idle_sessions",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 68,
+    "line": 1055,
+    "name": "crates/service/src/native.rs:1055:68: replace == with != in NativeService::reap_idle_sessions",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "`metadata.generation_id == generation_id` read as `!=` removes the metadata of a NEWER generation and leaves the stale one. Killed by `native::tests::seam::a_successor_published_while_the_reaper_was_in_flight_is_not_removed_by_it`, which holds the terminal's close open with a gate, publishes a successor generation of the same session id in that window, and requires the successor to survive. Without something held open inside `expire_idle` there is no interleaving for the fence to be wrong about. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_session_whose_process_was_not_proven_reaped_survives_the_reaper"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::reap_idle_sessions",
+   "genre": "UnaryOperator",
+   "observed_at": {
+    "column": 16,
+    "line": 1040,
+    "name": "crates/service/src/native.rs:1040:16: delete ! in NativeService::reap_idle_sessions",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`!result.process_reaped` with the `!` deleted unregisters exactly the sessions whose process is still alive and keeps the ones proven dead. Killed by `native::tests::seam::a_session_whose_process_was_not_proven_reaped_survives_the_reaper`, which expires a session whose terminal closes without confirming a reap and requires its metadata, and its absence from the tombstones, both to remain. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_start_naming_a_stored_agent_resolves_that_agents_configuration"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::resolve_agent_reference",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 9,
+    "line": 1299,
+    "name": "crates/service/src/native.rs:1299:9: replace NativeService::resolve_agent_reference -> Result<Option<SessionAgentPin>, ErrorBody> with Ok(None)",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Read as `Ok(None)` a start naming a stored agent silently launches the caller's inline policy instead of the agent's, and reports no pin. Killed by `native::tests::seam::a_start_naming_a_stored_agent_resolves_that_agents_configuration`, which stores a real agent whose executable appears nowhere in the request and requires the resolved request to carry it, the pin to name the stored digest, and the reference to be consumed. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "Ok(None)"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_private_runtime_that_will_not_stop_is_reported_unless_a_close_already_failed"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::shutdown",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 27,
+    "line": 2584,
+    "name": "crates/service/src/native.rs:2584:27: replace match guard first_error.is_none() with false in NativeService::shutdown",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The guard on the arm that records a PRIVATE RUNTIME shutdown failure -- not the one in the close loop above it, which the register's earlier reason described. Read as `false` the arm never matches, the failure falls into `Err(_) => {}`, and a daemon whose sidecar could not be stopped reports a clean shutdown. Killed by `native::tests::seam::a_private_runtime_that_will_not_stop_is_reported_unless_a_close_already_failed`, whose first half scripts the double's `shutdown` to fail and requires `rmux_unavailable` carrying the runtime's own cause. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "false"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_private_runtime_that_will_not_stop_is_reported_unless_a_close_already_failed"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::shutdown",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 27,
+    "line": 2584,
+    "name": "crates/service/src/native.rs:2584:27: replace match guard first_error.is_none() with true in NativeService::shutdown",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The same guard read as `true` always matches, so the private runtime's failure OVERWRITES the first session close failure and the caller is told about the sidecar instead of about the process that was never reaped. Killed by the second half of `native::tests::seam::a_private_runtime_that_will_not_stop_is_reported_unless_a_close_already_failed`, which scripts both failures at once and requires the close's. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "true"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_start_whose_terminal_never_renders_a_prompt_publishes_nothing_and_keeps_no_pane"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::start_session_owned_with_retention",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 25,
+    "line": 1627,
+    "name": "crates/service/src/native.rs:1627:25: replace == with != in NativeService::start_session_owned_with_retention",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`request.cell == SessionCell::Minified` read as `!=` INVERTS which cell `require_tested_for_minified_cell` protects: the minified cell launches against an unpromoted profile, which is the one thing `RequireTested` exists to refuse, and an ordinary full cell is refused instead. Killed by `native::tests::seam::only_the_minified_cell_requires_a_tested_profile_to_start`, which drives a real start of each cell against a real executable that prints an untested version, and asserts both directions -- so neither a guard that refuses everything nor one that refuses nothing passes. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_turn_still_running_is_waited_for_rather_than_declared_lost"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "NativeService::wait_for_turn",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 44,
+    "line": 1899,
+    "name": "crates/service/src/native.rs:1899:44: replace >= with < in NativeService::wait_for_turn",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`Instant::now() >= safety_deadline` read as `<` fires the infrastructure guard on the FIRST iteration, so every turn returns `daemon_lost` immediately and no turn can ever complete. Killed by `native::tests::seam::a_turn_still_running_is_waited_for_rather_than_declared_lost`, which holds a turn open across the waiter's first poll -- a turn that has already published is returned by the check ABOVE the guard, so a wait that never reaches the guard would prove nothing -- and requires the answer to be the one the ACTOR published. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "<"
+  },
+  {
+   "closeable": "cheap",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/native.rs",
+   "function": "admit_claude_version",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 44,
+    "line": 3201,
+    "name": "crates/service/src/native.rs:3201:44: replace == with != in admit_claude_version",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Real, guard-critical and NEWLY surviving: caught in the prior run only by the soak test `docs/testing.md` names as drifting. `POOL_CELL == SessionCell::Minified` read as `!=` skips `require_tested_for_minified_cell` for POOL admission -- so the pool admits a Claude version no promoted profile covers into the minified cell, which is the one thing `RequireTested` exists to refuse. The function is free-standing over a `CompatibilityProfileRegistry` and two scalars; `require_tested_fails_closed` in this module already builds the empty registry it needs.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "claude_version_of",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4575,
+    "name": "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Ok(\"xyzzy\".into())"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "claude_version_of",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4575,
+    "name": "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(String::new())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Ok(String::new())"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_start_whose_terminal_never_renders_a_prompt_publishes_nothing_and_keeps_no_pane"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "claude_version_of",
+   "genre": "UnaryOperator",
+   "observed_at": {
+    "column": 8,
+    "line": 4591,
+    "name": "crates/service/src/native.rs:4591:8: delete ! in claude_version_of",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_close_removes_only_the_generation_it_named"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "close_session_with_state",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 64,
+    "line": 2752,
+    "name": "crates/service/src/native.rs:2752:64: replace == with != in close_session_with_state",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "`metadata.generation_id == request.generation_id` read as `!=` removes the map entry of a generation the close does NOT name: a freshly started session's metadata deleted while the closed one stays. Killed by `native::tests::seam::a_close_removes_only_the_generation_it_named`, which gates the terminal's close and publishes a successor generation inside that window. Reached at all by the `SessionRuntime` seam: `NativeService` holds its runtime as a trait, so `crates/service/src/native/tests/seam.rs` builds a service over `ScriptedRuntime` -- a double whose every method refuses what no test scripted -- with no rmux sidecar, no launcher and no Claude.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "detect_claude_version",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4552,
+    "name": "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Ok(\"xyzzy\".into())"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "detect_claude_version",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4552,
+    "name": "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(String::new())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Ok(String::new())"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "diagnostic_offset_from_bottom",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4712,
+    "name": "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with None",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "None"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "diagnostic_offset_from_bottom",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4712,
+    "name": "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with Some(Default::default())",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Some(Default::default())"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "diagnostic_usize",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4708,
+    "name": "crates/service/src/native.rs:4708:5: replace diagnostic_usize -> serde_json::Value with Default::default()",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "Default::default()"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "normalize_claude_version",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 65,
+    "line": 4617,
+    "name": "crates/service/src/native.rs:4617:65: replace != with == in normalize_claude_version",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "=="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::each_layer_reports_not_established_rather_than_health_when_it_proved_nothing"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "performance_layer",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 43,
+    "line": 3479,
+    "name": "crates/service/src/native.rs:3479:43: replace > with >= in performance_layer",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ">="
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/native.rs",
+   "function": "record_lifecycle_stop_instant",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 26,
+    "line": 700,
+    "name": "crates/service/src/native.rs:700:26: replace || with && in record_lifecycle_stop_instant",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "&&"
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/native.rs",
+   "function": "record_lifecycle_stop_instant",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 42,
+    "line": 700,
+    "name": "crates/service/src/native.rs:700:42: replace > with == in record_lifecycle_stop_instant",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": "=="
+  },
+  {
+   "closeable": null,
+   "disposition": "REMOVED",
+   "file": "crates/service/src/native.rs",
+   "function": "record_lifecycle_stop_instant",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 42,
+    "line": 700,
+    "name": "crates/service/src/native.rs:700:42: replace > with >= in record_lifecycle_stop_instant",
+    "run": "prior"
+   },
+   "occurrence": 1,
+   "reason": "The tool no longer enumerates this key at the recorded head: the clause was deleted, or the function holding it was renamed or split, in which case its new key is a separate entry. Recorded because it was a survivor of the run this register ratchets from, and a clause deleted rather than tested has to stay visible.",
+   "replacement": ">="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_startup_diagnostic_counts_the_lines_that_carry_something"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "startup_screen_diagnostics",
+   "genre": "UnaryOperator",
+   "observed_at": {
+    "column": 38,
+    "line": 3872,
+    "name": "crates/service/src/native.rs:3872:38: delete ! in startup_screen_diagnostics",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": ""
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::the_strictest_cell_is_the_minified_one_from_either_side"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "strictest_cell",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 4319,
+    "name": "crates/service/src/native.rs:4319:17: replace == with != in strictest_cell",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_successor_published_while_the_reaper_was_in_flight_is_not_removed_by_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "unix_now_ms",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4666,
+    "name": "crates/service/src/native.rs:4666:5: replace unix_now_ms -> Result<u64, ErrorBody> with Ok(0)",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Read as `Ok(0)` every synthesized deadline in the daemon is computed from the epoch and is already in the past. Killed by `native::tests::seam::unix_now_ms_is_a_reading_of_this_hosts_clock`, which brackets the call between two `SystemTime` reads. It needed no seam; it is closed here because this is where the callers that make it observable now live, and the same two mutations are now caught a second way -- by the reaper and clear-deadline tests, which read the same clock.",
+   "replacement": "Ok(0)"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::seam::a_successor_published_while_the_reaper_was_in_flight_is_not_removed_by_it"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "unix_now_ms",
+   "genre": "FnValue",
+   "observed_at": {
+    "column": 5,
+    "line": 4666,
+    "name": "crates/service/src/native.rs:4666:5: replace unix_now_ms -> Result<u64, ErrorBody> with Ok(1)",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The sibling constant, and the same bracketing kills it: `native::tests::seam::unix_now_ms_is_a_reading_of_this_hosts_clock` requires the value to lie between a read taken before the call and one taken after.",
+   "replacement": "Ok(1)"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "native::tests::a_ready_screen_that_keeps_repainting_never_settles_and_a_still_one_does"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/native.rs",
+   "function": "wait_until_ready_with_timings",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 59,
+    "line": 3776,
+    "name": "crates/service/src/native.rs:3776:59: replace == with != in wait_until_ready_with_timings",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "!="
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/evidence.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 40,
+    "line": 96,
+    "name": "crates/service/src/pool/evidence.rs:96:40: replace * with +",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "MAX_EVIDENCE_BYTES's own arithmetic (64 * 1024 * 1024). The two `*`-to-`+` mutants land the hard ceiling at 66,560 and 1,048,640 bytes, so proving the real one needs an evidence tree written past both and asserted un-pruned -- about a megabyte of redacted transcripts per suite run. The prune function it feeds already takes the budget as a parameter and is tested; only the constant is unobserved.",
+   "replacement": "+"
+  },
+  {
+   "closeable": "cost-bound",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/evidence.rs",
+   "function": "",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 47,
+    "line": 96,
+    "name": "crates/service/src/pool/evidence.rs:96:47: replace * with +",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "MAX_EVIDENCE_BYTES's own arithmetic (64 * 1024 * 1024). The two `*`-to-`+` mutants land the hard ceiling at 66,560 and 1,048,640 bytes, so proving the real one needs an evidence tree written past both and asserted un-pruned -- about a megabyte of redacted transcripts per suite run. The prune function it feeds already takes the budget as a parameter and is tested; only the constant is unobserved. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "+"
+  },
+  {
+   "caught_by": {
+    "run": "filtered.killed-rows.1dabf39",
+    "target": "-p pseudomux-service --lib",
+    "test": "pool::evidence::tests::only_a_regular_file_named_jsonl_under_a_slug_is_a_transcript"
+   },
+   "closeable": null,
+   "disposition": "KILLED",
+   "file": "crates/service/src/pool/evidence.rs",
+   "function": "transcripts_under",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 17,
+    "line": 198,
+    "name": "crates/service/src/pool/evidence.rs:198:17: replace && with || in transcripts_under",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "Survived the run this register ratchets from and is caught at the recorded head. Kept so that its reappearance as a survivor is a regression this register refuses rather than a row nobody has worked.",
+   "replacement": "||"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::admit_once",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 25,
+    "line": 703,
+    "name": "crates/service/src/pool/mod.rs:703:25: replace < with <= in Pool::admit_once",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "`state.live() < state.capacity(pool_size)` is redundant with the `free_slot` beside it: `free_slot` returns Some only when `live + leaked < pool_size`, which implies `live < capacity`. The `<=` mutant can therefore only admit when `free_slot` already answered None, and the `&&` short-circuits. Deliberately NOT deleted: unlike the four clauses the guard phase removed, this implication crosses three functions and a set-disjointness invariant, and deleting it means a future violation of that invariant over-subscribes the 15-instance cap silently.",
+   "replacement": "<="
+  },
+  {
+   "closeable": "log-assertion",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::destroy",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 48,
+    "line": 1311,
+    "name": "crates/service/src/pool/mod.rs:1311:48: replace > with < in Pool::destroy",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "All five are the `Ok(retained) if retained.files > 0` MATCH GUARD, which selects between a `tracing::debug!` and `{}`. The retention call itself is the scrutinee and runs either way; no accept/refuse decision, no count and no file changes. The only test that could distinguish them installs a tracing subscriber and asserts on a debug-level line, which nothing in this tree does. Risk left open: the evidence-retention log an operator would use to tell 'retained nothing' from 'retention never ran' can be made to lie.",
+   "replacement": "<"
+  },
+  {
+   "closeable": "log-assertion",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::destroy",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 48,
+    "line": 1311,
+    "name": "crates/service/src/pool/mod.rs:1311:48: replace > with == in Pool::destroy",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "All five are the `Ok(retained) if retained.files > 0` MATCH GUARD, which selects between a `tracing::debug!` and `{}`. The retention call itself is the scrutinee and runs either way; no accept/refuse decision, no count and no file changes. The only test that could distinguish them installs a tracing subscriber and asserts on a debug-level line, which nothing in this tree does. Risk left open: the evidence-retention log an operator would use to tell 'retained nothing' from 'retention never ran' can be made to lie. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "=="
+  },
+  {
+   "closeable": "log-assertion",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::destroy",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 48,
+    "line": 1311,
+    "name": "crates/service/src/pool/mod.rs:1311:48: replace > with >= in Pool::destroy",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "All five are the `Ok(retained) if retained.files > 0` MATCH GUARD, which selects between a `tracing::debug!` and `{}`. The retention call itself is the scrutinee and runs either way; no accept/refuse decision, no count and no file changes. The only test that could distinguish them installs a tracing subscriber and asserts on a debug-level line, which nothing in this tree does. Risk left open: the evidence-retention log an operator would use to tell 'retained nothing' from 'retention never ran' can be made to lie.",
+   "replacement": ">="
+  },
+  {
+   "closeable": "log-assertion",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::destroy",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 33,
+    "line": 1311,
+    "name": "crates/service/src/pool/mod.rs:1311:33: replace match guard retained.files > 0 with false in Pool::destroy",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "All five are the `Ok(retained) if retained.files > 0` MATCH GUARD, which selects between a `tracing::debug!` and `{}`. The retention call itself is the scrutinee and runs either way; no accept/refuse decision, no count and no file changes. The only test that could distinguish them installs a tracing subscriber and asserts on a debug-level line, which nothing in this tree does. Risk left open: the evidence-retention log an operator would use to tell 'retained nothing' from 'retention never ran' can be made to lie. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "false"
+  },
+  {
+   "closeable": "log-assertion",
+   "disposition": "ACCEPTED",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::destroy",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 33,
+    "line": 1311,
+    "name": "crates/service/src/pool/mod.rs:1311:33: replace match guard retained.files > 0 with true in Pool::destroy",
+    "run": "recorded"
+   },
+   "occurrence": 2,
+   "reason": "All five are the `Ok(retained) if retained.files > 0` MATCH GUARD, which selects between a `tracing::debug!` and `{}`. The retention call itself is the scrutinee and runs either way; no accept/refuse decision, no count and no file changes. The only test that could distinguish them installs a tracing subscriber and asserts on a debug-level line, which nothing in this tree does. Risk left open: the evidence-retention log an operator would use to tell 'retained nothing' from 'retention never ran' can be made to lie.",
+   "replacement": "true"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::spawn_rewarm",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 48,
+    "line": 957,
+    "name": "crates/service/src/pool/mod.rs:957:48: replace < with <= in Pool::spawn_rewarm",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The same capacity comparison as admit_once, in the re-warm path, guarded by the same `free_slot`. Same reasoning and the same refusal to delete. CAUGHT by the full-scope campaign at c94612d (`run.6k6C2J`) and the disposition is UNCHANGED, because one run catching a mutant is not a test that kills it: the gate-scope campaign at the same commit (`run.rF6yEE`, the `gate_b` cell) MISSED four of the twelve this campaign caught, and this row's own catcher there was a real-resource test target. A row moves to KILLED when a named test kills it, not when a run happens to.",
+   "replacement": "<="
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::spawn_rewarm",
+   "genre": "MatchArmGuard",
+   "observed_at": {
+    "column": 35,
+    "line": 957,
+    "name": "crates/service/src/pool/mod.rs:957:35: replace match guard state.live() < state.capacity(pool.config.pool_size) with true in Pool::spawn_rewarm",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "The same capacity comparison as admit_once, in the re-warm path, guarded by the same `free_slot`. Same reasoning and the same refusal to delete.",
+   "replacement": "true"
+  },
+  {
+   "closeable": null,
+   "disposition": "EQUIVALENT",
+   "file": "crates/service/src/pool/mod.rs",
+   "function": "Pool::transition_locked",
+   "genre": "BinaryOperator",
+   "observed_at": {
+    "column": 66,
+    "line": 1432,
+    "name": "crates/service/src/pool/mod.rs:1432:66: replace && with || in Pool::transition_locked",
+    "run": "recorded"
+   },
+   "occurrence": 1,
+   "reason": "`instance.state == Idle && next != Idle` read as `||` calls `remove_from_idle(class, slot)` for instances that are not in the idle set, and that function is a tolerant set removal -- it does nothing when the class or the slot is absent. The equivalence holds exactly as long as the invariant 'only Idle instances are in the idle set' does, and is recorded as resting on it.",
+   "replacement": "||"
+  }
+ ],
+ "key_fields": [
+  "file",
+  "function",
+  "genre",
+  "replacement",
+  "occurrence"
+ ],
+ "ratchets_from": {
+  "evidence": "run.7OrHM9",
+  "head": "23e81db",
+  "missed": 64
+ },
+ "recorded_at": {
+  "cargo_mutants_version": "27.1.0",
+  "caught": 1120,
+  "caught_only_by_a_measured_drifter": 19,
+  "caught_only_by_a_timeout": 7,
+  "date": "2026-08-12",
+  "decided": 1156,
+  "enumerated": 1661,
+  "evidence": "run.6k6C2J",
+  "floor_derivation": "The measured score with every mutant whose ONLY failing test target was a MEASURED drifter, or which was caught by a TIMEOUT and by nothing else, counted as missed. The RULE is the one the run at 23e81db derived and is not re-invented here; the MEASUREMENT is this run's. The drifter targets are `bounded_soak`, `private_runtime`, `lifecycle_faults` and `performance_diagnostics` -- every one a real-resource or wall-clock test. It is re-derived from this campaign's own per-mutant logs: `cargo test` without `--no-fail-fast` stops at the first target that fails, so each caught mutant's log names exactly one catching target, and reading that as \"the only catcher\" over-counts drifter-caught mutants, which pushes the floor DOWN -- the safe direction for a floor. 19 of the 1,120 caught mutants were caught only by a drifter target and 7 only by a timeout, giving 94. The gate's error is one-directional (a test that fails for its own reasons is recorded as the mutant being caught), so the raw score is an over-estimate and a floor set at it reddens on a clean tree.",
+  "floor_percent": 94,
+  "head": "c8616a9",
+  "head_note": "THE SQUASH FOR PUBLICATION replaced this branch's 166 commits with one, so the commit this was recorded at is not in published history and `head` names c8616a9, which is. This is the same reconciliation the census's own note already makes and it is held to the same test: MEASURED, `git diff c94612d c8616a9` over FULL_GLOBS is EMPTY -- the mutated files are byte-identical at the campaign's head and here -- and `git diff 6ab75a4 c8616a9` is empty over the WHOLE tree, because the squash was built from the pre-squash tip's tree object unchanged. So the measurement still describes this tree; what it can no longer do is say WHICH earlier commit it was taken at, and with one commit in the range the drift check has nothing to diff against and is vacuous here. It becomes meaningful again at the next commit that touches FULL_GLOBS. Every other commit reference in this file -- run identifiers, the ratcheted-from head, the campaign named in prose -- is a historical citation that no gate resolves, and is left exactly as written.",
+  "missed": 36,
+  "mutation_score_percent": 96,
+  "scope": "full",
+  "unviable": 505
+ },
+ "schema": "pmux.mutation-survivor-register.v1"
+}

@@ -1,0 +1,489 @@
+{
+ "arch": "aarch64",
+ "by_version": {
+  "2.1.207": {
+   "files_at_this_version": 3,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 4,
+    "fraction": 0.25,
+    "without_a_turn_duration_marker": 1
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 3,
+     "max_ms": 41,
+     "median_ms": 24,
+     "min_ms": 24,
+     "p90_ms": 41,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 3,
+      "max_ms": 41,
+      "median_ms": 24,
+      "min_ms": 24,
+      "p90_ms": 41,
+      "p95_ms": 41,
+      "p99_ms": 41,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 3,
+     "max_ms": 41,
+     "median_ms": 24,
+     "min_ms": 24,
+     "p90_ms": 41,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 6
+  },
+  "2.1.215": {
+   "files_at_this_version": 31,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 139,
+    "fraction": 0.705,
+    "without_a_turn_duration_marker": 98
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 46,
+     "max_ms": 18074772,
+     "median_ms": 55,
+     "min_ms": 5,
+     "p90_ms": 338,
+     "p95_ms": 203805,
+     "p99_ms": 18074772
+    },
+    "by_kind": {
+     "queue-operation/None": {
+      "count": 3,
+      "max_ms": 18074772,
+      "median_ms": 4338,
+      "min_ms": 68,
+      "p90_ms": 18074772,
+      "p95_ms": 18074772,
+      "p99_ms": 18074772,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "the task queue is a harness feature; a minified cell has no queue"
+     },
+     "system/away_summary": {
+      "count": 1,
+      "max_ms": 203805,
+      "median_ms": 203805,
+      "min_ms": 203805,
+      "p90_ms": 203805,
+      "p95_ms": 203805,
+      "p99_ms": 203805,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "away mode is an interactive-session feature; a minified cell has none"
+     },
+     "system/turn_duration": {
+      "count": 41,
+      "max_ms": 338,
+      "median_ms": 54,
+      "min_ms": 5,
+      "p90_ms": 165,
+      "p95_ms": 258,
+      "p99_ms": 338,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     },
+     "user/None": {
+      "count": 1,
+      "max_ms": 1561622,
+      "median_ms": 1561622,
+      "min_ms": 1561622,
+      "p90_ms": 1561622,
+      "p95_ms": 1561622,
+      "p99_ms": 1561622,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "a post-answer user row is a harness injection, e.g. a <task-notification>; nothing can inject one into a minified cell"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 41,
+     "max_ms": 338,
+     "median_ms": 54,
+     "min_ms": 5,
+     "p90_ms": 165,
+     "p95_ms": 258,
+     "p99_ms": 338
+    },
+    "unreachable_on_a_minified_cell": {
+     "count": 5,
+     "max_ms": 18074772,
+     "median_ms": 203805,
+     "min_ms": 68,
+     "p90_ms": 18074772,
+     "p95_ms": 18074772,
+     "p99_ms": 18074772
+    }
+   },
+   "recommended_transcript_drain_ms": 750,
+   "turns": 159
+  },
+  "2.1.220": {
+   "files_at_this_version": 319,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 346,
+    "fraction": 0.474,
+    "without_a_turn_duration_marker": 164
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 2018,
+     "max_ms": 31657017,
+     "median_ms": 4886,
+     "min_ms": -11837461,
+     "p90_ms": 602459,
+     "p95_ms": 1525810,
+     "p99_ms": 3842268
+    },
+    "by_kind": {
+     "queue-operation/None": {
+      "count": 1818,
+      "max_ms": 31657017,
+      "median_ms": 8430,
+      "min_ms": 0,
+      "p90_ms": 720546,
+      "p95_ms": 1630354,
+      "p99_ms": 4007573,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "the task queue is a harness feature; a minified cell has no queue"
+     },
+     "system/api_error": {
+      "count": 9,
+      "max_ms": 39312,
+      "median_ms": 4975,
+      "min_ms": -11837461,
+      "p90_ms": 39312,
+      "p95_ms": 39312,
+      "p99_ms": 39312,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": true,
+      "why": "NOT A POST-ANSWER ARRIVAL. An api_error records an HTTP failure that happened INSIDE the turn -- Connection error., a 529 overload, a timeout -- and is stamped at the moment of that failure, not at the moment the row is appended. Every one seen post-answer is stamped BEFORE the turn's final assistant row, which is the row the successful retry produced; the `retrospective` column above makes that a checked premise rather than a claim. It lands after the answer in FILE order only where a queue reorders the append stream, and a minified cell has no queue. A retry that does produce a further answer arrives as an ('assistant', None) row, which is classified reachable below and is the entry that guards that case. Measured in docs/version-drift.md"
+     },
+     "system/away_summary": {
+      "count": 1,
+      "max_ms": 203805,
+      "median_ms": 203805,
+      "min_ms": 203805,
+      "p90_ms": 203805,
+      "p95_ms": 203805,
+      "p99_ms": 203805,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "away mode is an interactive-session feature; a minified cell has none"
+     },
+     "system/stop_hook_summary": {
+      "count": 7,
+      "max_ms": 292,
+      "median_ms": 68,
+      "min_ms": 33,
+      "p90_ms": 292,
+      "p95_ms": 292,
+      "p99_ms": 292,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "a Stop hook ran; pmux's own hybrid lifecycle hook is one"
+     },
+     "system/turn_duration": {
+      "count": 182,
+      "max_ms": 438,
+      "median_ms": 40,
+      "min_ms": 1,
+      "p90_ms": 115,
+      "p95_ms": 202,
+      "p99_ms": 344,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     },
+     "user/None": {
+      "count": 1,
+      "max_ms": 1561622,
+      "median_ms": 1561622,
+      "min_ms": 1561622,
+      "p90_ms": 1561622,
+      "p95_ms": 1561622,
+      "p99_ms": 1561622,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "a post-answer user row is a harness injection, e.g. a <task-notification>; nothing can inject one into a minified cell"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 189,
+     "max_ms": 438,
+     "median_ms": 42,
+     "min_ms": 1,
+     "p90_ms": 120,
+     "p95_ms": 240,
+     "p99_ms": 344
+    },
+    "unreachable_on_a_minified_cell": {
+     "count": 1829,
+     "max_ms": 31657017,
+     "median_ms": 8463,
+     "min_ms": -11837461,
+     "p90_ms": 720546,
+     "p95_ms": 1601088,
+     "p99_ms": 4007573
+    }
+   },
+   "recommended_transcript_drain_ms": 1000,
+   "turns": 1294
+  },
+  "2.1.223": {
+   "files_at_this_version": 74,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 1,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 1825,
+     "max_ms": 31657017,
+     "median_ms": 8430,
+     "min_ms": -11837461,
+     "p90_ms": 706239,
+     "p95_ms": 1598653,
+     "p99_ms": 3939745
+    },
+    "by_kind": {
+     "queue-operation/None": {
+      "count": 1815,
+      "max_ms": 31657017,
+      "median_ms": 8463,
+      "min_ms": 0,
+      "p90_ms": 711651,
+      "p95_ms": 1601088,
+      "p99_ms": 3939745,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "the task queue is a harness feature; a minified cell has no queue"
+     },
+     "system/api_error": {
+      "count": 9,
+      "max_ms": 39312,
+      "median_ms": 4975,
+      "min_ms": -11837461,
+      "p90_ms": 39312,
+      "p95_ms": 39312,
+      "p99_ms": 39312,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": true,
+      "why": "NOT A POST-ANSWER ARRIVAL. An api_error records an HTTP failure that happened INSIDE the turn -- Connection error., a 529 overload, a timeout -- and is stamped at the moment of that failure, not at the moment the row is appended. Every one seen post-answer is stamped BEFORE the turn's final assistant row, which is the row the successful retry produced; the `retrospective` column above makes that a checked premise rather than a claim. It lands after the answer in FILE order only where a queue reorders the append stream, and a minified cell has no queue. A retry that does produce a further answer arrives as an ('assistant', None) row, which is classified reachable below and is the entry that guards that case. Measured in docs/version-drift.md"
+     },
+     "system/turn_duration": {
+      "count": 1,
+      "max_ms": 57,
+      "median_ms": 57,
+      "min_ms": 57,
+      "p90_ms": 57,
+      "p95_ms": 57,
+      "p99_ms": 57,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 1,
+     "max_ms": 57,
+     "median_ms": 57,
+     "min_ms": 57,
+     "p90_ms": 57,
+     "p95_ms": 57,
+     "p99_ms": 57
+    },
+    "unreachable_on_a_minified_cell": {
+     "count": 1824,
+     "max_ms": 31657017,
+     "median_ms": 8430,
+     "min_ms": -11837461,
+     "p90_ms": 706239,
+     "p95_ms": 1598653,
+     "p99_ms": 3939745
+    }
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 817
+  }
+ },
+ "claude_version": "2.1.207",
+ "claude_versions": [
+  "2.1.207",
+  "2.1.215",
+  "2.1.220",
+  "2.1.223"
+ ],
+ "corpus": {
+  "files_at_these_versions": 425,
+  "files_scanned": 1398,
+  "note": "Host-local operator transcripts. Not committed: they contain prompts. The receipt is the durable artifact; re-run the tool to regenerate it.",
+  "roots": [
+   "<HOME>/.claude/projects",
+   "<HOME>/.claude-1/projects"
+  ],
+  "tracked": false,
+  "turns": 1336
+ },
+ "full_drain_binds_on": {
+  "cli_turns_with_a_terminal_candidate": 385,
+  "fraction": 0.431,
+  "without_a_turn_duration_marker": 166
+ },
+ "os": "macos",
+ "partition_balances": true,
+ "per_version_recommendations_not_to_be_shipped": {
+  "2.1.207": 250,
+  "2.1.215": 750,
+  "2.1.220": 1000,
+  "2.1.223": 250
+ },
+ "post_answer_arrivals": {
+  "all": {
+   "count": 2055,
+   "max_ms": 31657017,
+   "median_ms": 4576,
+   "min_ms": -11837461,
+   "p90_ms": 594958,
+   "p95_ms": 1510628,
+   "p99_ms": 3842268
+  },
+  "by_kind": {
+   "queue-operation/None": {
+    "count": 1818,
+    "max_ms": 31657017,
+    "median_ms": 8430,
+    "min_ms": 0,
+    "p90_ms": 720546,
+    "p95_ms": 1630354,
+    "p99_ms": 4007573,
+    "reachable_on_a_minified_cell": false,
+    "timestamp_is_retrospective": false,
+    "why": "the task queue is a harness feature; a minified cell has no queue"
+   },
+   "system/api_error": {
+    "count": 9,
+    "max_ms": 39312,
+    "median_ms": 4975,
+    "min_ms": -11837461,
+    "p90_ms": 39312,
+    "p95_ms": 39312,
+    "p99_ms": 39312,
+    "reachable_on_a_minified_cell": false,
+    "timestamp_is_retrospective": true,
+    "why": "NOT A POST-ANSWER ARRIVAL. An api_error records an HTTP failure that happened INSIDE the turn -- Connection error., a 529 overload, a timeout -- and is stamped at the moment of that failure, not at the moment the row is appended. Every one seen post-answer is stamped BEFORE the turn's final assistant row, which is the row the successful retry produced; the `retrospective` column above makes that a checked premise rather than a claim. It lands after the answer in FILE order only where a queue reorders the append stream, and a minified cell has no queue. A retry that does produce a further answer arrives as an ('assistant', None) row, which is classified reachable below and is the entry that guards that case. Measured in docs/version-drift.md"
+   },
+   "system/away_summary": {
+    "count": 1,
+    "max_ms": 203805,
+    "median_ms": 203805,
+    "min_ms": 203805,
+    "p90_ms": 203805,
+    "p95_ms": 203805,
+    "p99_ms": 203805,
+    "reachable_on_a_minified_cell": false,
+    "timestamp_is_retrospective": false,
+    "why": "away mode is an interactive-session feature; a minified cell has none"
+   },
+   "system/stop_hook_summary": {
+    "count": 7,
+    "max_ms": 292,
+    "median_ms": 68,
+    "min_ms": 33,
+    "p90_ms": 292,
+    "p95_ms": 292,
+    "p99_ms": 292,
+    "reachable_on_a_minified_cell": true,
+    "timestamp_is_retrospective": false,
+    "why": "a Stop hook ran; pmux's own hybrid lifecycle hook is one"
+   },
+   "system/turn_duration": {
+    "count": 219,
+    "max_ms": 438,
+    "median_ms": 43,
+    "min_ms": 1,
+    "p90_ms": 120,
+    "p95_ms": 240,
+    "p99_ms": 338,
+    "reachable_on_a_minified_cell": true,
+    "timestamp_is_retrospective": false,
+    "why": "the end-of-turn marker Claude Code writes for every turn"
+   },
+   "user/None": {
+    "count": 1,
+    "max_ms": 1561622,
+    "median_ms": 1561622,
+    "min_ms": 1561622,
+    "p90_ms": 1561622,
+    "p95_ms": 1561622,
+    "p99_ms": 1561622,
+    "reachable_on_a_minified_cell": false,
+    "timestamp_is_retrospective": false,
+    "why": "a post-answer user row is a harness injection, e.g. a <task-notification>; nothing can inject one into a minified cell"
+   }
+  },
+  "reachable_on_a_minified_cell": {
+   "count": 226,
+   "max_ms": 438,
+   "median_ms": 45,
+   "min_ms": 1,
+   "p90_ms": 122,
+   "p95_ms": 240,
+   "p99_ms": 338
+  },
+  "unreachable_on_a_minified_cell": {
+   "count": 1829,
+   "max_ms": 31657017,
+   "median_ms": 8463,
+   "min_ms": -11837461,
+   "p90_ms": 720546,
+   "p95_ms": 1601088,
+   "p99_ms": 4007573
+  }
+ },
+ "recommendation_basis": {
+  "margin": 2.0,
+  "pooled_over_versions": [
+   "2.1.207",
+   "2.1.215",
+   "2.1.220",
+   "2.1.223"
+  ],
+  "rounded_up_to_ms": 250,
+  "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"
+ },
+ "recommended_transcript_drain_ms": 1000,
+ "repromotion_triggers_this_tool_detects": {
+  "reachable_arrival_above_the_bound": "exit 4 when --bound-ms is given and a reachable arrival exceeds it; exit 5 when there was nothing to check",
+  "unclassified_transcript_row_kind": "exit 2 on a post-answer row kind absent from ROW_KINDS, exit 3 on a `retrospective` kind stamped after the terminal candidate"
+ },
+ "what_would_invalidate_it": [
+  "an assistant row arriving after a turn's final assistant row -- see ROW_KINDS",
+  "any reachable arrival above the recommended value",
+  "a different os or arch, or a claude_version outside the promoted range",
+  "a minified cell acquiring a harness able to inject rows (a hook, a queue, an MCP server)"
+ ]
+}

@@ -1,4 +1,5 @@
 /target
+**/target/
 **/*.swp
 .DS_Store
 .pseudomux/
@@ -11,7 +12,9 @@
 # TypeScript client build + deps
 clients/typescript/dist/
 clients/typescript/node_modules/
-clients/typescript/package-lock.json
 
 # Local Claude Code session data
 .claude/
+
+# Workspace coordination and raw evidence: never part of the product repo.
+.context/

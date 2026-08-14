@@ -1,0 +1,19 @@
+Copy the line between the two markers back to me exactly, byte for byte. Do
+not translate, transliterate, normalize, re-order, re-wrap, quote, or
+substitute any character, and do not add a leading or trailing space. Do not
+use any tool. Answer immediately: do not think, plan, restate, or explain
+first.
+
+BEGIN
+the lighthouse keeps its own quiet hours
+END
+
+The SHA-256 of that line's exact UTF-8 bytes is already computed and is
+correct:
+
+7b0cbb8fcac8e9572d023064b05d7a1e31de65f45c5f25ebc9a0be5c2e66b863
+
+Do not recompute it and do not run any command. Reply with exactly this and
+nothing else: the line between the markers unchanged on one line, then one
+blank line, then a final line reading exactly `SHA256: <hex>`, where <hex> is
+the 64-character lowercase digest given above, copied verbatim.

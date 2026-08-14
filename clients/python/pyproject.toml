@@ -1,8 +1,9 @@
 [project]
 name = "pmux-client"
 version = "0.1.0"
-description = "Python client for the pseudomux PTY multiplexer (pmuxd HTTP API)"
-requires-python = ">=3.9"
+description = "Native Python client for the versioned pmux Unix-socket API"
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = []
 license = { text = "MIT OR Apache-2.0" }
 
@@ -12,3 +13,13 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pmux_client"]
+
+[tool.setuptools.package-data]
+pmux_client = ["py.typed"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

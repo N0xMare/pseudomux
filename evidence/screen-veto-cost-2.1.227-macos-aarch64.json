@@ -1,0 +1,428 @@
+{
+  "schema": "pmux.screen-veto-cost.v1",
+  "receipt": "screen-veto-cost",
+  "purpose": "Availability cost of the unrecognized-screen veto: does refusing an unrecognised screen refuse any legitimate turn?",
+  "provenance": {
+    "what_was_measured": "a pmuxd built from an UNCOMMITTED working tree, not from any commit",
+    "committed_as": "93bc7a167ff3df0c1b50c3f15ae2c543a09cf4e7",
+    "head_when_the_run_started": "3192498870d1b23a22bdc7d0dabe2af15ce8ef36",
+    "reader_warning": "This file does NOT describe the commit that happens to be HEAD when you read it. The binaries below are the identity of the code that produced these numbers; the tree they were built from was committed afterwards as 93bc7a1. `evidence/README.md` and `UNRECOGNISED_SCREEN_VETO`'s doc comment both cite this file."
+  },
+  "measured_at_unix_ms": 1786474540095,
+  "host": {
+    "os": "macos",
+    "arch": "aarch64"
+  },
+  "claude_version": "2.1.227",
+  "binaries": {
+    "pmuxd": "544d911a4cf04d60543fd7d4d2650d527e7713ffff527ef9efdc1fc170157212",
+    "pmux": "5a672be614b4cfbc309c303757bb63daa5e2f3852985fe97fea7b995c51fcbac"
+  },
+  "daemon": {
+    "path_b_pool_size": 3,
+    "warm": "claude-sonnet-5/low=1",
+    "screen_corpus_dir_env": "PMUX_SCREEN_CORPUS_DIR",
+    "label": "veto-cost"
+  },
+  "veto_window_ms": 30000,
+  "turns": {
+    "total": 24,
+    "model": "claude-sonnet-5",
+    "efforts": [
+      "high",
+      "low",
+      "medium"
+    ],
+    "per_effort": {
+      "low": 8,
+      "medium": 8,
+      "high": 8
+    },
+    "answered": 24,
+    "refused": 0,
+    "false_refusal_rate": 0.0
+  },
+  "census": {
+    "by_site": {
+      "completion_gate.evidence": {
+        "longest_unrecognised_run_frames": 0,
+        "longest_unrecognised_run_ms": 0,
+        "verdicts": {
+          "ready": 48
+        }
+      },
+      "control_channel.selection": {
+        "longest_unrecognised_run_frames": 11,
+        "longest_unrecognised_run_ms": 277,
+        "verdicts": {
+          "composer_holding_text": 1,
+          "ready": 24,
+          "unrecognised": 261
+        }
+      },
+      "input_gate.post_paste": {
+        "longest_unrecognised_run_frames": 0,
+        "longest_unrecognised_run_ms": 0,
+        "verdicts": {
+          "composer_holding_text": 281,
+          "ready": 24
+        }
+      },
+      "input_gate.pre_paste": {
+        "longest_unrecognised_run_frames": 0,
+        "longest_unrecognised_run_ms": 0,
+        "verdicts": {
+          "ready": 575
+        }
+      },
+      "screen_stability.poll": {
+        "longest_unrecognised_run_frames": 0,
+        "longest_unrecognised_run_ms": 0,
+        "verdicts": {
+          "ready": 470
+        }
+      },
+      "startup.wait_until_ready": {
+        "longest_unrecognised_run_frames": 17,
+        "longest_unrecognised_run_ms": 844,
+        "verdicts": {
+          "ready": 32,
+          "unrecognised": 70
+        }
+      },
+      "turn_monitor.observe": {
+        "longest_unrecognised_run_frames": 0,
+        "longest_unrecognised_run_ms": 0,
+        "verdicts": {
+          "composer_holding_text": 30,
+          "ready": 2599
+        }
+      }
+    },
+    "files": [
+      {
+        "arch": "aarch64",
+        "claude_version": "2.1.227",
+        "frames": 4415,
+        "label": "veto-cost",
+        "os": "macos",
+        "source": "/tmp/veto-cost/corpus/pmux-screens-1786474534799-18787.ndjson"
+      }
+    ],
+    "frames": 4415,
+    "longest_unrecognised_run_ms": 844,
+    "totals": {
+      "composer_holding_text": 312,
+      "ready": 3772,
+      "unrecognised": 331
+    },
+    "veto_window_ms": 30000,
+    "veto_would_have_fired": false
+  },
+  "findings": {
+    "turn_path_unrecognised_frames": 0,
+    "turn_path_observations": 2629,
+    "turn_path_longest_unrecognised_run_ms": 0,
+    "longest_unrecognised_run_ms_anywhere": 844,
+    "longest_unrecognised_run_site": "startup.wait_until_ready",
+    "veto_would_have_fired": false,
+    "margin_over_longest_measured_run": 35.5
+  },
+  "not_established": [
+    "The veto never fired: no unrecognised frame was observed on the turn path at all, so this run is evidence about the false-refusal rate and none about the firing path against a live Claude.",
+    "control_channel.selection reports 261 unrecognised frames because the census replays EVERY site through classify_terminal_snapshot; that site's own decision is prove_control_command_selection, which is colour-based and refuses on no match. The number is an artefact of one classifier applied to all sites, not a defect.",
+    "One host, one Claude version, one pane geometry. No Linux cell.",
+    "No turn here was refused, so no legitimate-turn refusal was narrowed with evidence; the window is a bound set far above the measurement rather than fitted to it.",
+    "The daemon measured predates 3b44c12, which replaced the veto's `Option<(ScreenShape, u64)>` with `Option<u64>`. That commit removed a stored value nothing read and changed no behaviour, but this run did not exercise the code as it stands at that commit."
+  ],
+  "per_turn": [
+    {
+      "turn": 1,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 2857,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 3,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 2,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 2660,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 7,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 3,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 3176,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 35,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 4,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 2996,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 9,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 5,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 4017,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 131,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 6,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 3529,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 31,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 7,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 3417,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 133,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 8,
+      "effort": "low",
+      "exit": 0,
+      "duration_ms": 5700,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 291,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 9,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 8507,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 3,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 10,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 3360,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 7,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 11,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 4219,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 36,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 12,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 3736,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 9,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 13,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 4321,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 90,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 14,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 3673,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 37,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 15,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 4511,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 129,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 16,
+      "effort": "medium",
+      "exit": 0,
+      "duration_ms": 6996,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 339,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 17,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 6735,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 3,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 18,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 3472,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 7,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 19,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 4003,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 57,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 20,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 3220,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 9,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 21,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 4064,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 101,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 22,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 3861,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 33,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 23,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 4687,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 175,
+      "sidechain_tokens": 0,
+      "answered": true
+    },
+    {
+      "turn": 24,
+      "effort": "high",
+      "exit": 0,
+      "duration_ms": 7536,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "output_tokens": 303,
+      "sidechain_tokens": 0,
+      "answered": true
+    }
+  ]
+}

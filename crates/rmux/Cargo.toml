@@ -1,0 +1,27 @@
+[package]
+name = "pseudomux-rmux"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Explicit-endpoint rmux terminal backend and secure launch contract for pmux"
+
+[lints]
+workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+libc = { workspace = true }
+rmux-client = { workspace = true }
+rmux-sdk = { workspace = true, default-features = false }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tempfile = { workspace = true }

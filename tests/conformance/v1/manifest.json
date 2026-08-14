@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "protocol_version": 1,
+  "methods": [
+    "ping",
+    "start_session",
+    "run_turn",
+    "cancel_turn",
+    "inspect_session",
+    "attach_session",
+    "close_session",
+    "subscribe_events",
+    "run_once",
+    "clear_session",
+    "diagnose",
+    "run_stateless",
+    "create_agent",
+    "get_agent",
+    "list_agents",
+    "update_agent"
+  ],
+  "results": [
+    "pong",
+    "session_started",
+    "turn_accepted",
+    "turn_cancelled",
+    "session_snapshot",
+    "attach_capability",
+    "session_closed",
+    "events",
+    "turn_result",
+    "session_cleared",
+    "diagnosis",
+    "stateless_result",
+    "agent_created",
+    "agent",
+    "agent_list",
+    "agent_updated"
+  ],
+  "events": [
+    "session_state_changed",
+    "prompt_acknowledged",
+    "logical_message",
+    "tool_started",
+    "tool_completed",
+    "rate_limit",
+    "needs_input",
+    "terminal_candidate",
+    "turn_completed",
+    "turn_cancelled",
+    "turn_failed",
+    "warning",
+    "replay_gap",
+    "heartbeat"
+  ],
+  "error_codes": [
+    "invalid_config",
+    "unsupported_feature",
+    "unsupported_claude_version",
+    "claude_not_found",
+    "rmux_unavailable",
+    "rmux_incompatible",
+    "persistence_disabled",
+    "transcript_unavailable",
+    "schema_drift",
+    "prompt_not_acknowledged",
+    "result_too_large",
+    "turn_history_capacity_exceeded",
+    "session_busy",
+    "id_conflict",
+    "id_collision",
+    "session_not_found",
+    "stale_session_generation",
+    "needs_trust",
+    "needs_login",
+    "needs_permission",
+    "needs_update",
+    "needs_input",
+    "rate_limited",
+    "authentication_failed",
+    "billing_failed",
+    "permission_denied",
+    "turn_timeout",
+    "cancelled",
+    "recovery_failed",
+    "claude_exited",
+    "daemon_lost",
+    "replay_gap",
+    "protocol_version_mismatch",
+    "internal"
+  ],
+  "tagged_unions": {
+    "ConfigSource": {
+      "tag": "source",
+      "variants": [
+        "file",
+        "inline"
+      ]
+    },
+    "LifecycleMode": {
+      "tag": "mode",
+      "variants": [
+        "transcript",
+        "hybrid"
+      ]
+    },
+    "MessageBlock": {
+      "tag": "kind",
+      "variants": [
+        "text",
+        "tool_use",
+        "tool_result",
+        "unknown"
+      ]
+    },
+    "RetentionPolicy": {
+      "tag": "mode",
+      "variants": [
+        "one_shot",
+        "persistent"
+      ]
+    },
+    "SessionIdentity": {
+      "tag": "mode",
+      "variants": [
+        "new",
+        "resume"
+      ]
+    },
+    "SystemPromptPolicy": {
+      "tag": "mode",
+      "variants": [
+        "default",
+        "append",
+        "replace"
+      ]
+    }
+  },
+  "value_enums": {
+    "AuthPolicy": [
+      "subscription",
+      "inherit"
+    ],
+    "CancelOutcome": [
+      "cancelled",
+      "already_terminal",
+      "recovery_failed"
+    ],
+    "ClosePolicy": [
+      "graceful",
+      "force"
+    ],
+    "CompatibilityPolicy": [
+      "require_tested",
+      "allow_untested"
+    ],
+    "CompletionAuthority": [
+      "transcript"
+    ],
+    "DisconnectAction": [
+      "continue",
+      "cancel_turn",
+      "close_session"
+    ],
+    "EffortLevel": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "HealthLayerName": [
+      "configuration",
+      "control_plane",
+      "private_runtime",
+      "launch_broker",
+      "compatibility_profile",
+      "pool",
+      "sessions",
+      "performance"
+    ],
+    "InputTransport": [
+      "auto",
+      "sdk",
+      "attached_stream"
+    ],
+    "LayerFinding": [
+      "exercised",
+      "faulted",
+      "nothing_to_exercise",
+      "not_established"
+    ],
+    "MessageScope": [
+      "main",
+      "sidechain",
+      "team",
+      "metadata"
+    ],
+    "NeedsInputKind": [
+      "trust",
+      "login",
+      "permission",
+      "update",
+      "quota",
+      "unknown_modal"
+    ],
+    "PermissionMode": [
+      "default",
+      "accept_edits",
+      "plan",
+      "auto",
+      "bypass_permissions",
+      "dont_ask",
+      "dangerously_skip_permissions"
+    ],
+    "ProbeOutcome": [
+      "pass",
+      "unproven",
+      "fail"
+    ],
+    "RateLimitStatus": [
+      "allowed",
+      "rejected",
+      "unknown"
+    ],
+    "RuntimeFinding": [
+      "private_runtime_responsive",
+      "control_plane_unreachable",
+      "control_plane_unresponsive",
+      "control_plane_refused",
+      "launch_broker_stopped"
+    ],
+    "SessionCell": [
+      "full",
+      "minified"
+    ],
+    "SessionFinding": [
+      "terminal_present",
+      "terminal_missing",
+      "session_declared_unusable",
+      "session_actor_unresponsive",
+      "session_closed_during_probe",
+      "not_probed"
+    ],
+    "SessionState": [
+      "creating",
+      "booting",
+      "ready",
+      "submitting",
+      "awaiting_prompt_ack",
+      "running",
+      "needs_input",
+      "terminal_candidate",
+      "draining",
+      "cancelling",
+      "tainted",
+      "closing",
+      "closed",
+      "failed"
+    ],
+    "StopReasonKind": [
+      "end_turn",
+      "stop_sequence",
+      "max_tokens",
+      "tool_use",
+      "pause_turn",
+      "refusal",
+      "error",
+      "unknown"
+    ],
+    "TerminalProfile": [
+      "transparent",
+      "rmux_standard"
+    ],
+    "ToolStatus": [
+      "requested",
+      "completed",
+      "failed",
+      "cancelled"
+    ],
+    "TurnOutcome": [
+      "completed",
+      "cancelled",
+      "failed"
+    ]
+  }
+}

@@ -1,2 +1,0 @@
-Ask anything... "Fix a TODO in the codebase"
-ctrl+t variants  tab agents  ctrl+p commands

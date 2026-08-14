@@ -1,0 +1,1223 @@
+{
+ "argv": [
+  "<REPO>/.context/tools/cargo-mutants/bin/cargo-mutants",
+  "mutants",
+  "--no-config",
+  "--gitignore=true",
+  "--copy-vcs=false",
+  "--profile",
+  "mutants",
+  "--test-workspace=false",
+  "--no-times",
+  "--timeout",
+  "243",
+  "--output",
+  "/private/tmp/agree/work2/out",
+  "--jobs",
+  "4",
+  "--file",
+  "crates/protocol/src/v1.rs",
+  "--file",
+  "crates/service/src/driver_io.rs",
+  "--file",
+  "crates/service/src/native.rs",
+  "--file",
+  "crates/service/src/pool/evidence.rs",
+  "-F",
+  "(?:replace |in )(?:<impl Serialize for StartSessionRequest>::serialize|<impl TerminalControl for RmuxTerminalControl>::completion_evidence|<impl TerminalControl for RmuxTerminalControl>::interrupt|<impl TerminalControl for RmuxTerminalControl>::observe_screen|<impl TerminalControl for RmuxTerminalControl>::submit_prompt|FileTranscriptSource::prove_transcript_inert|FileTranscriptSource::record_rotation|NativeService::from_runtime_with_agent_store|NativeService::start|NativeService::start_session_owned_with_retention|RecognisedScreen::label|RmuxTerminalControl::resize|ScreenShape::of|ScreenShape::to_json|TerminalScreenState::label|active_editor|blocking_screen|classify_terminal_snapshot|claude_version_of|detect_claude_version|diagnostic_offset_from_bottom|diagnostic_usize|gated_snapshot|gated_styled_screen|normalize_claude_version|performance_layer|read_rotation_anchor|rendered_prompt_is_proven|startup_screen_diagnostics|strictest_cell|transcripts_under|validate_turn_deadline_domain|wait_for_snapshot_stability|wait_for_stable_control_render|wait_for_stable_empty_editor|wait_until_ready_with_timings)(?: with | -> |$)",
+  "--test-package",
+  "pseudomux-protocol",
+  "--test-package",
+  "pseudomux-client",
+  "--test-package",
+  "pseudomux-service"
+ ],
+ "argv_note": "Not `scripts/gate-a-mutants.sh`. It borrows that script's pinned toolchain, `mutants` profile, test-package set, candidate binaries and required cargo-mutants version -- all READ OUT OF it rather than copied here -- and skips its evidence directory, its floor and its register check, because the register check is a statement about a full-scope run. This is a tool result, not a gate cell.",
+ "baseline": {
+  "attempts": [
+   {
+    "attempt": 1,
+    "exit_status": 0,
+    "failing_target": null,
+    "seconds": 48.548
+   }
+  ],
+  "test_packages": [
+   "pseudomux-protocol",
+   "pseudomux-client",
+   "pseudomux-service"
+  ],
+  "timeout_note": "5x the unmutated pass of every test package, floor 20s. Pinned rather than left to cargo-mutants, whose own baseline is scoped to the mutated files' packages while every mutant is tested against all of them.",
+  "timeout_seconds": 243,
+  "unmutated_test_seconds": 48.548
+ },
+ "catchers": {
+  "crates/protocol/src/v1.rs:1800:27: delete ! in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test v1_golden",
+   "test": "every_typed_method_sends_exact_golden_requests_and_accepts_matching_results"
+  },
+  "crates/protocol/src/v1.rs:1813:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1813:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1814:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1814:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-protocol --test v1_wire",
+   "test": "an_agent_start_emits_the_agent_and_omits_every_path_the_agent_supplies"
+  },
+  "crates/protocol/src/v1.rs:1815:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1815:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1816:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1816:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1817:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1817:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test v1_golden",
+   "test": "every_typed_method_sends_exact_golden_requests_and_accepts_matching_results"
+  },
+  "crates/protocol/src/v1.rs:1818:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1818:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1818:21: replace * with + in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1818:21: replace * with / in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-protocol --test v1_wire",
+   "test": "an_agent_start_emits_the_agent_and_omits_every_path_the_agent_supplies"
+  },
+  "crates/protocol/src/v1.rs:1819:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1819:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test v1_golden",
+   "test": "every_typed_method_sends_exact_golden_requests_and_accepts_matching_results"
+  },
+  "crates/protocol/src/v1.rs:1819:31: delete ! in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1852:12: delete ! in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/protocol/src/v1.rs:1855:20: replace != with == in <impl Serialize for StartSessionRequest>::serialize": {
+   "target": "-p pseudomux-client --test fake_uds",
+   "test": "every_typed_method_rejects_contextually_mismatched_results"
+  },
+  "crates/service/src/driver_io.rs:1141:59: replace == with != in wait_for_stable_empty_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::input_gate_accepts_delayed_multiline_collapsed_and_cursor_only_renders"
+  },
+  "crates/service/src/driver_io.rs:1142:20: delete ! in wait_for_stable_empty_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1147:63: replace >= with < in wait_for_stable_empty_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1251:5: replace rendered_prompt_is_proven -> bool with false": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_holding_text_this_prompt_never_began_with_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1251:5: replace rendered_prompt_is_proven -> bool with true": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1272:50: replace == with != in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_holding_text_this_prompt_never_began_with_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1273:32: replace == with != in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1273:55: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1273:76: replace <= with > in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::input_gate_accepts_delayed_multiline_collapsed_and_cursor_only_renders"
+  },
+  "crates/service/src/driver_io.rs:1273:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1274:13: replace || with && in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1274:35: replace == with != in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1275:17: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_second_editor_holding_the_prompts_own_text_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1275:38: replace >= with < in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_whose_anchor_and_cursor_both_moved_is_not_this_prompt_rendered"
+  },
+  "crates/service/src/driver_io.rs:1276:23: replace != with == in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_holding_text_this_prompt_never_began_with_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1277:30: replace != with == in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_holding_text_this_prompt_never_began_with_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1277:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1278:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1279:12: delete ! in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_composer_holding_text_this_prompt_never_began_with_is_never_entered"
+  },
+  "crates/service/src/driver_io.rs:1279:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1280:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1281:9: replace && with || in rendered_prompt_is_proven": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:1452:30: replace != with == in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1452:35: replace && with || in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_control_render_gate_refuses_a_frame_the_fence_already_saw"
+  },
+  "crates/service/src/driver_io.rs:1452:56: replace != with == in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1452:77: replace && with || in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_control_render_gate_refuses_a_frame_the_fence_already_saw"
+  },
+  "crates/service/src/driver_io.rs:1452:90: replace != with == in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1456:58: replace == with != in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:1457:16: delete ! in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1461:36: replace >= with < in wait_for_stable_control_render": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:1748:35: replace >= with < in wait_for_snapshot_stability": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:1752:16: replace >= with < in wait_for_snapshot_stability": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:1766:21: replace != with == in wait_for_snapshot_stability": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:1920:17: replace == with != in RmuxTerminalControl::resize": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+  },
+  "crates/service/src/driver_io.rs:1920:22: replace || with && in RmuxTerminalControl::resize": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+  },
+  "crates/service/src/driver_io.rs:1920:30: replace == with != in RmuxTerminalControl::resize": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_resize_to_a_zero_dimension_is_refused_on_either_axis"
+  },
+  "crates/service/src/driver_io.rs:1982:22: replace == with != in <impl TerminalControl for RmuxTerminalControl>::submit_prompt": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_fence_that_is_not_the_proven_frame_never_sends_enter"
+  },
+  "crates/service/src/driver_io.rs:1983:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_fence_that_is_not_the_proven_frame_never_sends_enter"
+  },
+  "crates/service/src/driver_io.rs:1989:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_fence_that_is_not_the_proven_frame_never_sends_enter"
+  },
+  "crates/service/src/driver_io.rs:1990:60: replace == with != in <impl TerminalControl for RmuxTerminalControl>::submit_prompt": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_gate_maximum_that_expires_inside_a_write_is_still_an_ambiguity"
+  },
+  "crates/service/src/driver_io.rs:2039:17: delete field lifecycle_expected from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2040:17: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2041:17: delete field lifecycle_hook_at_ms from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2063:25: delete field lifecycle_expected from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2064:25: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2065:25: delete field lifecycle_hook_at_ms from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_carries_the_lifecycle_observation_on_the_modal_returns"
+  },
+  "crates/service/src/driver_io.rs:2408:31: replace > with < in FileTranscriptSource::record_rotation": {
+   "target": null,
+   "test": null,
+   "undetermined": "timeout"
+  },
+  "crates/service/src/driver_io.rs:2408:31: replace > with == in FileTranscriptSource::record_rotation": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_rotation_ledger_remembers_its_bound_and_retires_the_oldest_first"
+  },
+  "crates/service/src/driver_io.rs:2408:31: replace > with >= in FileTranscriptSource::record_rotation": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_rotation_ledger_remembers_its_bound_and_retires_the_oldest_first"
+  },
+  "crates/service/src/driver_io.rs:2555:18: replace > with < in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2555:18: replace > with == in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_assert_empty_byte_budget_refuses_rather_than_judging_a_prefix"
+  },
+  "crates/service/src/driver_io.rs:2555:18: replace > with >= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_assert_empty_byte_budget_refuses_rather_than_judging_a_prefix"
+  },
+  "crates/service/src/driver_io.rs:2575:60: replace == with != in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2576:29: replace != with == in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2582:18: replace += with *= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_preamble_written_row_by_row_is_not_settled_until_it_stops_growing"
+  },
+  "crates/service/src/driver_io.rs:2582:18: replace += with -= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2583:21: replace > with < in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2583:21: replace > with == in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_successor_at_exactly_the_row_budget_is_admitted"
+  },
+  "crates/service/src/driver_io.rs:2583:21: replace > with >= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_successor_at_exactly_the_row_budget_is_admitted"
+  },
+  "crates/service/src/driver_io.rs:2592:49: replace - with + in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2593:28: replace == with != in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2594:43: replace - with + in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_successor_written_with_carriage_returns_is_still_proven_inert"
+  },
+  "crates/service/src/driver_io.rs:2603:20: replace += with -= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2642:36: replace == with != in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_last_prompt_row_that_names_a_prompt_is_refused"
+  },
+  "crates/service/src/driver_io.rs:2643:25: replace && with || in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2643:28: delete ! in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2666:50: replace != with == in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2681:31: replace += with *= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_third_preamble_user_row_is_refused_by_the_user_row_budget"
+  },
+  "crates/service/src/driver_io.rs:2681:31: replace += with -= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2682:34: replace > with < in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2682:34: replace > with == in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:2682:34: replace > with >= in FileTranscriptSource::prove_transcript_inert": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:297:9: replace TerminalScreenState::label -> &'static str with \"\"": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::cursorless_ready_fallback_is_test_only_and_stale_revisions_are_rejected"
+  },
+  "crates/service/src/driver_io.rs:297:9: replace TerminalScreenState::label -> &'static str with \"xyzzy\"": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::cursorless_ready_fallback_is_test_only_and_stale_revisions_are_rejected"
+  },
+  "crates/service/src/driver_io.rs:328:9: replace RecognisedScreen::label -> &'static str with \"\"": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::cursorless_ready_fallback_is_test_only_and_stale_revisions_are_rejected"
+  },
+  "crates/service/src/driver_io.rs:328:9: replace RecognisedScreen::label -> &'static str with \"xyzzy\"": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::cursorless_ready_fallback_is_test_only_and_stale_revisions_are_rejected"
+  },
+  "crates/service/src/driver_io.rs:3661:60: replace == with != in read_rotation_anchor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:3662:24: replace >= with < in read_rotation_anchor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_half_written_anchor_is_a_not_yet_answer_and_never_a_binding"
+  },
+  "crates/service/src/driver_io.rs:3668:20: replace == with != in read_rotation_anchor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:3669:35: replace - with + in read_rotation_anchor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_successor_written_with_carriage_returns_is_still_proven_inert"
+  },
+  "crates/service/src/driver_io.rs:3673:60: replace != with == in read_rotation_anchor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:370:62: delete ! in ScreenShape::of": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_startup_diagnostic_counts_the_lines_that_carry_something"
+  },
+  "crates/service/src/driver_io.rs:388:9: replace ScreenShape::to_json -> serde_json::Value with Default::default()": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_child_that_refused_a_launch_flag_is_named_as_a_repromotion_trigger"
+  },
+  "crates/service/src/driver_io.rs:4009:5: replace blocking_screen -> Option<NeedsInput> with None": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_rejects_modal_before_or_during_stability"
+  },
+  "crates/service/src/driver_io.rs:4011:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4012:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4016:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4017:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4018:54: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::cursorless_ready_fallback_is_test_only_and_stale_revisions_are_rejected"
+  },
+  "crates/service/src/driver_io.rs:4018:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4022:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4023:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4027:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4028:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4029:13: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4029:44: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4030:37: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4030:68: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4030:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4033:44: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4033:72: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4034:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::completion_evidence_rejects_modal_before_or_during_stability"
+  },
+  "crates/service/src/driver_io.rs:4035:9: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4036:13: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4037:13: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4041:9: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4042:13: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4043:13: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4044:13: replace || with && in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:4044:38: replace && with || in blocking_screen": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_blocking_phrase_alternative_is_recognized_and_needs_all_of_its_phrases"
+  },
+  "crates/service/src/driver_io.rs:443:26: replace == with != in classify_terminal_snapshot": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:491:5: replace active_editor -> Option<ActiveEditor> with None": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:498:26: replace == with != in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:499:12: delete ! in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:499:9: replace || with && in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::structured_classifier_correlates_the_active_cursor_not_prompt_history"
+  },
+  "crates/service/src/driver_io.rs:500:23: replace >= with < in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:500:9: replace || with && in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::structured_classifier_correlates_the_active_cursor_not_prompt_history"
+  },
+  "crates/service/src/driver_io.rs:501:23: replace >= with < in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:501:9: replace || with && in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_cursor_outside_the_reported_grid_resolves_no_editor"
+  },
+  "crates/service/src/driver_io.rs:510:20: replace != with == in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:519:59: delete ! in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:520:19: replace > with < in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:520:19: replace > with == in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:520:19: replace > with >= in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:521:30: replace - with + in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:521:30: replace - with / in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:521:43: replace > with < in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:521:43: replace > with == in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:521:43: replace > with >= in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:521:9: replace || with && in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::rendered_rows_below_the_cursor_are_bounded_whatever_the_blank_tail_says"
+  },
+  "crates/service/src/driver_io.rs:529:48: replace == with != in active_editor": {
+   "target": "-p pseudomux-service --test screen_properties",
+   "test": "ready_iff_the_composer_is_empty_when_the_cursor_is_where_a_terminal_puts_it"
+  },
+  "crates/service/src/driver_io.rs:534:19: replace == with != in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_cursor_on_the_prompt_glyph_is_not_a_resolved_composer"
+  },
+  "crates/service/src/driver_io.rs:534:33: replace && with || in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:534:59: replace < with <= in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:534:59: replace < with == in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:534:59: replace < with > in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:553:55: replace == with != in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:553:60: replace && with || in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:553:86: replace == with != in active_editor": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_baseline_that_is_not_the_fenced_empty_editor_proves_nothing"
+  },
+  "crates/service/src/driver_io.rs:838:25: replace > with < in validate_turn_deadline_domain": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::a_clear_binds_the_transcript_that_appeared_and_names_the_one_it_abandoned"
+  },
+  "crates/service/src/driver_io.rs:838:25: replace > with == in validate_turn_deadline_domain": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::millisecond_conversion_rejects_values_above_protocol_safe_max"
+  },
+  "crates/service/src/driver_io.rs:838:25: replace > with >= in validate_turn_deadline_domain": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::the_turn_deadline_domain_admits_the_last_safe_integer"
+  },
+  "crates/service/src/native.rs:1627:25: replace == with != in NativeService::start_session_owned_with_retention": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::seam::a_start_whose_terminal_never_renders_a_prompt_publishes_nothing_and_keeps_no_pane"
+  },
+  "crates/service/src/native.rs:3477:43: replace == with != in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_correct_path_b_daemon_rolls_up_healthy_and_a_real_gap_still_does_not"
+  },
+  "crates/service/src/native.rs:3479:43: replace > with < in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_correct_path_a_daemon_with_no_profile_and_no_pool_rolls_up_healthy"
+  },
+  "crates/service/src/native.rs:3479:43: replace > with == in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::each_layer_reports_not_established_rather_than_health_when_it_proved_nothing"
+  },
+  "crates/service/src/native.rs:3479:43: replace > with >= in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::each_layer_reports_not_established_rather_than_health_when_it_proved_nothing"
+  },
+  "crates/service/src/native.rs:3488:26: replace > with < in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::each_layer_reports_not_established_rather_than_health_when_it_proved_nothing"
+  },
+  "crates/service/src/native.rs:3488:26: replace > with == in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_correct_path_a_daemon_with_no_profile_and_no_pool_rolls_up_healthy"
+  },
+  "crates/service/src/native.rs:3488:26: replace > with >= in performance_layer": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_correct_path_a_daemon_with_no_profile_and_no_pool_rolls_up_healthy"
+  },
+  "crates/service/src/native.rs:3763:16: replace >= with < in wait_until_ready_with_timings": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_child_that_refused_a_launch_flag_is_named_as_a_repromotion_trigger"
+  },
+  "crates/service/src/native.rs:3776:59: replace == with != in wait_until_ready_with_timings": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_ready_screen_that_keeps_repainting_never_settles_and_a_still_one_does"
+  },
+  "crates/service/src/native.rs:3777:20: delete ! in wait_until_ready_with_timings": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_ready_screen_that_keeps_repainting_never_settles_and_a_still_one_does"
+  },
+  "crates/service/src/native.rs:3782:63: replace >= with < in wait_until_ready_with_timings": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_ready_screen_that_keeps_repainting_never_settles_and_a_still_one_does"
+  },
+  "crates/service/src/native.rs:3802:16: replace >= with < in wait_until_ready_with_timings": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_ready_screen_that_keeps_repainting_never_settles_and_a_still_one_does"
+  },
+  "crates/service/src/native.rs:3867:5: replace startup_screen_diagnostics -> serde_json::Value with Default::default()": {
+   "target": "-p pseudomux-service --lib",
+   "test": "driver_io::tests::every_rendering_decision_site_is_registered"
+  },
+  "crates/service/src/native.rs:3872:38: delete ! in startup_screen_diagnostics": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_startup_diagnostic_counts_the_lines_that_carry_something"
+  },
+  "crates/service/src/native.rs:4318:5: replace strictest_cell -> Option<SessionCell> with None": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_cwd_is_not_shared_with_a_minified_cell_in_either_direction"
+  },
+  "crates/service/src/native.rs:4318:5: replace strictest_cell -> Option<SessionCell> with Some(Default::default())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_cwd_is_not_shared_with_a_minified_cell_in_either_direction"
+  },
+  "crates/service/src/native.rs:4319:17: replace == with != in strictest_cell": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_strictest_cell_is_the_minified_one_from_either_side"
+  },
+  "crates/service/src/native.rs:4319:42: replace || with && in strictest_cell": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_root_a_live_minified_cell_holds_admits_no_other_session_in_any_shape"
+  },
+  "crates/service/src/native.rs:4319:51: replace == with != in strictest_cell": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_root_a_live_minified_cell_holds_admits_no_other_session_in_any_shape"
+  },
+  "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+  },
+  "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(String::new())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+  },
+  "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+  },
+  "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(String::new())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_version_query_reads_the_child_it_actually_ran"
+  },
+  "crates/service/src/native.rs:4591:8: delete ! in claude_version_of": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::seam::a_start_whose_terminal_never_renders_a_prompt_publishes_nothing_and_keeps_no_pane"
+  },
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with None": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with Some(\"xyzzy\".into())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with Some(String::new())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4617:17: delete ! in normalize_claude_version": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4617:52: replace && with || in normalize_claude_version": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4617:65: replace != with == in normalize_claude_version": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::a_decorated_version_token_still_normalizes_to_the_version"
+  },
+  "crates/service/src/native.rs:4708:5: replace diagnostic_usize -> serde_json::Value with Default::default()": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+  },
+  "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with None": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+  },
+  "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with Some(Default::default())": {
+   "target": "-p pseudomux-service --lib",
+   "test": "native::tests::the_diagnostic_encoders_stay_inside_the_safe_integer_domain"
+  },
+  "crates/service/src/pool/evidence.rs:184:5: replace transcripts_under -> Vec<PathBuf> with vec![Default::default()]": {
+   "target": "-p pseudomux-service --lib",
+   "test": "pool::evidence::tests::a_mirror_keeps_the_measurement_and_none_of_the_content"
+  },
+  "crates/service/src/pool/evidence.rs:184:5: replace transcripts_under -> Vec<PathBuf> with vec![]": {
+   "target": "-p pseudomux-service --lib",
+   "test": "pool::evidence::tests::a_mirror_keeps_the_measurement_and_none_of_the_content"
+  },
+  "crates/service/src/pool/evidence.rs:197:52: replace == with != in transcripts_under": {
+   "target": "-p pseudomux-service --lib",
+   "test": "pool::evidence::tests::a_mirror_keeps_the_measurement_and_none_of_the_content"
+  },
+  "crates/service/src/pool/evidence.rs:198:17: replace && with || in transcripts_under": {
+   "target": "-p pseudomux-service --lib",
+   "test": "pool::evidence::tests::only_a_regular_file_named_jsonl_under_a_slug_is_a_transcript"
+  }
+ },
+ "catchers_note": "The first target `cargo test` stopped at and the first test named in it. Sound for invalidating a register row and for nothing else: the log names A catcher, not every catcher.",
+ "caught": [
+  "crates/protocol/src/v1.rs:1800:27: delete ! in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1813:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1813:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1814:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1814:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1815:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1815:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1816:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1816:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1817:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1817:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1818:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1818:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1818:21: replace * with + in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1818:21: replace * with / in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1819:16: replace += with *= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1819:16: replace += with -= in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1819:31: delete ! in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1852:12: delete ! in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/protocol/src/v1.rs:1855:20: replace != with == in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/service/src/driver_io.rs:1141:59: replace == with != in wait_for_stable_empty_editor",
+  "crates/service/src/driver_io.rs:1142:20: delete ! in wait_for_stable_empty_editor",
+  "crates/service/src/driver_io.rs:1147:63: replace >= with < in wait_for_stable_empty_editor",
+  "crates/service/src/driver_io.rs:1251:5: replace rendered_prompt_is_proven -> bool with false",
+  "crates/service/src/driver_io.rs:1251:5: replace rendered_prompt_is_proven -> bool with true",
+  "crates/service/src/driver_io.rs:1272:50: replace == with != in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1273:32: replace == with != in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1273:55: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1273:76: replace <= with > in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1273:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1274:13: replace || with && in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1274:35: replace == with != in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1275:17: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1275:38: replace >= with < in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1276:23: replace != with == in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1277:30: replace != with == in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1277:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1278:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1279:12: delete ! in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1279:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1280:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1281:9: replace && with || in rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs:1452:30: replace != with == in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1452:35: replace && with || in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1452:56: replace != with == in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1452:77: replace && with || in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1452:90: replace != with == in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1456:58: replace == with != in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1457:16: delete ! in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1461:36: replace >= with < in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1748:35: replace >= with < in wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs:1752:16: replace >= with < in wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs:1766:21: replace != with == in wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs:1920:17: replace == with != in RmuxTerminalControl::resize",
+  "crates/service/src/driver_io.rs:1920:22: replace || with && in RmuxTerminalControl::resize",
+  "crates/service/src/driver_io.rs:1920:30: replace == with != in RmuxTerminalControl::resize",
+  "crates/service/src/driver_io.rs:1982:22: replace == with != in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs:1983:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs:1989:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs:1990:60: replace == with != in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs:2039:17: delete field lifecycle_expected from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2040:17: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2041:17: delete field lifecycle_hook_at_ms from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2063:25: delete field lifecycle_expected from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2064:25: delete field lifecycle_hook_observed from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2065:25: delete field lifecycle_hook_at_ms from struct TerminalEvidence expression in <impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs:2408:31: replace > with == in FileTranscriptSource::record_rotation",
+  "crates/service/src/driver_io.rs:2408:31: replace > with >= in FileTranscriptSource::record_rotation",
+  "crates/service/src/driver_io.rs:2555:18: replace > with < in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2555:18: replace > with == in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2555:18: replace > with >= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2575:60: replace == with != in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2576:29: replace != with == in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2582:18: replace += with *= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2582:18: replace += with -= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2583:21: replace > with < in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2583:21: replace > with == in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2583:21: replace > with >= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2592:49: replace - with + in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2593:28: replace == with != in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2594:43: replace - with + in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2603:20: replace += with -= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2642:36: replace == with != in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2643:25: replace && with || in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2643:28: delete ! in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2666:50: replace != with == in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2681:31: replace += with *= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2681:31: replace += with -= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2682:34: replace > with < in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2682:34: replace > with == in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2682:34: replace > with >= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:297:9: replace TerminalScreenState::label -> &'static str with \"\"",
+  "crates/service/src/driver_io.rs:297:9: replace TerminalScreenState::label -> &'static str with \"xyzzy\"",
+  "crates/service/src/driver_io.rs:328:9: replace RecognisedScreen::label -> &'static str with \"\"",
+  "crates/service/src/driver_io.rs:328:9: replace RecognisedScreen::label -> &'static str with \"xyzzy\"",
+  "crates/service/src/driver_io.rs:3661:60: replace == with != in read_rotation_anchor",
+  "crates/service/src/driver_io.rs:3662:24: replace >= with < in read_rotation_anchor",
+  "crates/service/src/driver_io.rs:3668:20: replace == with != in read_rotation_anchor",
+  "crates/service/src/driver_io.rs:3669:35: replace - with + in read_rotation_anchor",
+  "crates/service/src/driver_io.rs:3673:60: replace != with == in read_rotation_anchor",
+  "crates/service/src/driver_io.rs:370:62: delete ! in ScreenShape::of",
+  "crates/service/src/driver_io.rs:388:9: replace ScreenShape::to_json -> serde_json::Value with Default::default()",
+  "crates/service/src/driver_io.rs:4009:5: replace blocking_screen -> Option<NeedsInput> with None",
+  "crates/service/src/driver_io.rs:4011:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4012:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4016:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4017:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4018:54: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4018:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4022:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4023:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4027:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4028:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4029:13: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4029:44: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4030:37: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4030:68: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4030:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4033:44: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4033:72: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4034:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4035:9: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4036:13: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4037:13: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4041:9: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:4042:13: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4043:13: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4044:13: replace || with && in blocking_screen",
+  "crates/service/src/driver_io.rs:4044:38: replace && with || in blocking_screen",
+  "crates/service/src/driver_io.rs:443:26: replace == with != in classify_terminal_snapshot",
+  "crates/service/src/driver_io.rs:491:5: replace active_editor -> Option<ActiveEditor> with None",
+  "crates/service/src/driver_io.rs:498:26: replace == with != in active_editor",
+  "crates/service/src/driver_io.rs:499:12: delete ! in active_editor",
+  "crates/service/src/driver_io.rs:499:9: replace || with && in active_editor",
+  "crates/service/src/driver_io.rs:500:23: replace >= with < in active_editor",
+  "crates/service/src/driver_io.rs:500:9: replace || with && in active_editor",
+  "crates/service/src/driver_io.rs:501:23: replace >= with < in active_editor",
+  "crates/service/src/driver_io.rs:501:9: replace || with && in active_editor",
+  "crates/service/src/driver_io.rs:510:20: replace != with == in active_editor",
+  "crates/service/src/driver_io.rs:519:59: delete ! in active_editor",
+  "crates/service/src/driver_io.rs:520:19: replace > with < in active_editor",
+  "crates/service/src/driver_io.rs:520:19: replace > with == in active_editor",
+  "crates/service/src/driver_io.rs:520:19: replace > with >= in active_editor",
+  "crates/service/src/driver_io.rs:521:30: replace - with + in active_editor",
+  "crates/service/src/driver_io.rs:521:30: replace - with / in active_editor",
+  "crates/service/src/driver_io.rs:521:43: replace > with < in active_editor",
+  "crates/service/src/driver_io.rs:521:43: replace > with == in active_editor",
+  "crates/service/src/driver_io.rs:521:43: replace > with >= in active_editor",
+  "crates/service/src/driver_io.rs:521:9: replace || with && in active_editor",
+  "crates/service/src/driver_io.rs:529:48: replace == with != in active_editor",
+  "crates/service/src/driver_io.rs:534:19: replace == with != in active_editor",
+  "crates/service/src/driver_io.rs:534:33: replace && with || in active_editor",
+  "crates/service/src/driver_io.rs:534:59: replace < with <= in active_editor",
+  "crates/service/src/driver_io.rs:534:59: replace < with == in active_editor",
+  "crates/service/src/driver_io.rs:534:59: replace < with > in active_editor",
+  "crates/service/src/driver_io.rs:553:55: replace == with != in active_editor",
+  "crates/service/src/driver_io.rs:553:60: replace && with || in active_editor",
+  "crates/service/src/driver_io.rs:553:86: replace == with != in active_editor",
+  "crates/service/src/driver_io.rs:838:25: replace > with < in validate_turn_deadline_domain",
+  "crates/service/src/driver_io.rs:838:25: replace > with == in validate_turn_deadline_domain",
+  "crates/service/src/driver_io.rs:838:25: replace > with >= in validate_turn_deadline_domain",
+  "crates/service/src/native.rs:1627:25: replace == with != in NativeService::start_session_owned_with_retention",
+  "crates/service/src/native.rs:3477:43: replace == with != in performance_layer",
+  "crates/service/src/native.rs:3479:43: replace > with < in performance_layer",
+  "crates/service/src/native.rs:3479:43: replace > with == in performance_layer",
+  "crates/service/src/native.rs:3479:43: replace > with >= in performance_layer",
+  "crates/service/src/native.rs:3488:26: replace > with < in performance_layer",
+  "crates/service/src/native.rs:3488:26: replace > with == in performance_layer",
+  "crates/service/src/native.rs:3488:26: replace > with >= in performance_layer",
+  "crates/service/src/native.rs:3763:16: replace >= with < in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3776:59: replace == with != in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3777:20: delete ! in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3782:63: replace >= with < in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3802:16: replace >= with < in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3867:5: replace startup_screen_diagnostics -> serde_json::Value with Default::default()",
+  "crates/service/src/native.rs:3872:38: delete ! in startup_screen_diagnostics",
+  "crates/service/src/native.rs:4318:5: replace strictest_cell -> Option<SessionCell> with None",
+  "crates/service/src/native.rs:4318:5: replace strictest_cell -> Option<SessionCell> with Some(Default::default())",
+  "crates/service/src/native.rs:4319:17: replace == with != in strictest_cell",
+  "crates/service/src/native.rs:4319:42: replace || with && in strictest_cell",
+  "crates/service/src/native.rs:4319:51: replace == with != in strictest_cell",
+  "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())",
+  "crates/service/src/native.rs:4552:5: replace detect_claude_version -> Result<String, ErrorBody> with Ok(String::new())",
+  "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(\"xyzzy\".into())",
+  "crates/service/src/native.rs:4575:5: replace claude_version_of -> Result<String, ErrorBody> with Ok(String::new())",
+  "crates/service/src/native.rs:4591:8: delete ! in claude_version_of",
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with None",
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with Some(\"xyzzy\".into())",
+  "crates/service/src/native.rs:4613:5: replace normalize_claude_version -> Option<String> with Some(String::new())",
+  "crates/service/src/native.rs:4617:17: delete ! in normalize_claude_version",
+  "crates/service/src/native.rs:4617:52: replace && with || in normalize_claude_version",
+  "crates/service/src/native.rs:4617:65: replace != with == in normalize_claude_version",
+  "crates/service/src/native.rs:4708:5: replace diagnostic_usize -> serde_json::Value with Default::default()",
+  "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with None",
+  "crates/service/src/native.rs:4712:5: replace diagnostic_offset_from_bottom -> Option<serde_json::Value> with Some(Default::default())",
+  "crates/service/src/pool/evidence.rs:184:5: replace transcripts_under -> Vec<PathBuf> with vec![Default::default()]",
+  "crates/service/src/pool/evidence.rs:184:5: replace transcripts_under -> Vec<PathBuf> with vec![]",
+  "crates/service/src/pool/evidence.rs:197:52: replace == with != in transcripts_under",
+  "crates/service/src/pool/evidence.rs:198:17: replace && with || in transcripts_under"
+ ],
+ "commit": "c94612de5378daf06bc78c1d234f1cf76bd1d110",
+ "counts": {
+  "caught": 199,
+  "missed": 8,
+  "timeout": 1,
+  "total_mutants": 291,
+  "unviable": 83
+ },
+ "filter_expression": "(?:replace |in )(?:<impl Serialize for StartSessionRequest>::serialize|<impl TerminalControl for RmuxTerminalControl>::completion_evidence|<impl TerminalControl for RmuxTerminalControl>::interrupt|<impl TerminalControl for RmuxTerminalControl>::observe_screen|<impl TerminalControl for RmuxTerminalControl>::submit_prompt|FileTranscriptSource::prove_transcript_inert|FileTranscriptSource::record_rotation|NativeService::from_runtime_with_agent_store|NativeService::start|NativeService::start_session_owned_with_retention|RecognisedScreen::label|RmuxTerminalControl::resize|ScreenShape::of|ScreenShape::to_json|TerminalScreenState::label|active_editor|blocking_screen|classify_terminal_snapshot|claude_version_of|detect_claude_version|diagnostic_offset_from_bottom|diagnostic_usize|gated_snapshot|gated_styled_screen|normalize_claude_version|performance_layer|read_rotation_anchor|rendered_prompt_is_proven|startup_screen_diagnostics|strictest_cell|transcripts_under|validate_turn_deadline_domain|wait_for_snapshot_stability|wait_for_stable_control_render|wait_for_stable_empty_editor|wait_until_ready_with_timings)(?: with | -> |$)",
+ "functions_reached_beyond_those_named": [],
+ "graded_functions": [
+  "crates/protocol/src/v1.rs::<impl Serialize for StartSessionRequest>::serialize",
+  "crates/service/src/driver_io.rs::<impl TerminalControl for RmuxTerminalControl>::completion_evidence",
+  "crates/service/src/driver_io.rs::<impl TerminalControl for RmuxTerminalControl>::interrupt",
+  "crates/service/src/driver_io.rs::<impl TerminalControl for RmuxTerminalControl>::observe_screen",
+  "crates/service/src/driver_io.rs::<impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs::FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs::FileTranscriptSource::record_rotation",
+  "crates/service/src/driver_io.rs::RecognisedScreen::label",
+  "crates/service/src/driver_io.rs::RmuxTerminalControl::resize",
+  "crates/service/src/driver_io.rs::ScreenShape::of",
+  "crates/service/src/driver_io.rs::ScreenShape::to_json",
+  "crates/service/src/driver_io.rs::TerminalScreenState::label",
+  "crates/service/src/driver_io.rs::active_editor",
+  "crates/service/src/driver_io.rs::blocking_screen",
+  "crates/service/src/driver_io.rs::classify_terminal_snapshot",
+  "crates/service/src/driver_io.rs::gated_snapshot",
+  "crates/service/src/driver_io.rs::gated_styled_screen",
+  "crates/service/src/driver_io.rs::read_rotation_anchor",
+  "crates/service/src/driver_io.rs::rendered_prompt_is_proven",
+  "crates/service/src/driver_io.rs::validate_turn_deadline_domain",
+  "crates/service/src/driver_io.rs::wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs::wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs::wait_for_stable_empty_editor",
+  "crates/service/src/native.rs::NativeService::from_runtime_with_agent_store",
+  "crates/service/src/native.rs::NativeService::start",
+  "crates/service/src/native.rs::NativeService::start_session_owned_with_retention",
+  "crates/service/src/native.rs::claude_version_of",
+  "crates/service/src/native.rs::detect_claude_version",
+  "crates/service/src/native.rs::diagnostic_offset_from_bottom",
+  "crates/service/src/native.rs::diagnostic_usize",
+  "crates/service/src/native.rs::normalize_claude_version",
+  "crates/service/src/native.rs::performance_layer",
+  "crates/service/src/native.rs::startup_screen_diagnostics",
+  "crates/service/src/native.rs::strictest_cell",
+  "crates/service/src/native.rs::wait_until_ready_with_timings",
+  "crates/service/src/pool/evidence.rs::transcripts_under"
+ ],
+ "graded_sources": {
+  "crates/protocol/src/v1.rs": "e88d1697266a9e613772af8225c51c7656f3eea5bee8926886333e5298622202",
+  "crates/service/src/driver_io.rs": "dfd32167ac16443c2b20689b3cb7556fa0723790102fb37f91d2b0358c70a37f",
+  "crates/service/src/native.rs": "fb6e66e4952ebfcb371310e7841a939c9c678cd0dd7a44a18ca92e6429135624",
+  "crates/service/src/pool/evidence.rs": "8918e11b8607f343b2d40b0e8bf27e69dc88448cd6f3a2f5c2e182c677981ab1"
+ },
+ "graded_sources_note": "The run copies the source tree when it starts, so what it graded is these bytes and not a commit -- the commit above is this repository's HEAD when the receipt was written. `shasum -a 256` each path at that commit to check the two are the same tree.",
+ "missed": [
+  "crates/service/src/driver_io.rs:2142:30: replace < with <= in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+  "crates/service/src/driver_io.rs:2142:30: replace < with == in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+  "crates/service/src/driver_io.rs:2142:30: replace < with > in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+  "crates/service/src/driver_io.rs:2592:49: replace - with / in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2594:43: replace - with / in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:2603:20: replace += with *= in FileTranscriptSource::prove_transcript_inert",
+  "crates/service/src/driver_io.rs:364:49: replace != with == in ScreenShape::of",
+  "crates/service/src/driver_io.rs:3669:35: replace - with / in read_rotation_anchor"
+ ],
+ "recorded_at": {
+  "cargo_mutants_version": "27.1.0",
+  "date": "2026-08-12",
+  "end_time": "2026-08-12T16:01:17.82102Z",
+  "host": "Darwin arm64",
+  "start_time": "2026-08-12T15:24:48.116589Z",
+  "toolchain": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+ },
+ "schema": "pmux.mutation-filtered-run.v1",
+ "timeout": [
+  "crates/service/src/driver_io.rs:2408:31: replace > with < in FileTranscriptSource::record_rotation"
+ ],
+ "unviable": [
+  "crates/protocol/src/v1.rs:1786:9: replace <impl Serialize for StartSessionRequest>::serialize -> Result<S::Ok, S::Error> with Ok(Default::default())",
+  "crates/protocol/src/v1.rs:1789:24: replace && with || in <impl Serialize for StartSessionRequest>::serialize",
+  "crates/service/src/driver_io.rs:1019:5: replace gated_snapshot -> DriverResult<TerminalSnapshot> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:1019:5: replace gated_snapshot -> DriverResult<TerminalSnapshot> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:1019:5: replace gated_snapshot -> DriverResult<TerminalSnapshot> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1019:5: replace gated_snapshot -> DriverResult<TerminalSnapshot> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:1074:5: replace gated_styled_screen -> DriverResult<StyledScreen> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:1074:5: replace gated_styled_screen -> DriverResult<StyledScreen> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:1074:5: replace gated_styled_screen -> DriverResult<StyledScreen> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1074:5: replace gated_styled_screen -> DriverResult<StyledScreen> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:1131:5: replace wait_for_stable_empty_editor -> DriverResult<TerminalSnapshot> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:1131:5: replace wait_for_stable_empty_editor -> DriverResult<TerminalSnapshot> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:1131:5: replace wait_for_stable_empty_editor -> DriverResult<TerminalSnapshot> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1131:5: replace wait_for_stable_empty_editor -> DriverResult<TerminalSnapshot> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:1448:5: replace wait_for_stable_control_render -> DriverResult<StyledScreen> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:1448:5: replace wait_for_stable_control_render -> DriverResult<StyledScreen> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:1448:5: replace wait_for_stable_control_render -> DriverResult<StyledScreen> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1448:5: replace wait_for_stable_control_render -> DriverResult<StyledScreen> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:1461:17: replace && with || in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1467:17: replace && with || in wait_for_stable_control_render",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::from(None)",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::from(Some(Default::default()))",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::from_iter([None])",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::from_iter([Some(Default::default())])",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::new(None)",
+  "crates/service/src/driver_io.rs:1732:5: replace wait_for_snapshot_stability -> DriverResult<Option<TerminalSnapshot>> with DriverResult::new(Some(Default::default()))",
+  "crates/service/src/driver_io.rs:1755:55: replace - with + in wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs:1755:55: replace - with / in wait_for_snapshot_stability",
+  "crates/service/src/driver_io.rs:1920:9: replace RmuxTerminalControl::resize -> DriverResult<()> with DriverResult::from(())",
+  "crates/service/src/driver_io.rs:1920:9: replace RmuxTerminalControl::resize -> DriverResult<()> with DriverResult::from_iter([()])",
+  "crates/service/src/driver_io.rs:1920:9: replace RmuxTerminalControl::resize -> DriverResult<()> with DriverResult::new(())",
+  "crates/service/src/driver_io.rs:1920:9: replace RmuxTerminalControl::resize -> DriverResult<()> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1942:9: replace <impl TerminalControl for RmuxTerminalControl>::submit_prompt -> DriverResult<()> with DriverResult::from(())",
+  "crates/service/src/driver_io.rs:1942:9: replace <impl TerminalControl for RmuxTerminalControl>::submit_prompt -> DriverResult<()> with DriverResult::from_iter([()])",
+  "crates/service/src/driver_io.rs:1942:9: replace <impl TerminalControl for RmuxTerminalControl>::submit_prompt -> DriverResult<()> with DriverResult::new(())",
+  "crates/service/src/driver_io.rs:1942:9: replace <impl TerminalControl for RmuxTerminalControl>::submit_prompt -> DriverResult<()> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:1995:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::submit_prompt",
+  "crates/service/src/driver_io.rs:2011:9: replace <impl TerminalControl for RmuxTerminalControl>::completion_evidence -> DriverResult<TerminalEvidence> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:2011:9: replace <impl TerminalControl for RmuxTerminalControl>::completion_evidence -> DriverResult<TerminalEvidence> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:2011:9: replace <impl TerminalControl for RmuxTerminalControl>::completion_evidence -> DriverResult<TerminalEvidence> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:2011:9: replace <impl TerminalControl for RmuxTerminalControl>::completion_evidence -> DriverResult<TerminalEvidence> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:2095:9: replace <impl TerminalControl for RmuxTerminalControl>::observe_screen -> DriverResult<TerminalScreenObservation> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:2095:9: replace <impl TerminalControl for RmuxTerminalControl>::observe_screen -> DriverResult<TerminalScreenObservation> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:2095:9: replace <impl TerminalControl for RmuxTerminalControl>::observe_screen -> DriverResult<TerminalScreenObservation> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:2095:9: replace <impl TerminalControl for RmuxTerminalControl>::observe_screen -> DriverResult<TerminalScreenObservation> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:2129:9: replace <impl TerminalControl for RmuxTerminalControl>::interrupt -> DriverResult<InterruptRecovery> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:2129:9: replace <impl TerminalControl for RmuxTerminalControl>::interrupt -> DriverResult<InterruptRecovery> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:2129:9: replace <impl TerminalControl for RmuxTerminalControl>::interrupt -> DriverResult<InterruptRecovery> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:2129:9: replace <impl TerminalControl for RmuxTerminalControl>::interrupt -> DriverResult<InterruptRecovery> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:2147:17: replace && with || in <impl TerminalControl for RmuxTerminalControl>::interrupt",
+  "crates/service/src/driver_io.rs:2402:9: replace FileTranscriptSource::record_rotation -> DriverResult<()> with DriverResult::from(())",
+  "crates/service/src/driver_io.rs:2402:9: replace FileTranscriptSource::record_rotation -> DriverResult<()> with DriverResult::from_iter([()])",
+  "crates/service/src/driver_io.rs:2402:9: replace FileTranscriptSource::record_rotation -> DriverResult<()> with DriverResult::new(())",
+  "crates/service/src/driver_io.rs:2402:9: replace FileTranscriptSource::record_rotation -> DriverResult<()> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:2552:9: replace FileTranscriptSource::prove_transcript_inert -> DriverResult<EmptinessProof> with DriverResult::from(Default::default())",
+  "crates/service/src/driver_io.rs:2552:9: replace FileTranscriptSource::prove_transcript_inert -> DriverResult<EmptinessProof> with DriverResult::from_iter([Default::default()])",
+  "crates/service/src/driver_io.rs:2552:9: replace FileTranscriptSource::prove_transcript_inert -> DriverResult<EmptinessProof> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:2552:9: replace FileTranscriptSource::prove_transcript_inert -> DriverResult<EmptinessProof> with DriverResult::new(Default::default())",
+  "crates/service/src/driver_io.rs:362:9: replace ScreenShape::of -> Self with Default::default()",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::from(None)",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::from(Some(Default::default()))",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::from_iter([None])",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::from_iter([Some(Default::default())])",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::new()",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::new(None)",
+  "crates/service/src/driver_io.rs:3656:5: replace read_rotation_anchor -> DriverResult<Option<SessionId>> with DriverResult::new(Some(Default::default()))",
+  "crates/service/src/driver_io.rs:4009:5: replace blocking_screen -> Option<NeedsInput> with Some(Default::default())",
+  "crates/service/src/driver_io.rs:443:5: replace classify_terminal_snapshot -> TerminalScreenState with Default::default()",
+  "crates/service/src/driver_io.rs:491:5: replace active_editor -> Option<ActiveEditor> with Some(Default::default())",
+  "crates/service/src/driver_io.rs:838:5: replace validate_turn_deadline_domain -> DriverResult<()> with DriverResult::from(())",
+  "crates/service/src/driver_io.rs:838:5: replace validate_turn_deadline_domain -> DriverResult<()> with DriverResult::from_iter([()])",
+  "crates/service/src/driver_io.rs:838:5: replace validate_turn_deadline_domain -> DriverResult<()> with DriverResult::new(())",
+  "crates/service/src/driver_io.rs:838:5: replace validate_turn_deadline_domain -> DriverResult<()> with DriverResult::new()",
+  "crates/service/src/native.rs:1478:9: replace NativeService::start_session_owned_with_retention -> Result<SessionHandle, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:3457:5: replace performance_layer -> HealthLayer with Default::default()",
+  "crates/service/src/native.rs:3739:5: replace wait_until_ready_with_timings -> Result<TerminalScreenState, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:3766:54: replace - with + in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3766:54: replace - with / in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3805:38: replace - with + in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:3805:38: replace - with / in wait_until_ready_with_timings",
+  "crates/service/src/native.rs:848:9: replace NativeService::start -> Result<Arc<Self>, ErrorBody> with Ok(Arc::new(Default::default()))",
+  "crates/service/src/native.rs:947:9: replace NativeService::from_runtime_with_agent_store -> Self with Default::default()"
+ ],
+ "what": "The stale set of the survivor register recorded at 23e81db, re-decided at c94612d -- the acceptance test for the function-scoped currency check, run at the one commit where the full-scope campaign's answer also exists.",
+ "working_tree": "clean"
+}

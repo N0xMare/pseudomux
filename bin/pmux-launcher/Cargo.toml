@@ -1,0 +1,22 @@
+[package]
+name = "pmux-launcher"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "One-shot environment-reconstructing process launcher for pmux"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+pseudomux-rmux = { path = "../../crates/rmux" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+sha2 = { workspace = true }
+tempfile = { workspace = true }

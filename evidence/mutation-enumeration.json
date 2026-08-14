@@ -1,0 +1,4004 @@
+{
+ "counts": {
+  "crates/protocol/src/v1.rs": {
+   "": {
+    "BinaryOperator": {
+     "+": 2,
+     "/": 2
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "<impl Deserialize<'de> for AgentVersion>::deserialize": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for EventBatch>::deserialize": {
+    "BinaryOperator": {
+     "&&": 2,
+     "<": 2,
+     "==": 3,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "<impl Deserialize<'de> for EventEnvelope>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for LifecycleMode>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for ResponseEnvelope>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for RetentionPolicy>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for SessionGenerationId>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Deserialize<'de> for StartSessionRequest>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "MatchArm": {
+     "": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "<impl Deserialize<'de> for SystemPromptPolicy>::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl Serialize for StartSessionRequest>::serialize": {
+    "BinaryOperator": {
+     "*=": 7,
+     "+": 1,
+     "-=": 7,
+     "/": 1,
+     "==": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 3
+    }
+   },
+   "<impl std::fmt::Display for AgentVersion>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl std::fmt::Display for EffortLevel>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl std::fmt::Display for SessionCell>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl std::fmt::Display for SessionGenerationId>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentDescriptor::typed_spec": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentVersion::get": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "AgentVersion::next": {
+    "BinaryOperator": {
+     "*": 1,
+     "-": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "DaemonDiagnosis::layer": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "DaemonDiagnosis::missing_layers": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "DaemonDiagnosis::outcome": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "EffortLevel::as_str": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "ErrorBody::advising": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ErrorBody::recommendation": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "ErrorBody::retryable": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ErrorBody::with_details": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "HealthLayer::for_sessions": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "HealthLayerName::exhaustive": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "LayerFinding::outcome": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "NativeFrameAccumulator::is_empty": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "NativeFrameAccumulator::push": {
+    "BinaryOperator": {
+     "*": 4,
+     "*=": 4,
+     "+": 2,
+     "-": 4,
+     "-=": 4,
+     "/": 2,
+     "<=": 2,
+     "==": 2,
+     ">": 2
+    },
+    "FnValue": {
+     "(0, Default::default())": 1,
+     "(1, Default::default())": 1
+    }
+   },
+   "NativeFrameAccumulator::remaining_bytes": {
+    "BinaryOperator": {
+     "+": 2,
+     "/": 2
+    },
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "ProbeOutcome::fold": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ResponseEnvelope::failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ResponseEnvelope::success": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "RuntimeFinding::outcome": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionCell::as_str": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "SessionCell::is_default": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "SessionFinding::outcome": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionGenerationId::as_uuid": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionGenerationId::from_u128": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionGenerationId::from_uuid": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "StartSessionRequest::agent_supplied_presence": {
+    "BinaryOperator": {
+     "==": 5
+    },
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "UnaryOperator": {
+     "": 3
+    }
+   },
+   "WireStartSessionRequest::agent_supplied_presence": {
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "WireStartSessionRequest::first_agent_conflict": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "admit_native_frame_header": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "agent_supplied_start_paths": {
+    "FnValue": {
+     "Vec::leak(Vec::new())": 1,
+     "Vec::leak(vec![\"\"])": 1,
+     "Vec::leak(vec![\"xyzzy\"])": 1
+    }
+   },
+   "agent_supplied_start_paths::exhaustive": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "caller_actionable_decode_refusal": {
+    "BinaryOperator": {
+     "*": 1,
+     "-": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(\"xyzzy\".into())": 1,
+     "Some(String::new())": 1
+    }
+   },
+   "default_hook_timeout_ms": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "default_idle_ttl_ms": {
+    "BinaryOperator": {
+     "+": 2,
+     "/": 2
+    },
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "deserialize_canonical_uuid": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "deserialize_optional_canonical_uuid": {
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(Default::default()))": 1
+    }
+   },
+   "deserialize_resolved_input_transport": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "MatchArm": {
+     "": 1
+    }
+   },
+   "deserialize_subscribe_events": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "deserialize_subscribe_wait_ms": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "deserialize_transcript_drain_ms": {
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "first_carried_path": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "is_supported_version": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "is_zero_u64": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "optional_safe_json_value::deserialize": {
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(Default::default()))": 1
+    }
+   },
+   "optional_safe_json_value::serialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "optional_safe_u64::<impl Serialize for SafeU64>::serialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "optional_safe_u64::deserialize": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(0))": 1,
+     "Ok(Some(1))": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "optional_safe_u64::serialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "safe_json_value::deserialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "safe_json_value::serialize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "safe_u64::deserialize": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "safe_u64::serialize": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "serialize_resolved_input_transport": {
+    "BinaryOperator": {
+     "==": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "serialize_transcript_drain_ms": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "validate_opaque_json": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 2,
+     "==": 2,
+     ">=": 2,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "validate_v1_serializable": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "value_is_null": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   }
+  },
+  "crates/protocol/src/v1/launch_environment.rs": {
+   "inherits": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 3,
+     "||": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "subscription_policy_removes": {
+    "BinaryOperator": {
+     "!=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "transparent_profile_removes": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   }
+  },
+  "crates/service/src/agent.rs": {
+   "AgentStore::advance_head": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "AgentStore::agent_dir": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "AgentStore::create": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::get": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::head_file": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "AgentStore::list": {
+    "BinaryOperator": {
+     "==": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::load_for_launch": {
+    "FnValue": {
+     "Ok((Default::default(), \"xyzzy\".into()))": 1,
+     "Ok((Default::default(), String::new()))": 1
+    }
+   },
+   "AgentStore::open": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "AgentStore::published_head": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::read_head": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::read_version": {
+    "BinaryOperator": {
+     "&&": 1,
+     "==": 3
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::require_readable_agent_dir": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "AgentStore::root": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "AgentStore::summarize": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::update": {
+    "BinaryOperator": {
+     "==": 2
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "AgentStore::version_file": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "AgentStore::version_name_is_taken": {
+    "BinaryOperator": {
+     "==": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "admit_agent_containment": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "config_digest": {
+    "FnValue": {
+     "Ok(\"xyzzy\".into())": 1,
+     "Ok(String::new())": 1
+    }
+   },
+   "create_new_private_file": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "digest_or_refuse": {
+    "FnValue": {
+     "Ok(\"xyzzy\".into())": 1,
+     "Ok(String::new())": 1
+    }
+   },
+   "effective_uid": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "missing_agent": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "missing_version": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "publish_version_exclusively": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "read_private_file": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "Ok(vec![0])": 1,
+     "Ok(vec![1])": 1,
+     "Ok(vec![])": 1
+    },
+    "MatchArmGuard": {
+     "false": 2,
+     "true": 2
+    }
+   },
+   "redact_agent_spec": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "redacted": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "replace_private_file": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "require_owner_only_open_file": {
+    "BinaryOperator": {
+     "==": 2,
+     "^": 2,
+     "|": 2
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "resolve_agent_start": {
+    "FnValue": {
+     "(Default::default(), Default::default())": 1
+    }
+   },
+   "stale_fence": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "store_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "supplied_start_paths": {
+    "FnValue": {
+     "Vec::leak(Vec::new())": 1,
+     "Vec::leak(vec![\"\"])": 1,
+     "Vec::leak(vec![\"xyzzy\"])": 1
+    }
+   },
+   "sync_parent_directory": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "unique_temporary": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "validate_agent_claude": {
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "validate_agent_environment": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_agent_spec": {
+    "BinaryOperator": {
+     "!=": 4,
+     "&&": 1,
+     "<": 2,
+     "==": 2,
+     ">=": 2,
+     "||": 2
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "value_digest": {
+    "FnValue": {
+     "\"xyzzy\".into()": 1,
+     "String::new()": 1
+    }
+   }
+  },
+  "crates/service/src/claude_launch.rs": {
+   "DirectoryIdentity::of": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "build_args": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(vec![\"xyzzy\".into()])": 1,
+     "Ok(vec![String::new()])": 1,
+     "Ok(vec![])": 1
+    }
+   },
+   "build_environment": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "Ok((Default::default(), BTreeSet::from_iter([\"xyzzy\".into()])))": 1,
+     "Ok((Default::default(), BTreeSet::from_iter([String::new()])))": 1,
+     "Ok((Default::default(), BTreeSet::new()))": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "canonical_absolute": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "canonical_utf8": {
+    "FnValue": {
+     "Ok(\"\")": 1,
+     "Ok(\"xyzzy\")": 1
+    }
+   },
+   "contains_or_is": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "directory_lies_within": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "effort_name": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "is_executable": {
+    "BinaryOperator": {
+     "==": 1,
+     "^": 1,
+     "|": 1
+    },
+    "FnValue": {
+     "false": 2,
+     "true": 1
+    }
+   },
+   "is_team_marker": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "must_treat_as_same_directory": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "MatchArm": {
+     "": 3
+    }
+   },
+   "one_directory_contains_the_other": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "patched_value": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "path_the_child_will_reach": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "permission_mode_argv": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "pre_isolation_config_root": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "push_config_source": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "push_value": {
+    "BinaryOperator": {
+     "&&": 2
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "reject_team_markers_reaching_child": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "remove_tmux_shim_from_path": {
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "require_owner_only_directory": {
+    "BinaryOperator": {
+     "^": 1,
+     "|": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "resolve_claude_launch": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "resource_key": {
+    "FnValue": {
+     "Default::default()": 2
+    }
+   },
+   "select_session_id": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "traverses_a_parent_component": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "validate_config_isolation": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_environment": {
+    "BinaryOperator": {
+     "&&": 3
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_extra_args": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "validate_public_extra_args": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_start": {
+    "BinaryOperator": {
+     "!=": 2,
+     "&&": 2,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   }
+  },
+  "crates/service/src/driver_io.rs": {
+   "": {
+    "BinaryOperator": {
+     "*": 1,
+     "+": 5,
+     "-": 1,
+     "/": 5
+    }
+   },
+   "<impl TerminalControl for RmuxTerminalControl>::close": {
+    "FnValue": {
+     "DriverResult::from(false)": 1,
+     "DriverResult::from(true)": 1,
+     "DriverResult::from_iter([false])": 1,
+     "DriverResult::from_iter([true])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(false)": 1,
+     "DriverResult::new(true)": 1
+    }
+   },
+   "<impl TerminalControl for RmuxTerminalControl>::completion_evidence": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "StructField": {
+     "": 6
+    }
+   },
+   "<impl TerminalControl for RmuxTerminalControl>::interrupt": {
+    "BinaryOperator": {
+     "<=": 1,
+     "==": 1,
+     ">": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "<impl TerminalControl for RmuxTerminalControl>::observe_screen": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "<impl TerminalControl for RmuxTerminalControl>::submit_prompt": {
+    "BinaryOperator": {
+     "!=": 2,
+     "||": 3
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "<impl TranscriptSource for FileTranscriptSource>::arm_at_eof": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "<impl TranscriptSource for FileTranscriptSource>::assert_empty_at_launch": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "<impl TranscriptSource for FileTranscriptSource>::poll": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "AssertEmptyRefusal::from_reason": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "AssertEmptyRefusal::is_a_version_drift_signal": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "AssertEmptyRefusal::reason": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "ControlCommand::literal": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "FileTranscriptSource::arm_sync": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "FileTranscriptSource::assert_empty_after_clear": {
+    "BinaryOperator": {
+     "!=": 3,
+     "<": 2,
+     "||": 3
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "MatchArmGuard": {
+     "false": 3,
+     "true": 3
+    }
+   },
+   "FileTranscriptSource::assert_empty_at": {
+    "FnValue": {
+     "DriverResult::from(None)": 1,
+     "DriverResult::from(Some(Default::default()))": 1,
+     "DriverResult::from_iter([None])": 1,
+     "DriverResult::from_iter([Some(Default::default())])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(None)": 1,
+     "DriverResult::new(Some(Default::default()))": 1
+    }
+   },
+   "FileTranscriptSource::await_rotation": {
+    "BinaryOperator": {
+     "<": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "FileTranscriptSource::config_root": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "FileTranscriptSource::cwd": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "FileTranscriptSource::observe_rotation": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 1
+    },
+    "FnValue": {
+     "DriverResult::from(None)": 1,
+     "DriverResult::from(Some(Default::default()))": 1,
+     "DriverResult::from_iter([None])": 1,
+     "DriverResult::from_iter([Some(Default::default())])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(None)": 1,
+     "DriverResult::new(Some(Default::default()))": 1
+    }
+   },
+   "FileTranscriptSource::poll_sync": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<=": 1,
+     "==": 3,
+     ">": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "FileTranscriptSource::prove_empty_at_launch": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::prove_transcript_inert": {
+    "BinaryOperator": {
+     "!=": 3,
+     "*=": 3,
+     "+": 2,
+     "-=": 3,
+     "/": 2,
+     "<": 3,
+     "==": 5,
+     ">=": 3,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "FileTranscriptSource::read_available": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "DriverResult::from((vec![Default::default()], Default::default()))": 1,
+     "DriverResult::from((vec![], Default::default()))": 1,
+     "DriverResult::from_iter([(vec![Default::default()], Default::default())])": 1,
+     "DriverResult::from_iter([(vec![], Default::default())])": 1,
+     "DriverResult::new((vec![Default::default()], Default::default()))": 1,
+     "DriverResult::new((vec![], Default::default()))": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::read_observed_range": {
+    "BinaryOperator": {
+     "<=": 2,
+     "==": 2,
+     ">": 2
+    },
+    "FnValue": {
+     "DriverResult::from((vec![Default::default()], Default::default()))": 1,
+     "DriverResult::from((vec![], Default::default()))": 1,
+     "DriverResult::from_iter([(vec![Default::default()], Default::default())])": 1,
+     "DriverResult::from_iter([(vec![], Default::default())])": 1,
+     "DriverResult::new((vec![Default::default()], Default::default()))": 1,
+     "DriverResult::new((vec![], Default::default()))": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::record_rotation": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::resolve_rotation": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "FileTranscriptSource::rotation_record": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(None)": 1,
+     "DriverResult::from(Some(Default::default()))": 1,
+     "DriverResult::from_iter([None])": 1,
+     "DriverResult::from_iter([Some(Default::default())])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(None)": 1,
+     "DriverResult::new(Some(Default::default()))": 1
+    }
+   },
+   "FileTranscriptSource::seek_to_observed_eof": {
+    "BinaryOperator": {
+     "+": 1,
+     "/": 1,
+     "<": 1,
+     "==": 2,
+     ">=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::seek_to_validated_eof": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "FileTranscriptSource::validate_metadata_identity": {
+    "BinaryOperator": {
+     "==": 2
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "FileTranscriptSource::validate_semantic_identity": {
+    "BinaryOperator": {
+     "==": 2
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "FileTranscriptSource::watch_rotation": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "InputGateBudget::expiry": {
+    "BinaryOperator": {
+     "<": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "InputGateBudget::remaining": {
+    "BinaryOperator": {
+     "+": 1,
+     "/": 1,
+     "<": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "RecognisedScreen::label": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "RmuxTerminalControl::lifecycle_hook": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 2,
+     ">=": 1
+    },
+    "FnValue": {
+     "(false, None)": 1,
+     "(false, Some(0))": 1,
+     "(false, Some(1))": 1,
+     "(true, None)": 1,
+     "(true, Some(0))": 1,
+     "(true, Some(1))": 1
+    }
+   },
+   "RmuxTerminalControl::resize": {
+    "BinaryOperator": {
+     "!=": 2,
+     "&&": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "RmuxTerminalControl::type_control_command": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "RmuxTerminalControl::with_lifecycle_observation": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "RmuxTerminalControl::with_timings": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "RotationRecord::into_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ScreenShape::of": {
+    "BinaryOperator": {
+     "==": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "ScreenShape::to_json": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "TailState::position": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "TailState::rebind": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "TerminalScreenState::label": {
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    }
+   },
+   "active_editor": {
+    "BinaryOperator": {
+     "!=": 5,
+     "&&": 4,
+     "+": 1,
+     "/": 1,
+     "<": 4,
+     "<=": 1,
+     "==": 4,
+     ">": 1,
+     ">=": 2,
+     "||": 2
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "assert_empty_details": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "assert_empty_refusal": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "assert_empty_refusal_with": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "assert_empty_row_refusal": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "blocking_screen": {
+    "BinaryOperator": {
+     "&&": 18,
+     "||": 8
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "classify_preamble_user_row": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "classify_terminal_snapshot": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "clear_and_rebind": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "clear_refusal_repromotion_trigger": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "clear_was_not_submitted": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "closed_terminal": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "composer_head": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "composer_rows": {
+    "BinaryOperator": {
+     "+": 1,
+     "/": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(vec![\"\"])": 1,
+     "Some(vec![\"xyzzy\"])": 1,
+     "Some(vec![])": 1
+    }
+   },
+   "continuation_content": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "control_selection_refusal": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "control_selection_refusal_with": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "diagnostic_u64": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ensure_before_turn_deadline": {
+    "BinaryOperator": {
+     "<": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "ensure_protocol_transcript_offset": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "ensure_same_transcript_generation": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "ensure_same_transcript_length": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "enter_ambiguity_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "enter_once": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "enter_was_attempted": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "gated_snapshot": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "gated_styled_screen": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "identity_bound_row_kind": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"\")": 1,
+     "Some(\"xyzzy\")": 1
+    }
+   },
+   "identity_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "input_gate_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "input_render_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "io_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "is_menu_rule": {
+    "BinaryOperator": {
+     "!=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "list_transcripts": {
+    "FnValue": {
+     "DriverResult::from(BTreeSet::from_iter([Default::default()]))": 1,
+     "DriverResult::from(BTreeSet::new())": 1,
+     "DriverResult::from_iter([BTreeSet::from_iter([Default::default()])])": 1,
+     "DriverResult::from_iter([BTreeSet::new()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(BTreeSet::from_iter([Default::default()]))": 1,
+     "DriverResult::new(BTreeSet::new())": 1
+    }
+   },
+   "list_transcripts_within": {
+    "BinaryOperator": {
+     "*=": 1,
+     "-=": 1,
+     "<": 1,
+     "==": 1,
+     ">=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(BTreeSet::from_iter([Default::default()]))": 1,
+     "DriverResult::from(BTreeSet::new())": 1,
+     "DriverResult::from_iter([BTreeSet::from_iter([Default::default()])])": 1,
+     "DriverResult::from_iter([BTreeSet::new()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(BTreeSet::from_iter([Default::default()]))": 1,
+     "DriverResult::new(BTreeSet::new())": 1
+    }
+   },
+   "map_location_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_terminal_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_transcript_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "mark_enter_attempted": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "menu_candidates": {
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "metadata_for": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "metadata_for_file": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "needs_input_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "normalize_candidate_cwd": {
+    "FnValue": {
+     "\"xyzzy\".into()": 1,
+     "String::new()": 1
+    }
+   },
+   "normalize_path": {
+    "FnValue": {
+     "\"xyzzy\".into()": 1,
+     "String::new()": 1
+    }
+   },
+   "now_unix_ms": {
+    "FnValue": {
+     "DriverResult::from(0)": 1,
+     "DriverResult::from(1)": 1,
+     "DriverResult::from_iter([0])": 1,
+     "DriverResult::from_iter([1])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(0)": 1,
+     "DriverResult::new(1)": 1
+    }
+   },
+   "paste_ambiguity_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "paste_once": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "platform_file_metadata": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 2,
+     "DriverResult::from_iter([Default::default()])": 2,
+     "DriverResult::new()": 2,
+     "DriverResult::new(Default::default())": 2
+    }
+   },
+   "poisoned_tail": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "preamble_metadata_disposition": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    },
+    "MatchArm": {
+     "": 2
+    }
+   },
+   "prompt_glyph_col": {
+    "FnValue": {
+     "None": 1,
+     "Some(0)": 1,
+     "Some(1)": 1
+    }
+   },
+   "prompt_glyph_split": {
+    "BinaryOperator": {
+     "&&": 1,
+     "==": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some((0, \"\"))": 1,
+     "Some((0, \"xyzzy\"))": 1,
+     "Some((1, \"\"))": 1,
+     "Some((1, \"xyzzy\"))": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "protocol_milliseconds": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "DriverResult::from(0)": 1,
+     "DriverResult::from(1)": 1,
+     "DriverResult::from_iter([0])": 1,
+     "DriverResult::from_iter([1])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(0)": 1,
+     "DriverResult::new(1)": 1
+    }
+   },
+   "prove_control_command_selection": {
+    "BinaryOperator": {
+     "==": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "prove_stable_empty_editor": {
+    "BinaryOperator": {
+     "!=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from((Default::default(), Default::default()))": 1,
+     "DriverResult::from_iter([(Default::default(), Default::default())])": 1,
+     "DriverResult::new((Default::default(), Default::default()))": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "proven_composer_row": {
+    "BinaryOperator": {
+     "&&": 1,
+     "*": 1,
+     "-": 1,
+     "<=": 1,
+     "==": 3,
+     ">": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(0)": 1,
+     "DriverResult::from(1)": 1,
+     "DriverResult::from_iter([0])": 1,
+     "DriverResult::from_iter([1])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(0)": 1,
+     "DriverResult::new(1)": 1
+    }
+   },
+   "read_rotation_anchor": {
+    "BinaryOperator": {
+     "!=": 2,
+     "+": 1,
+     "/": 1,
+     "<": 1,
+     "==": 1
+    },
+    "FnValue": {
+     "DriverResult::from(None)": 1,
+     "DriverResult::from(Some(Default::default()))": 1,
+     "DriverResult::from_iter([None])": 1,
+     "DriverResult::from_iter([Some(Default::default())])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(None)": 1,
+     "DriverResult::new(Some(Default::default()))": 1
+    }
+   },
+   "redacted_schema_token": {
+    "BinaryOperator": {
+     "&&": 1,
+     ">": 1,
+     "||": 2
+    },
+    "FnValue": {
+     "\"\"": 1,
+     "\"xyzzy\"": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "refusal_before_clear_submission": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "rendered_prompt_is_proven": {
+    "BinaryOperator": {
+     "!=": 3,
+     "&&": 1,
+     "<": 1,
+     "==": 2,
+     ">": 1,
+     "||": 8
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "rotation_anchor_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "screen_geometry": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "selected_row_colour": {
+    "BinaryOperator": {
+     "!=": 1,
+     "*": 1,
+     "-": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "sleep_for_input_poll": {
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "turn_deadline_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "typed_needs_input": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "unarmed_tail_failure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "validate_prompt": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(\"xyzzy\".into())": 1,
+     "DriverResult::from(String::new())": 1,
+     "DriverResult::from_iter([\"xyzzy\".into()])": 1,
+     "DriverResult::from_iter([String::new()])": 1,
+     "DriverResult::new(\"xyzzy\".into())": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(String::new())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "validate_turn_deadline_domain": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "DriverResult::from(())": 1,
+     "DriverResult::from_iter([()])": 1,
+     "DriverResult::new(())": 1,
+     "DriverResult::new()": 1
+    }
+   },
+   "wait_for_snapshot_stability": {
+    "BinaryOperator": {
+     "+": 1,
+     "/": 1,
+     "<": 2,
+     "==": 1
+    },
+    "FnValue": {
+     "DriverResult::from(None)": 1,
+     "DriverResult::from(Some(Default::default()))": 1,
+     "DriverResult::from_iter([None])": 1,
+     "DriverResult::from_iter([Some(Default::default())])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(None)": 1,
+     "DriverResult::new(Some(Default::default()))": 1
+    }
+   },
+   "wait_for_stable_control_render": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1,
+     "==": 3,
+     "||": 4
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "wait_for_stable_empty_editor": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "wait_for_stable_prompt_render": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   }
+  },
+  "crates/service/src/native.rs": {
+   "<impl ClearRebind for RmuxClearRebind>::clear_and_rebind": {
+    "FnValue": {
+     "DriverResult::from(Default::default())": 1,
+     "DriverResult::from_iter([Default::default()])": 1,
+     "DriverResult::new()": 1,
+     "DriverResult::new(Default::default())": 1
+    }
+   },
+   "<impl DriverFailureExt for crate::v1::DriverFailure>::protocol": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "<impl Drop for IdleReaper>::drop": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "<impl Drop for SessionLifecycle>::drop": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "<impl Drop for StartupCleanupGuard>::drop": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "<impl Drop for TerminalCreationDelivery>::drop": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "ActorStateObservation::from_read": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ActorStateObservation::state": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "IdleReaper::request_shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "IdleReaper::shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "LiveResourceClaim::directories": {
+    "FnValue": {
+     "[(\"\", Box::leak(Box::new(Default::default()))); 2]": 1,
+     "[(\"xyzzy\", Box::leak(Box::new(Default::default()))); 2]": 1
+    }
+   },
+   "NativeService::admit_pool_claude": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "NativeService::agent_store": {
+    "FnValue": {
+     "Ok(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "NativeService::attach": {
+    "BinaryOperator": {
+     "!=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::clear_boundary": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(Arc::new(Default::default()))": 1
+    }
+   },
+   "NativeService::clear_session": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::clear_timeout_ms": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "NativeService::close_session": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::close_session_owned": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::configuration_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "NativeService::create_terminal_for_start": {
+    "FnValue": {
+     "Ok(Box::new(Default::default()))": 1
+    }
+   },
+   "NativeService::diagnose": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "NativeService::dispatch": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::finish_failed_start": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "NativeService::from_runtime_with_agent_store": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "NativeService::health_layers": {
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    }
+   },
+   "NativeService::pool": {
+    "FnValue": {
+     "None": 1,
+     "Some(Box::leak(Box::new(Arc::new(Default::default()))))": 1
+    }
+   },
+   "NativeService::reap_idle_sessions": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "NativeService::reap_pending_startup_cleanup": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "NativeService::registry": {
+    "FnValue": {
+     "Box::leak(Box::new(Arc::new(Default::default())))": 1
+    }
+   },
+   "NativeService::resolve_agent_reference": {
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(Default::default()))": 1
+    }
+   },
+   "NativeService::run_once": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::run_turn": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::seed_config_isolation_root": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "NativeService::shutdown": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "NativeService::start": {
+    "FnValue": {
+     "Ok(Arc::new(Default::default()))": 1
+    }
+   },
+   "NativeService::start_idle_reaper": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "NativeService::start_pool": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "NativeService::start_session": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::start_session_internal": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::start_session_owned": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::start_session_owned_with_retention": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "NativeService::wait_for_turn": {
+    "BinaryOperator": {
+     "<": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "PendingStartupCleanup::close_controlled_terminal": {
+    "FnValue": {
+     "Ok(false)": 1,
+     "Ok(true)": 1
+    }
+   },
+   "PendingStartupCleanup::close_raw_terminal": {
+    "FnValue": {
+     "Ok(false)": 1,
+     "Ok(true)": 1
+    }
+   },
+   "PendingStartupCleanup::close_terminal": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "PendingStartupCleanup::into_metadata": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "PendingStartupCleanup::is_permanently_failed": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "PendingStartupCleanup::promote_terminal": {
+    "FnValue": {
+     "Arc::new(Default::default())": 1
+    }
+   },
+   "PendingStartupCleanup::raw_terminal_mut": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "PendingStartupCleanup::shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "PendingStartupCleanup::terminal_only": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionLifecycle::request_shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "SessionLifecycle::shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "SessionLifecycle::start": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SessionMetadata::shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "StartupCleanupGuard::cleanup_mut": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "StartupCleanupGuard::from_cleanup": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "StartupCleanupGuard::into_cleanup": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "StartupCleanupGuard::into_metadata": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "TerminalCreationDelivery::take": {
+    "FnValue": {
+     "Box::new(Default::default())": 1
+    }
+   },
+   "admit_bound_resources": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "admit_claude_version": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "admit_config_root": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "admit_cwd": {
+    "BinaryOperator": {
+     "!=": 2,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "build_diagnosis": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "checked_default_deadline_ms": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "checked_protocol_timestamp_ms": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "claim_reaches": {
+    "BinaryOperator": {
+     "!=": 3,
+     "&&": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "claude_version_of": {
+    "FnValue": {
+     "Ok(\"xyzzy\".into())": 1,
+     "Ok(String::new())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "close_session_with_state": {
+    "BinaryOperator": {
+     "!=": 2,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "combine_startup_and_cleanup_errors": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "combine_turn_and_cleanup_errors": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "compatibility_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "control_plane_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "decide_retention": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "detect_claude_version": {
+    "FnValue": {
+     "Ok(\"xyzzy\".into())": 1,
+     "Ok(String::new())": 1
+    }
+   },
+   "diagnostic_offset_from_bottom": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "diagnostic_u64": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "diagnostic_usize": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "dispatch_close_session": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "drain_after_runtime_shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "effective_config_root": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "idle_ttl_ms_for": {
+    "FnValue": {
+     "None": 1,
+     "Some(0)": 1,
+     "Some(1)": 1
+    }
+   },
+   "increment_lifecycle_stop_sequence": {
+    "BinaryOperator": {
+     ">": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(0)": 1,
+     "Some(1)": 1
+    }
+   },
+   "incumbent_cell_for": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "incumbent_cell_for_config_root": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "incumbent_cell_for_cwd": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "launch_broker_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "launch_bundle_rejected": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "live_resource_claims": {
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    }
+   },
+   "map_attach_grant_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_launch_error": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_location_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_startup_create_terminal_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "map_startup_terminal_error": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "missing_agent_store": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "normalize_claude_version": {
+    "BinaryOperator": {
+     "==": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(\"xyzzy\".into())": 1,
+     "Some(String::new())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "now_ms": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "performance_layer": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 2,
+     "==": 2,
+     ">=": 2
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "placeholder_start_request": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "pool_layer": {
+    "BinaryOperator": {
+     "!=": 3,
+     "<": 1,
+     "<=": 1,
+     "==": 2,
+     ">": 1,
+     ">=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "private_runtime_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "record_lifecycle_stop_instant": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "representable_stop_instant": {
+    "BinaryOperator": {
+     "==": 1,
+     ">": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(0)": 1,
+     "Some(1)": 1
+    }
+   },
+   "require_created_terminal": {
+    "FnValue": {
+     "Ok(Box::new(Default::default()))": 1
+    }
+   },
+   "require_establishable_identity": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "require_isolation_root_is_the_effective_root": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "require_process_reaped": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "require_resolved_launch": {
+    "FnValue": {
+     "Ok(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "require_resolved_launch_mut": {
+    "FnValue": {
+     "Ok(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "resolve_agent_and_retention": {
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(Default::default()))": 1
+    }
+   },
+   "resolve_agent_reference_into": {
+    "FnValue": {
+     "Ok(None)": 1,
+     "Ok(Some(Default::default()))": 1
+    }
+   },
+   "runtime_finding": {
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "session_finding": {
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "MatchArmGuard": {
+     "false": 2,
+     "true": 2
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "session_is_still_offered": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "sessions_layer": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "startup_ready_timeout": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "startup_screen_diagnostics": {
+    "FnValue": {
+     "Default::default()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "strictest_cell": {
+    "BinaryOperator": {
+     "!=": 2,
+     "&&": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "take_retryable_startup_cleanup": {
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "turn_wait_safety_delay": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "unix_now_ms": {
+    "FnValue": {
+     "Ok(0)": 1,
+     "Ok(1)": 1
+    }
+   },
+   "unresolved_launch": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "validate_native_request": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_public_start_retention": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_subscribe_events": {
+    "BinaryOperator": {
+     "&&": 1,
+     "<": 2,
+     "==": 2,
+     ">=": 2
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_transcript_identity": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "validate_turn_lease": {
+    "BinaryOperator": {
+     "&&": 1,
+     "==": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "wait_until_ready": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "wait_until_ready_with_timings": {
+    "BinaryOperator": {
+     "!=": 1,
+     "+": 2,
+     "/": 2,
+     "<": 3
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   }
+  },
+  "crates/service/src/pool/class.rs": {
+   "<impl fmt::Display for InstanceClass>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl fmt::Display for ModelEffortRefusal>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "InstanceClass::argv": {
+    "FnValue": {
+     "vec![\"xyzzy\".into()]": 1,
+     "vec![String::new()]": 1,
+     "vec![]": 1
+    }
+   },
+   "InstanceClass::effort_level": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "InstanceClass::of": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "ModelEffortRefusal::into_error_body": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "ModelEntry::admit": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "ModelEntry::admitted_spellings": {
+    "FnValue": {
+     "vec![\"\"]": 1,
+     "vec![\"xyzzy\"]": 1,
+     "vec![]": 1
+    }
+   },
+   "ModelEntry::matches": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "admitted_model_list": {
+    "FnValue": {
+     "\"xyzzy\".into()": 1,
+     "String::new()": 1
+    }
+   },
+   "lookup": {
+    "FnValue": {
+     "None": 1,
+     "Some(Box::leak(Box::new(Default::default())))": 1
+    }
+   },
+   "resolve_model_effort": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "resolve_named": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "resolve_pool_class": {
+    "FnValue": {
+     "Ok((Default::default(), Default::default()))": 1
+    }
+   }
+  },
+  "crates/service/src/pool/config.rs": {
+   "<impl std::fmt::Display for ConfigField>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl std::fmt::Display for ConfigRefusal>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "PoolConfig::declared_warm_total": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolConfig::effective_deadline_ms": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolConfig::warm_floor": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolSettings::defaults": {
+    "BinaryOperator": {
+     "+": 1,
+     "/": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "PoolSettings::validate": {
+    "BinaryOperator": {
+     "!=": 4,
+     "&&": 2,
+     "+": 1,
+     "/": 1,
+     "<": 3,
+     "==": 3,
+     ">=": 3
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "fingerprint": {
+    "BinaryOperator": {
+     "&=": 1,
+     "|=": 1
+    },
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "require_absolute": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "resolve_warm_set": {
+    "BinaryOperator": {
+     "!=": 2,
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(vec![Default::default()])": 1,
+     "Ok(vec![])": 1
+    }
+   },
+   "validate_system_prompt": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 1,
+     "<": 1,
+     "==": 3,
+     ">=": 1,
+     "||": 2
+    },
+    "FnValue": {
+     "Ok(())": 1
+    }
+   }
+  },
+  "crates/service/src/pool/evidence.rs": {
+   "": {
+    "BinaryOperator": {
+     "+": 2,
+     "/": 2
+    }
+   },
+   "prune": {
+    "BinaryOperator": {
+     "*=": 1,
+     "-=": 1,
+     ">": 1
+    },
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "retain_instance_transcripts": {
+    "BinaryOperator": {
+     "!=": 1,
+     "*=": 3,
+     "-=": 3
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "retained_row": {
+    "FnValue": {
+     "None": 1,
+     "Some(\"xyzzy\".into())": 1,
+     "Some(String::new())": 1
+    }
+   },
+   "transcripts_under": {
+    "BinaryOperator": {
+     "!=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "vec![Default::default()]": 1,
+     "vec![]": 1
+    }
+   },
+   "write_private": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   }
+  },
+  "crates/service/src/pool/host.rs": {
+   "<impl Spawner for TrackedSpawner>::spawn": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "HostFailure::possibly_live": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "HostFailure::reaped": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   }
+  },
+  "crates/service/src/pool/instance.rs": {
+   "<impl std::fmt::Display for InvariantViolation>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "Instance::check_invariants": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1,
+     "==": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Instance::reserved": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "SlotPaths::minted_dirs": {
+    "BinaryOperator": {
+     "!=": 2
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(vec![Default::default()])": 1,
+     "Some(vec![])": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   }
+  },
+  "crates/service/src/pool/machine.rs": {
+   "<impl fmt::Display for IllegalTransition>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl fmt::Display for InstanceState>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl fmt::Display for Transition>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "CensusBucket::comes_back_on_its_own": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "InstanceState::census_bucket": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "InstanceState::counts_against_pool": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "InstanceState::is_terminal": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "InstanceState::owns_a_root": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Transition::is_proof_carrying": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "clear_success_transition": {
+    "BinaryOperator": {
+     "<": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "idle_is_proof_carrying": {
+    "BinaryOperator": {
+     "&&": 1
+    },
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "shutdown_action": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "step": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   }
+  },
+  "crates/service/src/pool/mod.rs": {
+   "<impl std::fmt::Display for PoolInvariantViolation>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "<impl std::fmt::Display for TransitionRefusal>::fmt": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "Pool::abandon_mint": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::abandon_unpublishable": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::admit": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::admit_once": {
+    "BinaryOperator": {
+     "<": 1,
+     "<=": 2,
+     "==": 3,
+     ">": 2,
+     ">=": 1,
+     "||": 4
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "Pool::census": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "Pool::check_invariants": {
+    "BinaryOperator": {
+     "!=": 1,
+     "<": 1,
+     "==": 3,
+     ">=": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::commit": {
+    "BinaryOperator": {
+     "&&": 1,
+     "<": 1,
+     "==": 2,
+     ">=": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "Pool::config": {
+    "FnValue": {
+     "Box::leak(Box::new(Default::default()))": 1
+    }
+   },
+   "Pool::destroy": {
+    "BinaryOperator": {
+     "<": 1,
+     "==": 1,
+     ">=": 1
+    },
+    "FnValue": {
+     "()": 1
+    },
+    "MatchArmGuard": {
+     "false": 2,
+     "true": 2
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::finish_turn": {
+    "BinaryOperator": {
+     "!=": 2,
+     "||": 1
+    },
+    "FnValue": {
+     "()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::halt": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::handle_of": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "Pool::leak": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::mint": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "Pool::publish_idle": {
+    "FnValue": {
+     "()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::publish_idle_and_check_out": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::publish_idle_locked": {
+    "FnValue": {
+     "false": 1,
+     "true": 1
+    }
+   },
+   "Pool::quarantine_and_destroy": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::reclaim": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "Pool::reserve_locked": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::run": {
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "Pool::shutdown": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::spawn_clear": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "Pool::spawn_rewarm": {
+    "BinaryOperator": {
+     "<=": 1,
+     "==": 1,
+     ">": 1,
+     "||": 2
+    },
+    "FnValue": {
+     "()": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::start": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "Pool::sweep_idle": {
+    "BinaryOperator": {
+     "<": 1,
+     ">": 1
+    },
+    "FnValue": {
+     "()": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   },
+   "Pool::transition_locked": {
+    "BinaryOperator": {
+     "!=": 3,
+     "&=": 1,
+     "==": 1,
+     "||": 1
+    },
+    "FnValue": {
+     "Ok(Default::default())": 1
+    }
+   },
+   "PoolState::buckets": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "PoolState::capacity": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolState::free_slot": {
+    "BinaryOperator": {
+     "||": 1
+    },
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "PoolState::idle_count": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolState::live": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolState::lru_of": {
+    "FnValue": {
+     "None": 1,
+     "Some(Default::default())": 1
+    }
+   },
+   "PoolState::pressure": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "PoolState::remove_from_idle": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "PoolState::take_epoch": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "create_owner_only": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "effective_uid": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "erase_tree": {
+    "BinaryOperator": {
+     "!=": 1,
+     "&&": 1
+    },
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "MatchArmGuard": {
+     "false": 1,
+     "true": 1
+    },
+    "UnaryOperator": {
+     "": 2
+    }
+   },
+   "internal": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "mint_roots": {
+    "FnValue": {
+     "Ok(())": 1
+    }
+   },
+   "require_private_parent": {
+    "FnValue": {
+     "Ok(())": 1
+    },
+    "UnaryOperator": {
+     "": 1
+    }
+   }
+  },
+  "crates/service/src/pool/refusal.rs": {
+   "BucketCounts::clauses": {
+    "FnValue": {
+     "[(Default::default(), 0, \"\"); 5]": 1,
+     "[(Default::default(), 0, \"xyzzy\"); 5]": 1,
+     "[(Default::default(), 1, \"\"); 5]": 1,
+     "[(Default::default(), 1, \"xyzzy\"); 5]": 1
+    }
+   },
+   "BucketCounts::clearing": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::coming_back": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::idle": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::in_flight": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::live": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::record": {
+    "FnValue": {
+     "()": 1
+    }
+   },
+   "BucketCounts::reserved": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "BucketCounts::tearing_down": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolPressure::census": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "\"xyzzy\".into()": 1,
+     "String::new()": 1
+    }
+   },
+   "PoolPressure::coming_back": {
+    "FnValue": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "PoolPressure::details": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "daemon_shutting_down": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "path_b_not_enabled": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "pool_exhausted": {
+    "BinaryOperator": {
+     "!=": 1
+    },
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "pool_halted": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "reclaimed_slot_leaked": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "sidechain_on_toolless_cell": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   },
+   "sidechain_rows_not_counted": {
+    "FnValue": {
+     "Default::default()": 1
+    }
+   }
+  }
+ },
+ "key_fields": [
+  "file",
+  "function",
+  "genre",
+  "replacement",
+  "occurrence"
+ ],
+ "recorded_at": {
+  "cargo_mutants_version": "cargo-mutants 27.1.0",
+  "enumerated": 1661,
+  "globs": [
+   "crates/service/src/agent.rs",
+   "crates/service/src/claude_launch.rs",
+   "crates/service/src/pool/**",
+   "crates/service/src/native.rs",
+   "crates/service/src/driver_io.rs",
+   "crates/protocol/src/**"
+  ],
+  "head": "c8616a9",
+  "head_note": "Enumerated at d15e614 and recorded against c94612d, the register's own head, because `git diff c94612d d15e614` over FULL_GLOBS is EMPTY: the mutated files are byte-identical at the two commits, and an identical pinned cargo-mutants over identical bytes enumerates identically. The campaign's own outcomes.json did not survive its work directory; this is the same enumeration, re-derived. THE SQUASH FOR PUBLICATION replaced this branch's 166 commits with one, so the commit this was recorded at is not in published history and `head` names c8616a9, which is. This is the same reconciliation the census's own note already makes and it is held to the same test: MEASURED, `git diff c94612d c8616a9` over FULL_GLOBS is EMPTY -- the mutated files are byte-identical at the campaign's head and here -- and `git diff 6ab75a4 c8616a9` is empty over the WHOLE tree, because the squash was built from the pre-squash tip's tree object unchanged. So the measurement still describes this tree; what it can no longer do is say WHICH earlier commit it was taken at, and with one commit in the range the drift check has nothing to diff against and is vacuous here. It becomes meaningful again at the next commit that touches FULL_GLOBS. Every other commit reference in this file -- run identifiers, the ratcheted-from head, the campaign named in prose -- is a historical citation that no gate resolves, and is left exactly as written.",
+  "mutation_profile": "mutants",
+  "scope": "full",
+  "test_packages": [
+   "pseudomux-protocol",
+   "pseudomux-client",
+   "pseudomux-service"
+  ],
+  "toolchain_channel": "1.88.0"
+ },
+ "schema": "pmux.mutation-enumeration.v1",
+ "what": "Every mutant the full-scope campaign at `recorded_at.head` enumerated, keyed as the survivor register is keyed and counted rather than listed. It answers the one question 144 survivor rows cannot: whether a mutant found at some later commit is one this measurement has ever seen. A brand-new function's mutants are in no row and in no count, which is how they stop being invisible."
+}

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# NOTE: This script uses `cargo run` (debug build) for convenience.
-# For production use, build a release binary first:
-#   cargo build --release -p pmuxd
-# Then invoke: ./target/release/pmuxd serve [args]
+# Development supervisor. It builds every runtime companion into the same
+# directory before starting pmuxd. For a release installation, keep pmuxd,
+# pmux-rmuxd, pmux-launcher, and pmux-hook adjacent:
+#   cargo build --workspace --release
+#   ./target/release/pmuxd serve --socket /absolute/path/pmux.sock [args]
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -21,7 +22,7 @@ LOG_FILE="${PSEUDOMUX_SUPERVISOR_LOG:-$LOG_DIR/pmuxd-supervisor.log}"
 LOCK_DIR_ROOT="${PSEUDOMUX_LOCK_DIR:-$STATE_DIR/locks}"
 RESTART_DELAY="${PSEUDOMUX_RESTART_DELAY_SEC:-2}"
 LOCK_WAIT_SEC="${PSEUDOMUX_LOCK_WAIT_SEC:-20}"
-SOCKET_DEFAULT="${PSEUDOMUX_SOCKET:-$STATE_DIR/pmux.sock}"
+SOCKET_DEFAULT="${PMUX_SOCKET:-${PSEUDOMUX_SOCKET:-$STATE_DIR/pmux.sock}}"
 
 mkdir -p "$LOG_DIR" "$LOCK_DIR_ROOT"
 chmod 700 "$STATE_DIR" "$LOG_DIR" "$LOCK_DIR_ROOT" 2>/dev/null || true
@@ -35,15 +36,30 @@ resolve_socket() {
       socket="${args[$((i + 1))]}"
       break
     fi
+    if [[ "${args[$i]}" == --socket=* ]]; then
+      socket="${args[$i]#--socket=}"
+      break
+    fi
     i=$((i + 1))
   done
   printf '%s\n' "$socket"
 }
 
 SOCKET_PATH="$(resolve_socket "$@")"
-LOCK_KEY="$(printf '%s' "$SOCKET_PATH" | md5sum | awk '{print $1}')"
+if command -v md5sum >/dev/null 2>&1; then
+  LOCK_KEY="$(printf '%s' "$SOCKET_PATH" | md5sum | awk '{print $1}')"
+elif command -v md5 >/dev/null 2>&1; then
+  LOCK_KEY="$(printf '%s' "$SOCKET_PATH" | md5 -q)"
+else
+  LOCK_KEY="$(printf '%s' "$SOCKET_PATH" | shasum -a 256 | awk '{print $1}')"
+fi
 LOCK_DIR="$LOCK_DIR_ROOT/pmuxd-$LOCK_KEY.lock"
 LOCK_PID_FILE="$LOCK_DIR/pid"
+
+DAEMON_ARGS=("$@")
+if ! printf '%s\n' "$@" | grep -Eq '^--socket($|=)'; then
+  DAEMON_ARGS=(--socket "$SOCKET_PATH" "${DAEMON_ARGS[@]}")
+fi
 
 log_event() {
   local event="$1"
@@ -59,7 +75,7 @@ socket_is_live() {
   # Attempt a real connection to confirm pmuxd is listening.
   # Prefer socat (reliable Unix socket connect); fall back to file-existence only.
   if command -v socat >/dev/null 2>&1; then
-    timeout 1 socat /dev/null UNIX-CONNECT:"$path" 2>/dev/null
+    socat -T 1 /dev/null UNIX-CONNECT:"$path" 2>/dev/null
   else
     # socat not available — file existence is our best check.
     # pmuxd removes the socket on clean shutdown, so stale sockets are rare.
@@ -126,9 +142,13 @@ if socket_is_live "$SOCKET_PATH"; then
 fi
 cleanup_stale_socket "$SOCKET_PATH"
 
+log_event "build_companions"
+cargo build -p pmuxd -p pmux-rmuxd -p pmux-launcher -p pmux-hook >>"$LOG_FILE" 2>&1
+PMUXD_BIN="$ROOT_DIR/target/debug/pmuxd"
+
 while true; do
   log_event "start"
-  if cargo run -p pmuxd -- serve "$@" >>"$LOG_FILE" 2>&1; then
+  if "$PMUXD_BIN" serve "${DAEMON_ARGS[@]}" >>"$LOG_FILE" 2>&1; then
     code=0
   else
     code=$?

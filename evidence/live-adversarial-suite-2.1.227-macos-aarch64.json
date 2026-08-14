@@ -1,0 +1,442 @@
+{
+ "schema": "pmux.live-adversarial-suite.v1",
+ "receipt": "live-adversarial-suite-2.1.227-macos-aarch64.json",
+ "purpose": "Every Path B refusal guard fired against a live daemon, over both transports, plus the live checks that need a real model: statelessness across `/clear`, agentic induction, subagent spawning, NFD delivery, trailing-whitespace delivery and a 15-instance wave at the pool cap.",
+ "provenance": {
+  "what_was_measured": "the release binaries built from the working tree at the commit named below, driven through `pmux ask` and through one hand-framed `run_stateless` request on the daemon's own socket",
+  "head_when_the_run_started": "c94612de5378daf06bc78c1d234f1cf76bd1d110",
+  "reader_warning": "This receipt is written before the commit that carries it exists, so `head_when_the_run_started` is the PARENT of the commit this file lands in. The binaries are identified by digest above; those digests are what the run actually used."
+ },
+ "measured_at_unix_ms": 1786501450571,
+ "host": {
+  "os": "macos",
+  "arch": "arm64",
+  "product_version": "15.7.7",
+  "kernel": "24.6.0"
+ },
+ "claude_version": "2.1.227 (Claude Code)",
+ "binaries": {
+  "pmux": "5a672be614b4cfbc309c303757bb63daa5e2f3852985fe97fea7b995c51fcbac",
+  "pmuxd": "0c26b75009a8bb87b7130d251a38f3f3828c58769df9bace0742ef35e286f4d5",
+  "superseded_pmuxd": "bf10b9e91183fcf764dfe9c396790e341bf00ea77eed53e6d88d345750d6e18c -- the stale binary the first pass ran against, replaced by `cargo build --locked --release --workspace` mid-session"
+ },
+ "daemon": {
+  "path_b_pool_size": [
+   1,
+   15
+  ],
+  "warm": "none declared; every instance minted on demand",
+  "retain_dir": "set, and empty at teardown",
+  "label": "/tmp/pb-cert"
+ },
+ "guards": {
+  "derived_from": [
+   "crates/claude/src/composer.rs: COMPOSER_MODE_PREFIXES, COMPOSER_REWRITTEN_CHARACTERS, COMPOSER_LINE_CONTINUATION, enum ComposerRefusal",
+   "crates/service/src/driver_io.rs: MAX_PROMPT_BYTES and every `return Err(DriverFailure::new(` inside `validate_prompt`"
+  ],
+  "composer_mode_prefixes": [
+   "U+002F",
+   "U+0021"
+  ],
+  "composer_rewritten_characters": [
+   "U+0009",
+   "U+000B",
+   "U+000C"
+  ],
+  "composer_line_continuation": "U+005C",
+  "composer_refusal_variants": [
+   "LineContinuation",
+   "ModePrefix",
+   "RewrittenCharacter"
+  ],
+  "validate_prompt_err_sites": 4,
+  "max_prompt_bytes": 1048576,
+  "whitespace_domain": 30,
+  "probes": 47,
+  "refused_by_the_daemon": 47,
+  "refused_by_the_cli": 47,
+  "said_what_the_predicate_predicted_at_the_daemon": 47,
+  "shadowed_by_the_client": [
+   "1048577 bytes"
+  ],
+  "by_guard": {
+   "ComposerRefusal::ModePrefix": 4,
+   "ComposerRefusal::RewrittenCharacter": 6,
+   "ComposerRefusal::LineContinuation": 2,
+   "validate_prompt/whitespace-sweep": 30,
+   "validate_prompt/too_long": 1,
+   "validate_prompt/control": 4
+  }
+ },
+ "live_checks": {
+  "statelessness_across_clear": {
+   "passed": true
+  },
+  "agentic_induction_no_tool_surface": {
+   "passed": true
+  },
+  "subagent_spawning_refused": {
+   "passed": true
+  },
+  "nfd_prompt_is_delivered_as_nfc": {
+   "passed": true
+  },
+  "trailing_whitespace_is_trimmed_and_answered": {
+   "passed": true
+  },
+  "zero_width_space_is_kept_and_answered": {
+   "passed": true
+  },
+  "wave_of_15_at_the_pool_cap": {
+   "passed": true,
+   "answered_correctly": 15,
+   "requested": 15,
+   "wall_ms": 51123,
+   "slowest_turn_ms": 51091,
+   "fastest_turn_ms": 5630,
+   "sidechain_output_tokens": [
+    0
+   ]
+  }
+ },
+ "ledger": {
+  "sha256_before": "439e48533a77679d15bcc24a5a555366dcf426131cc8a0ae1e2c105afb167153",
+  "sha256_after": "439e48533a77679d15bcc24a5a555366dcf426131cc8a0ae1e2c105afb167153",
+  "bytes": 1200199,
+  "note": "`pmux ask` reserves no ordinal; the ledger is byte-identical across all turns here"
+ },
+ "turns": {
+  "model": "claude-sonnet-5",
+  "efforts": [
+   "low",
+   "medium"
+  ],
+  "graded_run": 22,
+  "first_pass_against_a_stale_pmuxd": 23,
+  "records": [
+   {
+    "check": "agentic_induction_no_tool_surface",
+    "effort": "medium",
+    "elapsed_ms": 8253,
+    "output_tokens": 10,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "subagent_spawning_refused",
+    "effort": "medium",
+    "elapsed_ms": 4276,
+    "output_tokens": 13,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "nfd_prompt_is_delivered_as_nfc",
+    "effort": "low",
+    "elapsed_ms": 7809,
+    "output_tokens": 11,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "trailing_whitespace_is_trimmed_and_answered",
+    "effort": "low",
+    "elapsed_ms": 3525,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "zero_width_space_is_kept_and_answered",
+    "effort": "low",
+    "elapsed_ms": 3686,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "statelessness_across_clear.first",
+    "effort": "low",
+    "elapsed_ms": 7356,
+    "output_tokens": 5,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "statelessness_across_clear.second",
+    "effort": "low",
+    "elapsed_ms": 4401,
+    "output_tokens": 17,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_01",
+    "effort": "low",
+    "elapsed_ms": 7891,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_02",
+    "effort": "low",
+    "elapsed_ms": 12103,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_03",
+    "effort": "low",
+    "elapsed_ms": 47075,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_04",
+    "effort": "low",
+    "elapsed_ms": 5630,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_05",
+    "effort": "low",
+    "elapsed_ms": 16992,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_06",
+    "effort": "low",
+    "elapsed_ms": 31973,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_07",
+    "effort": "low",
+    "elapsed_ms": 20961,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_08",
+    "effort": "low",
+    "elapsed_ms": 40088,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_09",
+    "effort": "low",
+    "elapsed_ms": 51091,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_10",
+    "effort": "low",
+    "elapsed_ms": 28442,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_11",
+    "effort": "low",
+    "elapsed_ms": 14194,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_12",
+    "effort": "low",
+    "elapsed_ms": 43436,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_13",
+    "effort": "low",
+    "elapsed_ms": 10116,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_14",
+    "effort": "low",
+    "elapsed_ms": 37901,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "wave_of_15.turn_15",
+    "effort": "low",
+    "elapsed_ms": 24608,
+    "output_tokens": 3,
+    "run": "0c26b75009a8bb"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.01",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.02",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.03",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.04",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.05",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.06",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.07",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.08",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.09",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.10",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.11",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.12",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.13",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.14",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.15",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.16",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.17",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.18",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.19",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.20",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.21",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.22",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   },
+   {
+    "check": "first_pass_against_a_stale_pmuxd.23",
+    "effort": "low",
+    "elapsed_ms": null,
+    "output_tokens": null,
+    "run": "bf10b9e91183fc"
+   }
+  ]
+ },
+ "not_established": [
+  "The unrecognised-screen veto never fired: it refuses only when the screen is unreadable AND the transcript has stopped, and neither happened in any turn here. Its firing path remains unit-tested only.",
+  "The 15-instance wave ran while a full-scope mutation run held four cores, so its 51,123 ms wall time is an upper bound under load and not a latency measurement.",
+  "The first pass's 23 turns ran against a stale `target/release/pmuxd`, and its results are discarded rather than reported. What that stale binary was built from was not established; only that it was not this tree.",
+  "The daemon's own prompt-size refusal is unreachable through `pmux ask`: `bin/pmux/src/cli.rs` carries its own copy of the limit and refuses first, with different words. Reached here only over the raw socket.",
+  "No probe here reaches the pool's quarantine or recycle paths: every instance was healthy, and `retain_dir` was empty at teardown.",
+  "Per-turn latency was not retained for the first pass."
+ ]
+}

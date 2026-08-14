@@ -1,0 +1,881 @@
+{
+ "attempts": [
+  {
+   "attempt_id": "29daeac1-8aa9-4b9e-8c2e-a30d8d7fd5e8",
+   "effort": "low",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "434269ef-0ed8-48f0-afca-17808d3963aa",
+   "effort": "low",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "73cfc557-fe06-4648-a3a0-68ffebf3797f",
+   "effort": "low",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "aaed38fd-4532-47dc-ac3c-537b77b163d3",
+   "effort": "low",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "ea1ae66e-0a5b-4d91-b496-91c5d3615ade",
+   "effort": "low",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "6921095a-ee79-4226-9ae5-bb6b9bbf6c2c",
+   "effort": "low",
+   "error": "frozen source changed during the campaign",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 32,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: frozen source changed during the campaign"
+   ],
+   "prompt_suite_index": 1,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "46269b73-26b9-4d2f-a75d-5f940c0da9b9",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "low",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 1,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 33,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "not_applicable",
+   "notes": [],
+   "prompt_suite_index": 1,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "c580ac6e-3e5c-4afd-9723-ff55b0a4cd74",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 34,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "not_applicable",
+   "notes": [],
+   "prompt_suite_index": 1,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "6f1d499d-73bc-452c-a895-cea9bc7c6baf",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 35,
+   "grade": "02-poem-only-no-tool",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "not_applicable",
+   "notes": [],
+   "prompt_suite_index": 2,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "620c566d-793b-43e9-a5c3-60bb70d9832d",
+   "effort": "medium",
+   "error": "pmux run exited with 1",
+   "fatal_error": null,
+   "gap_ms": null,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 36,
+   "grade": "03-poem-hash-single-tool",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [],
+   "hash_overall": "no_result",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ],
+   "prompt_suite_index": 3,
+   "status": "failed"
+  },
+  {
+   "attempt_id": "c56a0a7d-8759-471d-a66e-2b1a19719a11",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 37,
+   "grade": "03-poem-hash-single-tool",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "c7cd4254b248b5268b248cb92c90be7c6075ee53fc250d73ffe92f650ea2d28c",
+     "reported": "c7cd4254b248b5268b248cb92c90be7c6075ee53fc250d73ffe92f650ea2d28c"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 1 would have labelled this 01-baseline-trivial.txt, but its content is 03-poem-hash-single-tool.txt; graded by content"
+   ],
+   "prompt_suite_index": 1,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "684a101a-e598-4139-bd57-001f4dd22cfb",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 1,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 38,
+   "grade": "04-poem-hash-single-tool-variant",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "trailing_newline",
+     "reason": null,
+     "recomputed_example": "2e33f389e54d6117d450e5095c6e8c1a15bec23b94ce6e481736113a7f203143",
+     "reported": "d813e4bd2a02233a2432f97886c6dad7d8d47ccbb65a67261934ea10730c734d"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 2 would have labelled this 02-poem-only-no-tool.txt, but its content is 04-poem-hash-single-tool-variant.txt; graded by content"
+   ],
+   "prompt_suite_index": 2,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "b009127b-c0ca-4adc-8722-61143c899bea",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 39,
+   "grade": "05-poem-hash-reverse-transform",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "550a2a88bc5af1932a23052660e0726af16c938fa299be5107d653ef55eb1e9d",
+     "reported": "550a2a88bc5af1932a23052660e0726af16c938fa299be5107d653ef55eb1e9d"
+    },
+    {
+     "label": "reversed",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "dcb27276c2d42479b4281d943fd23057ac129f4b403f9f075000242b3cedf6b8",
+     "reported": "dcb27276c2d42479b4281d943fd23057ac129f4b403f9f075000242b3cedf6b8"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 3 would have labelled this 03-poem-hash-single-tool.txt, but its content is 05-poem-hash-reverse-transform.txt; graded by content"
+   ],
+   "prompt_suite_index": 3,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "fadd7a24-168c-43b8-9d74-2d670c7f4c49",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 1,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 40,
+   "grade": "06-poem-hash-triple-transform",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "517ab3a3a116ea9f809b87c18fcfeebcf96a7b539332568b2d3bf5f8bae0bdda",
+     "reported": "517ab3a3a116ea9f809b87c18fcfeebcf96a7b539332568b2d3bf5f8bae0bdda"
+    },
+    {
+     "label": "reversed",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "41280e12802c20eb8afa168619124a04ca85422831b3713e1e949146f14fc305",
+     "reported": "41280e12802c20eb8afa168619124a04ca85422831b3713e1e949146f14fc305"
+    },
+    {
+     "label": "upper",
+     "match": true,
+     "matched_variant": "exact",
+     "reason": null,
+     "recomputed_example": "11f93ca8b1e9d1f508286d8deecc008f053d58cf3efc1cb51d796db28e7ad5a2",
+     "reported": "11f93ca8b1e9d1f508286d8deecc008f053d58cf3efc1cb51d796db28e7ad5a2"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 4 would have labelled this 04-poem-hash-single-tool-variant.txt, but its content is 06-poem-hash-triple-transform.txt; graded by content"
+   ],
+   "prompt_suite_index": 4,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "8f22b228-4937-4d03-b3f1-c6ca6f508525",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 1,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 41,
+   "grade": "07-long-poem-hash",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "trailing_newline",
+     "reason": null,
+     "recomputed_example": "349fa4c11d2377c2d8d0145b6c3bba464089bcd336306b99922b21306ea71783",
+     "reported": "f5e4af8e1ae78638d077cbc9126a0f008aa48248666a6deb1e1f576b76b9f714"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 5 would have labelled this 05-poem-hash-reverse-transform.txt, but its content is 07-long-poem-hash.txt; graded by content"
+   ],
+   "prompt_suite_index": 5,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "7cb17088-4893-4a16-8bb5-a16da7fd4c03",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 42,
+   "grade": "08-unicode-poem-hash",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "trailing_newline",
+     "reason": null,
+     "recomputed_example": "e02139017885c7ea24a88712c97638ff21bc6b5a782755e8c306ca3e78e781bb",
+     "reported": "7001c29a18c9fb1aa2724aff5f19698e628cfec6a42a76bf19d953ab13afe5e3"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 6 would have labelled this 06-poem-hash-triple-transform.txt, but its content is 08-unicode-poem-hash.txt; graded by content"
+   ],
+   "prompt_suite_index": 6,
+   "status": "pmux_exit_zero"
+  },
+  {
+   "attempt_id": "261320a0-9d93-4f55-8df0-d2481a7c96f9",
+   "configured_transcript_drain_ms": 2000,
+   "effort": "medium",
+   "error": null,
+   "fatal_error": null,
+   "gap_ms": 0,
+   "gap_uncomputable_reason": null,
+   "global_attempt_ordinal": 43,
+   "grade": "09-long-unicode-poem-hash",
+   "grade_source": "prompt_sha256",
+   "hash_checks": [
+    {
+     "label": "poem",
+     "match": true,
+     "matched_variant": "trailing_newline",
+     "reason": null,
+     "recomputed_example": "bf3fd5e540006f10f0a8a2f9ebd3592d4806674b8bcd248ad50655b57733bb6f",
+     "reported": "7684f4a81da6fbc9e7bc6c95a7afce347c7998d86c8ed96ac8d51ecfc51ea986"
+    }
+   ],
+   "hash_overall": "match",
+   "notes": [
+    "prompt_suite_index 7 would have labelled this 07-long-poem-hash.txt, but its content is 09-long-unicode-poem-hash.txt; graded by content"
+   ],
+   "prompt_suite_index": 7,
+   "status": "pmux_exit_zero"
+  }
+ ],
+ "attempts_by_bucket": {
+  "failed": 7,
+  "fatal": 0,
+  "incomplete": 0,
+  "successful": 10,
+  "unreadable": 0
+ },
+ "attempts_discovered": 17,
+ "attempts_failed": [
+  {
+   "attempt_id": "29daeac1-8aa9-4b9e-8c2e-a30d8d7fd5e8",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "434269ef-0ed8-48f0-afca-17808d3963aa",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "73cfc557-fe06-4648-a3a0-68ffebf3797f",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "aaed38fd-4532-47dc-ac3c-537b77b163d3",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "ea1ae66e-0a5b-4d91-b496-91c5d3615ade",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "6921095a-ee79-4226-9ae5-bb6b9bbf6c2c",
+   "error": "frozen source changed during the campaign",
+   "global_attempt_ordinal": 32,
+   "grade": "01-baseline-trivial"
+  },
+  {
+   "attempt_id": "620c566d-793b-43e9-a5c3-60bb70d9832d",
+   "error": "pmux run exited with 1",
+   "global_attempt_ordinal": 36,
+   "grade": "03-poem-hash-single-tool"
+  }
+ ],
+ "attempts_incomplete": [],
+ "attempts_not_graded_by_content": 0,
+ "attempts_partition_balances": true,
+ "attempts_successful": 10,
+ "attempts_unreadable": [],
+ "attempts_with_fatal_errors": [],
+ "attempts_with_notes": [
+  {
+   "attempt_id": "29daeac1-8aa9-4b9e-8c2e-a30d8d7fd5e8",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "434269ef-0ed8-48f0-afca-17808d3963aa",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "73cfc557-fe06-4648-a3a0-68ffebf3797f",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "aaed38fd-4532-47dc-ac3c-537b77b163d3",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "ea1ae66e-0a5b-4d91-b496-91c5d3615ade",
+   "global_attempt_ordinal": 31,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "6921095a-ee79-4226-9ae5-bb6b9bbf6c2c",
+   "global_attempt_ordinal": 32,
+   "grade": "01-baseline-trivial",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: frozen source changed during the campaign"
+   ]
+  },
+  {
+   "attempt_id": "620c566d-793b-43e9-a5c3-60bb70d9832d",
+   "global_attempt_ordinal": 36,
+   "grade": "03-poem-hash-single-tool",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "attempt did not succeed: pmux run exited with 1"
+   ]
+  },
+  {
+   "attempt_id": "c56a0a7d-8759-471d-a66e-2b1a19719a11",
+   "global_attempt_ordinal": 37,
+   "grade": "03-poem-hash-single-tool",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 1 would have labelled this 01-baseline-trivial.txt, but its content is 03-poem-hash-single-tool.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "684a101a-e598-4139-bd57-001f4dd22cfb",
+   "global_attempt_ordinal": 38,
+   "grade": "04-poem-hash-single-tool-variant",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 2 would have labelled this 02-poem-only-no-tool.txt, but its content is 04-poem-hash-single-tool-variant.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "b009127b-c0ca-4adc-8722-61143c899bea",
+   "global_attempt_ordinal": 39,
+   "grade": "05-poem-hash-reverse-transform",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 3 would have labelled this 03-poem-hash-single-tool.txt, but its content is 05-poem-hash-reverse-transform.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "fadd7a24-168c-43b8-9d74-2d670c7f4c49",
+   "global_attempt_ordinal": 40,
+   "grade": "06-poem-hash-triple-transform",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 4 would have labelled this 04-poem-hash-single-tool-variant.txt, but its content is 06-poem-hash-triple-transform.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "8f22b228-4937-4d03-b3f1-c6ca6f508525",
+   "global_attempt_ordinal": 41,
+   "grade": "07-long-poem-hash",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 5 would have labelled this 05-poem-hash-reverse-transform.txt, but its content is 07-long-poem-hash.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "7cb17088-4893-4a16-8bb5-a16da7fd4c03",
+   "global_attempt_ordinal": 42,
+   "grade": "08-unicode-poem-hash",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 6 would have labelled this 06-poem-hash-triple-transform.txt, but its content is 08-unicode-poem-hash.txt; graded by content"
+   ]
+  },
+  {
+   "attempt_id": "261320a0-9d93-4f55-8df0-d2481a7c96f9",
+   "global_attempt_ordinal": 43,
+   "grade": "09-long-unicode-poem-hash",
+   "grade_source": "prompt_sha256",
+   "notes": [
+    "prompt_suite_index 7 would have labelled this 07-long-poem-hash.txt, but its content is 09-long-unicode-poem-hash.txt; graded by content"
+   ]
+  }
+ ],
+ "attempts_without_computable_gap": 0,
+ "configured_transcript_drain_ms": 2000,
+ "configured_transcript_drain_ms_note": "constant across every successful attempt",
+ "effort_tally": {
+  "low": 1,
+  "medium": 9
+ },
+ "failed_error_tally": {
+  "frozen source changed during the campaign": 1,
+  "pmux run exited with 1": 6
+ },
+ "failing_conditions": [],
+ "gap_uncomputable_reasons": {},
+ "grade_order": [
+  "01-baseline-trivial",
+  "02-poem-only-no-tool",
+  "03-poem-hash-single-tool",
+  "04-poem-hash-single-tool-variant",
+  "05-poem-hash-reverse-transform",
+  "06-poem-hash-triple-transform",
+  "07-long-poem-hash",
+  "08-unicode-poem-hash",
+  "09-long-unicode-poem-hash"
+ ],
+ "grade_source_tally": {
+  "prompt_sha256": 17
+ },
+ "grades": {
+  "01-baseline-trivial": {
+   "attempts": 8,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 2,
+    "late_row_attempts": 0,
+    "max": 1,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 2,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 1
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 8
+   },
+   "hash_tally": {
+    "no_result": 6,
+    "not_applicable": 2
+   }
+  },
+  "02-poem-only-no-tool": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 0,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 0
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "not_applicable": 1
+   }
+  },
+  "03-poem-hash-single-tool": {
+   "attempts": 2,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 0,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 0
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 2
+   },
+   "hash_tally": {
+    "match": 1,
+    "no_result": 1
+   }
+  },
+  "04-poem-hash-single-tool-variant": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 1,
+    "median": 1,
+    "min": 1,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 1
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  },
+  "05-poem-hash-reverse-transform": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 0,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 0
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  },
+  "06-poem-hash-triple-transform": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 1,
+    "median": 1,
+    "min": 1,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 1
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  },
+  "07-long-poem-hash": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 1,
+    "median": 1,
+    "min": 1,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 1
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  },
+  "08-unicode-poem-hash": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 0,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 0
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  },
+  "09-long-unicode-poem-hash": {
+   "attempts": 1,
+   "attempts_without_computable_gap": 0,
+   "gap_distribution": {
+    "count": 1,
+    "late_row_attempts": 0,
+    "max": 0,
+    "median": 0,
+    "min": 0,
+    "no_late_row_attempts": 1,
+    "noise_band_ms": 20,
+    "within_noise_band_attempts": 0
+   },
+   "gap_uncomputable_reasons": {},
+   "grade_source_tally": {
+    "prompt_sha256": 1
+   },
+   "hash_tally": {
+    "match": 1
+   }
+  }
+ },
+ "hash_expectation_unknown": [],
+ "hash_mismatches": [],
+ "hash_missing_when_expected": [],
+ "hash_partial": [],
+ "hash_tally_overall": {
+  "match": 7,
+  "no_result": 7,
+  "not_applicable": 3
+ },
+ "headroom_ms": null,
+ "only_low_effort_exercised": false,
+ "overall_gap_distribution": {
+  "count": 10,
+  "late_row_attempts": 0,
+  "max": 1,
+  "median": 0,
+  "min": 0,
+  "no_late_row_attempts": 10,
+  "noise_band_ms": 20,
+  "within_noise_band_attempts": 4
+ },
+ "provenance": {
+  "candidate": {
+   "binaries_sha256": {
+    "claude-p": "ccf1891b29d82eeb9edc8ca9c598b33dbe2f7a5c0d3dcecd9e9e0b02335f1d20",
+    "pmux": "e7dcf2f442b1ca8c700f64f0b2878fbbeeee3c4e27e81af775f933034d656410",
+    "pmux-hook": "2992f6fbaf1d53e28fb840db8383744e5bbbef5996042a95e7e84f05574ec5b8",
+    "pmux-launcher": "570b4cd6f95a0f4483a9b88ac34f7db7d1e298f4e07d2866e95bc1bf0872b3e9",
+    "pmux-mcp": "c2016d29a20c3a6f3a3282c76da6a47fa2ee49415fd79a50636db124e10a6116",
+    "pmux-rmuxd": "938fb64e2781fa9bb6dc22e6d929ac4d479027e177bfb2c8617cb77dfe147c4b",
+    "pmuxd": "68f694b4f810a61495902aa004e5be1f6d58f8cbd3b001b06cafec118de2f757"
+   },
+   "note": "The release tree the 10 successful attempts exercised, from each ledger record's campaign_contract.candidate.binaries. Identical across all 10; the binaries themselves are not retained in this repo."
+  },
+  "claude": {
+   "binary_path": "<HOME>/.local/share/claude/versions/2.1.220",
+   "binary_sha256": "8addc857f3fe64d5a0368af9ee50321b50afb4a6918ba3ef018ab84f5dbbe081",
+   "normalized_version": "2.1.220",
+   "note": "No attempt record in this receipt carries a Claude version. The only binding is evidence/model-attempt-ledger.ndjson, field claude.version_output.normalized_version, which reads 2.1.220 on all 14 records that use the global_attempt_ordinal spelling (ordinals 30-43)."
+  },
+  "evidence_root": {
+   "note": "Host-local and outside the repo, so it does not travel with a clone. Re-analysis is free while it exists and impossible once it is gone; see evidence/README.md, 'gate-b-drain-calibration.json'.",
+   "path": "<HOME>/pmux-validation-20260728-104907/gate-b-evidence",
+   "tracked": false
+  },
+  "ledger_cross_reference": {
+   "attempt_rows_matched": 13,
+   "attempt_rows_not_in_ledger": 4,
+   "note": "The 13 matched rows are global ordinals 31 through 43, one row per ordinal. The 4 unmatched rows all carry ordinal 31 and are the four detached reservations the ledger deliberately does not contain: each of their attempt ids appears in the campaign.json of one of the four retained campaign-run directories named in evidence/README.md, 'Four detached reservations, all numbered 31'. That mapping is checkable only inside provenance.evidence_root.path.",
+   "path": "evidence/model-attempt-ledger.ndjson"
+  },
+  "platform": {
+   "architecture": "aarch64",
+   "kernel_release": "24.6.0",
+   "os": "macos"
+  },
+  "producer": {
+   "command": "python3 tools/phase0/verify_calibration.py --evidence-root <provenance.evidence_root.path> --json",
+   "note": "This provenance block is the only key the verifier does not emit; every measured field above was regenerated by the command and is unchanged from the receipt first published in this file.",
+   "post_processing": "Every attempts[].attempt_dir key is dropped (absolute host paths), then the document is re-serialized with json.dumps(obj, indent=1, sort_keys=True) and a trailing newline.",
+   "tool": "tools/phase0/verify_calibration.py",
+   "tool_sha256_at_generation": "743d9a8ada314b80f0154f2e6988cd86a75a7b32b0e0911a6a92a06fb02e47c1"
+  },
+  "reserved_at_utc": {
+   "first": "2026-07-28T17:09:53.022062+00:00",
+   "last": "2026-07-28T17:26:13.547176+00:00"
+  },
+  "source_revision": {
+   "digest": "e0b94fa0481acde3b53185c635db0e509e48e197c830783b60be5e45e8ce2ea9",
+   "digest_algorithm": "pmux-source-v2-path-mode-size-content-sha256",
+   "git_head": "d87fb69a1bef93bbc2042166177da105f2a11985",
+   "note": "Recorded identically by the ledger (source.digest, source.revision_identity.head) for all 10 successful attempts and for 11 of the 13 matched rows. The other 2 (ordinals 31, 32) were reserved at git head f2a970a96fd919ab9dd15381fadd55ffacac60c2 against different source digests and both failed, one of them with 'frozen source changed during the campaign'. Commit d87fb69 is an ancestor of the commit that publishes this receipt."
+  }
+ }
+}

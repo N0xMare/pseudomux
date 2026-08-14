@@ -1,0 +1,451 @@
+{
+ "algorithm": "pmux-claude-version-promotion-v1",
+ "checks": [
+  {
+   "criterion": "the target is an exact x.y.z on the same major.minor line as the promoted floor, and at or above it",
+   "detail": {
+    "claude_version": "2.1.227",
+    "promoted_floor": "2.1.220",
+    "same_major_minor_line": true
+   },
+   "elapsed_ms": 0,
+   "exercises": [
+    "major_or_minor_version_change"
+   ],
+   "id": "version_identity",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "every flag in `MINIFIED_LAUNCH_FLAGS` is parsed by the target binary, and a known-bad flag is still rejected",
+   "detail": {
+    "negative_control_rejected": true,
+    "probed": {
+     "--disallowedTools": "accepted",
+     "--effort": "accepted",
+     "--model": "accepted",
+     "--permission-mode": "accepted",
+     "--session-id": "accepted",
+     "--strict-mcp-config": "accepted",
+     "--system-prompt-file": "accepted"
+    }
+   },
+   "elapsed_ms": 2036,
+   "exercises": [
+    "launch_bundle_rejected"
+   ],
+   "id": "launch_bundle_parses",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "a declared warm `SessionCell::Minified` instance reaches `idle`, with the pool neither halted nor leaking",
+   "detail": {
+    "census": {
+     "capacity": 1,
+     "clearing": 0,
+     "configured": true,
+     "declared_warm": 1,
+     "halted": null,
+     "idle": 1,
+     "in_flight": 0,
+     "instance_terminals_present": 1,
+     "leaked": 0,
+     "live": 1,
+     "pool_size": 1,
+     "registered_instances": 1,
+     "reserved": 0,
+     "tearing_down": 0
+    },
+    "claude_pids": [
+     7852
+    ],
+    "finding": "exercised"
+   },
+   "elapsed_ms": 487,
+   "exercises": [
+    "launch_bundle_rejected",
+    "clear_screen_or_preamble_mismatch"
+   ],
+   "id": "minified_cell_is_admitted",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "every graded prompt returns the exact reply it specified, and the whole suite is served by one unchanging process",
+   "detail": {
+    "additional_efforts": [
+     "high"
+    ],
+    "grades": [
+     "01-arithmetic-nonce",
+     "02-context-is-empty-after-clear",
+     "03-unicode-echo",
+     "04-ordered-long-reply"
+    ],
+    "suite_effort": "low",
+    "suite_pid_set": [
+     7852
+    ],
+    "turns": 5
+   },
+   "elapsed_ms": 21485,
+   "exercises": [],
+   "id": "grades_answer",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "the emptiness probe ran on the process that answered the nonce turn and did not return it",
+   "detail": {
+    "prior_nonce": "C1H5",
+    "probe_answered": "NONE",
+    "same_process": [
+     7852
+    ]
+   },
+   "elapsed_ms": 0,
+   "exercises": [
+    "clear_screen_or_preamble_mismatch"
+   ],
+   "id": "context_did_not_survive_recycling",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "`sidechain` is all-zero and `cache_creation`/`cache_read` are zero on every result",
+   "detail": {
+    "cache_creation_and_read_all_zero": true,
+    "sidechain_all_zero": true,
+    "turns_checked": 5
+   },
+   "elapsed_ms": 0,
+   "exercises": [],
+   "id": "no_tool_surface",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "`halted` is null and `leaked` is 0 after one `/clear` per turn",
+   "detail": {
+    "halted": null,
+    "leaked": 0,
+    "recycles_survived": 5
+   },
+   "elapsed_ms": 85,
+   "exercises": [
+    "clear_screen_or_preamble_mismatch"
+   ],
+   "id": "pool_never_halted",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "`measure_transcript_drain.py --version <target> --bound-ms <pooled>` exits 0 over the daemon's own evidence mirror AND the corpus holds at least one reachable arrival at that version",
+   "detail": {
+    "argv": [
+     "<REPO>/tools/promotion/measure_transcript_drain.py",
+     "--corpus",
+     "/private/tmp/qv4-turn-latency-80ya1fqw/path-b-evidence",
+     "--version",
+     "2.1.227",
+     "--bound-ms",
+     "1000",
+     "--json"
+    ],
+    "files_at_this_version": 7,
+    "full_drain_binds_on": {
+     "cli_turns_with_a_terminal_candidate": 5,
+     "fraction": 0.0,
+     "without_a_turn_duration_marker": 0
+    },
+    "note": "the per-version fit above is published for the same reason measure_transcript_drain.py publishes it -- to be read and NOT shipped. This tool asserts only that the pooled bound was not exceeded.",
+    "per_version_recommendations_not_to_be_shipped": {
+     "2.1.227": 250
+    },
+    "pooled_bound_ms": 1000,
+    "pooled_bound_receipt": "evidence/pooled-transcript-drain-macos-aarch64.json",
+    "reachable_post_answer_arrivals": {
+     "count": 5,
+     "max_ms": 52,
+     "median_ms": 25,
+     "min_ms": 16,
+     "p90_ms": 52,
+     "p95_ms": 52,
+     "p99_ms": 52
+    },
+    "transcript_turns_in_the_mirror": 5
+   },
+   "elapsed_ms": 3004,
+   "exercises": [
+    "reachable_arrival_above_the_bound",
+    "unclassified_transcript_row_kind"
+   ],
+   "id": "drain_within_the_pooled_bound",
+   "outcome": "passed"
+  },
+  {
+   "criterion": "no process of the target binary survives and the pool parent holds no epoch tree",
+   "detail": {
+    "pool_parent_epoch_trees": 0,
+    "surviving_processes": 0
+   },
+   "elapsed_ms": 21,
+   "exercises": [],
+   "id": "nothing_survived",
+   "outcome": "passed"
+  }
+ ],
+ "driver": {
+  "claude_executable": "<HOME>/.local/share/claude/versions/2.1.227",
+  "claude_version": "2.1.227",
+  "compatibility_probe_profile": {
+   "arch": "aarch64",
+   "claude_version": "2.1.227",
+   "input_transport": "sdk",
+   "os": "macos",
+   "terminal_profile": "transparent",
+   "transcript_drain_ms": 1000
+  },
+  "efforts": [
+   "low",
+   "high"
+  ],
+  "environment": "operator",
+  "model": "claude-sonnet-5",
+  "pre_existing_pids_of_this_executable": []
+ },
+ "elapsed_ms": 27464,
+ "failed_check": null,
+ "host": {
+  "arch": "arm64",
+  "cpu_count": 10,
+  "load_average_1m": 14.1171875,
+  "os": "darwin",
+  "release": "24.6.0"
+ },
+ "measured_at": "2026-08-11T14:40:33Z",
+ "profile": {
+  "arch": "aarch64",
+  "claude_version": "2.1.220",
+  "claude_version_tested_through": "2.1.227",
+  "input_transport": "sdk",
+  "os": "macos",
+  "terminal_profile": "transparent",
+  "transcript_drain_ms": 1000
+ },
+ "range_provenance": "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the screen/preamble measurements; below it 2.1.201 and earlier have ZERO reachable cli arrivals, which is unestablished rather than safe. Tested through 2.1.227: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite served by one unchanging process across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 5 reachable post-answer arrival(s) at this version, max 52 ms against the pooled 1000 ms bound. NOT measured at 2.1.227: anything outside a minified cell on macos/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
+ "real_claude_turns": {
+  "count": 5,
+  "reserved_ledger_ordinals": 0,
+  "why": "`pmux ask` reserves nothing. Counted here so `tools/phase0/phase0.py budget` can report the ledger's shortfall instead of the ledger implying it has none."
+ },
+ "repromotion_triggers_this_path_exercises": [
+  "unclassified_transcript_row_kind",
+  "reachable_arrival_above_the_bound",
+  "launch_bundle_rejected",
+  "clear_screen_or_preamble_mismatch",
+  "major_or_minor_version_change"
+ ],
+ "schema_version": 1,
+ "turns": [
+  {
+   "answered": true,
+   "claude_version": "2.1.227",
+   "client_wall_ms": 3332.4,
+   "effort": "low",
+   "expected": "C1H5-78",
+   "grade": "01-arithmetic-nonce",
+   "model": "claude-sonnet-5",
+   "nonce": "C1H5",
+   "pids_after": [
+    7852
+   ],
+   "reported_model": "claude-sonnet-5",
+   "stop_reason": {
+    "kind": "end_turn"
+   },
+   "text": "C1H5-78",
+   "usage": {
+    "combined": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 229,
+     "output_tokens": 8
+    },
+    "main": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 229,
+     "output_tokens": 8
+    },
+    "sidechain": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 0,
+     "output_tokens": 0
+    }
+   }
+  },
+  {
+   "answered": true,
+   "claude_version": "2.1.227",
+   "client_wall_ms": 3433.1,
+   "effort": "low",
+   "expected": "NONE",
+   "grade": "02-context-is-empty-after-clear",
+   "model": "claude-sonnet-5",
+   "nonce": "JUK5",
+   "pids_after": [
+    7852
+   ],
+   "reported_model": "claude-sonnet-5",
+   "stop_reason": {
+    "kind": "end_turn"
+   },
+   "text": "NONE",
+   "usage": {
+    "combined": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 377,
+     "output_tokens": 5
+    },
+    "main": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 377,
+     "output_tokens": 5
+    },
+    "sidechain": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 0,
+     "output_tokens": 0
+    }
+   }
+  },
+  {
+   "answered": true,
+   "claude_version": "2.1.227",
+   "client_wall_ms": 3648.9,
+   "effort": "low",
+   "expected": "DRQS caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+   "grade": "03-unicode-echo",
+   "model": "claude-sonnet-5",
+   "nonce": "DRQS",
+   "pids_after": [
+    7852
+   ],
+   "reported_model": "claude-sonnet-5",
+   "stop_reason": {
+    "kind": "end_turn"
+   },
+   "text": "DRQS caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+   "usage": {
+    "combined": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 342,
+     "output_tokens": 16
+    },
+    "main": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 342,
+     "output_tokens": 16
+    },
+    "sidechain": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 0,
+     "output_tokens": 0
+    }
+   }
+  },
+  {
+   "answered": true,
+   "claude_version": "2.1.227",
+   "client_wall_ms": 3818.7,
+   "effort": "low",
+   "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 DISI",
+   "grade": "04-ordered-long-reply",
+   "model": "claude-sonnet-5",
+   "nonce": "DISI",
+   "pids_after": [
+    7852
+   ],
+   "reported_model": "claude-sonnet-5",
+   "stop_reason": {
+    "kind": "end_turn"
+   },
+   "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 DISI",
+   "usage": {
+    "combined": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 364,
+     "output_tokens": 45
+    },
+    "main": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 364,
+     "output_tokens": 45
+    },
+    "sidechain": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 0,
+     "output_tokens": 0
+    }
+   }
+  },
+  {
+   "answered": true,
+   "claude_version": "2.1.227",
+   "client_wall_ms": 7108.8,
+   "effort": "high",
+   "expected": "ZXO1-60",
+   "grade": "01-arithmetic-nonce",
+   "model": "claude-sonnet-5",
+   "nonce": "ZXO1",
+   "pids_after": [
+    8389
+   ],
+   "reported_model": "claude-sonnet-5",
+   "stop_reason": {
+    "kind": "end_turn"
+   },
+   "text": "ZXO1-60",
+   "usage": {
+    "combined": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 203,
+     "output_tokens": 9
+    },
+    "main": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 203,
+     "output_tokens": 9
+    },
+    "sidechain": {
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 0,
+     "output_tokens": 0
+    }
+   }
+  }
+ ],
+ "verdict": "promotable",
+ "what_would_invalidate_it": [
+  "version_identity: the target is an exact x.y.z on the same major.minor line as the promoted floor, and at or above it",
+  "launch_bundle_parses: every flag in `MINIFIED_LAUNCH_FLAGS` is parsed by the target binary, and a known-bad flag is still rejected",
+  "minified_cell_is_admitted: a declared warm `SessionCell::Minified` instance reaches `idle`, with the pool neither halted nor leaking",
+  "grades_answer: every graded prompt returns the exact reply it specified, and the whole suite is served by one unchanging process",
+  "context_did_not_survive_recycling: the emptiness probe ran on the process that answered the nonce turn and did not return it",
+  "no_tool_surface: `sidechain` is all-zero and `cache_creation`/`cache_read` are zero on every result",
+  "pool_never_halted: `halted` is null and `leaked` is 0 after one `/clear` per turn",
+  "drain_within_the_pooled_bound: `measure_transcript_drain.py --version <target> --bound-ms <pooled>` exits 0 over the daemon's own evidence mirror AND the corpus holds at least one reachable arrival at that version",
+  "nothing_survived: no process of the target binary survives and the pool parent holds no epoch tree",
+  "a different `recommended_transcript_drain_ms` in pooled-transcript-drain-macos-aarch64.json: the bound asserted against is that receipt's, never a fit taken here",
+  "a different Claude executable, version, OS or arch: the identity is the key, exactly as it is for a compatibility profile",
+  "a loaded host: `load_average_1m` is recorded for exactly this reason"
+ ]
+}

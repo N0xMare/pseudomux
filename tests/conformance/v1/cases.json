@@ -1,0 +1,1065 @@
+{
+  "schema_version": 1,
+  "error_bodies": [
+    {
+      "id": "known_complete",
+      "valid": true,
+      "body": {"code": "internal", "message": "bad", "retryable": false}
+    },
+    {
+      "id": "known_additive",
+      "valid": true,
+      "body": {
+        "code": "rate_limited",
+        "message": "later",
+        "retryable": true,
+        "details": {"resets_at_ms": 42},
+        "future_field": {"opaque": true}
+      }
+    },
+    {
+      "id": "missing_retryable",
+      "valid": false,
+      "body": {"code": "internal", "message": "bad"}
+    },
+    {
+      "id": "wrong_retryable_type",
+      "valid": false,
+      "body": {"code": "internal", "message": "bad", "retryable": "false"}
+    },
+    {
+      "id": "unknown_code",
+      "valid": false,
+      "body": {"code": "future_error", "message": "bad", "retryable": false}
+    }
+  ],
+  "replay_batches": [
+    {
+      "id": "exact_gap",
+      "valid": true,
+      "requested_after": 2,
+      "oldest_available": 8,
+      "snapshot_last": 9,
+      "gap_next": 10,
+      "batch_next": 10,
+      "event_sequences": []
+    },
+    {
+      "id": "gap_with_events",
+      "valid": false,
+      "requested_after": 2,
+      "oldest_available": 8,
+      "snapshot_last": 9,
+      "gap_next": 10,
+      "batch_next": 11,
+      "event_sequences": [10]
+    },
+    {
+      "id": "gap_cursor_disagrees",
+      "valid": false,
+      "requested_after": 2,
+      "oldest_available": 8,
+      "snapshot_last": 9,
+      "gap_next": 11,
+      "batch_next": 10,
+      "event_sequences": []
+    },
+    {
+      "id": "batch_cursor_disagrees",
+      "valid": false,
+      "requested_after": 2,
+      "oldest_available": 8,
+      "snapshot_last": 9,
+      "gap_next": 10,
+      "batch_next": 11,
+      "event_sequences": []
+    },
+    {
+      "id": "gap_does_not_prove_loss",
+      "valid": false,
+      "requested_after": 2,
+      "oldest_available": 3,
+      "snapshot_last": 9,
+      "gap_next": 10,
+      "batch_next": 10,
+      "event_sequences": []
+    },
+    {
+      "id": "oldest_available_after_snapshot_cursor",
+      "valid": false,
+      "requested_after": 2,
+      "oldest_available": 11,
+      "snapshot_last": 9,
+      "gap_next": 10,
+      "batch_next": 10,
+      "event_sequences": []
+    }
+  ],
+  "identities": [
+    {"id": "canonical_lower", "valid": true, "value": "123e4567-e89b-12d3-a456-426614174000"},
+    {"id": "canonical_upper", "valid": true, "value": "123E4567-E89B-12D3-A456-426614174000"},
+    {"id": "compact", "valid": false, "value": "123e4567e89b12d3a456426614174000"},
+    {"id": "braced", "valid": false, "value": "{123e4567-e89b-12d3-a456-426614174000}"},
+    {"id": "urn", "valid": false, "value": "urn:uuid:123e4567-e89b-12d3-a456-426614174000"},
+    {"id": "not_uuid", "valid": false, "value": "not-a-uuid"}
+  ],
+  "nonstandard_json_constants": ["NaN", "Infinity", "-Infinity"],
+  "numeric_boundaries": [
+    {
+      "id": "safe_max_minus_one",
+      "literal": "9007199254740990",
+      "protocol_owned_valid": true,
+      "opaque_json_valid": true
+    },
+    {
+      "id": "safe_max",
+      "literal": "9007199254740991",
+      "protocol_owned_valid": true,
+      "opaque_json_valid": true
+    },
+    {
+      "id": "safe_max_plus_one",
+      "literal": "9007199254740992",
+      "protocol_owned_valid": false,
+      "opaque_json_valid": false
+    },
+    {
+      "id": "u64_max",
+      "literal": "18446744073709551615",
+      "protocol_owned_valid": false,
+      "opaque_json_valid": false
+    },
+    {
+      "id": "beyond_u64",
+      "literal": "18446744073709551616",
+      "protocol_owned_valid": false,
+      "opaque_json_valid": false
+    },
+    {
+      "id": "negative_safe_max",
+      "literal": "-9007199254740991",
+      "protocol_owned_valid": false,
+      "opaque_json_valid": true
+    },
+    {
+      "id": "negative_safe_max_minus_one",
+      "literal": "-9007199254740992",
+      "protocol_owned_valid": false,
+      "opaque_json_valid": false
+    }
+  ],
+  "strict_request_object_pointers": [
+    {"method": "ping", "pointers": [""]},
+    {
+      "method": "start_session",
+      "pointers": [
+        "",
+        "/params",
+        "/params/identity",
+        "/params/claude",
+        "/params/claude/settings/0",
+        "/params/claude/mcp_configs/0",
+        "/params/claude/system_prompt",
+        "/params/environment",
+        "/params/config_isolation",
+        "/params/terminal",
+        "/params/lifecycle",
+        "/params/retention"
+      ]
+    },
+    {"method": "run_turn", "pointers": ["", "/params", "/params/turn", "/params/turn/lease"]},
+    {"method": "cancel_turn", "pointers": ["", "/params"]},
+    {"method": "inspect_session", "pointers": ["", "/params"]},
+    {"method": "attach_session", "pointers": ["", "/params", "/params/size"]},
+    {"method": "close_session", "pointers": ["", "/params"]},
+    {"method": "subscribe_events", "pointers": ["", "/params"]},
+    {
+      "method": "run_once",
+      "pointers": [
+        "",
+        "/params",
+        "/params/session",
+        "/params/session/identity",
+        "/params/session/claude",
+        "/params/session/claude/settings/0",
+        "/params/session/claude/mcp_configs/0",
+        "/params/session/claude/system_prompt",
+        "/params/session/environment",
+        "/params/session/terminal",
+        "/params/session/lifecycle",
+        "/params/session/retention",
+        "/params/turn",
+        "/params/turn/lease"
+      ]
+    },
+    {
+      "method": "clear_session",
+      "pointers": [
+        "",
+        "/params"
+      ]
+    },
+    {
+      "method": "diagnose",
+      "pointers": [
+        ""
+      ]
+    },
+    {
+      "method": "run_stateless",
+      "pointers": [
+        "",
+        "/params"
+      ]
+    },
+    {
+      "method": "create_agent",
+      "pointers": [
+        "",
+        "/params",
+        "/params/spec",
+        "/params/spec/claude",
+        "/params/spec/claude/settings/0",
+        "/params/spec/claude/mcp_configs/0",
+        "/params/spec/claude/system_prompt",
+        "/params/spec/environment",
+        "/params/spec/environment/set",
+        "/params/spec/terminal",
+        "/params/spec/lifecycle",
+        "/params/spec/retention",
+        "/params/spec/containment"
+      ]
+    },
+    {
+      "method": "get_agent",
+      "pointers": [
+        "",
+        "/params"
+      ]
+    },
+    {
+      "method": "list_agents",
+      "pointers": [
+        "",
+        "/params"
+      ]
+    },
+    {
+      "method": "update_agent",
+      "pointers": [
+        "",
+        "/params",
+        "/params/spec",
+        "/params/spec/claude",
+        "/params/spec/claude/settings/0",
+        "/params/spec/claude/mcp_configs/0",
+        "/params/spec/claude/system_prompt",
+        "/params/spec/environment",
+        "/params/spec/environment/set",
+        "/params/spec/terminal",
+        "/params/spec/lifecycle",
+        "/params/spec/retention",
+        "/params/spec/containment"
+      ]
+    }
+  ],
+  "strict_request_unit_variant_mutations": [
+    {
+      "id": "system_prompt_default",
+      "method": "start_session",
+      "pointer": "/params/claude/system_prompt",
+      "replacement": {"mode": "default"}
+    },
+    {
+      "id": "lifecycle_transcript",
+      "method": "start_session",
+      "pointer": "/params/lifecycle",
+      "replacement": {"mode": "transcript"}
+    },
+    {
+      "id": "retention_one_shot",
+      "method": "start_session",
+      "pointer": "/params/retention",
+      "replacement": {"mode": "one_shot"}
+    }
+  ],
+  "client_required_field_deletions": {
+    "result_envelope": ["/version", "/request_id", "/result", "/result/type", "/result/data"],
+    "results": [
+      {
+        "method": "ping",
+        "pointers": ["/result/data/server_version", "/result/data/protocol_version"]
+      },
+      {
+        "method": "start_session",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/state",
+          "/result/data/compatibility",
+          "/result/data/created_at_ms",
+          "/result/data/last_sequence",
+          "/result/data/compatibility/claude_version",
+          "/result/data/compatibility/os",
+          "/result/data/compatibility/arch",
+          "/result/data/compatibility/terminal_profile",
+          "/result/data/compatibility/input_transport",
+          "/result/data/compatibility/tested",
+          "/result/data/compatibility/transcript_drain_ms"
+        ]
+      },
+      {
+        "method": "run_turn",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/turn_id",
+          "/result/data/replayed",
+          "/result/data/state",
+          "/result/data/next_sequence"
+        ]
+      },
+      {
+        "method": "cancel_turn",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/turn_id",
+          "/result/data/outcome",
+          "/result/data/session_state"
+        ]
+      },
+      {
+        "method": "inspect_session",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/transcript_session_id",
+          "/result/data/cell",
+          "/result/data/state",
+          "/result/data/cwd",
+          "/result/data/compatibility",
+          "/result/data/created_at_ms",
+          "/result/data/updated_at_ms",
+          "/result/data/resumable",
+          "/result/data/last_sequence",
+          "/result/data/compatibility/claude_version",
+          "/result/data/compatibility/os",
+          "/result/data/compatibility/arch",
+          "/result/data/compatibility/terminal_profile",
+          "/result/data/compatibility/input_transport",
+          "/result/data/compatibility/tested",
+          "/result/data/compatibility/transcript_drain_ms",
+          "/result/data/last_turn/turn_id",
+          "/result/data/last_turn/outcome",
+          "/result/data/last_turn/completed_at_ms",
+          "/result/data/last_turn/final_sequence",
+          "/result/data/needs_input/kind",
+          "/result/data/needs_input/message"
+        ]
+      },
+      {
+        "method": "attach_session",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/token",
+          "/result/data/endpoint",
+          "/result/data/expires_at_ms",
+          "/result/data/read_only"
+        ]
+      },
+      {
+        "method": "close_session",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/already_closed",
+          "/result/data/process_reaped"
+        ]
+      },
+      {
+        "method": "subscribe_events",
+        "pointers": [
+          "/result/data/next_sequence",
+          "/result/data/events/0/schema_version",
+          "/result/data/events/0/session_id",
+          "/result/data/events/0/generation_id",
+          "/result/data/events/0/sequence",
+          "/result/data/events/0/timestamp_ms",
+          "/result/data/events/0/event",
+          "/result/data/events/0/event/type",
+          "/result/data/events/0/event/data",
+          "/result/data/events/0/event/data/session_state"
+        ]
+      },
+      {
+        "method": "run_once",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/turn_id",
+          "/result/data/outcome",
+          "/result/data/text",
+          "/result/data/usage",
+          "/result/data/timings",
+          "/result/data/claude_version",
+          "/result/data/compatibility",
+          "/result/data/completion",
+          "/result/data/final_sequence",
+          "/result/data/usage/main",
+          "/result/data/usage/main/input_tokens",
+          "/result/data/usage/main/output_tokens",
+          "/result/data/usage/main/cache_creation_input_tokens",
+          "/result/data/usage/main/cache_read_input_tokens",
+          "/result/data/usage/sidechain",
+          "/result/data/usage/sidechain/input_tokens",
+          "/result/data/usage/sidechain/output_tokens",
+          "/result/data/usage/sidechain/cache_creation_input_tokens",
+          "/result/data/usage/sidechain/cache_read_input_tokens",
+          "/result/data/usage/combined",
+          "/result/data/usage/combined/input_tokens",
+          "/result/data/usage/combined/output_tokens",
+          "/result/data/usage/combined/cache_creation_input_tokens",
+          "/result/data/usage/combined/cache_read_input_tokens",
+          "/result/data/timings/submitted_at_ms",
+          "/result/data/timings/completed_at_ms",
+          "/result/data/compatibility/claude_version",
+          "/result/data/compatibility/os",
+          "/result/data/compatibility/arch",
+          "/result/data/compatibility/terminal_profile",
+          "/result/data/compatibility/input_transport",
+          "/result/data/compatibility/tested",
+          "/result/data/compatibility/transcript_drain_ms",
+          "/result/data/completion/authority",
+          "/result/data/completion/prompt_acknowledged",
+          "/result/data/completion/terminal_message_observed",
+          "/result/data/completion/terminal_prompt_observed",
+          "/result/data/completion/terminal_quiet_observed",
+          "/result/data/completion/transcript_drained",
+          "/result/data/completion/lifecycle_hook_observed",
+          "/result/data/final_blocks/0/kind",
+          "/result/data/final_blocks/0/text",
+          "/result/data/final_blocks/1/kind",
+          "/result/data/final_blocks/1/id",
+          "/result/data/final_blocks/1/name",
+          "/result/data/final_blocks/1/input",
+          "/result/data/final_blocks/2/kind",
+          "/result/data/final_blocks/2/tool_use_id",
+          "/result/data/final_blocks/2/content",
+          "/result/data/final_blocks/2/is_error",
+          "/result/data/final_blocks/3/kind",
+          "/result/data/final_blocks/3/block_type",
+          "/result/data/final_blocks/3/data",
+          "/result/data/tools/0/tool_use_id",
+          "/result/data/tools/0/name",
+          "/result/data/tools/0/input",
+          "/result/data/tools/0/status",
+          "/result/data/warnings/0/code",
+          "/result/data/warnings/0/message",
+          "/result/data/stop_reason/kind"
+        ]
+      },
+      {
+        "method": "clear_session",
+        "pointers": [
+          "/result/data/session_id",
+          "/result/data/generation_id",
+          "/result/data/transcript_session_id",
+          "/result/data/rotated",
+          "/result/data/state"
+        ]
+      },
+      {
+        "method": "diagnose",
+        "pointers": [
+          "/result/data/runtime",
+          "/result/data/runtime/outcome",
+          "/result/data/runtime/finding",
+          "/result/data/runtime/elapsed_ms",
+          "/result/data/sessions",
+          "/result/data/sessions/0/session_id",
+          "/result/data/sessions/0/generation_id",
+          "/result/data/sessions/0/outcome",
+          "/result/data/sessions/0/finding"
+        ]
+      },
+      {
+        "method": "run_stateless",
+        "pointers": [
+          "/result/data/model",
+          "/result/data/text",
+          "/result/data/usage",
+          "/result/data/claude_version",
+          "/result/data/usage/main",
+          "/result/data/usage/main/input_tokens",
+          "/result/data/usage/main/output_tokens",
+          "/result/data/usage/main/cache_creation_input_tokens",
+          "/result/data/usage/main/cache_read_input_tokens",
+          "/result/data/usage/sidechain",
+          "/result/data/usage/sidechain/input_tokens",
+          "/result/data/usage/sidechain/output_tokens",
+          "/result/data/usage/sidechain/cache_creation_input_tokens",
+          "/result/data/usage/sidechain/cache_read_input_tokens",
+          "/result/data/usage/combined",
+          "/result/data/usage/combined/input_tokens",
+          "/result/data/usage/combined/output_tokens",
+          "/result/data/usage/combined/cache_creation_input_tokens",
+          "/result/data/usage/combined/cache_read_input_tokens",
+          "/result/data/stop_reason/kind"
+        ]
+      },
+      {
+        "method": "create_agent",
+        "pointers": [
+          "/result/data/agent_id",
+          "/result/data/version",
+          "/result/data/config_digest",
+          "/result/data/spec",
+          "/result/data/created_at_ms",
+          "/result/data/updated_at_ms"
+        ]
+      },
+      {
+        "method": "get_agent",
+        "pointers": [
+          "/result/data/agent_id",
+          "/result/data/version",
+          "/result/data/config_digest",
+          "/result/data/spec",
+          "/result/data/created_at_ms",
+          "/result/data/updated_at_ms"
+        ]
+      },
+      {
+        "method": "list_agents",
+        "pointers": [
+          "/result/data/agents/0/agent_id",
+          "/result/data/agents/0/version",
+          "/result/data/agents/0/config_digest",
+          "/result/data/agents/0/name",
+          "/result/data/agents/0/cell",
+          "/result/data/agents/0/updated_at_ms"
+        ]
+      },
+      {
+        "method": "update_agent",
+        "pointers": [
+          "/result/data/agent_id",
+          "/result/data/version",
+          "/result/data/config_digest",
+          "/result/data/spec",
+          "/result/data/created_at_ms",
+          "/result/data/updated_at_ms"
+        ]
+      }
+    ],
+    "event_envelope": [
+      "/schema_version",
+      "/session_id",
+      "/generation_id",
+      "/sequence",
+      "/timestamp_ms",
+      "/event",
+      "/event/type",
+      "/event/data"
+    ],
+    "events": [
+      {
+        "event_type": "session_state_changed",
+        "pointers": ["/event/data/previous", "/event/data/current"]
+      },
+      {
+        "event_type": "prompt_acknowledged",
+        "pointers": ["/event/data/prompt_uuid", "/event/data/transcript_offset"]
+      },
+      {
+        "event_type": "logical_message",
+        "pointers": [
+          "/event/data/message_id",
+          "/event/data/scope",
+          "/event/data/blocks",
+          "/event/data/terminal",
+          "/event/data/blocks/0/kind",
+          "/event/data/blocks/0/text",
+          "/event/data/blocks/1/kind",
+          "/event/data/blocks/1/id",
+          "/event/data/blocks/1/name",
+          "/event/data/blocks/1/input",
+          "/event/data/blocks/2/kind",
+          "/event/data/blocks/2/tool_use_id",
+          "/event/data/blocks/2/content",
+          "/event/data/blocks/2/is_error",
+          "/event/data/blocks/3/kind",
+          "/event/data/blocks/3/block_type",
+          "/event/data/blocks/3/data",
+          "/event/data/stop_reason/kind",
+          "/event/data/usage/input_tokens",
+          "/event/data/usage/output_tokens",
+          "/event/data/usage/cache_creation_input_tokens",
+          "/event/data/usage/cache_read_input_tokens"
+        ]
+      },
+      {
+        "event_type": "tool_started",
+        "pointers": ["/event/data/tool_use_id", "/event/data/name", "/event/data/input"]
+      },
+      {
+        "event_type": "tool_completed",
+        "pointers": ["/event/data/tool_use_id", "/event/data/output", "/event/data/is_error"]
+      },
+      {"event_type": "rate_limit", "pointers": ["/event/data/status"]},
+      {
+        "event_type": "needs_input",
+        "pointers": ["/event/data/kind", "/event/data/message"]
+      },
+      {
+        "event_type": "terminal_candidate",
+        "pointers": ["/event/data/message_id", "/event/data/stop_reason/kind"]
+      },
+      {
+        "event_type": "turn_completed",
+        "pointers": [
+          "/event/data/session_id",
+          "/event/data/generation_id",
+          "/event/data/turn_id",
+          "/event/data/outcome",
+          "/event/data/text",
+          "/event/data/usage",
+          "/event/data/timings",
+          "/event/data/claude_version",
+          "/event/data/compatibility",
+          "/event/data/completion",
+          "/event/data/final_sequence",
+          "/event/data/usage/main",
+          "/event/data/usage/main/input_tokens",
+          "/event/data/usage/main/output_tokens",
+          "/event/data/usage/main/cache_creation_input_tokens",
+          "/event/data/usage/main/cache_read_input_tokens",
+          "/event/data/usage/sidechain",
+          "/event/data/usage/sidechain/input_tokens",
+          "/event/data/usage/sidechain/output_tokens",
+          "/event/data/usage/sidechain/cache_creation_input_tokens",
+          "/event/data/usage/sidechain/cache_read_input_tokens",
+          "/event/data/usage/combined",
+          "/event/data/usage/combined/input_tokens",
+          "/event/data/usage/combined/output_tokens",
+          "/event/data/usage/combined/cache_creation_input_tokens",
+          "/event/data/usage/combined/cache_read_input_tokens",
+          "/event/data/timings/submitted_at_ms",
+          "/event/data/timings/completed_at_ms",
+          "/event/data/compatibility/claude_version",
+          "/event/data/compatibility/os",
+          "/event/data/compatibility/arch",
+          "/event/data/compatibility/terminal_profile",
+          "/event/data/compatibility/input_transport",
+          "/event/data/compatibility/tested",
+          "/event/data/compatibility/transcript_drain_ms",
+          "/event/data/completion/authority",
+          "/event/data/completion/prompt_acknowledged",
+          "/event/data/completion/terminal_message_observed",
+          "/event/data/completion/terminal_prompt_observed",
+          "/event/data/completion/terminal_quiet_observed",
+          "/event/data/completion/transcript_drained",
+          "/event/data/completion/lifecycle_hook_observed",
+          "/event/data/final_blocks/0/kind",
+          "/event/data/final_blocks/0/text"
+        ]
+      },
+      {
+        "event_type": "turn_cancelled",
+        "pointers": ["/event/data/outcome", "/event/data/recovered_to_ready"]
+      },
+      {
+        "event_type": "turn_failed",
+        "pointers": ["/event/data/code", "/event/data/message", "/event/data/retryable"]
+      },
+      {
+        "event_type": "warning",
+        "pointers": ["/event/data/code", "/event/data/message"]
+      },
+      {
+        "event_type": "replay_gap",
+        "pointers": [
+          "/event/data/requested_after",
+          "/event/data/oldest_available",
+          "/event/data/next_sequence",
+          "/event/data/snapshot",
+          "/event/data/snapshot/session_id",
+          "/event/data/snapshot/generation_id",
+          "/event/data/snapshot/transcript_session_id",
+          "/event/data/snapshot/cell",
+          "/event/data/snapshot/state",
+          "/event/data/snapshot/cwd",
+          "/event/data/snapshot/compatibility",
+          "/event/data/snapshot/created_at_ms",
+          "/event/data/snapshot/updated_at_ms",
+          "/event/data/snapshot/resumable",
+          "/event/data/snapshot/last_sequence",
+          "/event/data/snapshot/compatibility/claude_version",
+          "/event/data/snapshot/compatibility/os",
+          "/event/data/snapshot/compatibility/arch",
+          "/event/data/snapshot/compatibility/terminal_profile",
+          "/event/data/snapshot/compatibility/input_transport",
+          "/event/data/snapshot/compatibility/tested",
+          "/event/data/snapshot/compatibility/transcript_drain_ms"
+        ]
+      },
+      {"event_type": "heartbeat", "pointers": ["/event/data/session_state"]}
+    ],
+    "error": [
+      "/version",
+      "/request_id",
+      "/error",
+      "/error/code",
+      "/error/message",
+      "/error/retryable"
+    ]
+  },
+  "reserved_turn_lease_cases": {
+    "expected_error": {"code": "unsupported_feature", "retryable": false},
+    "cases": [
+      {
+        "id": "run_turn_cancel_on_disconnect",
+        "operation": "run_turn",
+        "lease": {"on_disconnect": "cancel_turn"}
+      },
+      {
+        "id": "run_turn_close_on_disconnect",
+        "operation": "run_turn",
+        "lease": {"on_disconnect": "close_session"}
+      },
+      {
+        "id": "run_turn_heartbeat",
+        "operation": "run_turn",
+        "lease": {"on_disconnect": "continue", "heartbeat_timeout_ms": 5000}
+      },
+      {
+        "id": "run_once_cancel_on_disconnect",
+        "operation": "run_once",
+        "lease": {"on_disconnect": "cancel_turn"}
+      },
+      {
+        "id": "run_once_close_on_disconnect",
+        "operation": "run_once",
+        "lease": {"on_disconnect": "close_session"}
+      },
+      {
+        "id": "run_once_heartbeat",
+        "operation": "run_once",
+        "lease": {"on_disconnect": "continue", "heartbeat_timeout_ms": 5000}
+      }
+    ]
+  },
+  "client_negative_matrix": [
+    {
+      "id": "response_request_id_mismatch",
+      "operation": "ping",
+      "error_category": "response_identity",
+      "response": {
+        "version": 1,
+        "request_id": "00000000-0000-4000-8000-000000009999",
+        "result": {"type": "pong", "data": {"server_version": "test", "protocol_version": 1}}
+      }
+    },
+    {
+      "id": "response_schema_version_mismatch",
+      "operation": "ping",
+      "error_category": "schema_version",
+      "response": {
+        "version": 2,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "pong", "data": {"server_version": "test", "protocol_version": 1}}
+      }
+    },
+    {
+      "id": "unknown_result_discriminant",
+      "operation": "ping",
+      "error_category": "schema",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "future_result", "data": {}}
+      }
+    },
+    {
+      "id": "missing_required_result_field",
+      "operation": "ping",
+      "error_category": "schema",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "pong", "data": {"protocol_version": 1}}
+      }
+    },
+    {
+      "id": "result_session_mismatch",
+      "operation": "start_session",
+      "error_category": "result_session",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "session_started", "data": {
+          "session_id": "00000000-0000-4000-8000-000000009999",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "state": "booting",
+          "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+          "created_at_ms": 1,
+          "last_sequence": 0
+        }}
+      }
+    },
+    {
+      "id": "result_generation_mismatch",
+      "operation": "inspect_session",
+      "error_category": "result_generation",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "session_snapshot", "data": {
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000009999",
+          "transcript_session_id": "00000000-0000-4000-8000-000000000022",
+          "cell": "full",
+          "state": "ready",
+          "cwd": "/work/project",
+          "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+          "created_at_ms": 1,
+          "updated_at_ms": 2,
+          "resumable": true,
+          "last_sequence": 0
+        }}
+      }
+    },
+    {
+      "id": "result_turn_mismatch",
+      "operation": "run_turn",
+      "error_category": "result_turn",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "turn_accepted", "data": {
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "turn_id": "00000000-0000-4000-8000-000000009999",
+          "replayed": false,
+          "state": "running",
+          "next_sequence": 1
+        }}
+      }
+    },
+    {
+      "id": "event_schema_version_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 0,
+      "error_category": "schema_version",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [{
+          "schema_version": 2,
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "sequence": 1,
+          "timestamp_ms": 1,
+          "event": {"type": "heartbeat", "data": {"session_state": "ready"}}
+        }], "next_sequence": 2}}
+      }
+    },
+    {
+      "id": "event_session_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 0,
+      "error_category": "event_session",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [{
+          "schema_version": 1,
+          "session_id": "00000000-0000-4000-8000-000000009999",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "sequence": 1,
+          "timestamp_ms": 1,
+          "event": {"type": "heartbeat", "data": {"session_state": "ready"}}
+        }], "next_sequence": 2}}
+      }
+    },
+    {
+      "id": "event_generation_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 0,
+      "error_category": "event_generation",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [{
+          "schema_version": 1,
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000009999",
+          "sequence": 1,
+          "timestamp_ms": 1,
+          "event": {"type": "heartbeat", "data": {"session_state": "ready"}}
+        }], "next_sequence": 2}}
+      }
+    },
+    {
+      "id": "event_sequence_discontinuity",
+      "operation": "subscribe_events",
+      "after_sequence": 0,
+      "error_category": "event_sequence",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [{
+          "schema_version": 1,
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "sequence": 2,
+          "timestamp_ms": 2,
+          "event": {"type": "heartbeat", "data": {"session_state": "ready"}}
+        }], "next_sequence": 3}}
+      }
+    },
+    {
+      "id": "batch_next_cursor_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 0,
+      "error_category": "batch_cursor",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [{
+          "schema_version": 1,
+          "session_id": "00000000-0000-4000-8000-000000000022",
+          "generation_id": "00000000-0000-4000-8000-000000000044",
+          "sequence": 1,
+          "timestamp_ms": 1,
+          "event": {"type": "heartbeat", "data": {"session_state": "ready"}}
+        }], "next_sequence": 3}}
+      }
+    },
+    {
+      "id": "replay_gap_snapshot_session_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 2,
+      "error_category": "event_session",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"next_sequence": 10, "replay_gap": {
+          "requested_after": 2,
+          "oldest_available": 8,
+          "next_sequence": 10,
+          "snapshot": {
+            "session_id": "00000000-0000-4000-8000-000000009999",
+            "generation_id": "00000000-0000-4000-8000-000000000044",
+            "transcript_session_id": "00000000-0000-4000-8000-000000009999",
+            "cell": "full",
+            "state": "ready",
+            "cwd": "/work/project",
+            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+            "created_at_ms": 1,
+            "updated_at_ms": 2,
+            "resumable": true,
+            "last_sequence": 9
+          }
+        }}}
+      }
+    },
+    {
+      "id": "replay_gap_snapshot_generation_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 2,
+      "error_category": "event_generation",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"next_sequence": 10, "replay_gap": {
+          "requested_after": 2,
+          "oldest_available": 8,
+          "next_sequence": 10,
+          "snapshot": {
+            "session_id": "00000000-0000-4000-8000-000000000022",
+            "generation_id": "00000000-0000-4000-8000-000000009999",
+            "transcript_session_id": "00000000-0000-4000-8000-000000000022",
+            "cell": "full",
+            "state": "ready",
+            "cwd": "/work/project",
+            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+            "created_at_ms": 1,
+            "updated_at_ms": 2,
+            "resumable": true,
+            "last_sequence": 9
+          }
+        }}}
+      }
+    },
+    {
+      "id": "replay_gap_cursor_mismatch",
+      "operation": "subscribe_events",
+      "after_sequence": 2,
+      "error_category": "replay_gap",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"next_sequence": 10, "replay_gap": {
+          "requested_after": 2,
+          "oldest_available": 8,
+          "next_sequence": 11,
+          "snapshot": {
+            "session_id": "00000000-0000-4000-8000-000000000022",
+            "generation_id": "00000000-0000-4000-8000-000000000044",
+            "transcript_session_id": "00000000-0000-4000-8000-000000000022",
+            "cell": "full",
+            "state": "ready",
+            "cwd": "/work/project",
+            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+            "created_at_ms": 1,
+            "updated_at_ms": 2,
+            "resumable": true,
+            "last_sequence": 9
+          }
+        }}}
+      }
+    },
+    {
+      "id": "replay_gap_does_not_prove_loss",
+      "operation": "subscribe_events",
+      "after_sequence": 2,
+      "error_category": "replay_gap",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"next_sequence": 10, "replay_gap": {
+          "requested_after": 2,
+          "oldest_available": 3,
+          "next_sequence": 10,
+          "snapshot": {
+            "session_id": "00000000-0000-4000-8000-000000000022",
+            "generation_id": "00000000-0000-4000-8000-000000000044",
+            "transcript_session_id": "00000000-0000-4000-8000-000000000022",
+            "cell": "full",
+            "state": "ready",
+            "cwd": "/work/project",
+            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+            "created_at_ms": 1,
+            "updated_at_ms": 2,
+            "resumable": true,
+            "last_sequence": 9
+          }
+        }}}
+      }
+    },
+    {
+      "id": "safe_max_cursor_exhaustion",
+      "operation": "subscribe_events",
+      "after_sequence": 9007199254740991,
+      "error_category": "cursor_exhaustion",
+      "response": {
+        "version": 1,
+        "request_id": "$REQUEST_ID",
+        "result": {"type": "events", "data": {"events": [], "next_sequence": 9007199254740991}}
+      }
+    }
+  ]
+}

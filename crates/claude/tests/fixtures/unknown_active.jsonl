@@ -1,0 +1,3 @@
+{"parentUuid":null,"sessionId":"session-unknown","type":"user","message":{"role":"user","content":"hello"},"uuid":"unknown-user","promptSource":"typed","promptId":"unknown-prompt"}
+{"parentUuid":"unknown-user","sessionId":"session-unknown","type":"future-semantic-event","payload":{"meaning":"not understood"},"uuid":"unknown-middle"}
+{"parentUuid":"unknown-middle","sessionId":"session-unknown","type":"assistant","message":{"id":"unknown-message","model":"claude-test","content":[{"type":"text","text":"unsafe to accept"}],"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1}},"uuid":"unknown-assistant"}

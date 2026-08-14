@@ -1,0 +1,39 @@
+# The SIGKILL harness that measured `docs/spec.md` §4.8.2's crash-safety claims.
+#
+# DETACHED FROM THE WORKSPACE ON PURPOSE, with its own `[workspace]` table.
+# `tools/screen-corpus/per_binary_tests.sh` enumerates every workspace target
+# from `cargo metadata` and prints "every one of the N test targets passed in
+# isolation". These binaries are measurement instruments and assert nothing, so
+# as workspace members they would have widened that N by five while adding zero
+# test cases -- a count whose scope is wider than its sentence, which is the
+# defect this repository keeps finding. The durable regression protection for
+# what they measured lives in `crates/service/tests/agent_resource.rs`, in the
+# suite, deterministic; this is the instrument that establishes those states are
+# reachable at all.
+[package]
+name = "pmux-crash-harness"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+libc = "0.2.182"
+sha2 = "0.10.9"
+pseudomux-protocol = { path = "../../crates/protocol" }
+pseudomux-service = { path = "../../crates/service" }
+
+# The workspace vendors these; without the same patch this crate would try to
+# resolve `rmux-client 0.9.0` from crates.io, where it does not exist.
+[patch.crates-io]
+rmux-client = { path = "../../vendor/rmux-client" }
+rmux-server = { path = "../../vendor/rmux-server" }
+
+[[bin]]
+name = "crash-child"
+path = "src/bin/crash_child.rs"
+
+[[bin]]
+name = "crash-harness"
+path = "src/bin/crash_harness.rs"

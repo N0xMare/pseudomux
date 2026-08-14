@@ -5,22 +5,36 @@ version.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Service facade with profile loading and session management for pseudomux"
+description = "Native Claude-aware session service for pseudomux"
 
 [lints]
 workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = { workspace = true }
 serde = { workspace = true }
-tracing = { workspace = true }
 tokio = { workspace = true }
-dirs = { workspace = true }
-toml = { workspace = true }
+libc = { workspace = true }
 serde_json = { workspace = true }
-pseudomux-core = { path = "../core" }
-pseudomux-adapters = { path = "../adapters" }
+sha2 = { workspace = true }
+tempfile = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+unicode-normalization = { workspace = true }
+pseudomux-claude = { path = "../claude" }
 pseudomux-protocol = { path = "../protocol" }
+pseudomux-rmux = { path = "../rmux" }
+rmux-client = { workspace = true }
+rmux-sdk = { workspace = true }
 
 [dev-dependencies]
-tempfile = { workspace = true }
+pseudomux-client = { path = "../client" }
+pseudomux-e2e = { path = "../e2e" }
+proptest = { version = "=1.8.0", default-features = false, features = ["std"] }
+# `paste_injection` states what `normalize_prompt` is allowed to change as a
+# property of Unicode canonical equivalence rather than as a copy of the
+# implementation, so the integration target needs the same decomposition the
+# library uses.
+unicode-normalization = { workspace = true }

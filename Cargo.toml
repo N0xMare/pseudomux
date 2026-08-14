@@ -1,22 +1,29 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/core",
   "crates/protocol",
-  "crates/adapters",
   "crates/service",
-  "apps/pmux",
-  "apps/pmuxd",
-  "apps/pmux-mcp",
+  "crates/claude",
+  "crates/client",
+  "crates/rmux",
+  "crates/e2e",
+  "bin/pmux",
+  "bin/pmuxd",
+  "bin/pmux-mcp",
+  "bin/claude-p",
+  "bin/pmux-launcher",
+  "bin/pmux-hook",
+  "bin/pmux-rmuxd",
 ]
+exclude = ["vendor/rmux-client", "vendor/rmux-server"]
 
 [workspace.package]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 version = "0.1.0"
-rust-version = "1.85"
+rust-version = "1.88"
 repository = "https://github.com/N0xMare/pseudomux"
-description = "PTY multiplexer for agent TUI integration"
+description = "Claude-aware control plane for interactive Claude Code sessions"
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
@@ -30,20 +37,62 @@ libc = "0.2.182"
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+sha2 = "0.10.9"
 tokio = { version = "1.50.0", features = ["full"] }
-tokio-util = "0.7.18"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
 tracing-appender = "0.2.4"
 uuid = { version = "1.21.0", features = ["serde", "v4"] }
-portable-pty = "0.9.0"
-bytes = "1.11.1"
-futures = "0.3.32"
+futures-core = "0.3.32"
+futures-util = "0.3.32"
 clap = { version = "4.5.60", features = ["derive", "env"] }
-dirs = "6.0.0"
-toml = "1.0.4"
-vt100 = "0.16.2"
-strip-ansi-escapes = "0.2.1"
+unicode-normalization = "0.1.24"
 tempfile = "3.26.0"
-axum = "0.8"
-async-stream = "0.3"
+async-trait = "0.1.89"
+rmux-client = { version = "=0.9.0" }
+rmux-sdk = { version = "=0.9.0", default-features = false }
+rmux-server = { version = "=0.9.0", default-features = false }
+
+[patch.crates-io]
+rmux-client = { path = "vendor/rmux-client" }
+rmux-server = { path = "vendor/rmux-server" }
+
+# The profile `scripts/gate-a-mutants.sh` builds mutants under.
+#
+# It is `dev` with the debug info dropped, and NOTHING ELSE. A mutation run
+# rebuilds and relinks the mutated crate and every test binary of every test
+# package once per mutant; on macOS the linker's debuginfo work is the largest
+# single item in that loop, and it buys nothing when no human will ever attach a
+# debugger to a mutant.
+#
+# `debug-assertions` and `overflow-checks` are deliberately NOT set here, so they
+# take whatever `dev` resolves to. A mutation score measured with assertions off
+# would count every `debug_assert!` in the tree as a test that does not exist,
+# which is the exact failure this whole tool is being installed to stop.
+#
+# TWO guards in `scripts/gate-a-mutants.sh`, and they cover different claims:
+#
+#   * `assert_profile_is_dev_without_debuginfo` parses THIS TABLE and refuses any
+#     key beyond the two below. It says nothing about the paragraph above it:
+#     this file declares no `[profile.dev]`, so both properties come from cargo
+#     defaults that nothing here pins, and a `[profile.dev]` with
+#     `debug-assertions = false` added tomorrow would leave that guard green.
+#     It carried that overclaim in its own refusal message until this was
+#     written -- a guard whose message named two settings its predicate never
+#     read.
+#   * `assert_profile_properties_are_live` compiles
+#     `crates/protocol/tests/mutation_profile.rs` under `--profile mutants` and
+#     fires a `debug_assert!` and an integer overflow at it. That one measures
+#     the paragraph above, wherever the settings came from.
+#
+# Both run in `gate_b/mutation_score_agent_launch_pool_protocol` before a mutant
+# is built.
+#
+# (This comment cited `gate_a/mutation_profile_is_dev_without_debuginfo` until
+# that cell was looked for and found not to exist in any phase: the guard was
+# real and the citation was invented. It named a function and a LINE NUMBER on
+# the next revision, and the line moved in the same session; a function name is
+# the most precise thing here that a reader can still resolve next year.)
+[profile.mutants]
+inherits = "dev"
+debug = false

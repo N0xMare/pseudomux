@@ -1,0 +1,9 @@
+Write an original 6-10 line poem about autumn leaves, one stanza, no title.
+Step 1: hash the poem's exact text with the shell command `shasum -a 256` on
+stdin -> HASH1. Step 2: reverse the ENTIRE poem as a single string (character
+order reversed, including the line breaks; not the per-line `rev` tool), then
+hash that reversed text the same way -> HASH2. Use one shell command per
+hash, and no network. Reply with exactly this and nothing else: the poem's
+lines unchanged, then one blank line, then two final lines, in order:
+`SHA256(poem): <hex1>` and `SHA256(reversed): <hex2>`, each the 64-character
+lowercase hex digest the tool reported.

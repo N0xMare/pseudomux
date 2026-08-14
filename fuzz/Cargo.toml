@@ -1,0 +1,42 @@
+[package]
+name = "pseudomux-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+pseudomux-claude = { path = "../crates/claude" }
+pseudomux-protocol = { path = "../crates/protocol" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+name = "transcript_jsonl"
+path = "fuzz_targets/transcript_jsonl.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "transcript_cursor"
+path = "fuzz_targets/transcript_cursor.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "native_frame"
+path = "fuzz_targets/native_frame.rs"
+test = false
+doc = false
+bench = false
+
+# Keep the fuzz package outside the production workspace while still giving it
+# a checked-in lockfile and deterministic path dependencies.
+[workspace]
+members = ["."]
+

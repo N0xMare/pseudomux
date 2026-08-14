@@ -1,0 +1,2 @@
+{"type":"user","uuid":"00000000-0000-0000-0000-000000000001","sessionId":"10000000-0000-0000-0000-000000000000","promptSource":"typed","message":{"role":"user","content":"fuzz"}}
+{"type":"assistant","uuid":"00000000-0000-0000-0000-000000000002","parentUuid":"00000000-0000-0000-0000-000000000001","sessionId":"10000000-0000-0000-0000-000000000000","message":{"id":"msg_fuzz","role":"assistant","model":"claude-test","content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn"}}

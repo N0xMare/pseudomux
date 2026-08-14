@@ -1,16 +1,29 @@
 {
   "name": "pmux-client",
   "version": "0.1.0",
-  "description": "TypeScript client for the pseudomux PTY multiplexer (pmuxd HTTP API)",
+  "description": "Native Node.js client for the versioned pmux UDS API",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "tsc"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist", "src"],
-  "keywords": ["pmux", "pseudomux", "claude-code", "pty", "agent"],
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "files": ["dist", "README.md"],
+  "keywords": ["pmux", "pseudomux", "claude-code", "uds", "smithers", "agent"],
   "license": "MIT OR Apache-2.0",
   "devDependencies": {
     "typescript": "^5.4.0",

@@ -1,0 +1,30 @@
+[package]
+name = "pseudomux-e2e"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+# Only what `src/` links. Everything this crate's own `tests/` need and its
+# library and binary do not is below, in `[dev-dependencies]`, where a reader
+# can tell the two apart: `pseudomux-e2e` is consumed by `pseudomux-service`
+# as a dev-dependency, and a dev-dependency's `[dependencies]` are what that
+# consumer pays for.
+[dependencies]
+libc.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+pseudomux-client = { path = "../client" }
+pseudomux-protocol = { path = "../protocol" }
+tempfile.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "pmux-test-claude"
+path = "src/bin/pmux-test-claude.rs"

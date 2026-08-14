@@ -1,0 +1,93 @@
+{
+ "argv": [
+  ".context/tools/cargo-mutants/bin/cargo-mutants",
+  "mutants",
+  "--no-config",
+  "--gitignore=true",
+  "--copy-vcs=false",
+  "--profile",
+  "mutants",
+  "--test-workspace=false",
+  "--no-times",
+  "--jobs",
+  "4",
+  "--file",
+  "crates/service/src/native.rs",
+  "-F",
+  "NativeService::(clear_session|clear_boundary|clear_timeout_ms|attach|diagnose|pool|reap_idle_sessions|resolve_agent_reference|shutdown|start_session_owned_with_retention|wait_for_turn)|close_session_with_state|unix_now_ms|Drop for SessionLifecycle",
+  "--test-package",
+  "pseudomux-protocol",
+  "--test-package",
+  "pseudomux-client",
+  "--test-package",
+  "pseudomux-service"
+ ],
+ "argv_note": "Not `scripts/gate-a-mutants.sh`. It borrows that script's pinned toolchain, `mutants` profile, test-package set and pre-built candidate binaries (PMUX_TEST_BIN_DIR), and skips its preflight, its evidence directory and its register check, because the register check is a statement about a full-scope run. This is a tool result, not a gate cell.",
+ "caught": [
+  "crates/service/src/native.rs:1012:9: replace NativeService::reap_idle_sessions with ()",
+  "crates/service/src/native.rs:934:9: replace NativeService::pool -> Option<&Arc<Pool>> with None",
+  "crates/service/src/native.rs:1040:16: delete ! in NativeService::reap_idle_sessions",
+  "crates/service/src/native.rs:1024:52: replace == with != in NativeService::reap_idle_sessions",
+  "crates/service/src/native.rs:1055:68: replace == with != in NativeService::reap_idle_sessions",
+  "crates/service/src/native.rs:1299:9: replace NativeService::resolve_agent_reference -> Result<Option<SessionAgentPin>, ErrorBody> with Ok(None)",
+  "crates/service/src/native.rs:1627:25: replace == with != in NativeService::start_session_owned_with_retention",
+  "crates/service/src/native.rs:1897:44: replace >= with < in NativeService::wait_for_turn",
+  "crates/service/src/native.rs:1932:29: replace > with == in NativeService::clear_session",
+  "crates/service/src/native.rs:1932:29: replace > with < in NativeService::clear_session",
+  "crates/service/src/native.rs:1932:29: replace > with >= in NativeService::clear_session",
+  "crates/service/src/native.rs:1974:55: replace == with != in NativeService::clear_boundary",
+  "crates/service/src/native.rs:1992:9: replace NativeService::clear_timeout_ms -> u64 with 1",
+  "crates/service/src/native.rs:1992:9: replace NativeService::clear_timeout_ms -> u64 with 0",
+  "crates/service/src/native.rs:2038:55: replace == with != in NativeService::attach",
+  "crates/service/src/native.rs:2191:56: replace == with != in NativeService::diagnose",
+  "crates/service/src/native.rs:2203:51: replace == with != in NativeService::diagnose",
+  "crates/service/src/native.rs:2510:9: replace NativeService::shutdown -> Result<(), ErrorBody> with Ok(())",
+  "crates/service/src/native.rs:2582:27: replace match guard first_error.is_none() with true in NativeService::shutdown",
+  "crates/service/src/native.rs:2582:27: replace match guard first_error.is_none() with false in NativeService::shutdown",
+  "crates/service/src/native.rs:2729:9: replace && with || in close_session_with_state",
+  "crates/service/src/native.rs:2750:64: replace == with != in close_session_with_state",
+  "crates/service/src/native.rs:2728:14: replace == with != in close_session_with_state",
+  "crates/service/src/native.rs:4642:5: replace unix_now_ms -> Result<u64, ErrorBody> with Ok(0)",
+  "crates/service/src/native.rs:4642:5: replace unix_now_ms -> Result<u64, ErrorBody> with Ok(1)"
+ ],
+ "counts": {
+  "caught": 25,
+  "missed": 1,
+  "timeout": 0,
+  "total_mutants": 37,
+  "unviable": 11
+ },
+ "graded_sources": {
+  "crates/service/src/native.rs": "9ba4fdee26b68fac11068b8c3829a0167178642439717b067b3c3e3722d729f6",
+  "crates/service/src/native/tests/seam.rs": "11c15a98a26f2c88aa3c64c276b72620923d25615991a79edc78344e0a361ea8",
+  "crates/service/src/runtime.rs": "88bd87dd3c811e3385ae3f4e754fb8546be36f4151c4c89ac4d77f51e09cd15c"
+ },
+ "graded_sources_note": "The run copies the source tree when it starts, so what it graded is these bytes and not a commit -- the commit carrying this file is written afterwards. The digests are how a reader checks the two are the same tree: `shasum -a 256` each path at that commit.",
+ "missed": [
+  "crates/service/src/native.rs:736:9: replace <impl Drop for SessionLifecycle>::drop with ()"
+ ],
+ "missed_note": "The sole survivor, and it is the row this work re-dispositioned EQUIVALENT: emptying that Drop body still drops both fields in the order the body uses, and dropping the oneshot sender wakes the same select! arm the send wakes. It is expected to survive every run.",
+ "recorded_at": {
+  "cargo_mutants_version": "27.1.0",
+  "date": "2026-08-11",
+  "end_time": "2026-08-11T17:32:52.318183Z",
+  "host": "Darwin arm64",
+  "start_time": "2026-08-11T17:28:18.006747Z",
+  "toolchain": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+ },
+ "schema": "pmux.mutation-filtered-run.v1",
+ "unviable": [
+  "crates/service/src/native.rs:934:9: replace NativeService::pool -> Option<&Arc<Pool>> with Some(Box::leak(Box::new(Arc::new(Default::default()))))",
+  "crates/service/src/native.rs:1299:9: replace NativeService::resolve_agent_reference -> Result<Option<SessionAgentPin>, ErrorBody> with Ok(Some(Default::default()))",
+  "crates/service/src/native.rs:1478:9: replace NativeService::start_session_owned_with_retention -> Result<SessionHandle, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:1867:9: replace NativeService::wait_for_turn -> Result<TurnResult, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:1927:9: replace NativeService::clear_session -> Result<ClearSessionResult, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:1970:9: replace NativeService::clear_boundary -> Result<Arc<dyn ClearRebind>, ErrorBody> with Ok(Arc::new(Default::default()))",
+  "crates/service/src/native.rs:2024:9: replace NativeService::attach -> Result<ResponseResult, ErrorBody> with Ok(Default::default())",
+  "crates/service/src/native.rs:2058:17: replace && with || in NativeService::attach",
+  "crates/service/src/native.rs:2184:9: replace NativeService::diagnose -> DaemonDiagnosis with Default::default()",
+  "crates/service/src/native.rs:2553:17: replace && with || in NativeService::shutdown",
+  "crates/service/src/native.rs:2721:5: replace close_session_with_state -> Result<CloseSessionResult, ErrorBody> with Ok(Default::default())"
+ ],
+ "what": "A FILTERED cargo-mutants run over crates/service/src/native.rs, restricted by name to the functions the SessionRuntime test seam was built to reach. It is the receipt for the 21 survivor-register rows this work moved from ACCEPTED to KILLED, and for the one it moved to EQUIVALENT. It is NOT a score: it enumerates 37 of the 1,653 mutants a full-scope run enumerates and says nothing about the rest, so no percentage is computed here and none may be read out of it."
+}

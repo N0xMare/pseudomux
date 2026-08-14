@@ -1,0 +1,1227 @@
+{
+  "schema_version": 1,
+  "max_command_output_bytes": 16777216,
+  "phase_timeouts_seconds": {
+    "gate_a": 3600,
+    "gate_b": 14400,
+    "gate_c": 3600,
+    "gate_d": 7200,
+    "gate_e": 14400,
+    "gate_f": 3600,
+    "residue": 600
+  },
+  "phases": {
+    "gate_a": [
+      {
+        "id": "rust_fmt",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rust_check",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "check",
+          "--locked",
+          "--workspace",
+          "--all-targets",
+          "--all-features"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rust_clippy",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "clippy",
+          "--locked",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rustdoc",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "doc",
+          "--locked",
+          "--workspace",
+          "--all-features",
+          "--no-deps"
+        ],
+        "env": {
+          "RUSTDOCFLAGS": "-D warnings"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rust_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "--workspace",
+          "--all-targets",
+          "--all-features"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_standalone_fmt",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "fmt",
+          "--manifest-path",
+          "vendor/rmux-client/Cargo.toml",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_standalone_check",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "check",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-client/Cargo.toml",
+          "--all-targets",
+          "--all-features"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-client"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_standalone_clippy",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "clippy",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-client/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-client"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_standalone_rustdoc",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "doc",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-client/Cargo.toml",
+          "--all-features",
+          "--no-deps"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-client",
+          "RUSTDOCFLAGS": "-D warnings"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_standalone_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-client/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-client"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_vendor_patch",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-rmux",
+          "--test",
+          "vendor_patch",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_attach_fragmentation",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-rmux",
+          "--test",
+          "attach_fragmentation",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_fmt",
+        "cwd": "{workspace}",
+        "argv": [
+          "{rustfmt}",
+          "--edition",
+          "2021",
+          "--check",
+          "vendor/rmux-server/src/lib.rs",
+          "vendor/rmux-server/build.rs"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_product_check",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "check",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-server/Cargo.toml",
+          "--all-targets",
+          "--no-default-features"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-server"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_strict_clippy",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "clippy",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-server/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings",
+          "-A",
+          "clippy::collapsible-else-if",
+          "-A",
+          "clippy::uninlined-format-args"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-server"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_strict_rustdoc",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "doc",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-server/Cargo.toml",
+          "--all-features",
+          "--no-deps"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-server",
+          "RUSTDOCFLAGS": "-D warnings"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_patch_regressions",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "vendor/rmux-server/Cargo.toml",
+          "--lib",
+          "--no-default-features",
+          "pane_io::tests::",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {
+          "CARGO_TARGET_DIR": "{validation}/cargo-target/vendor-rmux-server"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmux_server_vendor_patch",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-rmux",
+          "--test",
+          "vendor_server_patch",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_typecheck",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "clients/typescript/node_modules/typescript/bin/tsc",
+          "-p",
+          "clients/typescript/tsconfig.json",
+          "--noEmit"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_stage_prepare",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "clients/typescript/tests/dist-stage.mjs",
+          "prepare",
+          "{validation}/typescript-dist",
+          "--outside-root",
+          "{workspace}"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_external_build",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "clients/typescript/node_modules/typescript/bin/tsc",
+          "-p",
+          "clients/typescript/tsconfig.json",
+          "--outDir",
+          "{validation}/typescript-dist"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_stage_verify",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "clients/typescript/tests/dist-stage.mjs",
+          "verify",
+          "{validation}/typescript-dist",
+          "--outside-root",
+          "{workspace}"
+        ],
+        "env": {},
+        "stdout_equals": null,
+        "stdout_sha256_line": true
+      },
+      {
+        "id": "release_full_stack_e2e",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-e2e",
+          "--all-targets",
+          "--",
+          "--include-ignored",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_E2E_BIN_DIR": "{release}",
+          "PMUX_E2E_TYPESCRIPT_DIST_DIR": "{validation}/typescript-dist"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "--test",
+          "clients/typescript/tests/client.test.mjs",
+          "clients/typescript/tests/dist-stage.test.mjs",
+          "clients/typescript/tests/golden-conformance.test.mjs"
+        ],
+        "env": {
+          "PMUX_TYPESCRIPT_DIST_DIR": "{validation}/typescript-dist"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "typescript_actual_daemon_syntax",
+        "cwd": "{workspace}",
+        "argv": [
+          "{node}",
+          "--check",
+          "clients/typescript/tests/actual_daemon_e2e.mjs"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "python_client",
+        "cwd": "{workspace}/clients/python",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "python_ruff",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "ruff",
+          "check",
+          "--no-cache",
+          "{workspace}"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "python_ruff_format",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "--no-cache",
+          "{workspace}"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      }
+    ],
+    "gate_b": [
+      {
+        "id": "transcript_properties",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-claude",
+          "--test",
+          "transcript_properties"
+        ],
+        "env": {
+          "PROPTEST_CASES": "4096",
+          "PROPTEST_MAX_SHRINK_ITERS": "10000"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "actor_model",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "actor_model"
+        ],
+        "env": {
+          "PROPTEST_CASES": "2048",
+          "PROPTEST_MAX_SHRINK_ITERS": "10000"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "client_protocol_properties",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-client",
+          "--lib",
+          "protocol_properties"
+        ],
+        "env": {
+          "PROPTEST_CASES": "2048",
+          "PROPTEST_MAX_SHRINK_ITERS": "10000"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "protocol_framing_properties",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmuxd",
+          "--bin",
+          "pmuxd",
+          "handler::tests::arbitrary_admitted_payloads_have_bounded_decode_recovery_and_responses",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PROPTEST_CASES": "2048",
+          "PROPTEST_MAX_SHRINK_ITERS": "10000"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "cargo_fuzz_version",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo_fuzz}",
+          "--version"
+        ],
+        "env": {},
+        "stdout_equals": "cargo-fuzz 0.13.2\n"
+      },
+      {
+        "id": "production_fuzz",
+        "cwd": "{workspace}",
+        "argv": [
+          "{bash}",
+          "scripts/gate-a-fuzz.sh"
+        ],
+        "env": {
+          "PMUX_CARGO_FUZZ_BIN": "{cargo_fuzz}",
+          "PMUX_FUZZ_EVIDENCE_ROOT": "{validation}/fuzz-evidence",
+          "PMUX_FUZZ_RUNS": "50000",
+          "PMUX_FUZZ_TARGET_DIR": "{validation}/fuzz",
+          "PMUX_NIGHTLY_BIN_DIR": "{nightly_bin}",
+          "PMUX_NIGHTLY_CARGO": "{nightly_cargo}",
+          "PMUX_NIGHTLY_RUSTC": "{nightly_rustc}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "cargo_mutants_version",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo_mutants}",
+          "mutants",
+          "--version"
+        ],
+        "env": {},
+        "stdout_equals": "cargo-mutants 27.1.0\n"
+      },
+      {
+        "id": "mutation_score_agent_launch_pool_protocol",
+        "cwd": "{workspace}",
+        "argv": [
+          "{bash}",
+          "scripts/gate-a-mutants.sh"
+        ],
+        "env": {
+          "PMUX_CARGO_MUTANTS_BIN": "{cargo_mutants}",
+          "PMUX_MUTANTS_CARGO": "{cargo}",
+          "PMUX_MUTANTS_EVIDENCE_ROOT": "{validation}/mutants-evidence",
+          "PMUX_MUTANTS_JOBS": "4",
+          "PMUX_MUTANTS_MINIMUM_SCORE": "94",
+          "PMUX_MUTANTS_SCOPE": "gate",
+          "PMUX_MUTANTS_WORK_DIR": "{validation}/mutants"
+        },
+        "stdout_equals": null
+      }
+    ],
+    "gate_c": [
+      {
+        "id": "companion_debug_build",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "build",
+          "--locked",
+          "-p",
+          "pmuxd",
+          "-p",
+          "pmux-rmuxd",
+          "-p",
+          "pmux-launcher",
+          "-p",
+          "pmux-hook"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "native_service",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "native_service",
+          "--",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "private_runtime",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "private_runtime",
+          "--",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "lifecycle_faults",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "lifecycle_faults",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      }
+    ],
+    "gate_d": [
+      {
+        "id": "cli_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmux",
+          "--all-targets",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "mcp_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmux-mcp",
+          "--test",
+          "stdio_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "facade_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "claude-p",
+          "--test",
+          "facade_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "launcher_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmux-launcher",
+          "--test",
+          "process_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "hook_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmux-hook",
+          "--test",
+          "process_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "rmuxd_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmux-rmuxd",
+          "--test",
+          "process_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "pmuxd_process",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmuxd",
+          "--test",
+          "process_blackbox"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_native_service",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "native_service",
+          "--",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_private_runtime",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "private_runtime",
+          "--",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_lifecycle_faults",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "lifecycle_faults",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      }
+    ],
+    "gate_e": [
+      {
+        "id": "concurrency_backpressure",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "concurrency_backpressure"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "resource_bounds",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "resource_bounds",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "bounded_soak",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "bounded_soak",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "replay_scaling",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--lib",
+          "replay_scaling_tests",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "protocol_framing_scaling",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pmuxd",
+          "--bin",
+          "pmuxd",
+          "native_framing_and_successful_decode_have_deterministic_linear_work",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "transcript_size_scaling",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-claude",
+          "--test",
+          "size_scaling",
+          "--release",
+          "--",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "release_concurrency_backpressure",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "concurrency_backpressure",
+          "--",
+          "--include-ignored",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_resource_bounds",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "resource_bounds",
+          "--",
+          "--include-ignored",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_bounded_soak",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "bounded_soak",
+          "--",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "release_performance_diagnostics",
+        "cwd": "{workspace}",
+        "argv": [
+          "{cargo}",
+          "test",
+          "--locked",
+          "--release",
+          "-p",
+          "pseudomux-service",
+          "--test",
+          "performance_diagnostics",
+          "--",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "env": {
+          "PMUX_TEST_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      }
+    ],
+    "gate_f": [
+      {
+        "id": "evidence_common_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/evidence_common/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "package_smoke_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/package-smoke/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "phase0_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/phase0/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "candidate_envelope_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/gate-a-candidate/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "gate_driver_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/gate-a/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "linux_docker_self_tests",
+        "cwd": "{workspace}",
+        "argv": [
+          "{python}",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/linux-docker/tests",
+          "-v"
+        ],
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "stdout_equals": null
+      },
+      {
+        "id": "shell_syntax",
+        "cwd": "{workspace}",
+        "argv": [
+          "{bash}",
+          "-n",
+          "scripts/gate-a-fuzz.sh",
+          "scripts/gate-a-mutants.sh",
+          "scripts/gate-a-residue.sh",
+          "scripts/gate-in-worktree.sh",
+          "scripts/path-b-done.sh",
+          "scripts/pmuxd-run.sh",
+          "tools/linux-docker/inside.sh",
+          "tools/linux-docker/run.sh",
+          "tools/linux-docker/suite.sh",
+          "tools/screen-corpus/per_binary_tests.sh"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "shellcheck",
+        "cwd": "{workspace}",
+        "argv": [
+          "{shellcheck}",
+          "scripts/gate-a-fuzz.sh",
+          "scripts/gate-a-mutants.sh",
+          "scripts/gate-a-residue.sh",
+          "scripts/gate-in-worktree.sh",
+          "scripts/path-b-done.sh",
+          "scripts/pmuxd-run.sh",
+          "tools/linux-docker/inside.sh",
+          "tools/linux-docker/run.sh",
+          "tools/linux-docker/suite.sh",
+          "tools/screen-corpus/per_binary_tests.sh"
+        ],
+        "env": {},
+        "stdout_equals": null
+      },
+      {
+        "id": "residue_script_self_test",
+        "cwd": "{workspace}",
+        "argv": [
+          "{bash}",
+          "scripts/gate-a-residue.sh",
+          "--self-test-disappearing-temp-root"
+        ],
+        "env": {},
+        "stdout_equals": null
+      }
+    ],
+    "residue": [
+      {
+        "id": "gate_a_residue",
+        "cwd": "{workspace}",
+        "argv": [
+          "{bash}",
+          "scripts/gate-a-residue.sh"
+        ],
+        "env": {
+          "PMUX_E2E_BIN_DIR": "{release}"
+        },
+        "stdout_equals": null
+      }
+    ]
+  }
+}

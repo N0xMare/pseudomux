@@ -1,0 +1,2 @@
+{"type":"user","uuid":"dup","promptSource":"typed","message":{"role":"user","content":"fuzz"}}
+{"type":"assistant","uuid":"dup","parentUuid":"dup","message":{"role":"assistant","content":[{"type":"unknown_future_block"}],"stop_reason":"end_turn"}}

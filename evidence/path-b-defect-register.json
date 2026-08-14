@@ -1,0 +1,62 @@
+{
+  "schema": "pmux.path-b-defect-register.v1",
+  "recorded_at": {
+    "head": "c8616a9",
+    "head_note": "`head` and every `closed_by` name the commit that replaced this branch's 166 commits at the squash for publication. The commits those fields used to name are not in published history, and a register whose rows point at nothing is this repository's own bug class aimed at the place defects go to be remembered -- `scripts/path_b_done.py` resolves both fields and refuses on either. As far as published history is concerned this commit is where all four were closed. What is lost is WHICH commit closed which row; `docs/defect-log.md` is where that survives, one entry per replaced commit. Commit references inside the prose fields below are historical citations, are resolved by nothing, and are left as written.",
+    "date": "2026-08-11",
+    "read_by": "scripts/path_b_done.py, criterion 1",
+    "why": "Criterion 1 is 'no known unfixed defect in the Path B path'. Until this file existed it was answered by an agent reading four paragraphs of docs/path-b-verdict.md and reporting a sentence; the four defects that section lists were annotated CLOSED in place, so the answer depended on which annotation the reader believed. Each is a row here, and the letter it carries is checked against the lettered list criterion 1 itself publishes -- in both directions, so a fifth defect added to that document is a refusal rather than a row nobody wrote.",
+    "what_this_does_not_claim": "This is not a claim that no other defect exists in the Path B path. Its completeness is exactly what it can be held to mechanically: every defect docs/path-b-verdict.md criterion 1 lists has a row, and every lettered row here is one that document lists. A defect nobody has written down anywhere is invisible to this file, as it is to every register. Mutation survivors are NOT recorded here -- they are dispositioned in evidence/mutation-survivor-register.json, which criterion 1 reads beside this one.",
+    "statuses": {
+      "OPEN": "A live defect with nothing decided about it. Criterion 1 is NOT MET while any row is OPEN.",
+      "CLOSED": "Fixed, with the commit named. The commit must exist in this repository or the row is refused.",
+      "ACCEPTED": "The behaviour is known, the decision to keep it is recorded, and the reason is in `decision`. A row with no decision is refused."
+    }
+  },
+  "entries": [
+    {
+      "id": "verdict-1a-head-proof-accepts-a-prefix",
+      "letter": "a",
+      "title": "the rendered-prompt proof accepted any non-empty prefix, so one delivered character of a seventeen-character prompt satisfied the gate before Enter",
+      "where": "crates/service/src/driver_io.rs",
+      "anchor": "composer_render_proof",
+      "status": "CLOSED",
+      "closed_by": "c8616a9",
+      "reason": "The proof now takes EVERY rendered row and requires them, in order, to spell the prompt from its first character to its last. It asks nothing about how wide a row is, which is why it needs neither the wrap model nor the width model the verdict document argued for -- both of those were refuted by the eighteen measured renders taken the same day.",
+      "cost_of_the_defect": "Enter went in on a truncated composer, the post-Enter equality then refused the turn with UnexpectedTypedPrompt, and the pooled instance was destroyed: an availability failure reachable through the last check before the irreversible write."
+    },
+    {
+      "id": "verdict-1b-trailing-nel-is-deleted",
+      "letter": "b",
+      "title": "a trailing U+0085 was silently deleted from a caller's prompt -- and it was one of FOUR characters whose treatment depended on where in the prompt they stood, not the one this title claimed",
+      "where": "crates/claude/src/composer.rs",
+      "anchor": "is_trimmed_from_the_end",
+      "status": "CLOSED",
+      "reason": "MEASURED and CLOSED on 2026-08-11. What this row waited on -- what the composer does with a trailing U+0085 -- needed neither guard relaxed, because it is a question about the composer and a composer can be driven without pmux: nine turns against an isolated Claude Code 2.1.227 in a 120x24 pane, with the paste framing `bracketed_paste_payload` builds and an Enter after it, reading the child's own recorded `user` rows. The composer KEEPS a trailing U+0085 -- bytes `65 6c 73 65 2e c2 85`, turn answered -- so trimming it was never matching the composer, and only one of the two behaviours this row called defensible ever was. The same nine turns found U+000B and U+000C RECORDED as `^K` and `^L` rather than removed; with U+0009 they make the count in the old title four, and the count was inferred rather than measured. The fix is one statement where there were two sets: `is_trimmed_from_the_end` is what the composer removes, less everything `is_refused_wherever_it_stands` names, so a character pmux refuses cannot be silently deleted instead. `validate_prompt` is unchanged -- the refusal a caller now meets is the one that was always there for an interior character. docs/path-b-adversarial.md sec. 12.",
+      "cost_of_the_defect": "A caller whose prompt ended in U+0009, U+000B, U+000C or U+0085 got an answer to a prompt it did not send, with nothing said. Of the four rows here it is the only one whose cost was the ANSWER rather than an instance or a message.",
+      "closed_by": "c8616a9"
+    },
+    {
+      "id": "verdict-1c-mcp-drops-the-daemon-message",
+      "letter": "c",
+      "title": "the MCP adapter discards a daemon refusal's `message`, so two different refusals can reach a model as the same payload",
+      "where": "bin/pmux-mcp/src/tools.rs",
+      "anchor": "redact_client_error",
+      "status": "ACCEPTED",
+      "decision": "`details.recommendation` now crosses in both channels (731c8ab), read through the same RECOMMENDATION_KEY the daemon writes it with, and `message` deliberately does not: a daemon message can be composed from caller bytes -- MEASURED, {\"environment\":{\"set\":{\"SECRET\":42}}} renders as `invalid type: integer 42, expected a string` -- while `recommendation` is written by ErrorBody::advising and by nothing else. A test pins the asymmetry. The remedy that used to live only inside the message was split out (explain/remedy) so a redacting surface still carries it.",
+      "reason": "Half closed and the half that is not is a redaction boundary, which is the owner's call to widen and not an oversight. Recorded ACCEPTED rather than CLOSED so that the residual -- an MCP caller cannot read the daemon's own words -- stays visible.",
+      "cost_of_the_defect": "On the one Path B surface whose reader cannot ask a human, the daemon's exact reason for a refusal is unavailable; the advice channel is what replaced it."
+    },
+    {
+      "id": "verdict-1d-prefix-justification-was-false",
+      "letter": "d",
+      "title": "the head proof's stated reason for choosing a prefix over an equality was falsified by the next commit and stood for two more",
+      "where": "crates/claude/src/composer.rs",
+      "anchor": "composer_render_proof",
+      "status": "CLOSED",
+      "closed_by": "c8616a9",
+      "reason": "Closed by the fix for (a) rather than as a comment edit: the prefix rule the justification defended no longer exists, so neither does the justification. The general form of this defect -- a comment whose measured reason a later commit falsified -- is the house bug class, and it is why the register rows here carry an anchor that must resolve in the file they name.",
+      "cost_of_the_defect": "A reader auditing the gate would have accepted a rule on a reason that was already false."
+    }
+  ]
+}

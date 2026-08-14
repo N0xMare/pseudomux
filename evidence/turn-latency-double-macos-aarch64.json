@@ -1,0 +1,1306 @@
+{
+ "algorithm": "pmux-turn-latency-v1",
+ "configuration": {
+  "compatibility_profile": {
+   "arch": "aarch64",
+   "claude_version": "9.9.9",
+   "input_transport": "sdk",
+   "os": "macos",
+   "terminal_profile": "transparent",
+   "transcript_drain_ms": 250
+  },
+  "effort": null,
+  "graduated_drain_note": "`graduated_drain_ms(configured, turn_duration_seen)` lowers the requirement to 250 ms once Claude's marker is seen. The double never writes one, so `transcript_drain_ms` here IS the requirement, and 250 is the value that reproduces what a real 2.1.220 turn owes against the promoted 1000 ms profile.",
+  "model": "sonnet",
+  "pmuxd_argv": [
+   "<REPO>/target/release/pmuxd",
+   "serve",
+   "--socket",
+   "/private/tmp/qv4-turn-latency-_ajm7lh0/pmux.sock",
+   "--rmuxd",
+   "<REPO>/target/release/pmux-rmuxd",
+   "--launcher",
+   "<REPO>/target/release/pmux-launcher",
+   "--runtime-parent",
+   "/private/tmp/qv4-turn-latency-_ajm7lh0/private",
+   "--tested-claude-profile",
+   "{\"arch\": \"aarch64\", \"claude_version\": \"9.9.9\", \"input_transport\": \"sdk\", \"os\": \"macos\", \"terminal_profile\": \"transparent\", \"transcript_drain_ms\": 250}",
+   "--path-b-parent",
+   "/private/tmp/qv4-turn-latency-_ajm7lh0/pool",
+   "--path-b-claude",
+   "<REPO>/target/release/pmux-test-claude",
+   "--path-b-pool-size",
+   "1",
+   "--path-b-recycle-turns",
+   "250",
+   "--path-b-instance-idle-ttl-ms",
+   "600000",
+   "--path-b-turn-timeout-ms",
+   "120000",
+   "--path-b-warm",
+   "sonnet=1"
+  ],
+  "turns_measured": 60,
+  "warmup_turns_discarded": 3
+ },
+ "driver": {
+  "claude_executable": "target/release/pmux-test-claude",
+  "claude_version": "9.9.9",
+  "environment": "double",
+  "writes_turn_duration_marker": false,
+  "zero_latency": true
+ },
+ "host": {
+  "arch": "arm64",
+  "cpu_count": 10,
+  "load_average_1m": 6.5078125,
+  "os": "darwin",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O",
+  "release": "24.6.0"
+ },
+ "measured_at": "2026-08-06T14:53:52Z",
+ "path_a": {
+  "samples": [
+   {
+    "client_wall_ms": 1226.4,
+    "completed_at_ms": 1786027833989,
+    "drain_ms": 576,
+    "legs": {
+     "completed_at_ms": 577.0,
+     "prompt_acknowledged_at_ms": 639.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1216.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1196.6,
+    "completed_at_ms": 1786027835186,
+    "drain_ms": 559,
+    "legs": {
+     "completed_at_ms": 559.0,
+     "prompt_acknowledged_at_ms": 628.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1187.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1209.7,
+    "completed_at_ms": 1786027836396,
+    "drain_ms": 537,
+    "legs": {
+     "completed_at_ms": 538.0,
+     "prompt_acknowledged_at_ms": 665.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1203.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1251.6,
+    "completed_at_ms": 1786027837646,
+    "drain_ms": 584,
+    "legs": {
+     "completed_at_ms": 584.0,
+     "prompt_acknowledged_at_ms": 658.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1242.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1225.7,
+    "completed_at_ms": 1786027838873,
+    "drain_ms": 554,
+    "legs": {
+     "completed_at_ms": 554.0,
+     "prompt_acknowledged_at_ms": 661.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1215.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1219.8,
+    "completed_at_ms": 1786027840093,
+    "drain_ms": 561,
+    "legs": {
+     "completed_at_ms": 561.0,
+     "prompt_acknowledged_at_ms": 649.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1210.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1219.0,
+    "completed_at_ms": 1786027841313,
+    "drain_ms": 564,
+    "legs": {
+     "completed_at_ms": 565.0,
+     "prompt_acknowledged_at_ms": 645.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1210.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1218.8,
+    "completed_at_ms": 1786027842531,
+    "drain_ms": 541,
+    "legs": {
+     "completed_at_ms": 541.0,
+     "prompt_acknowledged_at_ms": 668.0,
+     "terminal_candidate_at_ms": 1.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1210.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1211.2,
+    "completed_at_ms": 1786027843743,
+    "drain_ms": 544,
+    "legs": {
+     "completed_at_ms": 545.0,
+     "prompt_acknowledged_at_ms": 654.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1199.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1179.1,
+    "completed_at_ms": 1786027844922,
+    "drain_ms": 530,
+    "legs": {
+     "completed_at_ms": 531.0,
+     "prompt_acknowledged_at_ms": 638.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1169.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1261.6,
+    "completed_at_ms": 1786027846177,
+    "drain_ms": 577,
+    "legs": {
+     "completed_at_ms": 577.0,
+     "prompt_acknowledged_at_ms": 668.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1245.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1207.1,
+    "completed_at_ms": 1786027847391,
+    "drain_ms": 558,
+    "legs": {
+     "completed_at_ms": 558.0,
+     "prompt_acknowledged_at_ms": 639.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1197.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1234.9,
+    "completed_at_ms": 1786027848626,
+    "drain_ms": 556,
+    "legs": {
+     "completed_at_ms": 557.0,
+     "prompt_acknowledged_at_ms": 670.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1227.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1175.8,
+    "completed_at_ms": 1786027849801,
+    "drain_ms": 529,
+    "legs": {
+     "completed_at_ms": 529.0,
+     "prompt_acknowledged_at_ms": 635.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1164.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1190.2,
+    "completed_at_ms": 1786027850993,
+    "drain_ms": 535,
+    "legs": {
+     "completed_at_ms": 535.0,
+     "prompt_acknowledged_at_ms": 647.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1182.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1240.0,
+    "completed_at_ms": 1786027852232,
+    "drain_ms": 533,
+    "legs": {
+     "completed_at_ms": 534.0,
+     "prompt_acknowledged_at_ms": 675.0,
+     "terminal_candidate_at_ms": 23.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1232.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1188.9,
+    "completed_at_ms": 1786027853422,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 626.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1177.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1219.0,
+    "completed_at_ms": 1786027854641,
+    "drain_ms": 567,
+    "legs": {
+     "completed_at_ms": 568.0,
+     "prompt_acknowledged_at_ms": 642.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1210.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1187.5,
+    "completed_at_ms": 1786027855828,
+    "drain_ms": 541,
+    "legs": {
+     "completed_at_ms": 541.0,
+     "prompt_acknowledged_at_ms": 635.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1176.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1232.1,
+    "completed_at_ms": 1786027857061,
+    "drain_ms": 581,
+    "legs": {
+     "completed_at_ms": 581.0,
+     "prompt_acknowledged_at_ms": 642.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1223.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1202.4,
+    "completed_at_ms": 1786027858263,
+    "drain_ms": 567,
+    "legs": {
+     "completed_at_ms": 568.0,
+     "prompt_acknowledged_at_ms": 624.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1192.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1186.8,
+    "completed_at_ms": 1786027859443,
+    "drain_ms": 536,
+    "legs": {
+     "completed_at_ms": 537.0,
+     "prompt_acknowledged_at_ms": 634.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1171.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1317.6,
+    "completed_at_ms": 1786027860768,
+    "drain_ms": 555,
+    "legs": {
+     "completed_at_ms": 555.0,
+     "prompt_acknowledged_at_ms": 668.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1223.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1208.3,
+    "completed_at_ms": 1786027861976,
+    "drain_ms": 564,
+    "legs": {
+     "completed_at_ms": 565.0,
+     "prompt_acknowledged_at_ms": 633.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1198.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1209.9,
+    "completed_at_ms": 1786027863186,
+    "drain_ms": 557,
+    "legs": {
+     "completed_at_ms": 557.0,
+     "prompt_acknowledged_at_ms": 640.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1197.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1202.5,
+    "completed_at_ms": 1786027864389,
+    "drain_ms": 566,
+    "legs": {
+     "completed_at_ms": 566.0,
+     "prompt_acknowledged_at_ms": 628.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1194.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1242.3,
+    "completed_at_ms": 1786027865632,
+    "drain_ms": 601,
+    "legs": {
+     "completed_at_ms": 601.0,
+     "prompt_acknowledged_at_ms": 629.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1230.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1211.3,
+    "completed_at_ms": 1786027866842,
+    "drain_ms": 533,
+    "legs": {
+     "completed_at_ms": 533.0,
+     "prompt_acknowledged_at_ms": 669.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1202.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1160.2,
+    "completed_at_ms": 1786027868004,
+    "drain_ms": 532,
+    "legs": {
+     "completed_at_ms": 533.0,
+     "prompt_acknowledged_at_ms": 620.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1153.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1237.7,
+    "completed_at_ms": 1786027869242,
+    "drain_ms": 599,
+    "legs": {
+     "completed_at_ms": 599.0,
+     "prompt_acknowledged_at_ms": 627.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1226.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1226.4,
+    "completed_at_ms": 1786027870467,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 666.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1217.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1270.2,
+    "completed_at_ms": 1786027871739,
+    "drain_ms": 601,
+    "legs": {
+     "completed_at_ms": 602.0,
+     "prompt_acknowledged_at_ms": 654.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1256.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1203.7,
+    "completed_at_ms": 1786027872943,
+    "drain_ms": 543,
+    "legs": {
+     "completed_at_ms": 543.0,
+     "prompt_acknowledged_at_ms": 653.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1196.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1213.3,
+    "completed_at_ms": 1786027874155,
+    "drain_ms": 566,
+    "legs": {
+     "completed_at_ms": 567.0,
+     "prompt_acknowledged_at_ms": 637.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1204.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1259.5,
+    "completed_at_ms": 1786027875412,
+    "drain_ms": 572,
+    "legs": {
+     "completed_at_ms": 572.0,
+     "prompt_acknowledged_at_ms": 670.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1242.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1172.3,
+    "completed_at_ms": 1786027876588,
+    "drain_ms": 533,
+    "legs": {
+     "completed_at_ms": 533.0,
+     "prompt_acknowledged_at_ms": 632.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1165.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1259.9,
+    "completed_at_ms": 1786027877849,
+    "drain_ms": 602,
+    "legs": {
+     "completed_at_ms": 603.0,
+     "prompt_acknowledged_at_ms": 647.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1250.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1224.7,
+    "completed_at_ms": 1786027879073,
+    "drain_ms": 558,
+    "legs": {
+     "completed_at_ms": 558.0,
+     "prompt_acknowledged_at_ms": 659.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1217.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1221.3,
+    "completed_at_ms": 1786027880295,
+    "drain_ms": 556,
+    "legs": {
+     "completed_at_ms": 557.0,
+     "prompt_acknowledged_at_ms": 654.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1211.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1234.1,
+    "completed_at_ms": 1786027881529,
+    "drain_ms": 554,
+    "legs": {
+     "completed_at_ms": 555.0,
+     "prompt_acknowledged_at_ms": 671.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1226.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1173.0,
+    "completed_at_ms": 1786027882702,
+    "drain_ms": 532,
+    "legs": {
+     "completed_at_ms": 532.0,
+     "prompt_acknowledged_at_ms": 633.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1165.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1239.0,
+    "completed_at_ms": 1786027883941,
+    "drain_ms": 575,
+    "legs": {
+     "completed_at_ms": 575.0,
+     "prompt_acknowledged_at_ms": 655.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1230.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1255.6,
+    "completed_at_ms": 1786027885197,
+    "drain_ms": 587,
+    "legs": {
+     "completed_at_ms": 588.0,
+     "prompt_acknowledged_at_ms": 656.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1244.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1198.0,
+    "completed_at_ms": 1786027886395,
+    "drain_ms": 549,
+    "legs": {
+     "completed_at_ms": 549.0,
+     "prompt_acknowledged_at_ms": 638.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1187.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1221.9,
+    "completed_at_ms": 1786027887616,
+    "drain_ms": 542,
+    "legs": {
+     "completed_at_ms": 543.0,
+     "prompt_acknowledged_at_ms": 669.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1212.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1207.1,
+    "completed_at_ms": 1786027888824,
+    "drain_ms": 557,
+    "legs": {
+     "completed_at_ms": 557.0,
+     "prompt_acknowledged_at_ms": 635.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1192.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1240.9,
+    "completed_at_ms": 1786027890065,
+    "drain_ms": 561,
+    "legs": {
+     "completed_at_ms": 561.0,
+     "prompt_acknowledged_at_ms": 668.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1229.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1203.1,
+    "completed_at_ms": 1786027891269,
+    "drain_ms": 544,
+    "legs": {
+     "completed_at_ms": 544.0,
+     "prompt_acknowledged_at_ms": 648.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1192.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1166.5,
+    "completed_at_ms": 1786027892429,
+    "drain_ms": 525,
+    "legs": {
+     "completed_at_ms": 526.0,
+     "prompt_acknowledged_at_ms": 624.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1150.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1208.1,
+    "completed_at_ms": 1786027893643,
+    "drain_ms": 544,
+    "legs": {
+     "completed_at_ms": 545.0,
+     "prompt_acknowledged_at_ms": 646.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1191.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1188.1,
+    "completed_at_ms": 1786027894832,
+    "drain_ms": 538,
+    "legs": {
+     "completed_at_ms": 538.0,
+     "prompt_acknowledged_at_ms": 637.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1175.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1231.3,
+    "completed_at_ms": 1786027896064,
+    "drain_ms": 575,
+    "legs": {
+     "completed_at_ms": 576.0,
+     "prompt_acknowledged_at_ms": 647.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1223.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1189.3,
+    "completed_at_ms": 1786027897253,
+    "drain_ms": 544,
+    "legs": {
+     "completed_at_ms": 545.0,
+     "prompt_acknowledged_at_ms": 636.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1181.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1223.4,
+    "completed_at_ms": 1786027898477,
+    "drain_ms": 585,
+    "legs": {
+     "completed_at_ms": 586.0,
+     "prompt_acknowledged_at_ms": 625.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1211.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1196.9,
+    "completed_at_ms": 1786027899673,
+    "drain_ms": 543,
+    "legs": {
+     "completed_at_ms": 543.0,
+     "prompt_acknowledged_at_ms": 641.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1184.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1188.0,
+    "completed_at_ms": 1786027900860,
+    "drain_ms": 535,
+    "legs": {
+     "completed_at_ms": 536.0,
+     "prompt_acknowledged_at_ms": 641.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1177.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1237.3,
+    "completed_at_ms": 1786027902100,
+    "drain_ms": 553,
+    "legs": {
+     "completed_at_ms": 553.0,
+     "prompt_acknowledged_at_ms": 671.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1224.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1209.7,
+    "completed_at_ms": 1786027903310,
+    "drain_ms": 539,
+    "legs": {
+     "completed_at_ms": 539.0,
+     "prompt_acknowledged_at_ms": 662.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1201.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1250.1,
+    "completed_at_ms": 1786027904559,
+    "drain_ms": 588,
+    "legs": {
+     "completed_at_ms": 589.0,
+     "prompt_acknowledged_at_ms": 652.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1241.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1195.6,
+    "completed_at_ms": 1786027905756,
+    "drain_ms": 538,
+    "legs": {
+     "completed_at_ms": 538.0,
+     "prompt_acknowledged_at_ms": 640.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1178.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1194.0,
+    "completed_at_ms": 1786027906950,
+    "drain_ms": 561,
+    "legs": {
+     "completed_at_ms": 561.0,
+     "prompt_acknowledged_at_ms": 623.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1184.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1267.8,
+    "completed_at_ms": 1786027908217,
+    "drain_ms": 588,
+    "legs": {
+     "completed_at_ms": 588.0,
+     "prompt_acknowledged_at_ms": 669.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1257.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1220.6,
+    "completed_at_ms": 1786027909439,
+    "drain_ms": 560,
+    "legs": {
+     "completed_at_ms": 560.0,
+     "prompt_acknowledged_at_ms": 649.0,
+     "terminal_candidate_at_ms": 0.0
+    },
+    "marker_observed_at_ms": null,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 1209.0,
+    "warmup": false
+   }
+  ],
+  "session_id": "f8969db1-4356-4495-ac23-0cfe034c87ea",
+  "summary": {
+   "client_wall_ms": {
+    "count": 60,
+    "max_ms": 1317.6,
+    "mean_ms": 1217.2,
+    "median_ms": 1213.3,
+    "min_ms": 1160.2,
+    "p10_ms": 1179.1,
+    "p90_ms": 1255.6,
+    "p99_ms": 1317.6,
+    "spread_ms": 157.39999999999986
+   },
+   "drain_ms": {
+    "count": 60,
+    "max_ms": 602.0,
+    "mean_ms": 556.9,
+    "median_ms": 555.0,
+    "min_ms": 525.0,
+    "p10_ms": 533.0,
+    "p90_ms": 587.0,
+    "p99_ms": 602.0,
+    "spread_ms": 77.0
+   },
+   "legs": {
+    "completed_at_ms": {
+     "count": 60,
+     "max_ms": 603.0,
+     "mean_ms": 557.3,
+     "measures": "the commit gate: screen stability (`quiet_for`) AND the transcript drain AND the confirming re-poll",
+     "median_ms": 555.0,
+     "min_ms": 526.0,
+     "p10_ms": 533.0,
+     "p90_ms": 588.0,
+     "p99_ms": 603.0,
+     "spread_ms": 77.0
+    },
+    "prompt_acknowledged_at_ms": {
+     "count": 60,
+     "max_ms": 675.0,
+     "mean_ms": 647.2,
+     "measures": "the input gate: wait for a stable control render, type the bracketed paste, press Enter, and observe the prompt leave the composer",
+     "median_ms": 646.0,
+     "min_ms": 620.0,
+     "p10_ms": 626.0,
+     "p90_ms": 669.0,
+     "p99_ms": 675.0,
+     "spread_ms": 55.0
+    },
+    "terminal_candidate_at_ms": {
+     "count": 60,
+     "max_ms": 23.0,
+     "mean_ms": 0.4,
+     "measures": "generation: the turn's final assistant row appears in the transcript",
+     "median_ms": 0.0,
+     "min_ms": 0.0,
+     "p10_ms": 0.0,
+     "p90_ms": 0.0,
+     "p99_ms": 23.0,
+     "spread_ms": 23.0
+    }
+   },
+   "server_total_ms": {
+    "count": 60,
+    "max_ms": 1257.0,
+    "mean_ms": 1204.9,
+    "median_ms": 1204.0,
+    "min_ms": 1150.0,
+    "p10_ms": 1169.0,
+    "p90_ms": 1242.0,
+    "p99_ms": 1257.0,
+    "spread_ms": 107.0
+   },
+   "turn_duration_arrival": {
+    "claim": "no turn carried a `turn_duration` marker, so this says nothing",
+    "turns": 60,
+    "turns_where_a_row_arrived_after_the_marker": 0,
+    "turns_with_a_turn_duration_marker": 0
+   }
+  }
+ },
+ "path_b": {
+  "samples": [
+   {
+    "client_wall_ms": 1291.2,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1977.8,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1984.9,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 1897.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2008.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1957.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1930.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1957.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1936.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1970.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1938.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1979.3,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1928.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1932.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2004.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1938.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1935.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1981.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1919.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1905.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2011.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1966.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1917.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1954.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1957.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1912.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1955.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1944.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2006.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1987.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1975.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1947.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2050.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1964.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1925.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1970.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1953.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1939.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1985.3,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1900.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1964.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1953.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1935.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1940.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1966.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1961.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1952.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1984.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2036.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1940.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1938.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1945.2,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1971.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1928.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1959.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1989.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1884.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1973.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1911.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1920.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2007.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1995.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 1981.8,
+    "warmup": false
+   }
+  ],
+  "summary": {
+   "client_wall_ms": {
+    "count": 60,
+    "max_ms": 2050.2,
+    "mean_ms": 1956.5,
+    "median_ms": 1954.5,
+    "min_ms": 1884.5,
+    "p10_ms": 1912.6,
+    "p90_ms": 2004.5,
+    "p99_ms": 2050.2,
+    "spread_ms": 165.69999999999982
+   }
+  }
+ },
+ "schema_version": 1,
+ "what_would_invalidate_it": [
+  "a different Claude executable, version, OS or arch: the identity is the key, exactly as it is for a compatibility profile",
+  "a change to `quiet_for` (`crates/service/src/driver_io.rs`), which is what the commit-gate leg is currently made of",
+  "a change to `TURN_DURATION_DRAIN_FLOOR_MS` or to `graduated_drain_ms` (`crates/service/src/v1/backend.rs`)",
+  "a change to `wait_for_stable_control_render` or to the composer gate, which is what the input-gate leg is currently made of",
+  "a new `TurnTimings` boundary: this tool FAILS on one rather than reporting a total that silently excludes it",
+  "a loaded host: `load_average_1m` is recorded for exactly this reason, and a receipt taken above ~2 should be re-taken"
+ ]
+}

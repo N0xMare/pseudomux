@@ -1,0 +1,579 @@
+{
+ "algorithm": "pmux-turn-latency-v1",
+ "configuration": {
+  "compatibility_profile": {
+   "arch": "aarch64",
+   "claude_version": "2.1.220",
+   "input_transport": "sdk",
+   "os": "macos",
+   "terminal_profile": "transparent",
+   "transcript_drain_ms": 1000
+  },
+  "effort": "low",
+  "graduated_drain_note": "`graduated_drain_ms(configured, turn_duration_seen)` lowers the requirement to 250 ms once Claude's marker is seen. The double never writes one, so `transcript_drain_ms` here IS the requirement, and 250 is the value that reproduces what a real 2.1.220 turn owes against the promoted 1000 ms profile.",
+  "model": "sonnet",
+  "pmuxd_argv": [
+   "<REPO>/target/release/pmuxd",
+   "serve",
+   "--socket",
+   "/private/tmp/qv4-turn-latency-zwpuhxzd/pmux.sock",
+   "--rmuxd",
+   "<REPO>/target/release/pmux-rmuxd",
+   "--launcher",
+   "<REPO>/target/release/pmux-launcher",
+   "--runtime-parent",
+   "/private/tmp/qv4-turn-latency-zwpuhxzd/private",
+   "--tested-claude-profile",
+   "{\"arch\": \"aarch64\", \"claude_version\": \"2.1.220\", \"input_transport\": \"sdk\", \"os\": \"macos\", \"terminal_profile\": \"transparent\", \"transcript_drain_ms\": 1000}",
+   "--path-b-parent",
+   "/private/tmp/qv4-turn-latency-zwpuhxzd/pool",
+   "--path-b-claude",
+   "<HOME>/.local/share/claude/versions/2.1.220",
+   "--path-b-pool-size",
+   "1",
+   "--path-b-recycle-turns",
+   "250",
+   "--path-b-instance-idle-ttl-ms",
+   "600000",
+   "--path-b-turn-timeout-ms",
+   "120000",
+   "--path-b-warm",
+   "sonnet/low=1"
+  ],
+  "turns_measured": 20,
+  "warmup_turns_discarded": 2
+ },
+ "driver": {
+  "claude_executable": "<HOME>/.local/bin/claude",
+  "claude_version": "2.1.220",
+  "environment": "operator",
+  "writes_turn_duration_marker": true,
+  "zero_latency": false
+ },
+ "host": {
+  "arch": "arm64",
+  "cpu_count": 10,
+  "load_average_1m": 5.93359375,
+  "os": "darwin",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O",
+  "release": "24.6.0"
+ },
+ "measured_at": "2026-08-06T14:46:29Z",
+ "path_a": {
+  "samples": [
+   {
+    "client_wall_ms": 4971.0,
+    "completed_at_ms": 1786027410763,
+    "drain_ms": 577,
+    "legs": {
+     "completed_at_ms": 578.0,
+     "prompt_acknowledged_at_ms": 828.0,
+     "terminal_candidate_at_ms": 3558.0
+    },
+    "marker_observed_at_ms": 1786027410185,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4964.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 4970.4,
+    "completed_at_ms": 1786027415735,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 697.0,
+     "terminal_candidate_at_ms": 3713.0
+    },
+    "marker_observed_at_ms": 1786027415184,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4961.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 3533.9,
+    "completed_at_ms": 1786027419269,
+    "drain_ms": 577,
+    "legs": {
+     "completed_at_ms": 577.0,
+     "prompt_acknowledged_at_ms": 671.0,
+     "terminal_candidate_at_ms": 2277.0
+    },
+    "marker_observed_at_ms": 1786027418692,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3525.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3896.2,
+    "completed_at_ms": 1786027423165,
+    "drain_ms": 554,
+    "legs": {
+     "completed_at_ms": 554.0,
+     "prompt_acknowledged_at_ms": 672.0,
+     "terminal_candidate_at_ms": 2661.0
+    },
+    "marker_observed_at_ms": 1786027422611,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3887.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4994.9,
+    "completed_at_ms": 1786027428161,
+    "drain_ms": 550,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 703.0,
+     "terminal_candidate_at_ms": 3729.0
+    },
+    "marker_observed_at_ms": 1786027427610,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4983.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3168.9,
+    "completed_at_ms": 1786027431330,
+    "drain_ms": 553,
+    "legs": {
+     "completed_at_ms": 554.0,
+     "prompt_acknowledged_at_ms": 697.0,
+     "terminal_candidate_at_ms": 1905.0
+    },
+    "marker_observed_at_ms": 1786027430776,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3156.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3348.1,
+    "completed_at_ms": 1786027434678,
+    "drain_ms": 528,
+    "legs": {
+     "completed_at_ms": 528.0,
+     "prompt_acknowledged_at_ms": 671.0,
+     "terminal_candidate_at_ms": 2141.0
+    },
+    "marker_observed_at_ms": 1786027434150,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3340.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3129.4,
+    "completed_at_ms": 1786027437808,
+    "drain_ms": 553,
+    "legs": {
+     "completed_at_ms": 554.0,
+     "prompt_acknowledged_at_ms": 701.0,
+     "terminal_candidate_at_ms": 1863.0
+    },
+    "marker_observed_at_ms": 1786027437254,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3118.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3908.1,
+    "completed_at_ms": 1786027441716,
+    "drain_ms": 574,
+    "legs": {
+     "completed_at_ms": 574.0,
+     "prompt_acknowledged_at_ms": 675.0,
+     "terminal_candidate_at_ms": 2651.0
+    },
+    "marker_observed_at_ms": 1786027441142,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3900.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 2966.1,
+    "completed_at_ms": 1786027444683,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 677.0,
+     "terminal_candidate_at_ms": 1729.0
+    },
+    "marker_observed_at_ms": 1786027444132,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 2957.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4402.5,
+    "completed_at_ms": 1786027449085,
+    "drain_ms": 526,
+    "legs": {
+     "completed_at_ms": 526.0,
+     "prompt_acknowledged_at_ms": 676.0,
+     "terminal_candidate_at_ms": 3190.0
+    },
+    "marker_observed_at_ms": 1786027448559,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4392.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4445.0,
+    "completed_at_ms": 1786027453531,
+    "drain_ms": 550,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 646.0,
+     "terminal_candidate_at_ms": 3240.0
+    },
+    "marker_observed_at_ms": 1786027452980,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4437.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4056.4,
+    "completed_at_ms": 1786027457587,
+    "drain_ms": 579,
+    "legs": {
+     "completed_at_ms": 580.0,
+     "prompt_acknowledged_at_ms": 671.0,
+     "terminal_candidate_at_ms": 2796.0
+    },
+    "marker_observed_at_ms": 1786027457007,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4047.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3420.8,
+    "completed_at_ms": 1786027461008,
+    "drain_ms": 576,
+    "legs": {
+     "completed_at_ms": 577.0,
+     "prompt_acknowledged_at_ms": 676.0,
+     "terminal_candidate_at_ms": 2158.0
+    },
+    "marker_observed_at_ms": 1786027460431,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3411.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4414.5,
+    "completed_at_ms": 1786027465423,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 674.0,
+     "terminal_candidate_at_ms": 3182.0
+    },
+    "marker_observed_at_ms": 1786027464872,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4407.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4043.0,
+    "completed_at_ms": 1786027469466,
+    "drain_ms": 552,
+    "legs": {
+     "completed_at_ms": 552.0,
+     "prompt_acknowledged_at_ms": 673.0,
+     "terminal_candidate_at_ms": 2810.0
+    },
+    "marker_observed_at_ms": 1786027468914,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4035.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3262.3,
+    "completed_at_ms": 1786027472728,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 552.0,
+     "prompt_acknowledged_at_ms": 701.0,
+     "terminal_candidate_at_ms": 2000.0
+    },
+    "marker_observed_at_ms": 1786027472176,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3253.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4026.0,
+    "completed_at_ms": 1786027476755,
+    "drain_ms": 576,
+    "legs": {
+     "completed_at_ms": 576.0,
+     "prompt_acknowledged_at_ms": 672.0,
+     "terminal_candidate_at_ms": 2769.0
+    },
+    "marker_observed_at_ms": 1786027476179,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 4017.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3324.4,
+    "completed_at_ms": 1786027480079,
+    "drain_ms": 548,
+    "legs": {
+     "completed_at_ms": 548.0,
+     "prompt_acknowledged_at_ms": 646.0,
+     "terminal_candidate_at_ms": 2121.0
+    },
+    "marker_observed_at_ms": 1786027479531,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3315.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3853.4,
+    "completed_at_ms": 1786027483933,
+    "drain_ms": 577,
+    "legs": {
+     "completed_at_ms": 577.0,
+     "prompt_acknowledged_at_ms": 699.0,
+     "terminal_candidate_at_ms": 2569.0
+    },
+    "marker_observed_at_ms": 1786027483356,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3845.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3583.0,
+    "completed_at_ms": 1786027487516,
+    "drain_ms": 551,
+    "legs": {
+     "completed_at_ms": 551.0,
+     "prompt_acknowledged_at_ms": 697.0,
+     "terminal_candidate_at_ms": 2326.0
+    },
+    "marker_observed_at_ms": 1786027486965,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3574.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3123.9,
+    "completed_at_ms": 1786027490641,
+    "drain_ms": 578,
+    "legs": {
+     "completed_at_ms": 579.0,
+     "prompt_acknowledged_at_ms": 698.0,
+     "terminal_candidate_at_ms": 1841.0
+    },
+    "marker_observed_at_ms": 1786027490062,
+    "post_marker_row_at_ms": null,
+    "server_total_ms": 3118.0,
+    "warmup": false
+   }
+  ],
+  "session_id": "5b80d243-34ff-4d60-96f7-1669a04f0def",
+  "summary": {
+   "client_wall_ms": {
+    "count": 20,
+    "max_ms": 4994.9,
+    "mean_ms": 3745.0,
+    "median_ms": 3583.0,
+    "min_ms": 2966.1,
+    "p10_ms": 3123.9,
+    "p90_ms": 4414.5,
+    "p99_ms": 4994.9,
+    "spread_ms": 2028.7999999999997
+   },
+   "drain_ms": {
+    "count": 20,
+    "max_ms": 579.0,
+    "mean_ms": 557.8,
+    "median_ms": 552.0,
+    "min_ms": 526.0,
+    "p10_ms": 528.0,
+    "p90_ms": 577.0,
+    "p99_ms": 579.0,
+    "spread_ms": 53.0
+   },
+   "legs": {
+    "completed_at_ms": {
+     "count": 20,
+     "max_ms": 580.0,
+     "mean_ms": 558.1,
+     "measures": "the commit gate: screen stability (`quiet_for`) AND the transcript drain AND the confirming re-poll",
+     "median_ms": 552.0,
+     "min_ms": 526.0,
+     "p10_ms": 528.0,
+     "p90_ms": 577.0,
+     "p99_ms": 580.0,
+     "spread_ms": 54.0
+    },
+    "prompt_acknowledged_at_ms": {
+     "count": 20,
+     "max_ms": 703.0,
+     "mean_ms": 679.8,
+     "measures": "the input gate: wait for a stable control render, type the bracketed paste, press Enter, and observe the prompt leave the composer",
+     "median_ms": 675.0,
+     "min_ms": 646.0,
+     "p10_ms": 646.0,
+     "p90_ms": 701.0,
+     "p99_ms": 703.0,
+     "spread_ms": 57.0
+    },
+    "terminal_candidate_at_ms": {
+     "count": 20,
+     "max_ms": 3729.0,
+     "mean_ms": 2497.9,
+     "measures": "generation: the turn's final assistant row appears in the transcript",
+     "median_ms": 2326.0,
+     "min_ms": 1729.0,
+     "p10_ms": 1841.0,
+     "p90_ms": 3190.0,
+     "p99_ms": 3729.0,
+     "spread_ms": 2000.0
+    }
+   },
+   "server_total_ms": {
+    "count": 20,
+    "max_ms": 4983.0,
+    "mean_ms": 3735.8,
+    "median_ms": 3574.0,
+    "min_ms": 2957.0,
+    "p10_ms": 3118.0,
+    "p90_ms": 4407.0,
+    "p99_ms": 4983.0,
+    "spread_ms": 2026.0
+   },
+   "turn_duration_arrival": {
+    "claim": "no analysis-changing row arrived after the marker on any measured turn",
+    "commit_after_marker_ms": {
+     "count": 20,
+     "max_ms": 580.0,
+     "mean_ms": 558.1,
+     "median_ms": 552.0,
+     "min_ms": 526.0,
+     "p10_ms": 528.0,
+     "p90_ms": 577.0,
+     "p99_ms": 580.0,
+     "spread_ms": 54.0
+    },
+    "turns": 20,
+    "turns_where_a_row_arrived_after_the_marker": 0,
+    "turns_with_a_turn_duration_marker": 20
+   }
+  }
+ },
+ "path_b": {
+  "samples": [
+   {
+    "client_wall_ms": 3151.0,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 3796.8,
+    "warmup": true
+   },
+   {
+    "client_wall_ms": 3848.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3674.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3919.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3762.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4198.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4443.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4928.5,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 6380.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3711.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3751.3,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3745.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 6247.7,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4291.0,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4216.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4277.1,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3609.8,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3956.6,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 6284.4,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 4016.9,
+    "warmup": false
+   },
+   {
+    "client_wall_ms": 3692.1,
+    "warmup": false
+   }
+  ],
+  "summary": {
+   "client_wall_ms": {
+    "count": 20,
+    "max_ms": 6380.6,
+    "mean_ms": 4347.9,
+    "median_ms": 3956.6,
+    "min_ms": 3609.8,
+    "p10_ms": 3674.4,
+    "p90_ms": 6247.7,
+    "p99_ms": 6380.6,
+    "spread_ms": 2770.8
+   }
+  }
+ },
+ "schema_version": 1,
+ "what_would_invalidate_it": [
+  "a different Claude executable, version, OS or arch: the identity is the key, exactly as it is for a compatibility profile",
+  "a change to `quiet_for` (`crates/service/src/driver_io.rs`), which is what the commit-gate leg is currently made of",
+  "a change to `TURN_DURATION_DRAIN_FLOOR_MS` or to `graduated_drain_ms` (`crates/service/src/v1/backend.rs`)",
+  "a change to `wait_for_stable_control_render` or to the composer gate, which is what the input-gate leg is currently made of",
+  "a new `TurnTimings` boundary: this tool FAILS on one rather than reporting a total that silently excludes it",
+  "a loaded host: `load_average_1m` is recorded for exactly this reason, and a receipt taken above ~2 should be re-taken"
+ ]
+}

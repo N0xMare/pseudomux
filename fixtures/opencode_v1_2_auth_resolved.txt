@@ -1,2 +1,0 @@
-Ask anything... "Fix broken tests"
-ctrl+t variants  tab agents  ctrl+p commands
