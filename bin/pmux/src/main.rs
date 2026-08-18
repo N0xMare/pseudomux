@@ -197,7 +197,7 @@ async fn execute(cli: Cli) -> Result<()> {
                 ),
             )
         }
-        Command::Run {
+        Command::Oneshot {
             launch,
             prompt,
             turn,
@@ -354,7 +354,7 @@ async fn execute(cli: Cli) -> Result<()> {
             );
             emit(mode, "attach_capability", &capability, &text)
         }
-        Command::Ask {
+        Command::Run {
             model,
             effort,
             prompt,
@@ -369,7 +369,7 @@ async fn execute(cli: Cli) -> Result<()> {
                     deadline_unix_ms,
                 })
                 .await?;
-            // The answer first, on its own, so `pmux ask ... | head -1` is the
+            // The answer first, on its own, so `pmux run ... | head -1` is the
             // text and nothing else. The accounting follows it, and
             // `cache_read_input_tokens` is on the same line as `input_tokens`
             // deliberately: a cached prompt reports almost all of its context

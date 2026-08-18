@@ -55,19 +55,16 @@ const ENVIRONMENT_HELP_HEADING: &str =
     about = "Native pmux protocol-v1 CLI",
     long_about = "Native pmux protocol-v1 CLI.
 
-Two products share this binary and every subcommand says which one it is.
+`run` is the product: one stateless `(model, effort, prompt)` turn against a
+pool of embedded Claude Code processes. The caller names no resource. `pmuxd`
+must have been started with --path-b-parent or every `run` is refused.
 
-PATH A is the interactive session: you name the working directory, the Claude
-executable and the configuration root, and you own the session id and generation
-until you close it. `run`, `start`, `turn`, `inspect`, `cancel`, `close`,
-`attach` and `probe` are Path A. `clear` is a Path A call against a Path B cell.
+`ping` and `doctor` start nothing and spend no tokens.
 
-PATH B is the daemon's stateless token engine: `ask` is the entire surface, it
-names no resource at all, and the daemon mints every one from its own
-configuration. `pmuxd` must have been started with --path-b-parent or every
-`ask` is refused.
-
-`ping` and `doctor` belong to neither: they start nothing and spend no tokens."
+The other subcommands are Path A (experimental): interactive sessions where
+you name the working directory, the Claude executable and the configuration
+root. `oneshot`, `start`, `turn`, `inspect`, `cancel`, `close`, `attach` and
+`probe` are that surface. `clear` is a Path A call against a Path B cell."
 )]
 pub struct Cli {
     /// Exact pmuxd Unix socket. No discovery or daemon startup is performed.
@@ -75,7 +72,7 @@ pub struct Cli {
     pub socket: PathBuf,
 
     /// Output representation. `json` is one object; `ndjson` is one
-    /// `{"type","data"}` record per line. Only `run` and `turn` stream turn
+    /// `{"type","data"}` record per line. Only `oneshot` and `turn` stream turn
     /// events ahead of the result; every other subcommand emits exactly one
     /// record in either mode.
     #[arg(long, value_enum, default_value_t, global = true)]
@@ -113,7 +110,7 @@ impl Cli {
             return;
         };
         let launch = match &mut self.command {
-            Command::Run { launch, .. } | Command::Start { launch } => launch,
+            Command::Oneshot { launch, .. } | Command::Start { launch } => launch,
             _ => return,
         };
         launch.from_environment = subcommand
@@ -144,8 +141,40 @@ pub enum Command {
     /// Starts nothing, spends no tokens, and reaches only the accept loop. Use
     /// `pmux doctor` for anything behind it.
     Ping,
-    /// Path A: start, run one turn, and close one interactive Claude session.
+    /// Path B: run one stateless turn against the embedded Claude Code pool.
+    ///
+    /// Requires a `pmuxd` started with `--path-b-parent`; without one every
+    /// `run` is refused with `unsupported_feature`.
+    ///
+    /// THE CALLER NAMES NO RESOURCE. There is no `--cwd`, no
+    /// `--config-isolation-root`, no `--claude`, no `--system-prompt`, no
+    /// session id and no generation on this subcommand, and their absence is
+    /// the product rather than an omission: the daemon mints every one of them
+    /// from its own configuration plus a slot identity.
+    ///
+    /// `(model, effort, prompt) -> text + usage`, and nothing else.
+    #[command(alias = "ask")]
     Run {
+        /// Claude model alias or exact id, e.g. `opus`, `sonnet`,
+        /// `claude-opus-5`. Required: it is half the pool's class key, and an
+        /// absent model would partition the pool on whatever the daemon's
+        /// configuration happens to default to.
+        #[arg(long)]
+        model: String,
+        /// Reasoning depth. Omit for the resolved model's own default.
+        /// Validated against the RESOLVED model by the daemon, never against
+        /// this list alone -- tiers are not uniform across Claude models.
+        #[arg(long, value_enum)]
+        effort: Option<EffortArg>,
+        #[command(flatten)]
+        prompt: PromptArgs,
+        /// Absolute wall-clock deadline for the answer. Omit for daemon policy.
+        /// It may only SHORTEN pmux's wait; nothing here lengthens one.
+        #[arg(long)]
+        deadline_unix_ms: Option<u64>,
+    },
+    /// Path A (experimental): start, run one turn, and close one interactive Claude session.
+    Oneshot {
         #[command(flatten)]
         launch: LaunchArgs,
         #[command(flatten)]
@@ -153,7 +182,7 @@ pub enum Command {
         #[command(flatten)]
         turn: TurnArgs,
     },
-    /// Path A: start a persistent interactive Claude session.
+    /// Path A (experimental): start a persistent interactive Claude session.
     ///
     /// Prints the session id and generation id every later Path A subcommand
     /// needs. The session stays alive, holding a Claude process, until `pmux
@@ -162,7 +191,7 @@ pub enum Command {
         #[command(flatten)]
         launch: LaunchArgs,
     },
-    /// Path A: run one turn in an existing session.
+    /// Path A (experimental): run one turn in an existing session.
     #[command(alias = "prompt")]
     Turn {
         /// Session id printed by `pmux start`.
@@ -175,7 +204,7 @@ pub enum Command {
         #[command(flatten)]
         turn: TurnArgs,
     },
-    /// Path A: print one session's current snapshot as JSON.
+    /// Path A (experimental): print one session's current snapshot as JSON.
     ///
     /// This is where `transcript_session_id` is re-read after a lost `pmux
     /// clear` response, and where `state` and `last_turn` are read.
@@ -186,7 +215,7 @@ pub enum Command {
         #[arg(long)]
         generation: Uuid,
     },
-    /// Path A: cancel one exact in-flight turn and report recovery state.
+    /// Path A (experimental): cancel one exact in-flight turn and report recovery state.
     ///
     /// Idempotent, and never resubmits prompt input. Exits non-zero when the
     /// session could not be recovered, which means it must be closed.
@@ -200,7 +229,7 @@ pub enum Command {
         /// id `pmux` printed on stderr when the turn was accepted.
         turn: Uuid,
     },
-    /// Path A: close one session and reap its Claude process tree.
+    /// Path A (experimental): close one session and reap its Claude process tree.
     ///
     /// Exits non-zero unless the daemon confirms the process was reaped, so a
     /// zero exit is a released slot and a released process.
@@ -245,7 +274,7 @@ pub enum Command {
         #[arg(long)]
         deadline_unix_ms: Option<u64>,
     },
-    /// Path A: attach a terminal to a live session.
+    /// Path A (experimental): attach a terminal to a live session.
     ///
     /// With `--output text` pmux takes over this terminal until you detach.
     /// With `--output json`/`--output ndjson` it does NOT attach: it prints the
@@ -287,7 +316,7 @@ pub enum Command {
     /// The health tree includes the daemon's own compatibility layer, which
     /// runs the Claude the stateless pool would launch and asks the same
     /// registry a mint asks. That is what stops a green `doctor` from being
-    /// followed by an `ask` refused with `unsupported_claude_version`: the two
+    /// followed by a `run` refused with `unsupported_claude_version`: the two
     /// answers now come from one comparison, made where both operands live.
     Doctor {
         /// Claude executable to validate, resolved exactly as `pmux start`
@@ -304,41 +333,8 @@ pub enum Command {
         #[arg(long)]
         cwd: Option<PathBuf>,
     },
-    /// Path B: ask the daemon's stateless token engine one question.
-    ///
-    /// Requires a `pmuxd` started with `--path-b-parent`; without one every
-    /// `ask` is refused with `unsupported_feature`.
-    ///
-    /// THE CALLER NAMES NO RESOURCE. There is no `--cwd`, no
-    /// `--config-isolation-root`, no `--claude`, no `--system-prompt`, no
-    /// session id and no generation on this subcommand, and their absence is
-    /// the product rather than an omission: the daemon mints every one of them
-    /// from its own configuration plus a slot identity. Nine leaks in pmux were
-    /// each reachable only because a caller could name a resource pmux also
-    /// used, and a caller who cannot name a resource cannot alias one.
-    ///
-    /// `(model, effort, prompt) -> text + usage`, and nothing else.
-    Ask {
-        /// Claude model alias or exact id, e.g. `opus`, `sonnet`,
-        /// `claude-opus-5`. Required: it is half the pool's class key, and an
-        /// absent model would partition the pool on whatever the daemon's
-        /// configuration happens to default to.
-        #[arg(long)]
-        model: String,
-        /// Reasoning depth. Omit for the resolved model's own default.
-        /// Validated against the RESOLVED model by the daemon, never against
-        /// this list alone -- tiers are not uniform across Claude models.
-        #[arg(long, value_enum)]
-        effort: Option<EffortArg>,
-        #[command(flatten)]
-        prompt: PromptArgs,
-        /// Absolute wall-clock deadline for the answer. Omit for daemon policy.
-        /// It may only SHORTEN pmux's wait; nothing here lengthens one.
-        #[arg(long)]
-        deadline_unix_ms: Option<u64>,
-    },
-    /// Path A: store, read and revise the reusable launch configurations
-    /// `pmux start --agent` and `pmux run --agent` name.
+    /// Path A (experimental): store, read and revise the reusable launch configurations
+    /// `pmux start --agent` and `pmux oneshot --agent` name.
     ///
     /// An agent holds LAUNCH POLICY and never a resource: no cwd, no
     /// configuration root, no session identity, no prompt and no environment
@@ -351,7 +347,7 @@ pub enum Command {
         #[command(subcommand)]
         command: AgentCommand,
     },
-    /// Path A: build and print a redacted summary of the exact start DTO;
+    /// Path A (experimental): build and print a redacted summary of the exact start DTO;
     /// optionally launch it.
     ///
     /// Without --launch this reaches no daemon at all and starts nothing: it is
@@ -2251,9 +2247,9 @@ mod tests {
             ("start", "terminal_profile", "rmux-standard", "reserved"),
             ("start", "input_transport", "attached-stream", "reserved"),
             ("start", "retention", "one-shot", "reserved"),
-            ("run", "on_disconnect", "cancel-turn", "refused"),
-            ("run", "on_disconnect", "close-session", "refused"),
-            ("run", "heartbeat_timeout_ms", "", "NOT IMPLEMENTED"),
+            ("oneshot", "on_disconnect", "cancel-turn", "refused"),
+            ("oneshot", "on_disconnect", "close-session", "refused"),
+            ("oneshot", "heartbeat_timeout_ms", "", "NOT IMPLEMENTED"),
             ("attach", "read_only", "", "NOT IMPLEMENTED"),
             ("close", "policy", "", "does NOT currently change"),
         ];
@@ -2629,12 +2625,12 @@ mod tests {
     /// to this subcommand later is red here rather than in a leak report.
     #[test]
     fn the_path_b_subcommand_names_no_resource() {
-        let command = Cli::command().find_subcommand_mut("ask").unwrap().clone();
+        let command = Cli::command().find_subcommand_mut("run").unwrap().clone();
         let offered: BTreeSet<String> = command
             .get_arguments()
             .map(|argument| argument.get_id().to_string())
             .collect();
-        // Every argument `ask` declares of its own. `--socket` and `--output`
+        // Every argument `run` declares of its own. `--socket` and `--output`
         // are global and belong to the binary rather than to this subcommand;
         // neither names a resource the daemon would use for the turn.
         let admitted = BTreeSet::from([
@@ -2646,7 +2642,7 @@ mod tests {
         ]);
         assert_eq!(
             offered, admitted,
-            "`pmux ask` gained or lost an argument; every addition here is a resource a Path B \
+            "`pmux run` gained or lost an argument; every addition here is a resource a Path B \
              caller could name, which is the one thing this subcommand promises it cannot do"
         );
     }
@@ -2857,7 +2853,7 @@ mod tests {
     #[test]
     fn the_global_output_help_does_not_promise_turn_events_to_subcommands_that_have_none() {
         for subcommand in [
-            "ping", "inspect", "close", "clear", "attach", "doctor", "ask",
+            "ping", "inspect", "close", "clear", "attach", "doctor", "run",
         ] {
             let help = rendered_help(subcommand);
             assert!(

@@ -53,7 +53,7 @@ enum Command {
     /// Bind the socket and serve protocol v1 until SIGINT or SIGTERM.
     ///
     /// Path A (interactive sessions) is always served. Path B, the stateless
-    /// token engine `pmux ask` reaches, is OFF unless --path-b-parent is given;
+    /// token engine `pmux run` reaches, is OFF unless --path-b-parent is given;
     /// every other --path-b-* flag is refused without it.
     ///
     /// Every refusal below happens before the socket is bound, so a rejected

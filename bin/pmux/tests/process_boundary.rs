@@ -605,7 +605,7 @@ fn run_sigint_cancels_then_force_closes_and_withholds_success() {
     command_line.args([
         "--output",
         "ndjson",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",
@@ -2129,7 +2129,7 @@ fn run_ndjson_commits_exactly_once_only_after_cleanup_proof() {
     command_line.args([
         "--output",
         "ndjson",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",
@@ -2204,7 +2204,7 @@ fn completed_run_covers_text_and_json_only_after_each_close() {
     text.args([
         "--output",
         "text",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",
@@ -2220,7 +2220,7 @@ fn completed_run_covers_text_and_json_only_after_each_close() {
     json_command.args([
         "--output",
         "json",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",
@@ -2271,7 +2271,7 @@ fn run_cleanup_failure_keeps_observations_but_withholds_result_marker() {
     command_line.args([
         "--output",
         "ndjson",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",
@@ -2322,7 +2322,7 @@ fn run_failed_and_cancelled_terminal_results_never_emit_success_commit_markers()
         command_line.args([
             "--output",
             "ndjson",
-            "run",
+            "oneshot",
             "--session-id",
             SESSION_ID,
             "--turn-id",
@@ -2384,7 +2384,7 @@ fn run_combines_turn_and_cleanup_failures_without_false_commit() {
     command_line.args([
         "--output",
         "ndjson",
-        "run",
+        "oneshot",
         "--session-id",
         SESSION_ID,
         "--turn-id",

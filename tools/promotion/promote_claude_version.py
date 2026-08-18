@@ -26,7 +26,7 @@ checked against the clap declarations in `bin/pmux/src/cli.rs`) -- so no phase0
 campaign has ever exercised the cell the gate protects, including the one that
 promoted 2.1.220.
 
-Every turn here goes through `pmux ask`, which is Path B and therefore always
+Every turn here goes through `pmux run`, which is Path B and therefore always
 `SessionCell::Minified`, and the caller can name no resource on it. The oracle
 is a nonce plus a result the prompt makes computable, so it needs no tool: a
 cell launched with `--disallowedTools "*"` can satisfy it, and
@@ -542,7 +542,7 @@ class Run:
             self.binaries,
             self.sandbox,
             [
-                "ask",
+                "run",
                 "--model",
                 self.args.model,
                 "--effort",
@@ -1058,7 +1058,7 @@ def range_provenance(run: Run, results: list[dict[str, Any]]) -> str:
     return (
         f"{FLOOR_PROVENANCE} Tested through {run.version}: "
         f"promote_claude_version.py drove {len(run.turns)} minified-cell turns "
-        f"through `pmux ask` at {run.args.model} {efforts} -- every graded reply "
+        f"through `pmux run` at {run.args.model} {efforts} -- every graded reply "
         "exact, the four-grade suite served by one unchanging process across a "
         "`/clear` per turn, sidechain and cache zero on every result, the pool "
         f"never halted -- and measured {reachable['count']} reachable post-answer "

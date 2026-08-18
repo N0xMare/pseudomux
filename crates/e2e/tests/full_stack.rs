@@ -2065,7 +2065,7 @@ async fn exercise_shipped_cli(binaries: &CandidateBinaries, sandbox: &Sandbox) {
         .arg(&sandbox.public_socket)
         .arg("--output")
         .arg("ndjson")
-        .arg("run")
+        .arg("oneshot")
         .arg("--claude")
         .arg(&sandbox.fake_claude)
         .arg("--cwd")

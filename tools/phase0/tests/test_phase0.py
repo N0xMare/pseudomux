@@ -3041,12 +3041,12 @@ except FileNotFoundError:
         pmux = f"""#!/usr/bin/env python3
 import hashlib, json, os, sys
 args = sys.argv[1:]
-commands = [name for name in ("ping", "run", "start", "turn", "close") if name in args]
+commands = [name for name in ("ping", "oneshot", "run", "start", "turn", "close") if name in args]
 command = commands[0] if commands else "unknown"
-prompt = sys.stdin.buffer.read() if command in {{"run", "turn"}} else b""
+prompt = sys.stdin.buffer.read() if command in {{"oneshot", "run", "turn"}} else b""
 with open(os.environ["FAKE_PMUX_ARGV_LOG"], "a", encoding="utf-8") as output:
     output.write(json.dumps({{"command": command, "argv": args, "stdin_sha256": hashlib.sha256(prompt).hexdigest()}}) + "\\n")
-if command in {{"run", "start", "turn"}}:
+if command in {{"oneshot", "run", "start", "turn"}}:
     ledger = os.environ["FAKE_LEDGER"]
     if not os.path.exists(ledger) or not open(ledger, "rb").read().endswith(b"\\n"):
         raise SystemExit(92)
@@ -3062,8 +3062,8 @@ elif command == "start":
     flag = "--resume" if "--resume" in args else "--session-id"
     session = args[args.index(flag) + 1]
     print(json.dumps({{"session_id": session, "generation_id": "{GENERATION_ID}", "state": "ready", "compatibility": {compatibility!r}, "created_at_ms": 1, "last_sequence": 0}}))
-elif command in {{"run", "turn"}}:
-    session = args[args.index("--session-id") + 1] if command == "run" else args[args.index("turn") + 1]
+elif command in {{"oneshot", "run", "turn"}}:
+    session = args[args.index("--session-id") + 1] if command in {{"oneshot", "run"}} else args[args.index("turn") + 1]
     turn = args[args.index("--turn-id") + 1]
     generation = os.environ.get("FAKE_RESULT_GENERATION", "{GENERATION_ID}")
     model = os.environ.get("FAKE_RESULT_MODEL", "claude-sonnet-5-test")
@@ -3239,10 +3239,10 @@ print(json.dumps(result))
         self.assertEqual(reservation["public_entrypoint"], "pmux")
         self.assertNotIn("pmux-mcp", reservation["exercised_binaries"])
         argv_log = self.log.read_text()
-        self.assertIn('"command": "run"', argv_log)
+        self.assertIn('"command": "oneshot"', argv_log)
         self.assertNotIn("private prompt", argv_log)
         records = [json.loads(line) for line in argv_log.splitlines()]
-        run_record = next(record for record in records if record["command"] == "run")
+        run_record = next(record for record in records if record["command"] == "oneshot")
         self.assertEqual(
             run_record["stdin_sha256"],
             sha256_bytes(config.prompt_paths[0].read_bytes()),
@@ -3279,7 +3279,7 @@ print(json.dumps(result))
         result = CampaignRunner(config, environment).run()
         self.assertEqual(result["status"], "acquired")
         records = [json.loads(line) for line in self.log.read_text().splitlines()]
-        argv = next(record for record in records if record["command"] == "run")["argv"]
+        argv = next(record for record in records if record["command"] == "oneshot")["argv"]
         # `--profile`/`--profile-file`, not `--agent`/`--agent-file`. This test
         # asserted the old pair and passed for as long as the builder emitted
         # it: the fake pmux accepts any argv, so a spelling the real one refuses
@@ -3351,7 +3351,7 @@ print(json.dumps(result))
         result = runner.run()
         self.assertEqual(result["status"], "acquired")
         records = [json.loads(line) for line in self.log.read_text().splitlines()]
-        argv = next(record for record in records if record["command"] == "run")["argv"]
+        argv = next(record for record in records if record["command"] == "oneshot")["argv"]
         # `*` reaches pmux as one argument. Nothing in this envelope ever joins
         # argv into a shell string, so it is never a glob.
         self.assertEqual(argv[argv.index("--denied-tool") + 1], "*")

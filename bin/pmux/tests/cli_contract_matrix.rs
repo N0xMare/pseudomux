@@ -26,7 +26,7 @@ enum Surface {
     Ping,
     Start,
     Turn,
-    Run,
+    Oneshot,
     Inspect,
     Cancel,
     Close,
@@ -34,7 +34,7 @@ enum Surface {
     Attach,
     Doctor,
     Probe,
-    Ask,
+    Run,
     Agent,
 }
 
@@ -43,7 +43,7 @@ impl Surface {
         Self::Ping,
         Self::Start,
         Self::Turn,
-        Self::Run,
+        Self::Oneshot,
         Self::Inspect,
         Self::Cancel,
         Self::Close,
@@ -51,7 +51,7 @@ impl Surface {
         Self::Attach,
         Self::Doctor,
         Self::Probe,
-        Self::Ask,
+        Self::Run,
         Self::Agent,
     ];
 
@@ -60,7 +60,7 @@ impl Surface {
             Self::Ping => "ping",
             Self::Start => "start",
             Self::Turn => "turn",
-            Self::Run => "run",
+            Self::Oneshot => "oneshot",
             Self::Inspect => "inspect",
             Self::Cancel => "cancel",
             Self::Close => "close",
@@ -68,7 +68,7 @@ impl Surface {
             Self::Attach => "attach",
             Self::Doctor => "doctor",
             Self::Probe => "probe",
-            Self::Ask => "ask",
+            Self::Run => "run",
             Self::Agent => "agent",
         }
     }
@@ -112,9 +112,9 @@ impl Surface {
                     TURN_PROMPT_SECRET,
                 ]);
             }
-            Self::Run => {
+            Self::Oneshot => {
                 process.args([
-                    "run",
+                    "oneshot",
                     "--session-id",
                     SESSION_ID,
                     "--turn-id",
@@ -174,8 +174,8 @@ impl Surface {
                     SYSTEM_PROMPT_SECRET,
                 ]);
             }
-            Self::Ask => {
-                process.args(["ask", "--model", "sonnet", TURN_PROMPT_SECRET]);
+            Self::Run => {
+                process.args(["run", "--model", "sonnet", TURN_PROMPT_SECRET]);
             }
             Self::Agent => {
                 process.args(["agent", "list"]);
@@ -405,8 +405,8 @@ fn parser_misuse_is_exit_two_for_every_command() {
                     "prompt",
                 ]);
             }
-            Surface::Run => {
-                process.args(["run", "--claude", "/bin/sh", "positional"]);
+            Surface::Oneshot => {
+                process.args(["oneshot", "--claude", "/bin/sh", "positional"]);
                 process.arg("--prompt-file").arg(&prompt_file);
             }
             Surface::Inspect => {
@@ -457,8 +457,8 @@ fn parser_misuse_is_exit_two_for_every_command() {
             Surface::Probe => {
                 process.args(["probe", "--keep", "--claude", "/bin/sh"]);
             }
-            Surface::Ask => {
-                process.args(["ask", "--effort", "definitely-not-a-tier", "prompt"]);
+            Surface::Run => {
+                process.args(["run", "--effort", "definitely-not-a-tier", "prompt"]);
             }
             Surface::Agent => {
                 process.args(["agent", "get", "not-a-uuid"]);

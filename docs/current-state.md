@@ -21,7 +21,7 @@ Two products share one binary:
 
 | Product | Caller names | What happens |
 | --- | --- | --- |
-| **Path B** — the priority product | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. `pmux ask` and MCP `run_stateless`. |
+| **Path B** — the product | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. `pmux run` and MCP `run_stateless`. |
 | **Path A** — interactive sessions | cwd, Claude binary, config root, session id | Full tool surface, attach, stored agents. Always compiled and served. |
 
 Public **control** is an explicit owner-only Unix-domain socket. There is no
@@ -45,7 +45,7 @@ emptiness proof. `/clear` is the recycle; remint happens only when
 ### Sticky leases
 
 `InstanceState::Leased` is a sixth live bucket. A Messages conversation pins
-one instance: between turns the cell is not idle, not stealable by `pmux ask`,
+one instance: between turns the cell is not idle, not stealable by `pmux run`,
 and not `/clear`ed. `x-pmux-conversation` is the pin; `x-pmux-cell` is
 `s{slot}e{epoch}` (never a Claude `SessionId`). Release is
 `POST /v1/conversations/{id}/release`; idle TTL is the backstop.
@@ -113,7 +113,7 @@ Path A is not being deleted. Pool mint still goes
 
 | Dimension | Status |
 | --- | --- |
-| Path B pool + `/clear` recycle | Shipped. `pmux ask` / MCP `run_stateless`. |
+| Path B pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
 | Sticky `Leased` + Messages facade | Shipped, opt-in, measured on linux/x86_64 with Pi. |
 | Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 only. |
 | Linux 2.1.233 without a flag | **Not shipped.** Operator profile. |

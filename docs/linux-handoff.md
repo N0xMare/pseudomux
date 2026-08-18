@@ -24,7 +24,7 @@ one of them**, so nothing in the build will tell you when a number below goes st
 
 | You want | Read |
 |---|---|
-| The caller surface — `pmux ask`, models, effort, pool sizing | root `README.md` |
+| The caller surface — `pmux run`, models, effort, pool sizing | root `README.md` |
 | Path B as designed and as shipped | `docs/path-b.md` — its §0.0 is the reading order |
 | What a hostile caller can do to a pooled instance | `docs/path-b-adversarial.md` |
 | Architecture, protocol, normative product behaviour | `docs/spec.md` (2,224 lines) |

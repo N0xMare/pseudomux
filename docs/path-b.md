@@ -13,7 +13,7 @@ flag.
 | The clear/rebind boundary and the assert-empty invariant (§3.2) | `crates/service/src/driver_io.rs` |
 | The pool machine — classes, idle sets, checkout, recycle, warm floor, TTL sweep, teardown, quarantine retention (§3.1, §6, §7) | `crates/service/src/pool/` |
 | The half that touches a child, a TUI, a transcript and the registry (§2.1) | `crates/service/src/stateless.rs` |
-| `Request::RunStateless` / `StatelessResult`, and `pmux ask` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
+| `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
 | Sticky `Leased` instances and the opt-in loopback Messages facade (`--path-b-messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
 | One promoted compatibility RANGE — 2.1.220 through 2.1.227 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/promotion-2.1.227-macos-aarch64.json` |
@@ -48,7 +48,7 @@ normative documents that contain Path B material and a great deal that is not Pa
 
 | # | document | status | read it for |
 |---|---|---|---|
-| 1 | `README.md` | CURRENT | The caller's surface. `pmux ask`, the Messages facade, the model/effort table, pool sizing, and what each refusal means. Twenty minutes. |
+| 1 | `README.md` | CURRENT | The caller's surface. `pmux run`, the Messages facade, Pi, the model/effort table, and pool sizing. Twenty minutes. |
 | 2 | `docs/path-b.md` | CURRENT | This file. What an instance IS (§2), how it is recycled (§3, §6), the private root (§5), and §0 — the probe rule, which is the most reusable thing here. |
 | 3 | `docs/path-b-adversarial.md` | CURRENT | What a hostile caller can do to a pooled instance, and the three prompt shapes pmux used to admit and could not deliver. Read before touching `validate_prompt` or the composer. |
 | 4 | `docs/version-drift.md` | CURRENT | What breaks when Claude Code moves, which constants are version-keyed, and the re-promotion triggers. Read before promoting a version. |
@@ -1923,7 +1923,7 @@ here will not know what shipped.
 
 ### 12.1 The caller surface: `(model, effort, prompt) -> tokens`
 
-`pmux ask --model sonnet --effort low 'What is 2 plus 2?'` answers `4` with
+`pmux run --model sonnet --effort low 'What is 2 plus 2?'` answers `4` with
 `input_tokens=174 output_tokens=3`. **Nothing else is named on the way in.** The response object
 carries exactly `model reported_model effort text stop_reason usage claude_version` — **no session
 id, no cwd, no configuration root**. `RunStatelessRequest` denies unknown fields, so sixteen resource

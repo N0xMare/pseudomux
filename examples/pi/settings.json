@@ -1,0 +1,23 @@
+{
+  "defaultProvider": "pmux",
+  "defaultModel": "claude-opus-5-medium",
+  "defaultThinkingLevel": "off",
+  "enabledModels": ["pmux/*"],
+  "packages": ["npm:pi-subagents"],
+  "subagents": {
+    "defaultModel": "pmux/claude-opus-5-medium",
+    "modelScope": {
+      "enforce": true,
+      "strict": true,
+      "allow": ["pmux/*"]
+    },
+    "agentOverrides": {
+      "reviewer": { "thinking": false },
+      "worker": { "thinking": false },
+      "scout": { "thinking": false },
+      "oracle": { "thinking": false },
+      "delegate": { "thinking": false },
+      "researcher": { "thinking": false }
+    }
+  }
+}
