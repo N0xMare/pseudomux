@@ -22,6 +22,8 @@ pseudomux-service = { path = "../../crates/service" }
 pseudomux-protocol = { path = "../../crates/protocol" }
 libc = { workspace = true }
 async-trait = { workspace = true }
+sha2 = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 proptest = { version = "=1.8.0", default-features = false, features = ["std"] }

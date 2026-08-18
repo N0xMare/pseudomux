@@ -1523,6 +1523,103 @@ mod tests {
         }
     }
 
+    /// Linux/x86_64 minified ground truth for the 438 quantity is written down
+    /// and is not a licence to lower the product-wide catch-window floor.
+    ///
+    /// `POST_MARKER_CATCH_WINDOW_FLOOR_MS` is the macos campaign max (438ms)
+    /// plus the 352ms live sample. The same statistic on linux minified cells
+    /// is 46ms (`LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS`). This test is the
+    /// language-boundary pin: the constant equals the receipt, the receipt is
+    /// the unique-file measurement (not a double-counted retain tree), the
+    /// post-marker set is empty, and 438 is still the floor. Lowering the
+    /// floor to 46 fails the compile-time asserts in `v1/backend.rs`; changing
+    /// 46 without re-measuring fails here.
+    #[test]
+    fn linux_minified_post_answer_max_is_the_written_receipt_and_does_not_lower_the_floor() {
+        use crate::v1::{
+            LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS, POST_MARKER_CATCH_WINDOW_FLOOR_MS,
+        };
+
+        let path = evidence_dir().join("linux-minified-post-answer-x86_64.json");
+        let receipt = receipt_at(&path);
+
+        assert_eq!(receipt["os"].as_str(), Some("linux"));
+        assert_eq!(receipt["arch"].as_str(), Some("x86_64"));
+        assert_eq!(
+            receipt["claude_versions"],
+            serde_json::json!(["2.1.227", "2.1.232"])
+        );
+
+        let observed_max = reachable_max_ms(&receipt)
+            .expect("the linux minified receipt reports a reachable maximum");
+        assert_eq!(
+            observed_max,
+            LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS,
+            "the linux constant and its receipt disagree, at {}",
+            path.display()
+        );
+        assert_eq!(
+            receipt["linux_minified_post_answer_arrival_max_ms"].as_u64(),
+            Some(LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS)
+        );
+        assert_eq!(
+            receipt["post_marker_catch_window_floor_ms"].as_u64(),
+            Some(POST_MARKER_CATCH_WINDOW_FLOOR_MS)
+        );
+        assert_eq!(POST_MARKER_CATCH_WINDOW_FLOOR_MS, 438);
+        assert_eq!(LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS, 46);
+        assert!(
+            LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS < POST_MARKER_CATCH_WINDOW_FLOOR_MS,
+            "linux 46ms is inside the 438ms floor, not a replacement for it"
+        );
+
+        assert_eq!(
+            receipt["post_marker_arrivals_after_turn_duration"]["count"].as_u64(),
+            Some(0),
+            "a post-marker row on linux minified retracts the empty-set claim this receipt makes"
+        );
+        let kinds = receipt["post_answer_arrivals"]["by_kind"]
+            .as_object()
+            .expect("the receipt publishes by_kind");
+        let kind_names: Vec<&str> = kinds.keys().map(String::as_str).collect();
+        assert_eq!(
+            kind_names,
+            ["system/turn_duration"],
+            "a new reachable kind on linux minified is a new measurement, not a silent extra bucket"
+        );
+        assert_eq!(
+            receipt["full_drain_binds_on"]["without_a_turn_duration_marker"].as_u64(),
+            Some(0)
+        );
+        assert_eq!(
+            receipt["recommended_transcript_drain_ms"].as_u64(),
+            Some(250),
+            "the estimator over a 46ms max is 250ms; that is a drain recommendation, not a new floor"
+        );
+        assert_eq!(
+            receipt["corpus"]["dedup"]["unique_jsonl"].as_u64(),
+            Some(61)
+        );
+        let arrivals = receipt["post_answer_arrivals"]["reachable_on_a_minified_cell"]["count"]
+            .as_u64()
+            .expect("the receipt counts unique reachable arrivals");
+        assert!(
+            arrivals >= 47,
+            "the unique-file corpus shrank below the written n={arrivals} at {}",
+            path.display()
+        );
+        // Named so this file cannot be mistaken for the promotion drain
+        // receipt. Shipping 250 into PROMOTED_PROFILES is a later step and
+        // needs `pooled-transcript-drain-linux-x86_64.json`.
+        assert!(
+            receipt["role"]
+                .as_str()
+                .is_some_and(|role| role.contains("NOT a promoted-profile drain receipt")),
+            "the linux receipt must say it is not the promotion drain, at {}",
+            path.display()
+        );
+    }
+
     /// Every cell `resolve` will search is a supported v1 cell whose transport
     /// is already RESOLVED.
     ///

@@ -750,7 +750,7 @@ mutants each survivor is 0.167%, so 85% would admit 90 survivors — more than
 three times today's — before the cell said anything, and 93% would admit the
 tree exactly as it stood before this change. **The survivor list, not the
 score, is the artifact a reader acts on** — `missed.txt` is copied into the evidence directory on every
-run, and every entry in it is named with its reason in `current-state.md` §9.23.
+run, and every entry in it is named with its reason in `docs/archive/current-state-2026-08.md` §9.23.
 
 **Runtime, MEASURED end to end rather than extrapolated.** The scope is 702
 mutants and each one is a rebuild plus a run of three packages' test targets; at
@@ -1039,7 +1039,7 @@ is execution through the exact integrated release binaries, the row remains
 | S-16 | Daemon shutdown drains, closes, sidecar exits, unchanged socket removed; owner loss and lease faults bounded | L2/L3/L5 | cancellation-safe shutdown tests in `crates/service/src/native.rs`; `bin/pmuxd/tests/process_blackbox.rs`; `crates/service/tests/{private_runtime.rs,lifecycle_faults.rs,bounded_soak.rs}`; exact release Gate D/E reruns pending | OPEN-L5 |
 | S-17 | Hybrid hooks additive/corroborating only, bounded/private, artifacts removed | L0/L2/L3 | `crates/service/tests/hybrid_hooks.rs`; `bin/pmux-hook/tests/process_blackbox.rs`; Hybrid full-stack cell; exact release Gate D rerun pending | OPEN-L3 |
 | S-18 | Redaction of prompts, environment values, terminal screens, tokens, capabilities and backend matcher details | L0/L2/L3 | launch/driver/actor redaction tests; CLI/MCP process suites; actual daemon and full-stack log/argv assertions; exact release Gate D rerun pending | OPEN-L3 |
-| S-19 | Public control is only an explicit absolute owner-only UDS: no TCP/HTTP listener, path discovery, or client daemon autostart | L0/L3 | absolute-path rejection in Rust/TS/Python clients, CLI, and MCP; socket mode plus daemon/sidecar no-INET inspection in `crates/e2e/tests/full_stack.rs::all_v1_methods_use_the_real_public_and_private_process_boundaries`; exact release Gate D rerun pending | OPEN-L3 |
+| S-19 | Public **control** is only an explicit absolute owner-only UDS: no path discovery, no client daemon autostart, and no INET listener on the default daemon. `--path-b-messages-bind` is an opt-in loopback Anthropic Messages facade in front of Path B (not a general HTTP/TCP control plane); `parse_messages_bind` refuses any non-loopback address; default E2E daemons must not pass the flag | L0/L3 | absolute-path rejection in Rust/TS/Python clients, CLI, and MCP; socket mode plus daemon/sidecar no-INET inspection in `crates/e2e/tests/full_stack.rs::all_v1_methods_use_the_real_public_and_private_process_boundaries` (default daemon, no Messages bind); `bin/pmuxd/src/messages_http.rs::loopback_only`; exact release Gate D rerun pending | OPEN-L3 |
 | S-20 | Trust/login/permission/update/quota/unknown modals produce typed `needs_input` or the stricter admission failure without any automatic answer bytes | L0/L2/L3 | classifier/write-recorder tests in `driver_io.rs`; actor modal tests; real-PTY startup/post-Enter/admission full-stack cells; exact release Gate D rerun pending | OPEN-L3 |
 | S-21 | Daemon restart never reconstructs an actor or reinjects an interrupted prompt; recovery is caller-directed resume of one known validated UUID with a new generation | L0/L2/L3 | actor/registry stale-generation tests; `crates/e2e/tests/full_stack.rs::daemon_restart_requires_explicit_resume_without_prompt_reinjection`; exact release Gate D rerun pending | OPEN-L3 |
 | S-22 | Native turn input is one complete bounded prompt; `claude-p` streaming-input flags and any facade behavior requiring a second driver are stable pre-connect rejections | L0/L3/L4 | prompt bounds/source-conflict tests in `bin/pmux/tests/process_boundary.rs`; `bin/claude-p/tests/facade_blackbox.rs::facade_rejects_invalid_prompt_socket_timeout_and_flag_surfaces`; exact release Gate D rerun pending | OPEN-L3 |
@@ -1161,7 +1161,7 @@ terminal proxy while JSON/NDJSON intentionally return the sensitive metadata.
 | PLAT-04 | `rmux_standard`, `attached_stream`, and read-only attach are stable typed rejections (`crates/service/src/compatibility.rs::reserved_terminal_cells_fail_with_stable_typed_rejections`, launch validation, and the read-only/full reserved-cell composition in full-stack E2E); exact release Gate D rerun pending | OPEN-L3 |
 | PLAT-05 | Native credentialed Linux Claude compatibility promotion | OUT-OF-SCOPE |
 | PLAT-06 | Native Windows transport, PTY, process, and support claim | OUT-OF-SCOPE |
-| PLAT-07 | HTTP/TCP/network control-plane implementation or support claim | OUT-OF-SCOPE |
+| PLAT-07 | General HTTP/TCP/network **control-plane** implementation or support claim. The opt-in loopback Messages facade (`--path-b-messages-bind`) is a Path B token surface, not this row | OUT-OF-SCOPE |
 | PLAT-08 | Generic arbitrary-terminal-program API or public raw PTY/session API | OUT-OF-SCOPE |
 | PLAT-09 | Transparent automatic daemon-restart recovery or prompt reinjection | OUT-OF-SCOPE |
 | PLAT-10 | Native incremental/streaming prompt-input protocol | OUT-OF-SCOPE |
@@ -1175,7 +1175,7 @@ turn a future support non-goal into an implementation claim.
 
 | Boundary | Classification and deterministic closure |
 | --- | --- |
-| HTTP/TCP/network access | `OUT-OF-SCOPE` (`PLAT-07`). `S-19` separately proves the shipped daemon exposes only its exact owner-only UDS and clients neither discover nor autostart it. |
+| HTTP/TCP/network access | `OUT-OF-SCOPE` (`PLAT-07`) for a general control plane. `S-19` proves the default daemon exposes only its exact owner-only UDS, clients neither discover nor autostart it, and Messages (if enabled) is loopback-only. |
 | Daemon discovery/autostart | `OUT-OF-SCOPE`; no request exists to reject. `S-19` requires absolute-path/pre-connect and actual-process proof. |
 | `rmux_standard`, `attached_stream`, read-only attach | Typed rejection contract owned by `PLAT-04`; it remains `OPEN-L3` until the exact request/process composition passes Gate D. |
 | Non-default disconnect or heartbeat leases | Typed rejection contract owned by `P-08`; the shared vectors are covered, but the row remains `OPEN-L3` until the exact daemon composition proves the fields are not silently ignored. |

@@ -1,5 +1,7 @@
 mod bounded_log;
+mod conversation;
 mod handler;
+mod messages_http;
 
 use std::io::{self, Write};
 use std::num::NonZeroUsize;
@@ -211,6 +213,13 @@ enum Command {
         /// future promotion has nothing free to read.
         #[arg(long = "path-b-no-evidence", help_heading = PATH_B_HELP_HEADING)]
         path_b_no_evidence: bool,
+
+        /// Loopback Anthropic Messages listener (`HOST:PORT`) in front of
+        /// the Path B pool. One conversation pins one warm instance; only the
+        /// delta is typed; `/clear` runs on release. Loopback only. Off unless
+        /// given. Pi points `api: "anthropic-messages"` at `http://HOST:PORT`.
+        #[arg(long = "path-b-messages-bind", value_name = "HOST:PORT", help_heading = PATH_B_HELP_HEADING)]
+        path_b_messages_bind: Option<String>,
     },
 }
 
@@ -235,6 +244,7 @@ struct ServeOptions {
     untested_transcript_drain_ms: u64,
     agent_store: Option<PathBuf>,
     path_b: PathBOptions,
+    path_b_messages_bind: Option<String>,
 }
 
 /// The stateless engine's flags, exactly as parsed. Nothing here is trusted yet.
@@ -494,6 +504,7 @@ async fn main() -> Result<()> {
             path_b_rss_budget_mb,
             path_b_evidence_dir,
             path_b_no_evidence,
+            path_b_messages_bind,
         } => {
             run_server(
                 ServeOptions {
@@ -521,6 +532,7 @@ async fn main() -> Result<()> {
                         evidence_dir: path_b_evidence_dir,
                         no_evidence: path_b_no_evidence,
                     },
+                    path_b_messages_bind,
                 },
                 &matches,
             )
@@ -546,6 +558,27 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
     // pool refusal is an operator error, and an operator error must not leave a
     // socket, a runtime directory and an rmux sidecar behind it.
     let pool = resolve_path_b(options.path_b, matches, &options.socket)?;
+    let conversation_config = pool
+        .as_ref()
+        .map(|config| conversation::ConversationConfig {
+            idle_ttl: Duration::from_millis(config.instance_idle_ttl_ms),
+            max_leases: config.pool_size,
+        });
+    let messages_bind = options
+        .path_b_messages_bind
+        .as_deref()
+        .map(messages_http::parse_messages_bind)
+        .transpose()?;
+    if messages_bind.is_some() && pool.is_none() {
+        // The clap id starts with path_b_, so the absent-parent guard already
+        // refuses this when the operator typed the flag. This is the belt for
+        // a constructed ServeOptions in tests.
+        bail!("--path-b-messages-bind requires --path-b-parent");
+    }
+    let messages_listener = match messages_bind {
+        Some(addr) => Some(messages_http::bind_messages(addr).await?),
+        None => None,
+    };
     let socket_path = resolve_socket_path(options.socket)?;
     let (listener, mut socket_guard) = bind_socket(&socket_path).await?;
     let log_dir = daemon_log_dir(&socket_path)?;
@@ -599,6 +632,21 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
     });
 
     info!(socket = %socket_path.display(), "pmuxd protocol v1 listening");
+    let messages_task = match (messages_listener, conversation_config) {
+        (Some(listener), Some(config)) => {
+            let pool = service
+                .pool()
+                .cloned()
+                .ok_or_else(|| anyhow!("--path-b-messages-bind requires a started Path B pool"))?;
+            let book = Arc::new(conversation::ConversationBook::new(config, pool));
+            Some(tokio::spawn(async move {
+                if let Err(error) = messages_http::serve_messages(listener, book).await {
+                    warn!(error = %error, "Path B Messages listener stopped");
+                }
+            }))
+        }
+        _ => None,
+    };
     let serve_result = serve_until(
         listener,
         dispatcher,
@@ -610,6 +658,9 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         shutdown.requested(),
     )
     .await;
+    if let Some(task) = messages_task {
+        task.abort();
+    }
 
     let shutdown_result = service.shutdown().await;
     if let Err(error) = &shutdown_result {
@@ -1217,6 +1268,7 @@ mod tests {
                 "path_b_retain_dir" | "path_b_evidence_dir" => vec![flag, "/tmp".to_owned()],
                 "path_b_rss_budget_mb" => vec![flag, "4096".to_owned()],
                 "path_b_no_evidence" => vec![flag],
+                "path_b_messages_bind" => vec![flag, "127.0.0.1:0".to_owned()],
                 other => panic!(
                     "`--{}` is a --path-b-* flag with no value in this test; add one so the \
                      absent-parent guard is proven for it",

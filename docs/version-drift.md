@@ -90,16 +90,16 @@ one retracts any measured value taken without it"*. None was observed.
 
 An argument in a comment is the house bug class. `retrospective` is therefore a column the tool
 **tests**: `post_answer_arrivals` now also returns each row's offset from the terminal candidate
-(`measure_transcript_drain.py:346`), and `main` fails the run — new exit code **3**, distinct from
+(`measure_transcript_drain.py:421`), and `main` fails the run — new exit code **3**, distinct from
 the unclassified-kind exit 2 — if any row of a `retrospective` kind is ever stamped after the
-candidate. The premise is counted at `measure_transcript_drain.py:454` (`since_candidate > 0` on a `retrospective` row) and returned as
-`EXIT_RETROSPECTIVE_PREMISE_BROKEN` at `measure_transcript_drain.py:608`.
+candidate. The premise is counted at `measure_transcript_drain.py:529` (`since_candidate > 0` on a `retrospective` row) and returned as
+`EXIT_RETROSPECTIVE_PREMISE_BROKEN` at `measure_transcript_drain.py:298`.
 
 Proven able to fail: flipping the predicate `since_candidate > 0` at
-`measure_transcript_drain.py:454` to
+`measure_transcript_drain.py:529` to
 `< 0` turns 2.1.223 red with `{"system/api_error": 9}` and exit 3; restoring it returns exit 0. The
 receipt also publishes `timestamp_is_retrospective` per bucket
-(`measure_transcript_drain.py:490`), because a negative `min_ms`
+(`measure_transcript_drain.py:565`), because a negative `min_ms`
 in a table of arrivals otherwise has no explanation.
 
 **The refusal was not weakened for anything else.** `pr-link/None` (101), `system/compact_boundary`
@@ -204,7 +204,7 @@ Run the shipped tool, unmodified except for §1's classification:
 **Promoting 2.1.223 from its free corpus today would ship a 250 ms drain.** That is 188 ms below an
 arrival already observed one version earlier, equal to `TURN_DURATION_DRAIN_FLOOR_MS`
 (`crates/service/src/v1/backend.rs:305`), and below `POST_MARKER_CATCH_WINDOW_FLOOR_MS = 438`
-(`POST_MARKER_CATCH_WINDOW_FLOOR_MS`, `crates/service/src/v1/backend.rs:362`) — the constant that exists precisely to keep a 438 ms
+(`POST_MARKER_CATCH_WINDOW_FLOOR_MS`, `crates/service/src/v1/backend.rs:375`) — the constant that exists precisely to keep a 438 ms
 arrival catchable. The per-version
 fit does not merely cost ordinals; on a thin corpus it produces a number that truncates answers.
 
@@ -674,7 +674,7 @@ remain are the ones where it holds nothing.
   write-time measurement.
 - **Nothing here covers Linux or any non-aarch64 host.**
 - **A defect found and not fixed:** `read_transcript`'s docstring
-  (`tools/promotion/measure_transcript_drain.py:310-317`) says a file whose rows disagree on version is
+  (`tools/promotion/measure_transcript_drain.py:386-391`) says a file whose rows disagree on version is
   *"reported by the caller, not silently mixed in"* — and nothing in `main` reports it. Three such
   files exist here, one of 18,118 rows spanning four versions, and it is silently mixed into all
   four. That is the house bug class, it is why §3 re-attributes turns by their own candidate, and it

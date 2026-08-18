@@ -25,9 +25,11 @@ Claude's own JSONL transcript.
 > one **promoted** compatibility cell — Claude Code `2.1.220` through
 > `2.1.227` on macOS/`aarch64`, `transparent` terminal, `sdk` input — and ships
 > an **empty operator registry**: `--tested-claude-profile` admits nothing until
-> an operator names something. The default `require-tested` policy refuses every
-> version outside that range, and every other OS and architecture, *before a
-> Claude process is spawned*.
+> an operator names something. Linux (including Claude Code `2.1.233` on
+> `x86_64`) is admitted only by that flag, not by `PROMOTED_PROFILES`. The
+> default `require-tested` policy refuses every version outside a matching
+> cell, and every other OS and architecture, *before a Claude process is
+> spawned*.
 > macOS and Linux are intended targets; support claims belong to reviewed
 > evidence and operator configuration, not to this time-stable source document.
 > Windows is unsupported.
@@ -93,8 +95,10 @@ screen, or expose a general-purpose PTY API. Its core contracts are:
   later stable editor-relative render delta plus a final fence before the sole
   Enter attempt. Banner/history/footer changes cannot substitute for editor
   evidence.
-- All public integrations use one explicit, versioned Unix-domain socket. There
-  is no network listener, daemon discovery, or client-side daemon startup.
+- Public **control** uses one explicit, versioned Unix-domain socket. There is
+  no daemon discovery and no client-side daemon startup. An optional loopback
+  Anthropic Messages facade (`--path-b-messages-bind`) may be enabled in front
+  of Path B; it is off unless given and refuses any non-loopback bind.
 - One actor serializes each session. One turn may be active at a time, and a
   caller-supplied `TurnId` is an idempotency key.
 
@@ -168,8 +172,9 @@ target/release/pmux doctor \
 `doctor` reports one layer per subsystem, and its `pool` layer distinguishes
 "no stateless pool is configured on this daemon" from a pool that is configured
 and idle — so it is the fastest way to tell whether the daemon in front of you
-serves Path B at all. `configuration.evidence.path_b_enabled` is the same fact
-as a boolean.
+serves Path B at all. When Messages leases are live it reports `leased` and a
+`conversation_leases` map (`conversation` → `s{slot}e{epoch}`).
+`configuration.evidence.path_b_enabled` is the same fact as a boolean.
 
 Then the first Path B call, which does spend tokens:
 
@@ -256,6 +261,7 @@ are not uniform across Claude models, and a model that admits none refuses
 
 | model | aliases | admitted `--effort` |
 | --- | --- | --- |
+| `claude-fable-5` | `fable`, `fable-5` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-5` | `opus`, `opus-5` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-8` | `opus-4-8`, `opus-4.8` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-7` | `opus-4-7`, `opus-4.7` | `low`, `medium`, `high`, `xhigh`, `max` |
@@ -292,6 +298,7 @@ silently does nothing is worse than an error.
 | `--path-b-turn-timeout-ms MS` | `600000` | Deadline a stateless turn gets when its caller supplies none. |
 | `--path-b-retain-dir DIR` | erase | Absolute directory, outside the pool parent, where a quarantined instance's tree is kept as evidence. |
 | `--path-b-rss-budget-mb MB` | — | Resident-memory budget the pool is sized against, checked once at boot against `pool_size * 1024 MB`. |
+| `--path-b-messages-bind HOST:PORT` | off | Opt-in loopback Anthropic Messages facade in front of the pool. One conversation pins one warm instance; only the delta is typed; `/clear` runs on release. Loopback only (`127.0.0.1` or `[::1]`). Auth is presence-only: any non-empty `x-api-key` or `Authorization` is accepted; loopback is the trust boundary. |
 
 The default system prompt is `Answer directly and completely. If you cannot
 answer, say so in one line.`
@@ -330,13 +337,50 @@ total may not exceed the pool size.
 | `unsupported_feature` | the daemon was started without `--path-b-parent` — the message names the flag and the restart that fixes it. **Also** a prompt whose first meaningful character is a composer *mode* switch, `/` or `!`. `!` puts Claude's composer into bash mode and Enter runs the rest as a shell command on the host; it was reproduced 6/6 before the guard existed. The set is measured rather than guessed (`crates/claude/src/composer.rs`), leading invisibles are read past, and the check runs client-side *and* daemon-side so a raw socket caller is refused too. | no |
 | `unsupported_claude_version` | the installed Claude is not a promoted or admitted cell. Refused before a child is spawned. | no |
 | `invalid_config` | the model has no table entry, or the resolved model does not admit the requested `--effort`. The refusal offers the canonical model list, or that model's admitted tiers, from the same table argv is rendered from. **Also** the prompt shapes the composer does something to other than record: one containing a character it REWRITES — U+0009 into four spaces, U+000B into `^K`, U+000C into `^L`, each measured — because the acknowledgement could then never be satisfied; and one whose last character is `\`, because the composer reads it as a line continuation and Enter DELETES it and inserts a newline instead of submitting — doubling the backslash does not escape it, and the prompt is judged on what the composer will be left holding, so a `\` with spaces after it is still refused. **Also** a prompt carrying any other control character but `\n`, wherever it stands: pmux writes a prompt into a terminal as one paste, and it will not delete such a character from the end of a prompt to avoid saying so — a trailing U+0085 was silently removed until 2026-08-11, when the composer was measured KEEPING one. Two codes rather than one because a caller retries a rewrite differently from a mode switch. | no |
-| `session_busy` | every slot is live and none came back inside the bounded admission wait. The message carries the census — how many are serving a turn, clearing between turns, idle, reserved or warming, in teardown — and how long this caller waited. | yes |
+| `session_busy` | every slot is live and none came back inside the bounded admission wait. The message carries the census — how many are serving a turn, clearing between turns, holding a conversation lease, idle, reserved or warming, in teardown — and how long this caller waited. A `Leased` instance is not idle and is not stolen by `pmux ask`. | yes |
 | `schema_drift` | the pool halted: `/clear` selected some other command, which means pmux's model of the composer no longer matches the installed Claude. The pool stops minting and pages. | no |
 
 There is no queue, no fairness order and no reservation table. Admission waits,
 bounded, only while some slot is on its way back; the refusal says which of the
 two happened (`no slot was on its way back, so none was waited for` versus `no
 slot came back in the N ms this turn waited for one`).
+
+### Messages facade, for harnesses like Pi
+
+`--path-b-messages-bind` is **not** in the first serve example on purpose: the
+default daemon stays UDS-only. Given a loopback address it serves
+`POST /v1/messages` (and `POST /v1/v1/messages` if a client already put `/v1`
+on the base URL) plus `POST /v1/conversations/{id}/release`.
+
+```bash
+# add to an already-enabled Path B daemon; do not make this the first serve example
+--path-b-messages-bind 127.0.0.1:8765
+```
+
+A client such as Pi sets `api: "anthropic-messages"` at
+`http://127.0.0.1:8765` and sends header `x-pmux-conversation: <session-id>`.
+Every response repeats that id, plus `x-pmux-cell: s{slot}e{epoch}`,
+`x-pmux-lease: primed|continued|reprimed|replayed`, and `x-pmux-idle-ttl-ms`.
+The first turn is a primer; later turns type only the new suffix so the
+Anthropic prompt cache can hit. `/clear` runs on release, not after every
+HTTP request.
+
+Auth on this listener is presence-only. Any non-empty `x-api-key` or
+`Authorization` is accepted. That is not a secret check. Off-box bind is
+refused at boot.
+
+For a Pi root plus live subagents, warm the classes that will actually be
+used. At the owner-set cap of 15:
+
+```text
+--path-b-pool-size 15
+--path-b-warm claude-opus-5/medium=12
+--path-b-warm claude-opus-5/xhigh=2
+--path-b-warm claude-fable-5/xhigh=1
+```
+
+One pool instance per live Pi conversation. Agent end is release (`/clear`),
+not remint. Spawn, steer and delete stay the harness's job.
 
 ### Sidechains, and the one thing a stateless cell must not do
 
@@ -383,6 +427,15 @@ today is:
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
 | 2.1.220 through 2.1.227 | macos / aarch64 | transparent / sdk | 1000 |
+
+Linux is **not** in that table. Claude Code `2.1.233` on linux/`x86_64` is an
+operator cell: restart with `--tested-claude-profile` and a measured
+`transcript_drain_ms` (250 is the linux minified estimator; it is not a
+promoted pooled bound). A linux `PromotedProfile` needs
+`evidence/promotion-2.1.233-linux-x86_64.json`,
+`evidence/promoted-profile-<floor>-linux-x86_64.json`, and
+`evidence/pooled-transcript-drain-linux-x86_64.json`. Those files are not in
+this tree.
 
 The range has two closed ends and never spans a minor. Below the floor there is
 no evidence at all, above the ceiling nothing has been tested, and a different

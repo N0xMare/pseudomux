@@ -1,0 +1,221 @@
+{
+  "title": "Pi through pool-leased pmux \u2014 agentic + subagent live eval",
+  "daemon": {
+    "pool_size": 12,
+    "warm": "claude-opus-5/medium=12",
+    "messages": "http://127.0.0.1:8765"
+  },
+  "agentic": {
+    "verdict": "GREEN",
+    "turns": [
+      {
+        "tools": [
+          "read"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 0,
+        "cacheWrite": 22195,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [
+          "write"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 22195,
+        "cacheWrite": 234,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [
+          "bash"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 22532,
+        "cacheWrite": 225,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [],
+        "text": "AGENTIC_OK TOKEN=PMUX-AGENTIC-77",
+        "input": 2,
+        "cacheRead": 22866,
+        "cacheWrite": 240,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      }
+    ],
+    "notes": "TOKEN=PMUX-AGENTIC-77\nSTATUS=verified",
+    "cache_hit_after_first": true,
+    "tools_sequence": [
+      [
+        "read"
+      ],
+      [
+        "write"
+      ],
+      [
+        "bash"
+      ],
+      []
+    ]
+  },
+  "subagent_sequential": {
+    "verdict": "GREEN",
+    "turns": [
+      {
+        "tools": [
+          "subagent"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 0,
+        "cacheWrite": 22146,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [
+          "write"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 22146,
+        "cacheWrite": 4135,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [],
+        "text": "MULTI_OK",
+        "input": 2,
+        "cacheRead": 26801,
+        "cacheWrite": 636,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      }
+    ],
+    "census": {
+      "samples": 66,
+      "idle_min": 10,
+      "occupied_max": 2,
+      "leased_max": 1,
+      "in_flight_max": 1,
+      "occupied_ge_2": 35,
+      "occupied_ge_3": 0
+    },
+    "review_excerpt": "## Review\n- Correct: `GET /health` returns 200 with body `ok` (server.py:17-18), Content-Type/Content-Length set correctly in `_send` (server.py:6-12).\n- Correct: `GET /add` parses query params via `parse_qs`, converts `a`/`b` with `int()`, returns their sum as the body (server.py:19-28). Missing/invalid/empty params raise `KeyError`/`ValueError`/`IndexError`, all caught and answered with 400 `inv",
+    "cache_hit_after_first": true
+  },
+  "subagent_parallel": {
+    "verdict": "GREEN",
+    "turns": [
+      {
+        "tools": [
+          "subagent"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 0,
+        "cacheWrite": 22188,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [
+          "subagent"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 22188,
+        "cacheWrite": 430,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [
+          "write"
+        ],
+        "text": "",
+        "input": 2,
+        "cacheRead": 22836,
+        "cacheWrite": 7575,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      },
+      {
+        "tools": [],
+        "text": "PARALLEL_OK",
+        "input": 2,
+        "cacheRead": 31373,
+        "cacheWrite": 1077,
+        "provider": "pmux",
+        "model": "claude-opus-5-medium"
+      }
+    ],
+    "census": {
+      "samples": 86,
+      "idle_min": 9,
+      "occupied_max": 3,
+      "leased_max": 1,
+      "in_flight_max": 2,
+      "occupied_ge_2": 34,
+      "occupied_ge_3": 33
+    },
+    "review_excerpt": "# Parallel Review Results\n\n## health (runId ff77e1bc)\n\n## Review\n\n- **Correct:** `GET /health` is implemented correctly at `/tmp/pmux-pi-eval/server.py:15-16`. `do_GET` parses the request path with `urlparse` (line 14), so query strings and fragments do not break matching, and an exact match on `/health` returns `200` with body `ok` via `_send` (lines 6-12), which sets `Content-Type: text/plain` a",
+    "cache_hit_after_first": true
+  },
+  "child_metas": [
+    {
+      "file": "/tmp/pmux-pi-eval/runs/parallel-sessions/subagent-artifacts/4b5c565e_reviewer_0_meta.json",
+      "runId": "4b5c565e",
+      "model": "pmux/claude-opus-5-medium",
+      "exitCode": 0,
+      "usage": {
+        "input": 4,
+        "output": 1135,
+        "cacheRead": 4811,
+        "cacheWrite": 5404,
+        "cost": 0,
+        "turns": 2
+      },
+      "durationMs": 19884
+    },
+    {
+      "file": "/tmp/pmux-pi-eval/runs/parallel-sessions/subagent-artifacts/ff77e1bc_reviewer_0_meta.json",
+      "runId": "ff77e1bc",
+      "model": "pmux/claude-opus-5-medium",
+      "exitCode": 0,
+      "usage": {
+        "input": 4,
+        "output": 1195,
+        "cacheRead": 4813,
+        "cacheWrite": 5406,
+        "cost": 0,
+        "turns": 2
+      },
+      "durationMs": 20328
+    },
+    {
+      "file": "/tmp/pmux-pi-eval/runs/multi-sessions/subagent-artifacts/2221337c_reviewer_0_meta.json",
+      "runId": "2221337c",
+      "model": "pmux/claude-opus-5-medium",
+      "exitCode": 0,
+      "usage": {
+        "input": 4,
+        "output": 1239,
+        "cacheRead": 4832,
+        "cacheWrite": 5425,
+        "cost": 0,
+        "turns": 2
+      },
+      "durationMs": 19866
+    }
+  ]
+}

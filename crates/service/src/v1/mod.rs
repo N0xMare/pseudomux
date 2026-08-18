@@ -15,11 +15,11 @@ pub use actor::{
     WritableAttachCompletion, is_valid_session_transition,
 };
 pub use backend::{
-    Clock, DriverFailure, DriverResult, InterruptRecovery, POST_MARKER_CATCH_WINDOW_FLOOR_MS,
-    SystemClock, TURN_DURATION_DRAIN_FLOOR_MS, TerminalControl, TerminalEvidence,
-    TerminalScreenObservation, TranscriptArm, TranscriptBatch, TranscriptDrainEvidence,
-    TranscriptPosition, TranscriptSource, UNRECOGNISED_SCREEN_VETO, graduated_drain_ms,
-    post_marker_catch_window_ms,
+    Clock, DriverFailure, DriverResult, InterruptRecovery,
+    LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS, POST_MARKER_CATCH_WINDOW_FLOOR_MS, SystemClock,
+    TURN_DURATION_DRAIN_FLOOR_MS, TerminalControl, TerminalEvidence, TerminalScreenObservation,
+    TranscriptArm, TranscriptBatch, TranscriptDrainEvidence, TranscriptPosition, TranscriptSource,
+    UNRECOGNISED_SCREEN_VETO, graduated_drain_ms, post_marker_catch_window_ms,
 };
 pub use minified::{
     FastPathRefusal, FastPathVerdict, MINIFIED_FAST_PATH_DRAIN_FLOOR_MS, MinifiedTurnObservations,

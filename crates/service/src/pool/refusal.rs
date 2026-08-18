@@ -44,6 +44,7 @@ pub struct BucketCounts {
     serving: u32,
     clearing: u32,
     idle: u32,
+    leased: u32,
     reserved: u32,
     tearing_down: u32,
     released: u32,
@@ -56,6 +57,7 @@ impl BucketCounts {
             CensusBucket::Serving => &mut self.serving,
             CensusBucket::Clearing => &mut self.clearing,
             CensusBucket::Idle => &mut self.idle,
+            CensusBucket::Leased => &mut self.leased,
             CensusBucket::Reserved => &mut self.reserved,
             CensusBucket::TearingDown => &mut self.tearing_down,
             CensusBucket::Released => &mut self.released,
@@ -70,6 +72,7 @@ impl BucketCounts {
         self.serving
             .saturating_add(self.clearing)
             .saturating_add(self.idle)
+            .saturating_add(self.leased)
             .saturating_add(self.reserved)
             .saturating_add(self.tearing_down)
     }
@@ -98,6 +101,11 @@ impl BucketCounts {
     #[must_use]
     pub const fn idle(self) -> u32 {
         self.idle
+    }
+
+    #[must_use]
+    pub const fn leased(self) -> u32 {
+        self.leased
     }
 
     #[must_use]
@@ -134,14 +142,14 @@ impl BucketCounts {
     /// A wildcard-free match over [`CensusBucket`], so a new bucket is a
     /// compile error here rather than a count with no sentence.
     ///
-    /// The array holds the five buckets that hold a slot, and [`Self::live`]
-    /// sums exactly those five, so the sentence and the total cannot disagree.
+    /// The array holds the six buckets that hold a slot, and [`Self::live`]
+    /// sums exactly those six, so the sentence and the total cannot disagree.
     /// `Released` is deliberately absent from both: an instance in it holds no
     /// slot, and it is unreachable from the pool's live map, since `Leaked` and
     /// `Retired` are both reached and removed under one lock. It exists so the
     /// match above needs no wildcard, and it is given a phrase for the same
     /// reason -- a bucket with no phrase is the thing this shape prevents.
-    fn clauses(self) -> [(CensusBucket, u32, &'static str); 5] {
+    fn clauses(self) -> [(CensusBucket, u32, &'static str); 6] {
         let phrase = |bucket: CensusBucket| match bucket {
             CensusBucket::Serving => "serving a turn",
             // The sentence this whole type exists for. MEASURED at 8 concurrent
@@ -154,6 +162,7 @@ impl BucketCounts {
             // `CensusBucket::comes_back_on_its_own`.
             CensusBucket::Clearing => "clearing between turns, with no caller waiting",
             CensusBucket::Idle => "idle",
+            CensusBucket::Leased => "holding a conversation lease",
             CensusBucket::Reserved => "reserved or warming",
             CensusBucket::TearingDown => "in teardown",
             CensusBucket::Released => "holding no slot",
@@ -170,6 +179,11 @@ impl BucketCounts {
                 phrase(CensusBucket::Clearing),
             ),
             (CensusBucket::Idle, self.idle, phrase(CensusBucket::Idle)),
+            (
+                CensusBucket::Leased,
+                self.leased,
+                phrase(CensusBucket::Leased),
+            ),
             (
                 CensusBucket::Reserved,
                 self.reserved,
@@ -234,6 +248,7 @@ impl PoolPressure {
             "in_flight": self.counts.serving,
             "clearing": self.counts.clearing,
             "idle": self.counts.idle,
+            "leased": self.counts.leased,
             "reserved": self.counts.reserved,
             "tearing_down": self.counts.tearing_down,
             "leaked": self.leaked,
@@ -691,6 +706,7 @@ mod tests {
             InstanceState::Reserved,
             InstanceState::Warming,
             InstanceState::Idle,
+            InstanceState::Leased,
             InstanceState::CheckedOut,
             InstanceState::Delivering,
             InstanceState::Clearing,
@@ -806,6 +822,7 @@ mod tests {
             InstanceState::Reserved,
             InstanceState::Warming,
             InstanceState::Idle,
+            InstanceState::Leased,
             InstanceState::CheckedOut,
             InstanceState::Delivering,
             InstanceState::Clearing,
@@ -820,7 +837,7 @@ mod tests {
             );
             counts.record(state);
         }
-        let live = u32::try_from(states.len()).expect("eight states");
+        let live = u32::try_from(states.len()).expect("nine states");
         assert_eq!(
             counts.live(),
             live,
@@ -1191,6 +1208,12 @@ mod tests {
                 CensusBucket::Clearing,
                 5,
                 BucketCounts::clearing,
+            ),
+            (
+                InstanceState::Leased,
+                CensusBucket::Leased,
+                6,
+                BucketCounts::leased,
             ),
         ];
 

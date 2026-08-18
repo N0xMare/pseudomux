@@ -140,8 +140,8 @@ asked for.
 
 ### 2.1 The sidechain guard: fired, but only in a double
 
-`pool/refusal.rs:447` (`sidechain_on_toolless_cell`) refuses a turn whose transcript carried a
-sidechain row at all, and `pool/mod.rs:1068` is the commit-time predicate
+`pool/refusal.rs:462` (`sidechain_on_toolless_cell`) refuses a turn whose transcript carried a
+sidechain row at all, and `pool/mod.rs:1412` is the commit-time predicate
 (`counted_rows > 0 || turn.usage.sidechain != Default::default()`). **It did not fire once here, and
 I could not make it fire against a real Claude**: every phrasing of "spawn a subagent", direct and
 indirect, produced a text refusal. 100 transcripts of structural zero is the invariant holding, and
@@ -152,7 +152,7 @@ added nothing to it and claim nothing new about it.
 
 **A gap worth naming, since I looked for it:** the commit-time guard checks *sidechains only*. A
 `tool_use` block on the main chain — a `Bash` call, which produces no sidechain — has no commit-time
-refusal at all. `evaluate_minified_fast_path` (`crates/service/src/v1/minified.rs:318`) checks both (checks 1 and
+refusal at all. `evaluate_minified_fast_path` (`crates/service/src/v1/minified.rs:333`) checks both (checks 1 and
 2), but that is
 the **fast-path drain decision**: a refusal there makes the turn take the slower proof and does not
 fail it. So if a tool surface ever leaked without a subagent, Path B would return the answer and say
@@ -238,7 +238,7 @@ compares the recorded prompt to the typed one and the recorded prompt is a `<bas
 
 This is outside every isolation Path B claims. It is not a tool call, so `--disallowedTools "*"` does
 not see it; it is not a permission decision, so `--permission-mode dontAsk` does not see it; it
-produces no sidechain, so `sidechain_on_toolless_cell` (`pool/refusal.rs:447`) does not see it; and it produces a clean
+produces no sidechain, so `sidechain_on_toolless_cell` (`pool/refusal.rs:462`) does not see it; and it produces a clean
 `turn_duration` marker, so the fast-path checks in `v1/minified.rs` do not see it either. The command
 runs as the daemon's uid, in the daemon's environment, in the instance's cwd.
 
@@ -933,12 +933,12 @@ this commit, which puts them under the existing grader — and the grader then r
 as rotted**, every one invisible until it carried its path:
 
 ```
-docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:601
-docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1071
+docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:634
+docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1122
 docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1360
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:849
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2220
-docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:490
+docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:565
 ```
 
 **Graded citations went from 39 to 53.** The 14 that joined are the ones the guard's name had always

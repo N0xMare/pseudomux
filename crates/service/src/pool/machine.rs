@@ -7,10 +7,11 @@
 //!
 //! **G.** For every instance in every state: (a) exactly one Claude process,
 //! one config root, one cwd and one bound transcript belong to it and to no
-//! other instance or session; (b) at most one caller holds it, and only in
-//! [`InstanceState::CheckedOut`]; (c) its pmux `SessionId` has never appeared in
-//! any byte pmux wrote to any client socket; (d) its root exists on disk **iff**
-//! it has not yet completed destruction, or its process was never proven reaped.
+//! other instance or session; (b) at most one conversation holds it, and a
+//! caller holds it only in [`InstanceState::CheckedOut`]; (c) its pmux
+//! `SessionId` has never appeared in any byte pmux wrote to any client socket;
+//! (d) its root exists on disk **iff** it has not yet completed destruction, or
+//! its process was never proven reaped.
 //!
 //! # The invariant this module exists to make unforgeable
 //!
@@ -51,6 +52,11 @@ pub enum InstanceState {
     /// way to the caller. No clear has been typed yet: the response is written
     /// before the clear starts, so a slow clear costs capacity, never latency.
     Delivering,
+    /// A Messages conversation owns this instance between turns. The transcript
+    /// is NOT empty -- that is the whole point: the next suffix keeps Anthropic's
+    /// prefix cache. Not in any idle set; not checkout-able by a stranger.
+    /// `/clear` happens on [`Transition::ReleaseLease`], not after every turn.
+    Leased,
     /// The caller's response has already been handed back. Nobody waits here.
     Clearing,
     /// Not in any idle set, never re-enterable, root retained under the
@@ -111,6 +117,7 @@ impl InstanceState {
             Self::CheckedOut | Self::Delivering => CensusBucket::Serving,
             Self::Clearing => CensusBucket::Clearing,
             Self::Idle => CensusBucket::Idle,
+            Self::Leased => CensusBucket::Leased,
             Self::Reserved | Self::Warming => CensusBucket::Reserved,
             Self::Quarantined | Self::Destroying => CensusBucket::TearingDown,
             Self::Leaked | Self::Retired => CensusBucket::Released,
@@ -132,6 +139,8 @@ pub enum CensusBucket {
     Clearing,
     /// Published in an idle set and checkout-able.
     Idle,
+    /// Holding a conversation between turns. Not empty, not idle, not serving.
+    Leased,
     /// A slot claimed for a launch that has not finished.
     Reserved,
     /// On its way out, slot still held.
@@ -184,7 +193,7 @@ impl CensusBucket {
     pub const fn comes_back_on_its_own(self) -> bool {
         match self {
             Self::Clearing | Self::TearingDown => true,
-            Self::Serving | Self::Reserved | Self::Idle | Self::Released => false,
+            Self::Serving | Self::Reserved | Self::Idle | Self::Leased | Self::Released => false,
         }
     }
 }
@@ -197,6 +206,7 @@ impl fmt::Display for InstanceState {
             Self::Idle => "idle",
             Self::CheckedOut => "checked_out",
             Self::Delivering => "delivering",
+            Self::Leased => "leased",
             Self::Clearing => "clearing",
             Self::Quarantined => "quarantined",
             Self::Destroying => "destroying",
@@ -235,6 +245,14 @@ pub enum Transition {
     TurnNotDelivered,
     /// The answer has been handed back to the caller; the clear may start.
     ResponseDelivered,
+    /// The answer has been handed back and the conversation keeps the instance.
+    /// No `/clear`. The transcript prefix stays so the next suffix can cache.
+    LeaseHeld,
+    /// The conversation that holds this instance is sending another turn.
+    ResumeLease,
+    /// The conversation released the instance (eagerly or by idle TTL). `/clear`
+    /// starts so the slot can re-enter the idle set empty.
+    ReleaseLease,
     /// `clear_and_rebind` resolved the rotation and `assert_empty_after_clear`
     /// passed before the transcript was bound.
     ClearProven,
@@ -334,8 +352,8 @@ pub fn step(
         (S::Warming, T::MintFailed) => S::Destroying,
         (S::Warming, T::ShutdownDrain) => S::Destroying,
 
-        // Idle is the only state a caller can be handed an instance from, and
-        // the only exits are a checkout or a destruction.
+        // Idle is the only state a *stranger* can be handed an instance from.
+        // A leased conversation resumes without re-proving emptiness.
         (S::Idle, T::CheckOut) => S::CheckedOut,
         (S::Idle, T::IdleExpired | T::ColdSwapVictim | T::ShutdownDrain) => S::Destroying,
 
@@ -344,8 +362,16 @@ pub fn step(
         (S::CheckedOut, T::TurnCommitted) => S::Delivering,
         (S::CheckedOut, T::TurnNotDelivered) => S::Quarantined,
 
-        // Respond first, clear second. Nobody waits on the clear.
+        // Respond first, then either clear (stateless) or keep the conversation
+        // (Messages sticky). Both happen after the caller already has the bytes.
         (S::Delivering, T::ResponseDelivered) => S::Clearing,
+        (S::Delivering, T::LeaseHeld) => S::Leased,
+
+        // A leased instance is owned by one conversation until that conversation
+        // sends another turn, releases, or the daemon drains.
+        (S::Leased, T::ResumeLease) => S::CheckedOut,
+        (S::Leased, T::ReleaseLease) => S::Clearing,
+        (S::Leased, T::ShutdownDrain) => S::Destroying,
 
         // The clear half of assert-empty, plus the recycle cap and the two
         // failure shapes the driver distinguishes.
@@ -388,7 +414,10 @@ pub fn step(
             | T::ColdSwapVictim
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Warming,
@@ -405,7 +434,10 @@ pub fn step(
             | T::ColdSwapVictim
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Idle,
@@ -421,7 +453,10 @@ pub fn step(
             | T::ClearFailedIncoherent
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::CheckedOut,
@@ -439,7 +474,10 @@ pub fn step(
             | T::ShutdownDrain
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Delivering,
@@ -458,7 +496,29 @@ pub fn step(
             | T::ShutdownDrain
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::ResumeLease
+            | T::ReleaseLease,
+        )
+        | (
+            S::Leased,
+            T::BeginWarm
+            | T::WarmProven
+            | T::MintFailed
+            | T::CheckOut
+            | T::TurnCommitted
+            | T::TurnNotDelivered
+            | T::ResponseDelivered
+            | T::ClearProven
+            | T::RecycleDue
+            | T::ClearFailedCoherent
+            | T::ClearFailedIncoherent
+            | T::IdleExpired
+            | T::ColdSwapVictim
+            | T::BeginDestroy
+            | T::Reaped
+            | T::ReapFailed
+            | T::LeaseHeld,
         )
         | (
             S::Clearing,
@@ -473,7 +533,10 @@ pub fn step(
             | T::ColdSwapVictim
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Quarantined,
@@ -492,7 +555,10 @@ pub fn step(
             | T::ColdSwapVictim
             | T::ShutdownDrain
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Destroying,
@@ -510,7 +576,10 @@ pub fn step(
             | T::IdleExpired
             | T::ColdSwapVictim
             | T::ShutdownDrain
-            | T::BeginDestroy,
+            | T::BeginDestroy
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         )
         | (
             S::Leaked | S::Retired,
@@ -530,7 +599,10 @@ pub fn step(
             | T::ShutdownDrain
             | T::BeginDestroy
             | T::Reaped
-            | T::ReapFailed,
+            | T::ReapFailed
+            | T::LeaseHeld
+            | T::ResumeLease
+            | T::ReleaseLease,
         ) => return Err(IllegalTransition { from, transition }),
     };
     Ok(to)
@@ -569,6 +641,7 @@ pub const fn shutdown_action(state: InstanceState) -> ShutdownAction {
         InstanceState::Reserved
         | InstanceState::Warming
         | InstanceState::Idle
+        | InstanceState::Leased
         | InstanceState::Clearing => ShutdownAction::Drain(Transition::ShutdownDrain),
         // Quarantine teardown is a pool obligation and the instance is already
         // out of service; shutdown starts the destroy rather than leaving the
@@ -627,6 +700,7 @@ mod tests {
         InstanceState::Idle,
         InstanceState::CheckedOut,
         InstanceState::Delivering,
+        InstanceState::Leased,
         InstanceState::Clearing,
         InstanceState::Quarantined,
         InstanceState::Destroying,
@@ -652,6 +726,9 @@ mod tests {
         Transition::BeginDestroy,
         Transition::Reaped,
         Transition::ReapFailed,
+        Transition::LeaseHeld,
+        Transition::ResumeLease,
+        Transition::ReleaseLease,
     ];
 
     /// Every edge of the machine, written out as data.
@@ -725,6 +802,26 @@ mod tests {
             InstanceState::Delivering,
             Transition::ResponseDelivered,
             InstanceState::Clearing,
+        ),
+        (
+            InstanceState::Delivering,
+            Transition::LeaseHeld,
+            InstanceState::Leased,
+        ),
+        (
+            InstanceState::Leased,
+            Transition::ResumeLease,
+            InstanceState::CheckedOut,
+        ),
+        (
+            InstanceState::Leased,
+            Transition::ReleaseLease,
+            InstanceState::Clearing,
+        ),
+        (
+            InstanceState::Leased,
+            Transition::ShutdownDrain,
+            InstanceState::Destroying,
         ),
         (
             InstanceState::Clearing,
@@ -892,6 +989,34 @@ mod tests {
             step(InstanceState::Delivering, Transition::ResponseDelivered),
             Ok(InstanceState::Clearing)
         );
+        assert_eq!(
+            step(InstanceState::Delivering, Transition::LeaseHeld),
+            Ok(InstanceState::Leased)
+        );
+        assert!(step(InstanceState::CheckedOut, Transition::LeaseHeld).is_err());
+    }
+
+    #[test]
+    fn a_leased_instance_resumes_or_releases_and_is_never_stolen() {
+        assert_eq!(
+            step(InstanceState::Leased, Transition::ResumeLease),
+            Ok(InstanceState::CheckedOut)
+        );
+        assert_eq!(
+            step(InstanceState::Leased, Transition::ReleaseLease),
+            Ok(InstanceState::Clearing)
+        );
+        assert!(step(InstanceState::Leased, Transition::CheckOut).is_err());
+        assert!(step(InstanceState::Leased, Transition::ColdSwapVictim).is_err());
+        assert!(step(InstanceState::Leased, Transition::IdleExpired).is_err());
+        for state in ALL_STATES {
+            let admitted = step(*state, Transition::ResumeLease).is_ok();
+            assert_eq!(
+                admitted,
+                *state == InstanceState::Leased,
+                "{state} must not admit a lease resume"
+            );
+        }
     }
 
     #[test]
@@ -1091,6 +1216,7 @@ mod tests {
             (InstanceState::Idle, true),
             (InstanceState::CheckedOut, true),
             (InstanceState::Delivering, true),
+            (InstanceState::Leased, true),
             (InstanceState::Clearing, true),
             (InstanceState::Quarantined, true),
             (InstanceState::Destroying, true),

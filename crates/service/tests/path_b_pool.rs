@@ -2991,3 +2991,248 @@ async fn retention_keeps_a_quarantine_and_nothing_else() {
     assert!(trees(&harness.parent).is_empty());
     assert_invariants(&harness).await;
 }
+
+// ---------------------------------------------------------------------------
+// Sticky conversation leases
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn a_sticky_turn_keeps_the_instance_and_does_not_clear() {
+    let harness = build(|_| {});
+    let first = harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime answers");
+    assert_eq!(first.result.text, "answered: hello");
+    assert!(
+        first.cell.starts_with("s"),
+        "the cell token is a slot/epoch, not a session id: {}",
+        first.cell
+    );
+    let journal = harness.host.journal().await;
+    assert!(
+        !first
+            .cell
+            .contains(&session_for(&journal.mints[0]).to_string()),
+        "the cell token must not be a pmux SessionId"
+    );
+    assert_eq!(harness.spawner.pending(), 0, "sticky does not spawn /clear");
+    let census = harness.pool.census().await;
+    assert_eq!(census.leased, 1);
+    assert_eq!(census.clearing, 0);
+    assert_eq!(census.idle, 0);
+    let leases = harness.pool.conversation_leases().await;
+    assert_eq!(leases.len(), 1);
+    assert_eq!(leases[0].conversation_id, "conv-a");
+    assert_eq!(leases[0].cell, first.cell);
+    assert_eq!(leases[0].state, "leased");
+    assert_invariants(&harness).await;
+
+    let second = harness
+        .pool
+        .run_sticky("conv-a", ask("again"), true)
+        .await
+        .expect("resume answers");
+    assert_eq!(second.cell, first.cell);
+    assert_eq!(harness.spawner.pending(), 0);
+    let journal = harness.host.journal().await;
+    assert_eq!(journal.mints.len(), 1);
+    assert_eq!(journal.turns.len(), 2);
+    assert_eq!(journal.turns[0].0, journal.turns[1].0);
+    assert!(journal.clears.is_empty());
+    assert_eq!(harness.pool.census().await.leased, 1);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn releasing_a_conversation_clears_the_instance_back_to_idle() {
+    let harness = build(|_| {});
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime");
+    harness
+        .pool
+        .release_conversation("conv-a")
+        .await
+        .expect("release");
+    assert_eq!(harness.spawner.pending(), 1);
+    assert_eq!(harness.pool.census().await.clearing, 1);
+    harness.spawner.drain().await;
+    let census = harness.pool.census().await;
+    assert_eq!(census.leased, 0);
+    assert_eq!(census.idle, 1);
+    assert_eq!(harness.host.journal().await.clears.len(), 1);
+    assert_invariants(&harness).await;
+
+    let missing = harness
+        .pool
+        .run_sticky("conv-a", ask("after release"), true)
+        .await
+        .expect_err("the lease is gone");
+    assert_eq!(missing.code, ErrorCode::SessionNotFound);
+}
+
+#[tokio::test]
+async fn two_conversations_hold_two_slots_and_a_stranger_cannot_take_a_lease() {
+    let harness = build(|_| {});
+    harness
+        .pool
+        .run_sticky("root", ask("root"), false)
+        .await
+        .expect("root");
+    harness
+        .pool
+        .run_sticky("child", ask("child"), false)
+        .await
+        .expect("child");
+    let census = harness.pool.census().await;
+    assert_eq!(census.leased, 2);
+    assert_eq!(census.idle, 0);
+    assert_eq!(harness.host.journal().await.mints.len(), 2);
+    assert_eq!(harness.spawner.pending(), 0);
+
+    let stolen = harness
+        .pool
+        .run(ask("stateless must not steal a lease"))
+        .await
+        .expect_err("a full leased pool is exhaustion, not a steal");
+    assert_eq!(stolen.code, ErrorCode::SessionBusy);
+    assert!(
+        stolen.message.contains("holding a conversation lease"),
+        "the refusal must name the lease: {}",
+        stolen.message
+    );
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn an_in_flight_sticky_turn_is_busy_and_a_missing_resume_is_not_found() {
+    let harness = build(|_| {});
+    harness.host.hold_next_turn().await;
+    let pool = Arc::clone(&harness.pool);
+    let flying = tokio::spawn(async move { pool.run_sticky("conv-a", ask("slow"), false).await });
+    harness.host.await_turn_started().await;
+    let busy = harness
+        .pool
+        .run_sticky("conv-a", ask("overlap"), true)
+        .await
+        .expect_err("in flight");
+    assert_eq!(busy.code, ErrorCode::SessionBusy);
+    let missing = harness
+        .pool
+        .run_sticky("no-such", ask("ghost"), true)
+        .await
+        .expect_err("never leased");
+    assert_eq!(missing.code, ErrorCode::SessionNotFound);
+    harness.host.release_held_turn().await;
+    flying.await.expect("join").expect("slow turn commits");
+    assert_eq!(harness.pool.census().await.leased, 1);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn releasing_an_in_flight_sticky_turn_is_busy_and_does_not_clear() {
+    let harness = build(|_| {});
+    harness.host.hold_next_turn().await;
+    let pool = Arc::clone(&harness.pool);
+    let flying = tokio::spawn(async move { pool.run_sticky("conv-a", ask("slow"), false).await });
+    harness.host.await_turn_started().await;
+    let busy = harness
+        .pool
+        .release_conversation("conv-a")
+        .await
+        .expect_err("cannot release a turn in flight");
+    assert_eq!(busy.code, ErrorCode::SessionBusy);
+    harness.host.release_held_turn().await;
+    flying.await.expect("join").expect("slow turn commits");
+    assert_eq!(harness.pool.census().await.leased, 1);
+    assert_eq!(harness.spawner.pending(), 0);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn a_failed_sticky_turn_does_not_leave_the_id_permanently_busy() {
+    let harness = build(|_| {});
+    harness
+        .host
+        .fail_next_turn(ErrorBody::new(
+            ErrorCode::Internal,
+            "planted sticky failure",
+        ))
+        .await;
+    let failed = harness
+        .pool
+        .run_sticky("conv-a", ask("boom"), false)
+        .await
+        .expect_err("planted");
+    assert_eq!(failed.code, ErrorCode::Internal);
+    harness.spawner.drain().await;
+    let again = harness
+        .pool
+        .run_sticky("conv-a", ask("retry"), false)
+        .await
+        .expect("a failed prime must not pin the conversation id");
+    assert!(again.cell.starts_with('s'));
+    assert_eq!(harness.pool.census().await.leased, 1);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn shutdown_drains_a_leased_instance_and_erases_its_root() {
+    let harness = build(|settings| {
+        settings.pool_size = 2;
+        settings.rss_budget_mb = 2 * 1024;
+    });
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hold"), false)
+        .await
+        .expect("prime");
+    assert_eq!(harness.pool.census().await.leased, 1);
+    harness.pool.shutdown().await;
+    assert!(
+        trees(&harness.parent).is_empty(),
+        "a leased root must not survive shutdown"
+    );
+    assert_eq!(harness.pool.census().await.live, 0);
+    let late = harness
+        .pool
+        .run_sticky("conv-a", ask("late"), false)
+        .await
+        .expect_err("shutting down");
+    assert_eq!(late.code, ErrorCode::DaemonLost);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn a_sticky_turn_that_commits_during_shutdown_does_not_stay_leased() {
+    let harness = build(|settings| {
+        settings.pool_size = 2;
+        settings.rss_budget_mb = 2 * 1024;
+    });
+    harness.host.hold_next_turn().await;
+    let pool = Arc::clone(&harness.pool);
+    let flying = tokio::spawn(async move { pool.run_sticky("conv-a", ask("slow"), false).await });
+    harness.host.await_turn_started().await;
+    let shutting = {
+        let pool = Arc::clone(&harness.pool);
+        tokio::spawn(async move { pool.shutdown().await })
+    };
+    // Shutdown keeps CheckedOut. Completing the turn must drain, not LeaseHeld.
+    harness.host.release_held_turn().await;
+    flying.await.expect("join").expect("answer is still owed");
+    shutting.await.expect("shutdown join");
+    assert_eq!(
+        harness.pool.census().await.leased,
+        0,
+        "commit_sticky must not LeaseHeld after the shutdown scan"
+    );
+    assert!(
+        trees(&harness.parent).is_empty(),
+        "the instance that answered during shutdown must still be erased"
+    );
+    assert_invariants(&harness).await;
+}

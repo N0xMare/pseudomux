@@ -14,6 +14,7 @@ flag.
 | The pool machine — classes, idle sets, checkout, recycle, warm floor, TTL sweep, teardown, quarantine retention (§3.1, §6, §7) | `crates/service/src/pool/` |
 | The half that touches a child, a TUI, a transcript and the registry (§2.1) | `crates/service/src/stateless.rs` |
 | `Request::RunStateless` / `StatelessResult`, and `pmux ask` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
+| Sticky `Leased` instances and the opt-in loopback Messages facade (`--path-b-messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
 | One promoted compatibility RANGE — 2.1.220 through 2.1.227 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/promotion-2.1.227-macos-aarch64.json` |
 
@@ -47,7 +48,7 @@ normative documents that contain Path B material and a great deal that is not Pa
 
 | # | document | status | read it for |
 |---|---|---|---|
-| 1 | `README.md` | CURRENT | The caller's surface. `pmux ask`, the model/effort table, pool sizing, and what each refusal means. Twenty minutes. |
+| 1 | `README.md` | CURRENT | The caller's surface. `pmux ask`, the Messages facade, the model/effort table, pool sizing, and what each refusal means. Twenty minutes. |
 | 2 | `docs/path-b.md` | CURRENT | This file. What an instance IS (§2), how it is recycled (§3, §6), the private root (§5), and §0 — the probe rule, which is the most reusable thing here. |
 | 3 | `docs/path-b-adversarial.md` | CURRENT | What a hostile caller can do to a pooled instance, and the three prompt shapes pmux used to admit and could not deliver. Read before touching `validate_prompt` or the composer. |
 | 4 | `docs/version-drift.md` | CURRENT | What breaks when Claude Code moves, which constants are version-keyed, and the re-promotion triggers. Read before promoting a version. |
@@ -55,7 +56,7 @@ normative documents that contain Path B material and a great deal that is not Pa
 | 6 | `docs/2.1.226-acceptance.md` | DATED RECEIPT | 2026-08-09. Ten real turns at 2.1.226. §6 (the SIGTERM window) and §9.1 (the launch bundle) are closed and say so; §9's remaining content is a list of what the session did NOT establish, which is not a defect list and does not close. |
 | 7 | `docs/2.1.227-compatibility.md` | DATED RECEIPT | 2026-08-11. The A/B that promoted 2.1.227: every version-keyed instrument run at 2.1.226 and 2.1.227 within one hour, and **not one of them disagreed**. Read §2 for the derived list of version-keyed sites — 44 today, against the 16 the row above derived — and §9 for what one patch step does and does not establish. |
 | 8 | `docs/spec.md` | PARTIAL | Normative for product behaviour. §4-6 cover the launch, the turn and the completion gate for BOTH paths; the rest is Path A and transport. |
-| 9 | `docs/current-state.md` | PARTIAL | Normative for position — gate state, design debt, the bug-class ledger. §6.2.1, §6.3 and §7 carry the Path B numbers. |
+| 9 | `docs/current-state.md` | PARTIAL | Normative for position — Path B as a harness engine, Linux operator cell, gate stubs. The 2026-08 essay is `docs/archive/current-state-2026-08.md` and is not a Path B document. |
 
 **The status vocabulary is exactly `CURRENT`, `DATED RECEIPT` and `PARTIAL`**, and this table is not
 decoration: `crates/service/tests/path_b_doc_citations.rs` reads it to learn which documents are
@@ -486,7 +487,7 @@ leak.** "Excluded from the active graph by construction" is a statement about wh
 engine *reads*, not about what a row *carries*. `is_metadata_record`
 (`crates/claude/src/parser.rs`) also covers `queue-operation` -- which is **queued user input**, and
 MEASURED carries its `content` in 1,076 of 2,133 rows across 231 transcripts on the development host
-(this repo's own post-`turn_duration` census counts 7 of them, `current-state.md`) -- as well as
+(this repo's own post-`turn_duration` census counts 7 of them, `docs/archive/current-state-2026-08.md`) -- as well as
 `ai-title` and `summary`, both of which carry text derived from a prior conversation. A clear
 returned `rotated: true` over a preamble carrying all three. Metadata was the one accept-by-default
 arm of an otherwise reject-by-default predicate, and it was the arm carrying text.
@@ -544,7 +545,7 @@ string comparison. See §10 for what it still does not protect against.
 `TranscriptLocator::expected_candidates` (`crates/claude/src/locator.rs:128`) with a dash-collapsed
 fallback slug from `collapse_dashes` at `crates/claude/src/locator.rs:136-138`. Nothing else on disk is consulted. No screen scrape is
 involved: the screen is a liveness veto in this codebase, never a source of truth
-(`current-state.md` §2).
+(`docs/archive/current-state-2026-08.md` §2).
 
 **What it therefore CANNOT prove, stated so it is not presented as the invariant.** It proves that
 every row of one file is individually inert, and nothing more. It cannot see (i) any other file in
@@ -745,7 +746,7 @@ no thread to pull. Path B must distinguish the rebind failure explicitly (§3.5)
 Rebind is how an instance stops reading the abandoned file and starts reading the new one.
 
 **The seam already exists.** `trait TranscriptSource` already takes `session_id` as a **per-call**
-parameter on both methods (`crates/service/src/v1/backend.rs:421-428` — `arm_at_eof(&self,
+parameter on both methods (`crates/service/src/v1/backend.rs:452-459` — `arm_at_eof(&self,
 session_id)` and `poll(&self, session_id, position)`). `FileTranscriptSource` takes it on both
 (`arm_at_eof` forwards to `arm_sync`, `driver_io.rs:3203-3205`; `poll` to
 `poll_sync`, `driver_io.rs:3183-3188`), alongside the `expected_session_id` field at `driver_io.rs:2789`,
@@ -813,7 +814,7 @@ The deadline case is not only the already-elapsed one. `DEFAULT_CLEAR_TIMEOUT_MS
 expires with the `/clear` paste still in flight is therefore a routine outcome rather than a corner,
 and it answers `TurnTimeout` and marks `clear_not_submitted`, the same as an already-elapsed one.
 Before 2026-08-06 it answered `PromptNotAcknowledged` instead, because `paste_once` did not ask which
-of the budget's two clocks had run out; see `docs/current-state.md` §10 item 15. A deadline that
+of the budget's two clocks had run out; see `docs/archive/current-state-2026-08.md` §10 item 15. A deadline that
 expires inside the **Enter** does not take this path at all and must not: Enter went in, so the
 refusal keeps `enter_attempted` and the clear proceeds to the rotation authority.
 
@@ -1556,7 +1557,7 @@ has been driven at.**
 **Read the two rows together and do not average them.** The §9 row measures pmux's own machinery
 against a driver with no model in it; this table measures whole turns including the model, and the
 gap between them is model latency plus the warm/cold launch difference. Neither number is a target;
-`current-state.md` §6.4 is normative for why no latency target is gated.
+`docs/archive/current-state-2026-08.md` §6.4 is normative for why no latency target is gated.
 
 #### 9.1.1 Where a warm turn's milliseconds actually go — MEASURED, both clocks, same turn
 
@@ -1588,7 +1589,7 @@ not pmux waiting. The same code against `pmux-test-claude` spends ~91 ms of its 
 double's own `ensure_no_queued_input` guard, and removing that guard's 100 ms poll drops the double's
 input gate to 556 ms median with both screen gates unmoved. pmux's own input-gate machinery is
 ~535 ms on both drivers; the rest of leg 1 belongs to whatever is on the other end of the pty.
-`current-state.md` §6.1.2 is the decomposition and the A/B.
+`docs/archive/current-state-2026-08.md` §6.1.2 is the decomposition and the A/B.
 
 **Path B, same run, same daemon, real Claude:** `pmux ask` wall clock 3,610 / **3,957** / 6,381 ms
 over n=20. Consistent with the 3,186 ms warm median above at concurrency 2 to within the difference
@@ -1680,7 +1681,7 @@ Stated plainly, because the rest of this document reads as more settled than the
    between reading Enter and writing the typed `user` row — its own proof that pmux sent exactly one
    byte — and pays it in full on every passing turn. Re-run with that timeout at 0, n=30: input gate
    **556.0 ms** median, commit gate unchanged at 550.5, both screen gates unmoved. Quote 646 as the
-   leg and ~535 ms as pmux's share of it; `current-state.md` §6.1.2 is the measurement and the
+   leg and ~535 ms as pmux's share of it; `docs/archive/current-state-2026-08.md` §6.1.2 is the measurement and the
    decomposition of the rest.
 
    **Path B is not faster than Path A. It is 741 ms slower at the client clock**, on the same
@@ -1722,7 +1723,7 @@ Stated plainly, because the rest of this document reads as more settled than the
    3, which are 1,201 ms of the 1,204 ms median — and not on the drain.
 
    **NARROWED 2026-08-07: half of leg 3 is not available, and neither is ~91 ms of leg 1.**
-   `current-state.md` §6.1.2 decomposes both legs by measurement. Of leg 3's ~555 ms, ~275 ms is
+   `docs/archive/current-state-2026-08.md` §6.1.2 decomposes both legs by measurement. Of leg 3's ~555 ms, ~275 ms is
    reaching the drain requirement and the other ~275 ms is the **post-marker catch window** — the
    truncation guarantee itself, now named `POST_MARKER_CATCH_WINDOW_FLOOR_MS`, measured to cost a
    real 352 ms row, and defended by a compile-time refusal. Of leg 1's 646 ms, ~91 ms is the
@@ -1950,6 +1951,11 @@ empties a class, and an idle TTL that drains a cold class to its declared floor 
 swap may still take a floor instance, because refusing a live caller to hold a speculative one is
 starvation.
 
+A Messages conversation may pin an instance in `Leased` between turns: the instance is not idle,
+`/clear` has not run, and a stateless `ask` cannot steal it. `--path-b-messages-bind` is the
+opt-in loopback facade in front of that pin. The default daemon still binds only its owner-only
+UDS. `CensusBucket::Leased` is one of the six live buckets; `comes_back_on_its_own` is false for it.
+
 **Teardown order is the guarantee**: close and require a *positive* reaping, then discharge
 retention, then erase the tree, and only then release the slot. A close that cannot confirm reaping
 **leaks the slot permanently and keeps the tree**, because a root a live process may still be writing
@@ -2107,7 +2113,7 @@ should expect to find it the way these were found: by running the thing, not by 
    driver is **1,204 ms median server-side over n=60** (1,150 / 1,169 / **1,204** / 1,242 / 1,257
    for min / p10 / median / p90 / max), split 646 ms input gate + 0 ms generation + 555 ms commit
    gate — of which **~91 ms of the input gate is the double's own `ensure_no_queued_input` guard
-   rather than pmux** (`current-state.md` §6.1.2). Path B on the same clock in the same run is
+   rather than pmux** (`docs/archive/current-state-2026-08.md` §6.1.2). Path B on the same clock in the same run is
    **1,955 ms**, i.e. 741 ms *slower*. §10.1 is the full method and the invalidation list; §9 and §1
    now quote it.
 
@@ -2122,7 +2128,7 @@ should expect to find it the way these were found: by running the thing, not by 
    is pmux's to spend.** ~154 ms of leg 1 is the driver echoing the typed prompt back into the
    JSONL, so pmux's own machinery is ~1,073 ms. Measured on the double, where the same slot is that
    driver's own `ensure_no_queued_input` guard: removing its 100 ms poll drops the input gate 645 →
-   556 ms median with both screen gates unmoved. `current-state.md` §6.1.2.
+   556 ms median with both screen gates unmoved. `docs/archive/current-state-2026-08.md` §6.1.2.
 
 3. ~~**Whether the `--safe-mode` FLAG breaks a cell the way `CLAUDE_CODE_SAFE_MODE` does.**~~
    **MEASURED: IT DOES NOT.** Probe: a `/bin/sh` shim that `exec`s the operator's Claude, handed to

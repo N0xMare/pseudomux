@@ -128,6 +128,11 @@ impl ModelEntry {
 /// an operator change, not a three-language protocol event.
 pub static MODEL_TABLE: &[ModelEntry] = &[
     ModelEntry {
+        canonical: "claude-fable-5",
+        aliases: &["fable", "fable-5"],
+        efforts: EFFORTS_ALL,
+    },
+    ModelEntry {
         canonical: "claude-opus-5",
         aliases: &["opus", "opus-5"],
         efforts: EFFORTS_ALL,

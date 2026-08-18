@@ -1,0 +1,23 @@
+{
+  "title": "minified 2.1.233 no-/clear prompt-cache measurement",
+  "host": {"os": "linux", "arch": "x86_64"},
+  "claude_version": "2.1.233",
+  "cell": "minified",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "method": "pmux start --cell minified + three pmux turn, never pmux clear",
+  "session_id": "4ac2093a-0ece-4c28-9442-4e646ddd4aac",
+  "continuity": {
+    "codeword": "Kestrel-Delta-418",
+    "turn1_text": "ACK Kestrel-Delta-418",
+    "turn2_text": "Kestrel-Delta-418",
+    "turn3_text": "Kestrel-Delta-418 STILL"
+  },
+  "usage": {
+    "turn1": {"input_tokens": 2, "output_tokens": 16, "cache_creation_input_tokens": 10846, "cache_read_input_tokens": 0, "drain_ms": 613},
+    "turn2": {"input_tokens": 2, "output_tokens": 13, "cache_creation_input_tokens": 90, "cache_read_input_tokens": 10846, "drain_ms": 585},
+    "turn3": {"input_tokens": 2, "output_tokens": 17, "cache_creation_input_tokens": 76, "cache_read_input_tokens": 10949, "drain_ms": 586}
+  },
+  "verdict": "GREEN",
+  "meaning": "Turn 2 cache_read equals turn 1 cache_write. Turn 3 cache_read grew by the turn-2 suffix. Same as Pi+Anthropic API prefix cache when the cell is not /clear'd."
+}

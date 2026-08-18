@@ -687,6 +687,10 @@ fn is_supported_attachment_type(attachment_type: &str) -> bool {
             | "queued_command"
             | "skill_listing"
             | "task_reminder"
+            // MEASURED on Claude Code 2.1.232 linux/x86_64, SessionCell::Minified:
+            // attachment.type was this string (mint and again after /clear).
+            // This match admits the type name only; it does not read attachment.text.
+            | "total_tokens_reminder"
             | "ultra_effort_enter"
             | "workflow_keyword_request"
     )

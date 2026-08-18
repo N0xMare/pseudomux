@@ -1,0 +1,26 @@
+{
+  "turn1": {
+    "elapsed_s": 9.18,
+    "lease": "primed",
+    "cell": "4b490f54-04d2-4d2b-8a95-a11d4e0c7d24",
+    "conversation": "eval-sticky-1",
+    "input": 2,
+    "output": 14,
+    "cache_write": 8976,
+    "cache_read": 0,
+    "text": "ACK Otter-Cache-77",
+    "stop": "end_turn"
+  },
+  "turn2": {
+    "elapsed_s": 6.98,
+    "lease": "continued",
+    "cell": "4b490f54-04d2-4d2b-8a95-a11d4e0c7d24",
+    "conversation": "eval-sticky-1",
+    "input": 2,
+    "output": 11,
+    "cache_write": 142,
+    "cache_read": 8976,
+    "text": "Otter-Cache-77",
+    "stop": "end_turn"
+  }
+}

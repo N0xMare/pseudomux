@@ -170,6 +170,14 @@ pub struct Instance {
     /// the teardown rather than the reason for it, and the difference between
     /// "erase with no floor" and "keep as evidence" would be lost.
     pub was_quarantined: bool,
+    /// The Messages conversation that owns this instance, when one does.
+    ///
+    /// Bound at checkout (`claim_new_lease`) so an in-flight first turn is
+    /// findable, and again at [`super::machine::Transition::LeaseHeld`].
+    /// Cleared on `ReleaseLease`, `ShutdownDrain`, and `TurnNotDelivered`.
+    /// A `Leased` instance must carry one; an `Idle` or `Clearing` instance
+    /// must not, because those states are empty or about to be proven empty.
+    pub conversation_id: Option<String>,
 }
 
 /// A per-instance invariant that did not hold.
@@ -195,6 +203,11 @@ pub enum InvariantViolation {
     ReservationWithHandle { slot: SlotId },
     /// A turn is in flight on an instance that never counted a checkout.
     InFlightWithoutCheckout { slot: SlotId, state: InstanceState },
+    /// A leased instance has no conversation id, so nothing can resume it and
+    /// nothing can release it.
+    LeasedWithoutConversation { slot: SlotId },
+    /// A state that is empty (or being proven empty) still names a conversation.
+    ConversationOnEmptyInstance { slot: SlotId, state: InstanceState },
 }
 
 impl std::fmt::Display for InvariantViolation {
@@ -230,6 +243,13 @@ impl std::fmt::Display for InvariantViolation {
                 formatter,
                 "slot {slot} is {state} without having counted a checkout"
             ),
+            Self::LeasedWithoutConversation { slot } => {
+                write!(formatter, "slot {slot} is leased with no conversation id")
+            }
+            Self::ConversationOnEmptyInstance { slot, state } => write!(
+                formatter,
+                "slot {slot} is {state} but still names a conversation"
+            ),
         }
     }
 }
@@ -259,6 +279,7 @@ impl Instance {
             state: INITIAL,
             last_transition: None,
             was_quarantined: false,
+            conversation_id: None,
         }
     }
 
@@ -279,6 +300,12 @@ impl Instance {
             InstanceState::Reserved => {
                 if self.handle.is_some() {
                     return Err(InvariantViolation::ReservationWithHandle { slot: self.slot });
+                }
+                if self.conversation_id.is_some() {
+                    return Err(InvariantViolation::ConversationOnEmptyInstance {
+                        slot: self.slot,
+                        state: self.state,
+                    });
                 }
             }
             InstanceState::Warming
@@ -315,8 +342,14 @@ impl Instance {
                 if self.prompt_fingerprint != live_prompt_fingerprint {
                     return Err(InvariantViolation::IdleUnderStalePrompt { slot: self.slot });
                 }
+                if self.conversation_id.is_some() {
+                    return Err(InvariantViolation::ConversationOnEmptyInstance {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
             }
-            InstanceState::CheckedOut | InstanceState::Delivering | InstanceState::Clearing => {
+            InstanceState::Leased => {
                 if self.handle.is_none() {
                     return Err(InvariantViolation::MissingHandle {
                         slot: self.slot,
@@ -325,6 +358,43 @@ impl Instance {
                 }
                 if self.turns_started == 0 {
                     return Err(InvariantViolation::InFlightWithoutCheckout {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
+                if self.conversation_id.is_none() {
+                    return Err(InvariantViolation::LeasedWithoutConversation { slot: self.slot });
+                }
+            }
+            InstanceState::CheckedOut | InstanceState::Delivering => {
+                if self.handle.is_none() {
+                    return Err(InvariantViolation::MissingHandle {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
+                if self.turns_started == 0 {
+                    return Err(InvariantViolation::InFlightWithoutCheckout {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
+            }
+            InstanceState::Clearing => {
+                if self.handle.is_none() {
+                    return Err(InvariantViolation::MissingHandle {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
+                if self.turns_started == 0 {
+                    return Err(InvariantViolation::InFlightWithoutCheckout {
+                        slot: self.slot,
+                        state: self.state,
+                    });
+                }
+                if self.conversation_id.is_some() {
+                    return Err(InvariantViolation::ConversationOnEmptyInstance {
                         slot: self.slot,
                         state: self.state,
                     });
@@ -488,6 +558,7 @@ mod tests {
             InstanceState::Idle,
             InstanceState::CheckedOut,
             InstanceState::Delivering,
+            InstanceState::Leased,
             InstanceState::Clearing,
         ] {
             let mut instance = instance();
@@ -507,12 +578,16 @@ mod tests {
         for state in [
             InstanceState::CheckedOut,
             InstanceState::Delivering,
+            InstanceState::Leased,
             InstanceState::Clearing,
         ] {
             let mut instance = instance();
             instance.state = state;
             instance.handle = Some(handle());
             instance.turns_started = 0;
+            if state == InstanceState::Leased {
+                instance.conversation_id = Some("c".to_owned());
+            }
             assert_eq!(
                 instance.check_invariants(50, 0xfeed),
                 Err(InvariantViolation::InFlightWithoutCheckout { slot: 3, state }),
@@ -522,6 +597,45 @@ mod tests {
             instance
                 .check_invariants(50, 0xfeed)
                 .expect("a counted checkout admits an in-flight turn");
+        }
+    }
+
+    #[test]
+    fn a_leased_instance_must_name_its_conversation() {
+        let mut instance = instance();
+        instance.state = InstanceState::Leased;
+        instance.handle = Some(handle());
+        instance.turns_started = 1;
+        assert_eq!(
+            instance.check_invariants(50, 0xfeed),
+            Err(InvariantViolation::LeasedWithoutConversation { slot: 3 })
+        );
+        instance.conversation_id = Some("sess-1".to_owned());
+        instance
+            .check_invariants(50, 0xfeed)
+            .expect("a named conversation admits the leased set");
+    }
+
+    #[test]
+    fn an_empty_instance_must_not_name_a_conversation() {
+        for state in [
+            InstanceState::Reserved,
+            InstanceState::Idle,
+            InstanceState::Clearing,
+        ] {
+            let mut instance = instance();
+            instance.state = state;
+            instance.conversation_id = Some("sess-1".to_owned());
+            if state != InstanceState::Reserved {
+                instance.handle = Some(handle());
+                instance.last_transition = Some(Transition::WarmProven);
+                instance.turns_started = 1;
+            }
+            assert_eq!(
+                instance.check_invariants(50, 0xfeed),
+                Err(InvariantViolation::ConversationOnEmptyInstance { slot: 3, state }),
+                "{state} is empty and must not name a conversation"
+            );
         }
     }
 

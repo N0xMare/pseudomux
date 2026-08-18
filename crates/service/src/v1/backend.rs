@@ -343,15 +343,28 @@ pub const fn graduated_drain_ms(configured_drain_ms: u64, turn_duration_seen: bo
 ///
 /// MEASURED, and stated as two numbers because they answer two questions:
 ///
-/// - **438ms** is the largest post-answer transcript arrival in the promotion
-///   campaign: 456 turns across 189 real 2.1.220 transcripts, median 42, p90
-///   120, p95 240, p99 344 (`docs/current-state.md` 6.2.1). It is the floor
-///   because it is the largest thing ever observed, not because it is round.
+/// - **438ms** is the largest post-answer transcript arrival in the macos
+///   promotion campaign: 456 turns across 189 real 2.1.220 transcripts, median
+///   42, p90 120, p95 240, p99 344 (`docs/current-state.md` 6.2.1). It is the
+///   floor because it is the largest thing ever observed on a promoted cell,
+///   not because it is round.
 /// - **352ms** is the only such arrival ever observed live *through pmux*, on
 ///   ordinal 70 of that same campaign. It is pinned as an absolute by
 ///   `crates/service/tests/v1_actor.rs`'s
 ///   `the_live_352ms_post_marker_arrival_is_still_caught`, and it is 86ms inside
 ///   this floor.
+///
+/// Linux/x86_64 `SessionCell::Minified` was re-measured for the *same*
+/// statistic (reachable consecutive gaps after the turn's final `assistant`
+/// row) on 2026-08-15: **46ms** over 47 unique marked turns at 2.1.227/2.1.232,
+/// every arrival `system/turn_duration`, zero rows after the marker. That
+/// number lives in [`LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS`] and does
+/// **not** lower this floor. The catch window at the shipped screen constants
+/// is 550ms (`post_marker_catch_window_ms(250, 275)`), not ~50ms; a floor of
+/// 46ms would sit below [`TURN_DURATION_DRAIN_FLOOR_MS`] and below the 352ms
+/// live sample, so it would be a vacuous compile-time guard and would unprotect
+/// ordinal 70. 250ms is an honest *linux drain recommendation* against 46ms; it
+/// is not a licence to shrink the product-wide catch-window floor.
 ///
 /// The shipped configuration's window is 550ms, and it is OBSERVED: across NINE
 /// independent n=30 runs the published `drain_ms` median ranged 550.0-573.5,
@@ -360,6 +373,24 @@ pub const fn graduated_drain_ms(configured_drain_ms: u64, turn_duration_seen: bo
 /// today, with 112ms of headroom. It binds the day somebody shortens a screen
 /// constant for latency.
 pub const POST_MARKER_CATCH_WINDOW_FLOOR_MS: u64 = 438;
+
+/// Largest reachable post-answer arrival measured on linux/x86_64
+/// `SessionCell::Minified` cells.
+///
+/// Same statistic [`POST_MARKER_CATCH_WINDOW_FLOOR_MS`] cites as 438ms on the
+/// macos campaign: the consecutive gap between rows at or after the turn's
+/// final `assistant` row, reachable kinds only.
+///
+/// MEASURED 2026-08-15 against Claude Code 2.1.227 (12 marked turns) and
+/// 2.1.232 (35), after sha256-dedup of 159 jsonl files across the Path B
+/// state trees (98 copies discarded). Every arrival was
+/// `system/turn_duration`. Zero rows arrived after the marker. Raw max
+/// 46.0ms on two turns. Receipt:
+/// `evidence/linux-minified-post-answer-x86_64.json`.
+///
+/// This is a written linux max, not a new catch-window floor. See
+/// [`POST_MARKER_CATCH_WINDOW_FLOOR_MS`] for why 438 stays.
+pub const LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS: u64 = 46;
 
 /// The catchable window a commit loop with this sampling period actually offers.
 ///
@@ -541,6 +572,25 @@ mod tests {
     const _: () = assert!(
         TURN_DURATION_DRAIN_FLOOR_MS < POST_MARKER_CATCH_WINDOW_FLOOR_MS,
         "a catch-window floor at or below the drain requirement guards nothing"
+    );
+    /// Linux minified ground truth is inside the floor, not a replacement for
+    /// it. A future edit that "updates 438 to the linux number" fails here
+    /// before it can unprotect ordinal 70 or vacate the 250ms drain assert.
+    const _: () = assert!(
+        LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS < POST_MARKER_CATCH_WINDOW_FLOOR_MS,
+        "the linux minified max does not license lowering the product-wide catch-window floor"
+    );
+    /// The floor is still the macos campaign max, spelled as a literal so a
+    /// change has to touch this arm. The linux receipt test in `compatibility`
+    /// is what binds 46 to measurement; this arm is what keeps 438 from being
+    /// silently rewritten as 46.
+    const _: () = assert!(
+        POST_MARKER_CATCH_WINDOW_FLOOR_MS == 438,
+        "POST_MARKER_CATCH_WINDOW_FLOOR_MS is the macos campaign max; do not lower it to the linux 46ms arrival"
+    );
+    const _: () = assert!(
+        LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS == 46,
+        "LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS is the written linux max; re-measure before changing it"
     );
 
     #[test]

@@ -56,6 +56,27 @@ pub use instance::{Epoch, Instance, SlotId, SlotPaths};
 pub use machine::{InstanceState, Transition};
 pub use refusal::path_b_not_enabled;
 
+/// What [`Pool::run_sticky`] hands back. `cell` is a slot/epoch token, never a
+/// pmux `SessionId` -- that id must not appear on any client socket.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StickyTurn {
+    pub result: StatelessResult,
+    pub cell: String,
+}
+
+/// One conversation currently holding a pool instance.
+///
+/// Published on `pmux doctor`'s pool layer so an operator can map
+/// `x-pmux-conversation` to `x-pmux-cell` without a new wire method.
+/// The conversation id is the harness session id (or an implicit hash),
+/// never a Claude `SessionId`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConversationLease {
+    pub conversation_id: String,
+    pub cell: String,
+    pub state: String,
+}
+
 /// What one admission decision produced.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Admission {
@@ -115,6 +136,9 @@ struct PoolState {
     /// Classes with a re-warm already in flight, so a burst of checkouts cannot
     /// queue N background mints for one empty idle set.
     rewarming: BTreeSet<InstanceClass>,
+    /// Conversation ids whose first sticky turn has been admitted but not yet
+    /// bound to a slot. Stops two concurrent primes minting two cells.
+    pending_leases: BTreeSet<String>,
     halted: Option<&'static str>,
     shutting_down: bool,
 }
@@ -273,6 +297,7 @@ impl Pool {
                 next_epoch: BTreeMap::new(),
                 leaked_slots: BTreeSet::new(),
                 rewarming: BTreeSet::new(),
+                pending_leases: BTreeSet::new(),
                 halted: None,
                 shutting_down: false,
             }),
@@ -391,6 +416,271 @@ impl Pool {
         }
     }
 
+    /// One sticky turn: pin a conversation to one instance and do not `/clear`.
+    ///
+    /// `resume` is whether this conversation already holds an instance. A
+    /// continuation that lost its cell (`SessionNotFound`) is the caller's cue
+    /// to send the full primer rather than a suffix.
+    ///
+    /// # Errors
+    ///
+    /// The same refusals as [`Self::run`], plus [`ErrorCode::SessionNotFound`]
+    /// when `resume` names a conversation this pool is not holding, and
+    /// [`ErrorCode::SessionBusy`] when that conversation already has a turn in
+    /// flight.
+    pub async fn run_sticky(
+        self: &Arc<Self>,
+        conversation_id: &str,
+        request: RunStatelessRequest,
+        resume: bool,
+    ) -> Result<StickyTurn, ErrorBody> {
+        if conversation_id.trim().is_empty() {
+            return Err(ErrorBody::new(
+                ErrorCode::InvalidConfig,
+                "conversation id must not be empty",
+            ));
+        }
+        let prompt = validate_prompt(&request.prompt).map_err(DriverFailure::into_protocol)?;
+        let (class, resolved) = resolve_pool_class(&request.model, request.effort)
+            .map_err(ModelEffortRefusal::into_error_body)?;
+        let deadline = self
+            .config
+            .effective_deadline_ms(self.clock.now_ms(), request.deadline_unix_ms);
+
+        let slot = if resume {
+            self.resume_lease(conversation_id, class).await?
+        } else {
+            self.claim_new_lease(conversation_id, class, deadline)
+                .await?
+        };
+
+        let handle = match self.handle_of(slot).await {
+            Some(handle) => handle,
+            None => {
+                self.quarantine_and_destroy(slot).await;
+                return Err(internal("a checked-out instance lost its process handle"));
+            }
+        };
+
+        match self.host.run_turn(&handle, prompt, deadline).await {
+            Ok(turn) => {
+                self.commit_sticky(slot, conversation_id, &class, &resolved, turn)
+                    .await
+            }
+            Err(failure) => {
+                self.quarantine_and_destroy(slot).await;
+                Err(failure.error)
+            }
+        }
+    }
+
+    /// End a conversation: `/clear` the instance back to Idle, or recycle it.
+    ///
+    /// Missing conversations succeed. A turn in flight, or a first prime that
+    /// has reserved the id but not yet bound a slot, is
+    /// [`ErrorCode::SessionBusy`]. Lookup and `ReleaseLease` share one lock
+    /// so a recycled slot rebound to another conversation cannot be cleared
+    /// by a stale releaser.
+    pub async fn release_conversation(
+        self: &Arc<Self>,
+        conversation_id: &str,
+    ) -> Result<(), ErrorBody> {
+        let slot = {
+            let mut state = self.state.lock().await;
+            if state.pending_leases.contains(conversation_id) {
+                return Err(ErrorBody::new(
+                    ErrorCode::SessionBusy,
+                    "this conversation already has a turn in flight; nothing is queued",
+                )
+                .retryable(true));
+            }
+            let Some((slot, current)) = state.instances.iter().find_map(|(slot, instance)| {
+                (instance.conversation_id.as_deref() == Some(conversation_id))
+                    .then_some((*slot, instance.state))
+            }) else {
+                return Ok(());
+            };
+            match current {
+                InstanceState::CheckedOut | InstanceState::Delivering => {
+                    return Err(ErrorBody::new(
+                        ErrorCode::SessionBusy,
+                        "this conversation already has a turn in flight; nothing is queued",
+                    )
+                    .retryable(true));
+                }
+                InstanceState::Leased => {}
+                _ => return Ok(()),
+            }
+            self.transition_locked(&mut state, slot, Transition::ReleaseLease)
+                .map_err(|violation| internal(&violation.to_string()))?;
+            slot
+        };
+        self.spawn_clear(slot);
+        Ok(())
+    }
+
+    async fn claim_new_lease(
+        self: &Arc<Self>,
+        conversation_id: &str,
+        class: InstanceClass,
+        deadline: u64,
+    ) -> Result<SlotId, ErrorBody> {
+        {
+            let mut state = self.state.lock().await;
+            if state.pending_leases.contains(conversation_id)
+                || state.instances.values().any(|instance| {
+                    instance.conversation_id.as_deref() == Some(conversation_id)
+                        && matches!(
+                            instance.state,
+                            InstanceState::Leased
+                                | InstanceState::CheckedOut
+                                | InstanceState::Delivering
+                        )
+                })
+            {
+                return Err(ErrorBody::new(
+                    ErrorCode::SessionBusy,
+                    format!("conversation {conversation_id} already holds a pool instance"),
+                )
+                .retryable(true));
+            }
+            state.pending_leases.insert(conversation_id.to_owned());
+        }
+        let admitted = self.admit(class, deadline).await;
+        let Admitted {
+            admission,
+            waited_ms,
+        } = match admitted {
+            Ok(admitted) => admitted,
+            Err(error) => {
+                self.state
+                    .lock()
+                    .await
+                    .pending_leases
+                    .remove(conversation_id);
+                return Err(error);
+            }
+        };
+        let slot = match admission {
+            Admission::Warm(slot) => slot,
+            Admission::Reserved(slot) => {
+                if let Err(error) = self.mint(slot).await {
+                    self.state
+                        .lock()
+                        .await
+                        .pending_leases
+                        .remove(conversation_id);
+                    return Err(error);
+                }
+                match self.publish_idle_and_check_out(slot).await {
+                    Ok(slot) => slot,
+                    Err(error) => {
+                        self.state
+                            .lock()
+                            .await
+                            .pending_leases
+                            .remove(conversation_id);
+                        return Err(error);
+                    }
+                }
+            }
+            Admission::ColdSwap(slot) => {
+                self.destroy(slot).await;
+                if let Err(error) = self.reclaim(slot, class, waited_ms).await {
+                    self.state
+                        .lock()
+                        .await
+                        .pending_leases
+                        .remove(conversation_id);
+                    return Err(error);
+                }
+                if let Err(error) = self.mint(slot).await {
+                    self.state
+                        .lock()
+                        .await
+                        .pending_leases
+                        .remove(conversation_id);
+                    return Err(error);
+                }
+                match self.publish_idle_and_check_out(slot).await {
+                    Ok(slot) => slot,
+                    Err(error) => {
+                        self.state
+                            .lock()
+                            .await
+                            .pending_leases
+                            .remove(conversation_id);
+                        return Err(error);
+                    }
+                }
+            }
+        };
+        {
+            let mut state = self.state.lock().await;
+            state.pending_leases.remove(conversation_id);
+            if let Some(instance) = state.instances.get_mut(&slot) {
+                instance.conversation_id = Some(conversation_id.to_owned());
+            }
+        }
+        Ok(slot)
+    }
+
+    async fn resume_lease(
+        &self,
+        conversation_id: &str,
+        class: InstanceClass,
+    ) -> Result<SlotId, ErrorBody> {
+        let mut state = self.state.lock().await;
+        if state.pending_leases.contains(conversation_id) {
+            return Err(ErrorBody::new(
+                ErrorCode::SessionBusy,
+                "this conversation already has a turn in flight; nothing is queued",
+            )
+            .retryable(true));
+        }
+        let Some(slot) = state.instances.iter().find_map(|(slot, instance)| {
+            (instance.conversation_id.as_deref() == Some(conversation_id)
+                && matches!(
+                    instance.state,
+                    InstanceState::Leased | InstanceState::CheckedOut | InstanceState::Delivering
+                ))
+            .then_some(*slot)
+        }) else {
+            return Err(ErrorBody::new(
+                ErrorCode::SessionNotFound,
+                "this conversation has no leased instance; send the full primer",
+            ));
+        };
+        let instance = &state.instances[&slot];
+        match instance.state {
+            InstanceState::CheckedOut | InstanceState::Delivering => {
+                return Err(ErrorBody::new(
+                    ErrorCode::SessionBusy,
+                    "this conversation already has a turn in flight; nothing is queued",
+                )
+                .retryable(true));
+            }
+            InstanceState::Leased => {}
+            other => {
+                return Err(internal(&format!(
+                    "conversation {conversation_id} is bound to slot {slot} in state {other}"
+                )));
+            }
+        }
+        if instance.class != class {
+            return Err(ErrorBody::new(
+                ErrorCode::InvalidConfig,
+                format!(
+                    "conversation {conversation_id} is leased on {}, not {class}; release it first",
+                    instance.class
+                ),
+            ));
+        }
+        self.transition_locked(&mut state, slot, Transition::ResumeLease)
+            .map_err(|violation| internal(&violation.to_string()))?;
+        Ok(slot)
+    }
+
     /// Destroy every instance idle past the TTL, down to each class's declared
     /// warm floor.
     ///
@@ -444,6 +734,32 @@ impl Pool {
         };
         for slot in victims {
             self.destroy(slot).await;
+        }
+
+        // Leased conversations use the same TTL as idle instances. Expiry is
+        // `/clear` back to Idle, not a remint -- the cell stays warm.
+        let expired_leases = {
+            let mut state = self.state.lock().await;
+            let mut expired = Vec::new();
+            let slots: Vec<SlotId> = state.instances.keys().copied().collect();
+            for slot in slots {
+                let due = state.instances.get(&slot).is_some_and(|instance| {
+                    instance.state == InstanceState::Leased
+                        && now.saturating_sub(instance.idle_since_ms)
+                            >= self.config.instance_idle_ttl_ms
+                });
+                if due
+                    && self
+                        .transition_locked(&mut state, slot, Transition::ReleaseLease)
+                        .is_ok()
+                {
+                    expired.push(slot);
+                }
+            }
+            expired
+        };
+        for slot in expired_leases {
+            self.spawn_clear(slot);
         }
     }
 
@@ -500,12 +816,40 @@ impl Pool {
             idle: state.idle_count(),
             in_flight: counts.in_flight(),
             clearing: counts.clearing(),
+            leased: counts.leased(),
             reserved: counts.reserved(),
             tearing_down: counts.tearing_down(),
             leaked: u32::try_from(state.leaked_slots.len()).unwrap_or(u32::MAX),
             capacity: state.capacity(self.config.pool_size),
             halted: state.halted,
         }
+    }
+
+    /// Conversation → cell map for the doctor pool layer.
+    ///
+    /// Only instances that currently name a conversation and can resume or
+    /// finish a turn (`Leased`, `CheckedOut`, `Delivering`). Sorted by cell
+    /// so the report is stable.
+    pub async fn conversation_leases(&self) -> Vec<ConversationLease> {
+        let state = self.state.lock().await;
+        let mut leases: Vec<ConversationLease> = state
+            .instances
+            .values()
+            .filter_map(|instance| {
+                let conversation_id = instance.conversation_id.as_ref()?;
+                matches!(
+                    instance.state,
+                    InstanceState::Leased | InstanceState::CheckedOut | InstanceState::Delivering
+                )
+                .then(|| ConversationLease {
+                    conversation_id: conversation_id.clone(),
+                    cell: format!("s{}e{}", instance.slot, instance.epoch),
+                    state: instance.state.to_string(),
+                })
+            })
+            .collect();
+        leases.sort_by(|left, right| left.cell.cmp(&right.cell));
+        leases
     }
 
     /// Every pool-level invariant, checked from outside.
@@ -1104,6 +1448,82 @@ impl Pool {
         Ok(result)
     }
 
+    async fn commit_sticky(
+        self: &Arc<Self>,
+        slot: SlotId,
+        conversation_id: &str,
+        class: &InstanceClass,
+        resolved: &class::ResolvedModelEffort,
+        turn: HostTurn,
+    ) -> Result<StickyTurn, ErrorBody> {
+        let Some(counted_rows) = turn.sidechain_rows else {
+            self.quarantine_and_destroy(slot).await;
+            return Err(refusal::sidechain_rows_not_counted());
+        };
+        if counted_rows > 0 || turn.usage.sidechain != Default::default() {
+            self.quarantine_and_destroy(slot).await;
+            return Err(refusal::sidechain_on_toolless_cell(counted_rows));
+        }
+
+        let (claude_version, cell) = {
+            let state = self.state.lock().await;
+            let instance = state
+                .instances
+                .get(&slot)
+                .ok_or_else(|| internal("a committed sticky turn lost its instance"))?;
+            let claude_version = instance
+                .handle
+                .as_ref()
+                .map(|handle| handle.claude_version.clone())
+                .ok_or_else(|| internal("a committed sticky turn lost its process handle"))?;
+            (
+                claude_version,
+                format!("s{}e{}", instance.slot, instance.epoch),
+            )
+        };
+
+        let result = StatelessResult {
+            model: class.canonical_model.to_owned(),
+            reported_model: turn.reported_model,
+            effort: resolved.effort_level,
+            text: turn.text,
+            stop_reason: turn.stop_reason,
+            usage: turn.usage,
+            claude_version,
+        };
+
+        {
+            let mut state = self.state.lock().await;
+            self.transition_locked(&mut state, slot, Transition::TurnCommitted)
+                .map_err(|violation| internal(&violation.to_string()))?;
+            if state.shutting_down {
+                // The caller already has the bytes. Do not LeaseHeld after the
+                // shutdown scan: that is the leftover-root class measured for
+                // Clearing. Drain through the existing Delivering → Clearing
+                // → Destroying edges.
+                self.transition_locked(&mut state, slot, Transition::ResponseDelivered)
+                    .map_err(|violation| internal(&violation.to_string()))?;
+                self.transition_locked(&mut state, slot, Transition::ShutdownDrain)
+                    .map_err(|violation| internal(&violation.to_string()))?;
+                drop(state);
+                self.destroy(slot).await;
+                return Ok(StickyTurn { result, cell });
+            }
+            // Bind before LeaseHeld: Leased requires a conversation id, and
+            // Delivering admits one. Setting it after the transition would
+            // refuse the candidate as LeasedWithoutConversation.
+            if let Some(instance) = state.instances.get_mut(&slot) {
+                instance.conversation_id = Some(conversation_id.to_owned());
+            }
+            self.transition_locked(&mut state, slot, Transition::LeaseHeld)
+                .map_err(|violation| internal(&violation.to_string()))?;
+            if let Some(instance) = state.instances.get_mut(&slot) {
+                instance.idle_since_ms = self.clock.now_ms();
+            }
+        }
+        Ok(StickyTurn { result, cell })
+    }
+
     fn spawn_clear(self: &Arc<Self>, slot: SlotId) {
         let pool = Arc::clone(self);
         self.spawner.spawn(Box::pin(async move {
@@ -1399,11 +1819,20 @@ impl Pool {
         // invariant just rejected -- neither serviceable nor destroyable,
         // holding a slot with no path out of it.
         let mut candidate = instance.clone();
-        if transition == Transition::CheckOut {
+        if matches!(transition, Transition::CheckOut | Transition::ResumeLease) {
             // Incremented at CHECKOUT, not at check-in: a prompt reaches
             // `history.jsonl` at submission, so a counter incremented at
             // check-in miscounts a turn that was submitted and then failed.
             candidate.turns_started = candidate.turns_started.saturating_add(1);
+        }
+        if matches!(
+            transition,
+            Transition::ReleaseLease
+                | Transition::ShutdownDrain
+                | Transition::TurnNotDelivered
+                | Transition::ResponseDelivered
+        ) {
+            candidate.conversation_id = None;
         }
         candidate.state = next;
         candidate.last_transition = Some(transition);
@@ -1464,6 +1893,8 @@ pub struct PoolCensus {
     /// takes -- and because folding them made a refusal say "8 of 8 are
     /// serving a turn" with nobody waiting on any of them.
     pub clearing: u32,
+    /// `Leased`: a Messages conversation owns the instance between turns.
+    pub leased: u32,
     pub reserved: u32,
     /// `Quarantined | Destroying`: the slot is still held.
     pub tearing_down: u32,
@@ -2368,9 +2799,16 @@ mod tests {
                 }
                 if matches!(
                     state,
-                    InstanceState::CheckedOut | InstanceState::Delivering | InstanceState::Clearing
+                    InstanceState::CheckedOut
+                        | InstanceState::Delivering
+                        | InstanceState::Leased
+                        | InstanceState::Clearing
                 ) {
                     instance.turns_started = 1;
+                }
+                if state == InstanceState::Leased {
+                    instance.conversation_id = Some("planted".to_owned());
+                    instance.last_transition = Some(Transition::LeaseHeld);
                 }
                 instance
                     .check_invariants(config.recycle_turns, config.system_prompt_fingerprint)
@@ -2712,6 +3150,7 @@ mod tests {
                             next_epoch: BTreeMap::new(),
                             leaked_slots: BTreeSet::new(),
                             rewarming: BTreeSet::new(),
+                            pending_leases: BTreeSet::new(),
                             halted: None,
                             shutting_down: false,
                         };

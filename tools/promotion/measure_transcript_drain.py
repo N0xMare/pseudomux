@@ -186,6 +186,81 @@ ROW_KINDS: dict[tuple[str, str | None], dict[str, Any]] = {
             "without it"
         ),
     },
+    # The seven kinds below were unnamed on the first linux/x86_64 host-corpus
+    # drain (2026-08-14): measure_transcript_drain.py exit 2 printed
+    # attachment/None 5579, file-history-delta/None 13, system/agents_killed 2,
+    # system/bridge_status 2, system/compact_boundary 2, system/local_command 378,
+    # system/model_refusal_fallback 34. Counts are per --version admission.
+    # Reachable is whether a SessionCell::Minified Path B cell can emit the kind
+    # AFTER the turn's final assistant row, not whether the kind exists at all.
+    ("attachment", None): {
+        "reachable": False,
+        "why": (
+            "Post-answer attachment rows in the linux host corpus are an "
+            "interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 "
+            "326 s, max days). A minified 2.1.232 Path B cell on this host "
+            "emits type=attachment (total_tokens_reminder) only BEFORE the "
+            "assistant, on mint and again after /clear. Sizing the drain to "
+            "the interactive tail would be sizing it against hooks and files "
+            "the minified cell does not have"
+        ),
+    },
+    ("file-history-delta", None): {
+        "reachable": False,
+        "why": (
+            "A file-edit snapshot (no version, no cli entrypoint in the 49 "
+            "post-answer rows on this host). A minified cell has "
+            "--disallowedTools * and an empty cwd, so it cannot produce one"
+        ),
+    },
+    ("system", "agents_killed"): {
+        "reachable": False,
+        "why": (
+            "Agent-team teardown. A minified cell has no Task/subagent "
+            "surface (--disallowedTools *); three post-answer rows on this "
+            "host were interactive cli sessions (sample +129 s)"
+        ),
+    },
+    ("system", "bridge_status"): {
+        "reachable": False,
+        "why": (
+            "Remote-control / bridge status. A minified cell has no bridge. "
+            "One post-answer row on this host, interactive cli, sample +1045 s"
+        ),
+    },
+    ("system", "compact_boundary"): {
+        "reachable": False,
+        "why": (
+            "Conversation compact is a long-session harness feature. A "
+            "minified cell is /clear-recycled and has no compact loop. "
+            "Eleven post-answer rows on this host, interactive cli, "
+            "sample +156 s"
+        ),
+    },
+    ("system", "local_command"): {
+        "reachable": False,
+        "why": (
+            "A slash command the USER typed after the answer in an "
+            "interactive session (374 post-answer rows on this host, all "
+            "cli). Path B /clear is a local command but it ROTATES the "
+            "transcript; it is not a same-turn post-answer arrival. Measured "
+            "on two 2.1.232 minified recycles: the /clear file is a new "
+            "sessionId and the answered file has no system/local_command "
+            "after the assistant"
+        ),
+    },
+    ("system", "model_refusal_fallback"): {
+        "reachable": False,
+        "why": (
+            "Claude falling back after an API refusal. 24 post-answer rows "
+            "on this host (2.1.201/202/220 interactive cli; p50 87 ms, max "
+            "364 ms); ZERO on minified 2.1.232. Marked unreachable so those "
+            "24 interactive rows cannot set the linux bound. If a minified "
+            "cell emits this after the assistant, this classification will "
+            "HIDE it from the bound -- re-open the row; do not treat this "
+            "False as a proof the cell cannot produce it"
+        ),
+    },
 }
 
 # The margin the recommendation applies to the largest reachable arrival. Not a

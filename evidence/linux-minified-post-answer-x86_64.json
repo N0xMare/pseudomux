@@ -1,0 +1,202 @@
+{
+ "arch": "x86_64",
+ "by_version": {
+  "2.1.227": {
+   "files_at_this_version": 14,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 12,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 12,
+     "max_ms": 46,
+     "median_ms": 23,
+     "min_ms": 12,
+     "p90_ms": 46,
+     "p95_ms": 46,
+     "p99_ms": 46
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 12,
+      "max_ms": 46,
+      "median_ms": 23,
+      "min_ms": 12,
+      "p90_ms": 46,
+      "p95_ms": 46,
+      "p99_ms": 46,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 12,
+     "max_ms": 46,
+     "median_ms": 23,
+     "min_ms": 12,
+     "p90_ms": 46,
+     "p95_ms": 46,
+     "p99_ms": 46
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 12
+  },
+  "2.1.232": {
+   "files_at_this_version": 43,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 35,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 35,
+     "max_ms": 41,
+     "median_ms": 23,
+     "min_ms": 18,
+     "p90_ms": 34,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 35,
+      "max_ms": 41,
+      "median_ms": 23,
+      "min_ms": 18,
+      "p90_ms": 34,
+      "p95_ms": 41,
+      "p99_ms": 41,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 35,
+     "max_ms": 41,
+     "median_ms": 23,
+     "min_ms": 18,
+     "p90_ms": 34,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 38
+  }
+ },
+ "claude_version": "2.1.227",
+ "claude_versions": [
+  "2.1.227",
+  "2.1.232"
+ ],
+ "corpus": {
+  "dedup": {
+   "duplicate_files_skipped": 98,
+   "method": "sha256 of file bytes",
+   "unique_jsonl": 61,
+   "why": "The four state trees share retain/pool copies of the same Path B transcripts. Counting them twice inflates n without changing the max. This receipt is the unique-file measurement."
+  },
+  "files_at_these_versions": 57,
+  "files_scanned": 61,
+  "note": "Host-local SessionCell::Minified Path B transcripts. Not committed: they contain prompts. Files were sha256-deduped across the four roots before measure_transcript_drain.py ran. The receipt is the durable artifact.",
+  "roots": [
+   "<HOME>/.local/state/pmux-linux-pooled-minified",
+   "<HOME>/.local/state/pmux-minified-drain",
+   "<HOME>/.local/state/pmux-minified-227",
+   "<HOME>/.local/state/pmux-linux-232"
+  ],
+  "tracked": false,
+  "turns": 50
+ },
+ "full_drain_binds_on": {
+  "cli_turns_with_a_terminal_candidate": 47,
+  "fraction": 0.0,
+  "without_a_turn_duration_marker": 0
+ },
+ "linux_minified_post_answer_arrival_max_ms": 46,
+ "measured_at": "2026-08-15T00:00:00Z",
+ "os": "linux",
+ "partition_balances": true,
+ "per_version_recommendations_not_to_be_shipped": {
+  "2.1.227": 250,
+  "2.1.232": 250
+ },
+ "post_answer_arrivals": {
+  "all": {
+   "count": 47,
+   "max_ms": 46,
+   "median_ms": 23,
+   "min_ms": 12,
+   "p90_ms": 40,
+   "p95_ms": 41,
+   "p99_ms": 46
+  },
+  "by_kind": {
+   "system/turn_duration": {
+    "count": 47,
+    "max_ms": 46,
+    "median_ms": 23,
+    "min_ms": 12,
+    "p90_ms": 40,
+    "p95_ms": 41,
+    "p99_ms": 46,
+    "reachable_on_a_minified_cell": true,
+    "timestamp_is_retrospective": false,
+    "why": "the end-of-turn marker Claude Code writes for every turn"
+   }
+  },
+  "reachable_on_a_minified_cell": {
+   "count": 47,
+   "max_ms": 46,
+   "median_ms": 23,
+   "min_ms": 12,
+   "p90_ms": 40,
+   "p95_ms": 41,
+   "p99_ms": 46
+  },
+  "unreachable_on_a_minified_cell": null
+ },
+ "post_marker_arrivals_after_turn_duration": {
+  "by_kind": {},
+  "count": 0,
+  "note": "The 352ms ordinal-70 live sample is a row AFTER the turn_duration marker. On this linux minified corpus that set is empty: every post-answer arrival is the marker itself (assistant -> system/turn_duration, max 46ms)."
+ },
+ "post_marker_catch_window_floor_ms": 438,
+ "quantity": "reachable post-answer consecutive gaps after each turn's final assistant row \u2014 the same statistic POST_MARKER_CATCH_WINDOW_FLOOR_MS cites as 438ms over the macos/aarch64 campaign",
+ "recommendation_basis": {
+  "margin": 2.0,
+  "pooled_over_versions": [
+   "2.1.227",
+   "2.1.232"
+  ],
+  "rounded_up_to_ms": 250,
+  "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"
+ },
+ "recommended_transcript_drain_ms": 250,
+ "repromotion_triggers_this_tool_detects": {
+  "reachable_arrival_above_the_bound": "exit 4 when --bound-ms is given and a reachable arrival exceeds it; exit 5 when there was nothing to check",
+  "unclassified_transcript_row_kind": "exit 2 on a post-answer row kind absent from ROW_KINDS, exit 3 on a `retrospective` kind stamped after the terminal candidate"
+ },
+ "role": "linux/x86_64 ground truth for the 438 quantity on SessionCell::Minified. NOT a promoted-profile drain receipt and NOT evidence/pooled-transcript-drain-linux-x86_64.json. Both versions fit 250ms, so the pooled-bound-not-a-fit check would be vacuous. Do not copy this number into PROMOTED_PROFILES without a promotion run.",
+ "shipped_catch_window_derivation": "post_marker_catch_window_ms(250, 275) = 550",
+ "shipped_catch_window_ms": 550,
+ "what_would_invalidate_it": [
+  "an assistant row arriving after a turn's final assistant row -- see ROW_KINDS",
+  "any reachable arrival above the recommended value",
+  "a different os or arch, or a claude_version outside the promoted range",
+  "a minified cell acquiring a harness able to inject rows (a hook, a queue, an MCP server)",
+  "a reachable post-answer arrival above 46 ms on a linux minified cell at 2.1.227 or 2.1.232",
+  "any row after system/turn_duration on a linux minified cell (the post-marker set is empty here)"
+ ],
+ "why_the_product_floor_was_not_lowered": "The catch window at the shipped screen constants is 550ms, not ~50ms. A floor of 46ms is below TURN_DURATION_DRAIN_FLOOR_MS (250) and below the 352ms macos live sample, so it would be a vacuous compile-time guard and would unprotect ordinal 70. 250ms is an honest linux drain recommendation against this 46ms max; it is not a licence to shrink POST_MARKER_CATCH_WINDOW_FLOOR_MS. Interactive linux host-corpus reachable turn_duration tails (max 60222ms in a 2.1.201/202 kata session with away_summary + queue-operation) are not a minified-cell shape and were not used."
+}

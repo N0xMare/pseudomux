@@ -115,7 +115,7 @@ impl Default for NativeServiceConfig {
     fn default() -> Self {
         Self {
             actor: SessionActorConfig::default(),
-            readiness_timeout: Duration::from_secs(30),
+            readiness_timeout: Duration::from_secs(90),
             version_timeout: Duration::from_secs(10),
             attach_ttl: Duration::from_secs(30),
             idle_reaper_interval: Duration::from_secs(1),
@@ -1915,6 +1915,25 @@ impl NativeService {
         }
     }
 
+    /// Submit one Path A turn and wait for its transcript-proven result.
+    ///
+    /// The Messages lease book uses this instead of `RunStateless` so a pinned
+    /// cell can take a delta without `/clear`.
+    pub async fn run_turn_to_completion(
+        self: &Arc<Self>,
+        request: RunTurnRequest,
+        transcript_drain_ms: u64,
+    ) -> Result<TurnResult, ErrorBody> {
+        let turn_id = request.turn.turn_id;
+        let deadline = request.turn.deadline_unix_ms;
+        let session_id = request.session_id;
+        let generation_id = request.generation_id;
+        self.run_turn(request).await?;
+        let actor = self.registry.actor(session_id, generation_id).await?;
+        self.wait_for_turn(&actor, turn_id, deadline, transcript_drain_ms)
+            .await
+    }
+
     /// Clears a minified-cell session's context between turns and returns the
     /// session id Claude rotated to.
     ///
@@ -2317,6 +2336,7 @@ impl NativeService {
                 pool_size: pool.config().pool_size,
                 declared_warm: pool.config().declared_warm_total(),
                 census: pool.census().await,
+                conversation_leases: pool.conversation_leases().await,
             }),
             None => None,
         };
@@ -3233,6 +3253,9 @@ struct PoolSubject {
     /// the number `Pool::start` refused to boot without.
     declared_warm: u32,
     census: crate::pool::PoolCensus,
+    /// Conversation → `s{slot}e{epoch}` map. Empty in fixture-built
+    /// subjects; the live diagnose path fills it from the pool.
+    conversation_leases: Vec<crate::pool::ConversationLease>,
 }
 
 /// The stateless pool, per class where it has one.
@@ -3255,6 +3278,7 @@ fn pool_layer(
         pool_size,
         declared_warm,
         census,
+        conversation_leases,
     }) = subject
     else {
         // `NothingToExercise`, not `NotEstablished`: a daemon booted without
@@ -3293,6 +3317,14 @@ fn pool_layer(
         // needs the two apart. See `PoolCensus::clearing`.
         "in_flight": census.in_flight,
         "clearing": census.clearing,
+        "leased": census.leased,
+        "conversation_leases": conversation_leases.iter().map(|lease| {
+            json!({
+                "conversation": lease.conversation_id,
+                "cell": lease.cell,
+                "state": lease.state,
+            })
+        }).collect::<Vec<_>>(),
         "reserved": census.reserved,
         "tearing_down": census.tearing_down,
         "leaked": census.leaked,
@@ -8392,12 +8424,14 @@ mod tests {
                     idle: 2,
                     in_flight: 0,
                     clearing: 0,
+                    leased: 0,
                     reserved: 0,
                     tearing_down: 0,
                     leaked: 0,
                     capacity: 15,
                     halted: None,
                 },
+                conversation_leases: Vec::new(),
             };
             mutate(&mut subject);
             subject
@@ -8703,12 +8737,14 @@ mod tests {
                 idle: 2,
                 in_flight: 0,
                 clearing: 0,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 2,
                 halted: None,
             },
+            conversation_leases: Vec::new(),
         };
 
         // The tree a healthy Path B daemon actually emits: every layer built by
@@ -8901,12 +8937,14 @@ mod tests {
                 idle: 0,
                 in_flight: 0,
                 clearing: 0,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 2,
                 halted: None,
             },
+            conversation_leases: Vec::new(),
         };
         let tree = |declared_warm| DaemonDiagnosis {
             layers: vec![
@@ -9003,12 +9041,14 @@ mod tests {
                 idle: 1,
                 in_flight: 1,
                 clearing: 1,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 15,
                 halted: None,
             },
+            conversation_leases: Vec::new(),
         };
         let pool_terminals = vec!["pmux-pool-slot0".to_owned(), "pmux-pool-slot1".to_owned()];
         let live = diagnose_live(&["pmux-pool-slot0", "pmux-pool-slot1", "pmux-caller"]);
@@ -9085,12 +9125,14 @@ mod tests {
                 idle: 1,
                 in_flight: 0,
                 clearing: 0,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 15,
                 halted: Some("wrong_local_command"),
             },
+            conversation_leases: Vec::new(),
         };
         let drained = |declared_warm| PoolSubject {
             pool_size: 15,
@@ -9100,12 +9142,14 @@ mod tests {
                 idle: 0,
                 in_flight: 0,
                 clearing: 0,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 15,
                 halted: None,
             },
+            conversation_leases: Vec::new(),
         };
         let (session_id, generation_id, _) = diagnose_session(11, "pmux-one");
         let sessions = vec![SessionProbe::new(
@@ -9164,12 +9208,14 @@ mod tests {
                 idle: live_instances,
                 in_flight: 0,
                 clearing: 0,
+                leased: 0,
                 reserved: 0,
                 tearing_down: 0,
                 leaked: 0,
                 capacity: 15,
                 halted: None,
             },
+            conversation_leases: Vec::new(),
         };
         let layers = [
             control_plane_layer(Ok(&live), 1),

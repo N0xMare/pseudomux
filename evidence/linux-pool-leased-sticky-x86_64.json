@@ -1,0 +1,58 @@
+{
+  "turn1": {
+    "elapsed_s": 3.29,
+    "lease": "primed",
+    "cell": "s3e0",
+    "conversation": "eval-pool-sticky-1787013809",
+    "input": 2,
+    "output": 15,
+    "cache_write": 1733,
+    "cache_read": 0,
+    "text": "ACK Otter-Cache-3809",
+    "stop": "end_turn"
+  },
+  "turn2": {
+    "elapsed_s": 3.12,
+    "lease": "continued",
+    "cell": "s3e0",
+    "conversation": "eval-pool-sticky-1787013809",
+    "input": 2,
+    "output": 12,
+    "cache_write": 129,
+    "cache_read": 1733,
+    "text": "Otter-Cache-3809",
+    "stop": "end_turn"
+  },
+  "child": {
+    "elapsed_s": 2.77,
+    "lease": "primed",
+    "cell": "s1e0",
+    "conversation": "eval-pool-sticky-1787013809-child",
+    "input": 387,
+    "output": 9,
+    "cache_write": 0,
+    "cache_read": 0,
+    "text": "CHILD-OK",
+    "stop": "end_turn"
+  },
+  "release": {
+    "conversation": "eval-pool-sticky-1787013809",
+    "released": true
+  },
+  "release_child": {
+    "conversation": "eval-pool-sticky-1787013809-child",
+    "released": true
+  },
+  "checks": {
+    "primed": true,
+    "continued": true,
+    "same_cell": "s3e0",
+    "child_different_cell": true,
+    "child_primed": true,
+    "cache_read_t2": 1733,
+    "cache_write_t1": 1733,
+    "cache_hit": true,
+    "cell_not_uuid": true
+  },
+  "verdict": "GREEN"
+}

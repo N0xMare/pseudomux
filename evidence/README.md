@@ -755,3 +755,17 @@ that matters: the unrecognised-screen veto **never fired here either**, so this
 file adds nothing to the firing path `screen-veto-cost-…json` also could not
 reach. The wave's 51,123 ms wall time is an upper bound taken while a full-scope
 mutation run held four cores, not a latency measurement.
+
+## Linux 2026-08 Path B receipts (`x86_64`)
+
+These are **not** promotion receipts. They do not admit a linux
+`PromotedProfile`. `linux-minified-post-answer-x86_64.json` is pinned in
+`compatibility.rs` as "NOT a promoted-profile drain receipt".
+
+| File | What it is |
+| --- | --- |
+| `linux-minified-post-answer-x86_64.json` | Drain ground truth on 2.1.227 and 2.1.232 minified cells. Max reachable 46 ms; estimator 250 ms. Both versions fit 250, so a "pooled" 250 would be vacuous. |
+| `linux-minified-noclear-cache-x86_64.json` | Path A `pmux start --cell minified`, three turns, never `/clear`. Cache continuity. |
+| `linux-pool-leased-sticky-x86_64.json` | Pool `Leased`: same `s{slot}e{epoch}`, T2 `cache_read` equals T1 write. |
+| `linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky eval. Cache hits only above the ~1024-token floor. |
+| `linux-pi-agentic-subagent-x86_64.json` | Pi on Messages: agentic tools, sequential reviewer, parallel reviewers. |

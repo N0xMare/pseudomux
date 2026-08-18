@@ -50,6 +50,8 @@
 use pseudomux_claude::{ContentBlock, StopReason, TranscriptAnalysis, TurnStatus, UsageTotals};
 use pseudomux_protocol::v1::{TimestampMs, TurnTimings};
 
+use super::backend::LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS;
+
 /// How long the transcript must have been unchanged before a minified-cell turn
 /// that passed every check may commit.
 ///
@@ -69,12 +71,25 @@ use pseudomux_protocol::v1::{TimestampMs, TurnTimings};
 /// arrive after the marker refuses on its own evidence rather than on this
 /// constant being right.
 ///
+/// Linux/x86_64 minified ground truth sits just under this floor: the
+/// assistant-to-`turn_duration` gap maxed at 46ms over 47 unique marked turns
+/// (`LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS`), and no row arrived after the
+/// marker. 50ms therefore covers the measured linux arrival; it is still
+/// CHOSEN as a fast-path drain, not re-derived from that 46.
+///
 /// The protections that do not depend on it: the cell must be explicitly
 /// selected on a calibrated host, ready-prompt and terminal-quiet stay in the
 /// conjunction unconditionally, the confirming re-poll still has to come back
 /// with an unmoved cursor and no rows, and any one of the ten checks failing
 /// returns the turn to the Full cell's drain.
 pub const MINIFIED_FAST_PATH_DRAIN_FLOOR_MS: u64 = 50;
+
+/// The linux minified arrival max sits inside this floor. Lowering the fast
+/// path to or below 46ms would commit at the measured marker on this host.
+const _: () = assert!(
+    LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS < MINIFIED_FAST_PATH_DRAIN_FLOOR_MS,
+    "the minified fast-path drain must still cover the linux minified post-answer max"
+);
 
 /// The drain one turn owes, given what the Full cell would have required and
 /// whether this turn earned the shorter proof.

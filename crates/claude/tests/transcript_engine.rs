@@ -3,8 +3,8 @@ use std::fs;
 use pretty_assertions::assert_eq;
 use pseudomux_claude::{
     CompleteLine, EngineWarning, IngestOutcome, JsonlParser, LogicalMessageKey, ParseMode,
-    ParsedRow, SourceLocation, StopReason, TerminalOutcome, TranscriptEngine, TranscriptError,
-    TurnStatus,
+    ParsedRow, RowKind, SourceLocation, StopReason, TerminalOutcome, TranscriptEngine,
+    TranscriptError, TurnStatus,
 };
 
 #[test]
@@ -280,6 +280,52 @@ fn supported_attachments_are_structural_active_chain_nodes_only() {
     };
     assert_eq!(final_turn.final_text, "done");
     assert_eq!(analysis.messages.len(), 1);
+    assert!(analysis.tools.is_empty());
+}
+
+#[test]
+fn strict_admits_total_tokens_reminder_type_string() {
+    let accepted = parse(
+        r#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"a","attachment":{"type":"total_tokens_reminder","text":"<total_tokens>15000000 tokens left</total_tokens>"}}"#,
+    );
+    assert!(matches!(
+        accepted.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "total_tokens_reminder"
+    ));
+}
+
+#[test]
+fn measured_total_tokens_reminder_text_is_not_final_text() {
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    engine.arm_turn("go").unwrap();
+    engine.ingest(parse(user(None, "u", "go"))).unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"reminder","attachment":{"type":"total_tokens_reminder","text":"<total_tokens>15000000 tokens left</total_tokens>"}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(assistant(
+            "reminder",
+            "answer",
+            Some("message"),
+            None,
+            text("done"),
+            Some("end_turn"),
+            3,
+            1,
+        )))
+        .unwrap();
+
+    let analysis = engine.analyze().unwrap();
+    let TurnStatus::Terminal(final_turn) = analysis.status else {
+        panic!("expected terminal result");
+    };
+    assert_eq!(final_turn.final_text, "done");
+    assert!(!final_turn.final_text.contains("15000000"));
+    assert!(!final_turn.final_text.contains("tokens left"));
     assert!(analysis.tools.is_empty());
 }
 
