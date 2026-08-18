@@ -1,7 +1,7 @@
 /**
  * pmux provider for Pi.
  *
- * /model lists every (model, effort) pair the pool admits:
+ * /model lists the recommended warm-set families (not the full pool table):
  *   claude-sonnet-5-{low,medium,high,xhigh,max}
  *   claude-opus-5-{low,medium,high,xhigh,max}
  *   claude-fable-5-{low,medium,high,xhigh,max}

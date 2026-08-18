@@ -68,8 +68,8 @@ pub struct StickyTurn {
 ///
 /// Published on `pmux doctor`'s pool layer so an operator can map
 /// `x-pmux-conversation` to `x-pmux-cell` without a new wire method.
-/// The conversation id is the harness session id (or an implicit hash),
-/// never a Claude `SessionId`.
+/// The conversation id is the harness session id (or an implicit hash
+/// when the operator opted in), never a Claude `SessionId`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConversationLease {
     pub conversation_id: String,

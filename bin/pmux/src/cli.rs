@@ -60,8 +60,8 @@ caller names no resource. `pmuxd` must have been started with --path-b-parent
 or every `run` is refused. `ping` and `doctor` start nothing and spend no
 tokens.
 
-Harnesses such as Pi should use the Messages facade
-(`--path-b-messages-bind`), not this CLI."
+Harnesses should use the Messages facade (`--path-b-messages-bind`)
+with `x-pmux-conversation`, not this CLI."
 )]
 pub struct Cli {
     /// Exact pmuxd Unix socket. No discovery or daemon startup is performed.

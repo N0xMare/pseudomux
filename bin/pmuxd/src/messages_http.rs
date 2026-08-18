@@ -112,12 +112,33 @@ async fn handle_connection(mut stream: TcpStream, book: &ConversationBook) -> Re
         .await?;
         return Ok(());
     }
+    if method == "GET" && is_models_path(&path) {
+        write_http(
+            &mut stream,
+            200,
+            "application/json",
+            &models_document().to_string(),
+        )
+        .await?;
+        return Ok(());
+    }
+    if method == "GET" && is_capabilities_path(&path) {
+        write_http(
+            &mut stream,
+            200,
+            "application/json",
+            &capabilities_document(book.allows_implicit()).to_string(),
+        )
+        .await?;
+        return Ok(());
+    }
     if method != "POST" || !is_messages_path(&path) {
         write_http(
             &mut stream,
             404,
             "application/json",
-            &json!({"type":"error","error":{"type":"not_found_error","message":"POST /v1/messages or POST /v1/conversations/{id}/release"}}).to_string(),
+            &json!({"type":"error","error":{"type":"not_found_error","message":NOT_FOUND_MESSAGE}})
+                .to_string(),
         )
         .await?;
         return Ok(());
@@ -653,6 +674,8 @@ fn message_id() -> String {
     format!("msg_{nanos:x}")
 }
 
+const NOT_FOUND_MESSAGE: &str = "GET /v1/models, GET /v1/capabilities, POST /v1/messages, or POST /v1/conversations/{id}/release";
+
 fn is_messages_path(path: &str) -> bool {
     // Anthropic SDK posts `/v1/messages`. If a client sets baseUrl to
     // `http://host:port/v1`, the joined path becomes `/v1/v1/messages`.
@@ -660,6 +683,61 @@ fn is_messages_path(path: &str) -> bool {
         path.split('?').next().unwrap_or(path),
         "/v1/messages" | "/messages" | "/v1/v1/messages"
     )
+}
+
+fn is_models_path(path: &str) -> bool {
+    matches!(
+        path.split('?').next().unwrap_or(path),
+        "/v1/models" | "/models" | "/v1/v1/models"
+    )
+}
+
+fn is_capabilities_path(path: &str) -> bool {
+    matches!(
+        path.split('?').next().unwrap_or(path),
+        "/v1/capabilities" | "/capabilities" | "/v1/v1/capabilities"
+    )
+}
+
+/// Every Messages model id a harness can send: `{canonical}` when the model
+/// takes no effort, otherwise `{canonical}-{effort}`.
+fn messages_model_ids() -> Vec<String> {
+    let mut ids = Vec::new();
+    for entry in pseudomux_service::pool::class::MODEL_TABLE {
+        if entry.efforts.is_empty() {
+            ids.push(entry.canonical.to_owned());
+            continue;
+        }
+        for effort in entry.efforts {
+            ids.push(format!("{}-{}", entry.canonical, effort.argv));
+        }
+    }
+    ids
+}
+
+fn models_document() -> Value {
+    json!({
+        "object": "list",
+        "data": messages_model_ids()
+            .into_iter()
+            .map(|id| json!({"type": "model", "id": id}))
+            .collect::<Vec<_>>(),
+        "has_more": false,
+    })
+}
+
+fn capabilities_document(allow_implicit: bool) -> Value {
+    json!({
+        "pin_headers": ["x-pmux-conversation", "x-session-id", "x-session-affinity"],
+        "release": "POST /v1/conversations/{id}/release",
+        "stream": "post_commit",
+        "images": false,
+        "cache_control_on_tools": false,
+        "temperature": false,
+        "effort": "model_id_suffix_or_output_config",
+        "implicit_conversation": allow_implicit,
+        "models": "GET /v1/models",
+    })
 }
 
 /// Presence-only. Loopback is the trust boundary: any non-empty
@@ -904,6 +982,50 @@ mod tests {
             "messages": [{"role":"user","content":[{"type":"image","source":{"type":"base64"}}]}]
         });
         assert!(reject_unsupported(&body).is_err());
+    }
+
+    #[test]
+    fn models_list_is_the_pool_table_with_effort_suffixes() {
+        let ids = messages_model_ids();
+        assert!(ids.contains(&"claude-opus-5-medium".to_owned()));
+        assert!(ids.contains(&"claude-opus-5-xhigh".to_owned()));
+        assert!(ids.contains(&"claude-haiku-4-5".to_owned()));
+        assert!(!ids.iter().any(|id| id == "claude-haiku-4-5-low"));
+        let listed = models_document();
+        assert_eq!(listed["object"], "list");
+        assert_eq!(listed["has_more"], false);
+        assert_eq!(listed["data"].as_array().unwrap().len(), ids.len());
+    }
+
+    #[test]
+    fn capabilities_name_the_closed_harness_contract() {
+        let caps = capabilities_document(false);
+        assert_eq!(caps["images"], false);
+        assert_eq!(caps["stream"], "post_commit");
+        assert_eq!(caps["implicit_conversation"], false);
+        assert_eq!(caps["release"], "POST /v1/conversations/{id}/release");
+        assert!(
+            caps["pin_headers"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|header| header == "x-pmux-conversation")
+        );
+        assert!(capabilities_document(true)["implicit_conversation"] == true);
+    }
+
+    #[test]
+    fn catalogue_paths_accept_the_same_prefixes_as_messages() {
+        assert!(is_models_path("/v1/models"));
+        assert!(is_models_path("/models"));
+        assert!(is_models_path("/v1/v1/models"));
+        assert!(!is_models_path("/v1/model"));
+        assert!(is_capabilities_path("/v1/capabilities"));
+        assert!(is_capabilities_path("/capabilities"));
+        assert!(is_capabilities_path("/v1/v1/capabilities"));
+        assert!(NOT_FOUND_MESSAGE.contains("GET /v1/models"));
+        assert!(NOT_FOUND_MESSAGE.contains("GET /v1/capabilities"));
+        assert!(NOT_FOUND_MESSAGE.contains("POST /v1/messages"));
     }
 
     #[test]

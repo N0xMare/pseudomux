@@ -9,17 +9,19 @@
 //! (no `/clear`). Release or idle TTL runs `/clear` and returns the instance
 //! to the idle set.
 //!
-//! Harness contract (also implemented by `~/.pi/agent/extensions/pmux.ts`):
+//! Harness contract (also implemented by `examples/pi/pmux.ts`):
 //!
-//! - Request header `x-pmux-conversation: <id>` (Pi session id, or a UUID
-//!   for `pi -p --no-session`).
+//! - Request header `x-pmux-conversation: <id>` (harness session id).
+//!   `x-session-id` and `x-session-affinity` are accepted aliases.
 //! - Response headers `x-pmux-conversation`, `x-pmux-cell`,
 //!   `x-pmux-lease: primed|continued|reprimed|replayed`, `x-pmux-idle-ttl-ms`.
 //! - `POST /v1/conversations/<id>/release` on session end. Idle TTL is the
 //!   backstop. `/clear` happens here, not after every HTTP request.
 //!
-//! Unaware clients still work: the first user message (plus model/effort/
-//! system/tools) is hashed into an implicit id. They cannot eagerly release.
+//! An implicit hash of the first user message is off unless the operator
+//! starts the listener with `--path-b-allow-implicit-conversation`. That id
+//! cannot be released on purpose and collides when two sessions start the
+//! same way.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -45,6 +47,9 @@ const CONVERSATION_HEADER: &str = "x-pmux-conversation";
 pub struct ConversationConfig {
     pub idle_ttl: Duration,
     pub max_leases: u32,
+    /// When false (the default), POST /v1/messages without an explicit pin
+    /// is refused. When true, the first-turn hash is used instead.
+    pub allow_implicit: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -154,23 +159,46 @@ pub fn fingerprint_body(
     }
 }
 
+/// Conversation id from an explicit pin header, if one was sent.
+pub fn explicit_conversation_id(headers: &[(String, String)]) -> Option<String> {
+    for name in [CONVERSATION_HEADER, "x-session-id", "x-session-affinity"] {
+        if let Some(explicit) = header(headers, name) {
+            let trimmed = explicit.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_owned());
+            }
+        }
+    }
+    None
+}
+
 /// Conversation id from the header, or an implicit hash of the first turn.
+///
+/// The implicit arm is the operator opt-in. Production harnesses send a pin.
 pub fn conversation_id_from(
     headers: &[(String, String)],
     body: &Value,
     model: &str,
     effort: Option<EffortLevel>,
-) -> String {
-    if let Some(explicit) = header(headers, CONVERSATION_HEADER)
-        .or_else(|| header(headers, "x-session-id"))
-        .or_else(|| header(headers, "x-session-affinity"))
-    {
-        let trimmed = explicit.trim();
-        if !trimmed.is_empty() {
-            return trimmed.to_owned();
-        }
+    allow_implicit: bool,
+) -> Result<String, ErrorBody> {
+    if let Some(explicit) = explicit_conversation_id(headers) {
+        return Ok(explicit);
     }
-    implicit_conversation_id(body, model, effort)
+    if allow_implicit {
+        return Ok(implicit_conversation_id(body, model, effort));
+    }
+    Err(missing_conversation_header())
+}
+
+pub fn missing_conversation_header() -> ErrorBody {
+    ErrorBody::new(
+        ErrorCode::InvalidConfig,
+        "a conversation pin is required: send x-pmux-conversation (or x-session-id / x-session-affinity) on every POST /v1/messages",
+    )
+    .advising(
+        "set x-pmux-conversation to the harness session id, or start pmuxd with --path-b-allow-implicit-conversation for a single-session implicit hash",
+    )
 }
 
 pub fn implicit_conversation_id(body: &Value, model: &str, effort: Option<EffortLevel>) -> String {
@@ -274,6 +302,11 @@ impl ConversationBook {
         u64::try_from(self.config.idle_ttl.as_millis()).unwrap_or(u64::MAX)
     }
 
+    #[must_use]
+    pub fn allows_implicit(&self) -> bool {
+        self.config.allow_implicit
+    }
+
     pub async fn complete(
         &self,
         headers: &[(String, String)],
@@ -285,7 +318,8 @@ impl ConversationBook {
             .ok_or_else(|| ErrorBody::new(ErrorCode::InvalidConfig, "model is required"))?;
         let (model, effort_from_id) = split_model_and_effort(raw_model);
         let effort = effort_from_id.or(effort_from_body(body)?);
-        let conversation_id = conversation_id_from(headers, body, &model, effort);
+        let conversation_id =
+            conversation_id_from(headers, body, &model, effort, self.config.allow_implicit)?;
         let next = fingerprint_body(body, &model, effort);
         let primer = sanitize_prompt(
             &flatten_prompt(body)
@@ -705,7 +739,20 @@ mod tests {
             &body,
             &model,
             effort,
-        );
+            false,
+        )
+        .unwrap();
         assert_eq!(id, "sess-1");
+    }
+
+    #[test]
+    fn a_missing_pin_is_refused_unless_implicit_is_allowed() {
+        let body = body(vec![json!({"role":"user","content":"hello"})]);
+        let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
+        let refused = conversation_id_from(&[], &body, &model, effort, false).unwrap_err();
+        assert_eq!(refused.code, ErrorCode::InvalidConfig);
+        assert!(refused.message.contains("x-pmux-conversation"));
+        let implicit = conversation_id_from(&[], &body, &model, effort, true).unwrap();
+        assert_eq!(implicit, implicit_conversation_id(&body, &model, effort));
     }
 }

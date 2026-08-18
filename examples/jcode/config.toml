@@ -1,0 +1,26 @@
+[provider]
+default_provider = "pmux"
+default_model = "claude-opus-5-medium"
+
+[providers.pmux]
+type = "anthropic-compatible"
+base_url = "http://127.0.0.1:8765"
+auth = "bearer"
+api_key = "pmux"
+default_model = "claude-opus-5-medium"
+
+[[providers.pmux.models]]
+id = "claude-opus-5-medium"
+context_window = 200000
+
+[[providers.pmux.models]]
+id = "claude-opus-5-xhigh"
+context_window = 200000
+
+[[providers.pmux.models]]
+id = "claude-sonnet-5-medium"
+context_window = 200000
+
+[[providers.pmux.models]]
+id = "claude-fable-5-xhigh"
+context_window = 200000

@@ -57,11 +57,27 @@ target/release/pmux doctor --claude "$(command -v claude)" --cwd "$PWD"
 `doctor`'s pool layer tells you whether the pool is configured. When Messages
 leases are live it also reports `leased` and `conversation_leases`.
 
-## Use it from Pi
+## Use it from a harness
 
-This is the intended integration. Pi speaks Anthropic Messages; pmux pins one
-warm cell per Pi conversation and types only the new suffix so the prompt
-cache can hit.
+This is the intended integration. The harness owns tools and context. pmux
+owns the cells. The Messages listener is three verbs:
+
+1. **Pin.** Every `POST /v1/messages` carries `x-pmux-conversation: <session-id>`.
+   `x-session-id` and `x-session-affinity` are accepted aliases.
+2. **Release.** `POST /v1/conversations/{id}/release` on session end. That is
+   when the cell `/clear`s. Idle TTL is only the backstop.
+3. **Name the class.** Effort is in the model id (`claude-opus-5-medium`) or
+   in `output_config.effort`. Compact, rewind, or a class change is a prefix
+   break; the same pin reprimes.
+
+Without a pin the request is refused. `--path-b-allow-implicit-conversation`
+is the single-session curl hatch; two sessions that start the same way then
+share a cell and cannot be released on purpose.
+
+`GET /v1/models` lists the ids. `GET /v1/capabilities` states the closed set:
+no images, reconstructed SSE after the turn commits, no `cache_control` on
+tools, no temperature. Auth is presence-only (any non-empty `x-api-key` or
+`Authorization`). Loopback is the trust boundary; off-box bind is refused.
 
 Add Messages to an already-enabled pool (do not make this the first serve
 example):
@@ -74,7 +90,11 @@ example):
 --path-b-warm claude-fable-5/xhigh=1
 ```
 
-Then install the in-repo provider:
+Pi is the reference adapter ([examples/pi](examples/pi/README.md)). It has
+been measured. A harness that can set a per-request header and run on
+session teardown can copy that file. jcode can point at the listener
+([examples/jcode](examples/jcode/README.md)) but cannot pin or release per
+session; read that page before using it.
 
 ```bash
 mkdir -p ~/.pi/agent/extensions
@@ -83,12 +103,9 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 ```
 
 `settings.json` sets `defaultProvider` to `pmux`, default model
-`claude-opus-5-medium`, and `packages: ["npm:pi-subagents"]`. Spawn
-reviewers/workers as usual. One pool instance per live conversation. Session
-end releases the cell (`/clear`). Details: [examples/pi](examples/pi/README.md).
-
-Auth on the Messages listener is presence-only (any non-empty `x-api-key` or
-`Authorization`). Loopback is the trust boundary; off-box bind is refused.
+`claude-opus-5-medium`, and `packages: ["npm:pi-subagents"]`. One pool
+instance per live conversation. The contract itself is
+[examples/README.md](examples/README.md).
 
 ## One-shot from the CLI
 
@@ -148,6 +165,7 @@ refused without it.
 | `--path-b-retain-dir DIR` | erase | Where a quarantined tree is kept. |
 | `--path-b-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
 | `--path-b-messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
+| `--path-b-allow-implicit-conversation` | off | Permit headerless Messages turns (unsafe under concurrency). |
 | `--path-b-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
 | `--path-b-no-evidence` | off | Retain no pool evidence. |
 

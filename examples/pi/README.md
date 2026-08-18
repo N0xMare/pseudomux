@@ -1,7 +1,9 @@
 # Pi on pmux
 
 Pi owns tools, context, and subagents. pmux owns a pool of embedded Claude
-Code processes and speaks Anthropic Messages on loopback.
+Code processes and speaks Anthropic Messages on loopback. This is the
+reference adapter for the three-verb contract in
+[examples/README.md](../README.md).
 
 ## Install
 
@@ -17,8 +19,9 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 
 ## Models
 
-Effort is in the model id. `/model` lists `claude-opus-5-medium`,
-`claude-opus-5-xhigh`, `claude-fable-5-xhigh`, and the other admitted pairs.
+Effort is in the model id. `/model` lists the recommended warm-set
+families (`claude-opus-5-*`, `claude-sonnet-5-*`, `claude-fable-5-*`).
+`GET /v1/models` is the full pool table.
 
 Recommended warm set (at the owner-set cap of 15):
 

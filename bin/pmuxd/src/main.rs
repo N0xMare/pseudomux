@@ -217,9 +217,18 @@ enum Command {
         /// Loopback Anthropic Messages listener (`HOST:PORT`) in front of
         /// the pool. One conversation pins one warm instance; only the
         /// delta is typed; `/clear` runs on release. Loopback only. Off unless
-        /// given. Pi points `api: "anthropic-messages"` at `http://HOST:PORT`.
+        /// given. A harness sends `x-pmux-conversation` and releases on
+        /// session end.
         #[arg(long = "path-b-messages-bind", value_name = "HOST:PORT", help_heading = PATH_B_HELP_HEADING)]
         path_b_messages_bind: Option<String>,
+
+        /// Allow POST /v1/messages without a conversation pin. The listener
+        /// then hashes the first user message, system, tools, and model into
+        /// an implicit id. That id cannot be released on purpose and collides
+        /// when two sessions start the same way. Harnesses should send
+        /// `x-pmux-conversation` instead. Requires --path-b-messages-bind.
+        #[arg(long = "path-b-allow-implicit-conversation", help_heading = PATH_B_HELP_HEADING)]
+        path_b_allow_implicit_conversation: bool,
     },
 }
 
@@ -245,6 +254,7 @@ struct ServeOptions {
     agent_store: Option<PathBuf>,
     path_b: PathBOptions,
     path_b_messages_bind: Option<String>,
+    path_b_allow_implicit_conversation: bool,
 }
 
 /// The stateless engine's flags, exactly as parsed. Nothing here is trusted yet.
@@ -505,6 +515,7 @@ async fn main() -> Result<()> {
             path_b_evidence_dir,
             path_b_no_evidence,
             path_b_messages_bind,
+            path_b_allow_implicit_conversation,
         } => {
             run_server(
                 ServeOptions {
@@ -533,6 +544,7 @@ async fn main() -> Result<()> {
                         no_evidence: path_b_no_evidence,
                     },
                     path_b_messages_bind,
+                    path_b_allow_implicit_conversation,
                 },
                 &matches,
             )
@@ -563,6 +575,7 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         .map(|config| conversation::ConversationConfig {
             idle_ttl: Duration::from_millis(config.instance_idle_ttl_ms),
             max_leases: config.pool_size,
+            allow_implicit: options.path_b_allow_implicit_conversation,
         });
     let messages_bind = options
         .path_b_messages_bind
@@ -574,6 +587,9 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         // refuses this when the operator typed the flag. This is the belt for
         // a constructed ServeOptions in tests.
         bail!("--path-b-messages-bind requires --path-b-parent");
+    }
+    if options.path_b_allow_implicit_conversation && messages_bind.is_none() {
+        bail!("--path-b-allow-implicit-conversation requires --path-b-messages-bind");
     }
     let messages_listener = match messages_bind {
         Some(addr) => Some(messages_http::bind_messages(addr).await?),
@@ -1269,6 +1285,7 @@ mod tests {
                 "path_b_rss_budget_mb" => vec![flag, "4096".to_owned()],
                 "path_b_no_evidence" => vec![flag],
                 "path_b_messages_bind" => vec![flag, "127.0.0.1:0".to_owned()],
+                "path_b_allow_implicit_conversation" => vec![flag],
                 other => panic!(
                     "`--{}` is a --path-b-* flag with no value in this test; add one so the \
                      absent-parent guard is proven for it",

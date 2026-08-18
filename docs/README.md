@@ -10,7 +10,7 @@ landing page.
 
 | If you are… | Read |
 | --- | --- |
-| Calling the API or wiring Pi | Root README, then `examples/pi` |
+| Calling the API or wiring a harness | Root README, then [examples](../examples/README.md) |
 | Changing the pool | [path-b.md](path-b.md) |
 | Promoting a Claude Code version | [version-drift.md](version-drift.md) |
 | Running Gate A | [testing.md](testing.md) |

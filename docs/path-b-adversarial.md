@@ -933,8 +933,8 @@ this commit, which puts them under the existing grader — and the grader then r
 as rotted**, every one invisible until it carried its path:
 
 ```
-docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:634
-docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1122
+docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:650
+docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1138
 docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1360
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:849
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2220

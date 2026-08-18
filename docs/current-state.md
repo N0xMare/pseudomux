@@ -58,7 +58,10 @@ and not `/clear`ed. `x-pmux-conversation` is the pin; `x-pmux-cell` is
 
 `--path-b-messages-bind HOST:PORT` binds loopback only. Auth is
 **presence-only**: any non-empty `x-api-key` or `Authorization` is accepted;
-loopback is the trust boundary. The first turn is flattened into a primer;
+loopback is the trust boundary. A conversation pin
+(`x-pmux-conversation`) is required; `--path-b-allow-implicit-conversation`
+is the single-session opt-in. `GET /v1/models` and `GET /v1/capabilities`
+advertise the closed set. The first turn is flattened into a primer;
 later turns type only the new suffix so Anthropic's prompt cache can hit.
 Claude's tool surface stays denied; the harness runs tools and sends
 `tool_result`. Token streaming is reconstructed after the turn commits.
