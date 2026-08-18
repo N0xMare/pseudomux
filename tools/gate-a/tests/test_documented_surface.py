@@ -1,18 +1,18 @@
 """The README's documented surface, DERIVED from the things that ship it.
 
 `README.md` published a command surface of ten subcommands while the binary
-offered thirteen, and `pmux ask` -- the entire Path B product -- appeared in it
-zero times. The MCP section named eight tools while the server answered
+offered thirteen, and `pmux ask` -- the entire provider product -- appeared in
+it zero times. The MCP section named eight tools while the server answered
 `tools/list` with thirteen. Neither drift was reachable by any check: the
 README's lists were prose, and prose is a claim.
 
 So every list in this module is asked of the artefact and never restated here:
 
-* the subcommand set and each one's `Path A` / `Path B` / `Neither path` label
-  come from `pmux --help`, cross-checked against the `Command` variants in
+* the published subcommand set and each one's `API` / `Ops` label come from
+  `pmux --help`, cross-checked against the non-hidden `Command` variants in
   `bin/pmux/src/cli.rs` so a stale binary cannot quietly agree with a stale
   README;
-* the Path B daemon flags come from `pmuxd serve --help`;
+* the pool daemon flags come from `pmuxd serve --help`;
 * the pool cap comes from `MAX_POOL_SIZE`;
 * the model table comes from `MODEL_TABLE`;
 * the MCP tool list comes from a real `tools/list` exchange with `pmux-mcp`;
@@ -222,45 +222,80 @@ class DocumentedSurfaceTest(unittest.TestCase):
             "a Command variant renames itself with `#[command(name = ...)]`, so the "
             "kebab-case derivation below no longer produces its spelling",
         )
-        declared = {
-            kebab(match.group(1))
-            for match in re.finditer(
-                r"^    ([A-Z][A-Za-z0-9]*)\s*[,{(]", block, re.MULTILINE
-            )
-        }
+        declared: set[str] = set()
+        visible: set[str] = set()
+        pending_hide = False
+        pending_attr = ""
+        for line in block.splitlines():
+            stripped = line.strip()
+            if pending_attr or stripped.startswith("#["):
+                pending_attr += stripped
+                if stripped.endswith("]"):
+                    if re.search(
+                        r"#\[command\([^]]*hide\s*=\s*true", pending_attr
+                    ):
+                        pending_hide = True
+                    pending_attr = ""
+                continue
+            match = re.match(r"^    ([A-Z][A-Za-z0-9]*)\s*[,{(]", line)
+            if match:
+                name = kebab(match.group(1))
+                declared.add(name)
+                if not pending_hide:
+                    visible.add(name)
+                pending_hide = False
+        self.assertTrue(declared, "parsed no Command variant out of bin/pmux/src/cli.rs")
+        hidden = declared - visible
+        self.assertEqual(
+            hidden,
+            {
+                "agent",
+                "attach",
+                "cancel",
+                "clear",
+                "close",
+                "inspect",
+                "oneshot",
+                "probe",
+                "start",
+                "turn",
+            },
+            "the session CLI left the Command enum or lost hide; hide it, "
+            "do not delete it",
+        )
         self.assertEqual(
             offered,
-            declared,
-            f"{pmux} disagrees with bin/pmux/src/cli.rs about the subcommand set; "
-            f"the build is stale -- run `cargo build --workspace --release`",
+            visible,
+            f"{pmux} disagrees with bin/pmux/src/cli.rs about the published "
+            f"subcommand set; the build is stale -- run `cargo build --workspace --release`",
         )
 
         # The label is the binary's own: everything before the first colon of
-        # the one-line description. `pmux --help` promises that "every
-        # subcommand says which one it is", so a description with no colon is
-        # that promise broken and not a parse to work around.
+        # the one-line description. `pmux --help` promises that every published
+        # subcommand says which surface it is, so a description with no colon
+        # is that promise broken and not a parse to work around.
         labels = {}
         for name, description in described.items():
             if name in CLAP_BUILTIN_SUBCOMMANDS:
                 continue
             label, colon, _ = description.partition(":")
             self.assertTrue(
-                colon, f"`pmux {name}` states no path label in its help summary"
+                colon, f"`pmux {name}` states no surface label in its help summary"
             )
             labels[name] = label.strip()
         self.assertGreaterEqual(
             len(set(labels.values())),
-            3,
+            2,
             f"only {sorted(set(labels.values()))} came out of the help summaries; "
-            f"pmux --help says there are three kinds of subcommand, so a smaller "
-            f"set means the label parse is broken",
+            f"pmux --help says there are two kinds of published subcommand, so a "
+            f"smaller set means the label parse is broken",
         )
 
         # Order is deliberately NOT compared. The binary lists subcommands in
-        # declaration order; the README leads with Path B because that is the
+        # declaration order; the README leads with `run` because that is the
         # product, and forcing it to follow clap would be the document serving
         # the check rather than the reader.
-        rows = table_with_header(self.readme(), "subcommand", "path")
+        rows = table_with_header(self.readme(), "subcommand", "surface")
         documented = {}
         for row in rows:
             names = backticked(row[0])
@@ -284,7 +319,7 @@ class DocumentedSurfaceTest(unittest.TestCase):
                     f"labels it {labels[name]!r}",
                 )
 
-    # -- the Path B daemon -----------------------------------------------
+    # -- the pool daemon --------------------------------------------------
 
     def test_the_readme_names_every_path_b_flag_the_daemon_offers(self):
         """`--path-b-*` is the whole configuration surface of the product.

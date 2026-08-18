@@ -1,12 +1,12 @@
 /**
- * pmux Path B provider for Pi.
+ * pmux provider for Pi.
  *
  * /model lists every (model, effort) pair the pool admits:
  *   claude-sonnet-5-{low,medium,high,xhigh,max}
  *   claude-opus-5-{low,medium,high,xhigh,max}
  *   claude-fable-5-{low,medium,high,xhigh,max}
  *
- * Effort is in the model id. The Messages facade splits it before Path B.
+ * Effort is in the model id. The Messages facade splits it before the pool.
  * Requires pmuxd with --path-b-messages-bind 127.0.0.1:8765.
  *
  * Cell lifetime contract:

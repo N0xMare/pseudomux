@@ -322,7 +322,7 @@ fn snapshot() -> Value {
     })
 }
 
-/// The one Path B success shape. Deliberately carries no `session_id`: not even
+/// The one provider success shape. Deliberately carries no `session_id`: not even
 /// through the envelope does a pool instance get a name.
 /// The smallest complete agent an MCP caller can store.
 ///
@@ -515,33 +515,20 @@ fn real_stdio_enforces_rpc_id_domain_and_recovers_on_one_stream() {
     assert!(stderr.is_empty(), "unexpected MCP diagnostics: {stderr}");
 }
 
-/// Every advertised tool maps to exactly one native request, and the list of
-/// tools exercised here is the list the server advertises, in order.
+/// `tools/list` is the provider surface. `tools/call` still dispatches every
+/// native tool, including the unpublished session and agent ones.
 ///
-/// The name used to carry the count -- "all eight" -- and the count was the
-/// only thing tying the two hand-written arrays together. Adding a ninth tool
-/// broke the name list, which is what a pin is for; it did NOT break `cases`,
-/// so the fix an author reaches for is to extend the name list and stop, which
-/// leaves the new tool advertised and unexercised under a test that says every
-/// tool was exercised.
+/// `cases` is the dispatch catalogue this process actually exercises. It is
+/// not the advertised list: a server that listed every dispatchable tool
+/// would fail the `tools/list` comparison below, and a server that dropped
+/// `run_stateless` from the catalogue would fail it too. Session tools stay
+/// in `cases` so a regression that unhooks one from `map_tool_call` is still
+/// a black-box failure.
 ///
-/// THERE IS NO EXPECTED-NAMES ARRAY HERE ANY MORE, AND NO THIRTEEN. This test
-/// used to hold a hand-written list of every tool name beside `cases`, which
-/// is the same list with the fixtures stripped off, so a tool added to
-/// `tool_definitions` needed the identical edit in three places -- and the
-/// number in the third was a count nothing derived. `cases` IS the expectation:
-/// it is the only list here that has to be written by hand, because each entry
-/// carries a request and a native reply that cannot be derived from anything,
-/// and `tools/list` is compared against it IN ORDER. Deleting the array lost
-/// no property: a stale server that advertises nine of the thirteen fails on
-/// this same comparison, naming both lists, which is exactly how the four
-/// agent tools' absence was found (Gate A receipt, 2026-08-07,
-/// `gate_d/mcp_process`).
-///
-/// The one thing the array did that `cases` does not is refuse a tool REMOVED
-/// from both. `tools::tests::exposes_only_native_v1_tools_with_closed_schemas`
-/// is that pin, in the crate that defines the list, and it is the only place
-/// in the tree where the thirteen names are written down twice.
+/// The closed name list of every dispatchable tool lives in
+/// `tools::tests::exposes_only_native_v1_tools_with_closed_schemas`. The
+/// published subset lives in
+/// `tools::tests::tools_list_is_the_provider_surface_only`.
 #[test]
 fn real_stdio_maps_every_advertised_tool_to_an_exact_native_request() {
     let sandbox = Sandbox::new("tools");
@@ -719,20 +706,23 @@ fn real_stdio_maps_every_advertised_tool_to_an_exact_native_request() {
         .iter()
         .map(|tool| tool["name"].as_str().unwrap())
         .collect::<Vec<_>>();
-    // The one list here is `cases`, and `tools/list` is compared against it.
-    // A tool added to `tool_definitions` without an exchange here fails on this
-    // line, an exchange here for a tool the server does not advertise fails on
-    // it too, and a server built before a tool existed fails on it naming both
-    // lists. ORDERED, not a set: the order of `tools/list` is the order a model
-    // reads the catalogue in, and asserting it costs nothing here.
+    // Advertised is the provider surface only. `cases` still walks every
+    // dispatchable tool, including unpublished session tools.
+    assert_eq!(
+        names,
+        vec!["run_stateless"],
+        "tools/list must expose only run_stateless; session tools stay callable"
+    );
     let exercised = cases
         .iter()
         .map(|(name, _, _, _)| *name)
         .collect::<Vec<_>>();
-    assert_eq!(
-        names, exercised,
-        "every advertised tool must be exercised, in the order it is advertised"
-    );
+    for name in &names {
+        assert!(
+            exercised.contains(name),
+            "advertised tool {name} has no dispatch exchange in cases"
+        );
+    }
 
     for (index, (name, arguments, _, data)) in cases.iter().enumerate() {
         let id = 10 + index as u64;

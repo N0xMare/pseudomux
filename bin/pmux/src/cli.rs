@@ -53,18 +53,15 @@ const ENVIRONMENT_HELP_HEADING: &str =
     name = "pmux",
     version,
     about = "Native pmux protocol-v1 CLI",
-    long_about = "Native pmux protocol-v1 CLI.
+    long_about = "pmux talks to a local pool of embedded Claude Code processes.
 
-`run` is the product: one stateless `(model, effort, prompt)` turn against a
-pool of embedded Claude Code processes. The caller names no resource. `pmuxd`
-must have been started with --path-b-parent or every `run` is refused.
+`run` is the one-shot CLI: `(model, effort, prompt) -> text + usage`. The
+caller names no resource. `pmuxd` must have been started with --path-b-parent
+or every `run` is refused. `ping` and `doctor` start nothing and spend no
+tokens.
 
-`ping` and `doctor` start nothing and spend no tokens.
-
-The other subcommands are Path A (experimental): interactive sessions where
-you name the working directory, the Claude executable and the configuration
-root. `oneshot`, `start`, `turn`, `inspect`, `cancel`, `close`, `attach` and
-`probe` are that surface. `clear` is a Path A call against a Path B cell."
+Harnesses such as Pi should use the Messages facade
+(`--path-b-messages-bind`), not this CLI."
 )]
 pub struct Cli {
     /// Exact pmuxd Unix socket. No discovery or daemon startup is performed.
@@ -72,7 +69,7 @@ pub struct Cli {
     pub socket: PathBuf,
 
     /// Output representation. `json` is one object; `ndjson` is one
-    /// `{"type","data"}` record per line. Only `oneshot` and `turn` stream turn
+    /// `{"type","data"}` record per line. Interactive turn commands stream turn
     /// events ahead of the result; every other subcommand emits exactly one
     /// record in either mode.
     #[arg(long, value_enum, default_value_t, global = true)]
@@ -136,12 +133,12 @@ pub enum OutputMode {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Neither path: ask the daemon for its version and protocol number.
+    /// Ops: ask the daemon for its version and protocol number.
     ///
     /// Starts nothing, spends no tokens, and reaches only the accept loop. Use
     /// `pmux doctor` for anything behind it.
     Ping,
-    /// Path B: run one stateless turn against the embedded Claude Code pool.
+    /// API: run one stateless turn against the embedded Claude Code pool.
     ///
     /// Requires a `pmuxd` started with `--path-b-parent`; without one every
     /// `run` is refused with `unsupported_feature`.
@@ -173,7 +170,8 @@ pub enum Command {
         #[arg(long)]
         deadline_unix_ms: Option<u64>,
     },
-    /// Path A (experimental): start, run one turn, and close one interactive Claude session.
+    /// Experimental: start, run one turn, and close one interactive Claude session.
+    #[command(hide = true)]
     Oneshot {
         #[command(flatten)]
         launch: LaunchArgs,
@@ -182,16 +180,18 @@ pub enum Command {
         #[command(flatten)]
         turn: TurnArgs,
     },
-    /// Path A (experimental): start a persistent interactive Claude session.
+    /// Experimental: start a persistent interactive Claude session.
     ///
-    /// Prints the session id and generation id every later Path A subcommand
+    /// Prints the session id and generation id every later session subcommand
     /// needs. The session stays alive, holding a Claude process, until `pmux
     /// close` or its idle TTL expires.
+    #[command(hide = true)]
     Start {
         #[command(flatten)]
         launch: LaunchArgs,
     },
-    /// Path A (experimental): run one turn in an existing session.
+    /// Experimental: run one turn in an existing session.
+    #[command(hide = true)]
     #[command(alias = "prompt")]
     Turn {
         /// Session id printed by `pmux start`.
@@ -204,10 +204,11 @@ pub enum Command {
         #[command(flatten)]
         turn: TurnArgs,
     },
-    /// Path A (experimental): print one session's current snapshot as JSON.
+    /// Experimental: print one session's current snapshot as JSON.
     ///
     /// This is where `transcript_session_id` is re-read after a lost `pmux
     /// clear` response, and where `state` and `last_turn` are read.
+    #[command(hide = true)]
     Inspect {
         /// Session id printed by `pmux start`.
         session: Uuid,
@@ -215,10 +216,11 @@ pub enum Command {
         #[arg(long)]
         generation: Uuid,
     },
-    /// Path A (experimental): cancel one exact in-flight turn and report recovery state.
+    /// Experimental: cancel one exact in-flight turn and report recovery state.
     ///
     /// Idempotent, and never resubmits prompt input. Exits non-zero when the
     /// session could not be recovered, which means it must be closed.
+    #[command(hide = true)]
     Cancel {
         /// Session id printed by `pmux start`.
         session: Uuid,
@@ -229,10 +231,11 @@ pub enum Command {
         /// id `pmux` printed on stderr when the turn was accepted.
         turn: Uuid,
     },
-    /// Path A (experimental): close one session and reap its Claude process tree.
+    /// Experimental: close one session and reap its Claude process tree.
     ///
     /// Exits non-zero unless the daemon confirms the process was reaped, so a
     /// zero exit is a released slot and a released process.
+    #[command(hide = true)]
     Close {
         /// Session id printed by `pmux start`.
         session: Uuid,
@@ -248,13 +251,13 @@ pub enum Command {
         #[arg(long, value_enum, default_value_t)]
         policy: ClosePolicyArg,
     },
-    /// Path A call on a Path B cell: clear one minified-cell session's context
-    /// between turns.
+    /// Experimental: clear one minified-cell session's context between turns.
     ///
     /// Types `/clear` into the session's composer and rebinds to the transcript
     /// Claude rotates to. The session id and generation are unchanged; what
     /// rotates is `transcript_session_id`, which the result reports and which
     /// the next clear must be fenced against.
+    #[command(hide = true)]
     Clear {
         /// Session id printed by `pmux start --cell minified`.
         session: Uuid,
@@ -274,7 +277,7 @@ pub enum Command {
         #[arg(long)]
         deadline_unix_ms: Option<u64>,
     },
-    /// Path A (experimental): attach a terminal to a live session.
+    /// Experimental: attach a terminal to a live session.
     ///
     /// With `--output text` pmux takes over this terminal until you detach.
     /// With `--output json`/`--output ndjson` it does NOT attach: it prints the
@@ -284,6 +287,7 @@ pub enum Command {
     /// A `--cell minified` session cannot be attached at all: a writable attach
     /// is refused because the cell does not grant one, and `--read-only` is
     /// refused because it is unimplemented.
+    #[command(hide = true)]
     Attach {
         /// Session id printed by `pmux start`.
         session: Uuid,
@@ -306,7 +310,7 @@ pub enum Command {
         #[arg(long, requires = "rows")]
         cols: Option<u16>,
     },
-    /// Neither path: validate the socket, the daemon's health tree, the working
+    /// Ops: validate the socket, the daemon's health tree, the working
     /// directory, and the Claude executable.
     ///
     /// Starts no session and spends no tokens. Exits 0 only when every check it
@@ -319,21 +323,20 @@ pub enum Command {
     /// followed by a `run` refused with `unsupported_claude_version`: the two
     /// answers now come from one comparison, made where both operands live.
     Doctor {
-        /// Claude executable to validate, resolved exactly as `pmux start`
-        /// resolves `--claude`.
+        /// Claude executable to validate for interactive session starts.
         ///
-        /// PATH A's executable, and only that. Path A starts under
+        /// This is not the pool's `--path-b-claude`. Session starts under
         /// `AllowUntested`, so an unmeasured version is not a fault here; the
         /// version gate is `RequireTested` and applies to the pool's own
-        /// `--path-b-claude`, which the daemon reports on in the health tree
-        /// above rather than this client guessing at it.
+        /// executable, which the daemon reports on in the health tree above
+        /// rather than this client guessing at it.
         #[arg(long, env = "PMUX_CLAUDE", default_value = "claude")]
         claude: PathBuf,
         /// Working directory to validate. Defaults to the current directory.
         #[arg(long)]
         cwd: Option<PathBuf>,
     },
-    /// Path A (experimental): store, read and revise the reusable launch configurations
+    /// Experimental: store, read and revise the reusable launch configurations
     /// `pmux start --agent` and `pmux oneshot --agent` name.
     ///
     /// An agent holds LAUNCH POLICY and never a resource: no cwd, no
@@ -343,17 +346,19 @@ pub enum Command {
     ///
     /// Requires a `pmuxd` started with an agent store; `pmuxd serve` derives one
     /// beside the socket by default, so this is the ordinary case.
+    #[command(hide = true)]
     Agent {
         #[command(subcommand)]
         command: AgentCommand,
     },
-    /// Path A (experimental): build and print a redacted summary of the exact start DTO;
+    /// Experimental: build and print a redacted summary of the exact start DTO;
     /// optionally launch it.
     ///
     /// Without --launch this reaches no daemon at all and starts nothing: it is
     /// the way to read what a launch WOULD send, including every environment
     /// name the child will not receive. Environment values, inline settings and
     /// MCP documents, and the system prompt are never printed.
+    #[command(hide = true)]
     Probe {
         #[command(flatten)]
         launch_args: LaunchArgs,
@@ -681,7 +686,7 @@ pub struct LaunchArgs {
     /// default 5000.
     #[arg(long, requires = "lifecycle")]
     pub hook_timeout_ms: Option<u64>,
-    /// `persistent` is the only value `run`, `start` and `probe --launch`
+    /// `persistent` is the only value `oneshot`, `start` and `probe --launch`
     /// accept; `one-shot` is reserved for the daemon's own `run_once` operation
     /// and every start naming it is refused with `unsupported_feature`.
     #[arg(long, value_enum)]
@@ -696,8 +701,8 @@ pub struct LaunchArgs {
     /// conservative fallback drain, and the session reports `tested: false`.
     #[arg(long, value_enum)]
     pub compatibility: Option<CompatibilityArg>,
-    /// Which cell the session is driven as. `minified` is Path B: no tool
-    /// surface, cleared between turns, and admitted only on a tested
+    /// Which cell the session is driven as. `minified` is the pool cell: no
+    /// tool surface, cleared between turns, and admitted only on a tested
     /// compatibility profile. It REQUIRES --config-isolation-root, refuses
     /// terminal attachment, and is the only cell `pmux clear` accepts.
     #[arg(long, value_enum)]
@@ -2190,19 +2195,20 @@ mod tests {
     /// they are driving.
     ///
     /// Derived over every subcommand rather than over a list, so a subcommand
-    /// added later has to answer the question too.
+    /// added later has to answer the question too. Hidden session commands
+    /// still carry a prefix: they stay invokable.
     #[test]
-    fn every_subcommand_says_which_path_it_is_on() {
+    fn every_subcommand_says_which_surface_it_is_on() {
         for command in user_subcommands() {
             let about = command
                 .get_about()
                 .expect("about is required above")
                 .to_string();
             assert!(
-                about.starts_with("Path A")
-                    || about.starts_with("Path B")
-                    || about.starts_with("Neither path"),
-                "`pmux {}` does not say which path it belongs to: {about:?}",
+                about.starts_with("API:")
+                    || about.starts_with("Ops:")
+                    || about.starts_with("Experimental:"),
+                "`pmux {}` does not say which surface it belongs to: {about:?}",
                 command.get_name()
             );
         }
@@ -2617,14 +2623,14 @@ mod tests {
         );
     }
 
-    /// Path B's product statement, held on the CLI the way
+    /// The provider CLI's product statement, held on the CLI the way
     /// `the_run_stateless_tool_refuses_every_resource_a_caller_might_name`
     /// holds it on the MCP schema.
     ///
-    /// Derived from clap's own argument ids for `ask`, so a resource flag added
+    /// Derived from clap's own argument ids for `run`, so a resource flag added
     /// to this subcommand later is red here rather than in a leak report.
     #[test]
-    fn the_path_b_subcommand_names_no_resource() {
+    fn the_run_subcommand_names_no_resource() {
         let command = Cli::command().find_subcommand_mut("run").unwrap().clone();
         let offered: BTreeSet<String> = command
             .get_arguments()
@@ -2642,7 +2648,7 @@ mod tests {
         ]);
         assert_eq!(
             offered, admitted,
-            "`pmux run` gained or lost an argument; every addition here is a resource a Path B \
+            "`pmux run` gained or lost an argument; every addition here is a resource a \
              caller could name, which is the one thing this subcommand promises it cannot do"
         );
     }

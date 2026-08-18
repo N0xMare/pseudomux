@@ -11,7 +11,7 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 # merge examples/pi/settings.json into ~/.pi/agent/settings.json
 ```
 
-`pmuxd` must already be serving Path B with
+`pmuxd` must already be serving the pool with
 `--path-b-messages-bind 127.0.0.1:8765`. Override the URL with
 `PMUX_MESSAGES_URL` if you bound a different loopback port.
 

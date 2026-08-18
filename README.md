@@ -54,7 +54,7 @@ target/release/pmux ping
 target/release/pmux doctor --claude "$(command -v claude)" --cwd "$PWD"
 ```
 
-`doctor`'s pool layer tells you whether Path B is configured. When Messages
+`doctor`'s pool layer tells you whether the pool is configured. When Messages
 leases are live it also reports `leased` and `conversation_leases`.
 
 ## Use it from Pi
@@ -63,8 +63,8 @@ This is the intended integration. Pi speaks Anthropic Messages; pmux pins one
 warm cell per Pi conversation and types only the new suffix so the prompt
 cache can hit.
 
-Add Messages to an already-enabled Path B daemon (do not make this the first
-serve example):
+Add Messages to an already-enabled pool (do not make this the first serve
+example):
 
 ```bash
 --path-b-messages-bind 127.0.0.1:8765 \
@@ -136,7 +136,7 @@ refused without it.
 
 | flag | default | what it bounds |
 | --- | --- | --- |
-| `--path-b-parent DIR` | — | **Enables Path B.** Absolute parent for the per-slot trees. |
+| `--path-b-parent DIR` | — | **Enables the pool.** Absolute parent for the per-slot trees. |
 | `--path-b-claude PATH` | — | Required with `--path-b-parent`, and absolute. |
 | `--path-b-pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15, at boot. |
 | `--path-b-recycle-turns N` | `50` | Turns one instance serves before it is replaced. |
@@ -149,7 +149,7 @@ refused without it.
 | `--path-b-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
 | `--path-b-messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
 | `--path-b-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
-| `--path-b-no-evidence` | off | Retain no Path B evidence. |
+| `--path-b-no-evidence` | off | Retain no pool evidence. |
 
 Default system prompt: `Answer directly and completely. If you cannot answer, say so in one line.`
 
@@ -170,27 +170,19 @@ quickstart). Receipts live under `evidence/`.
 
 ## The command surface
 
-The `path` column is the label `pmux --help` prints. Gate A
+The `surface` column is the label `pmux --help` prints. Gate A
 (`tools/gate-a/tests/test_documented_surface.py`) fails if this table names a
 different set of subcommands or gives any one a different label.
 
-| subcommand | path | what it does |
+| subcommand | surface | what it does |
 | --- | --- | --- |
-| `run` | Path B | One stateless `(model, effort, prompt)` call against the pool. Alias: `ask`. |
-| `ping` | Neither path | Ask the daemon for its version and protocol number. |
-| `doctor` | Neither path | Validate the socket, health tree, working directory and Claude executable. |
-| `oneshot` | Path A (experimental) | Start, run one turn, and close one interactive session. |
-| `start` | Path A (experimental) | Start a persistent session; print `session_id` and `generation_id`. |
-| `turn` | Path A (experimental) | Run one turn in an existing session. |
-| `inspect` | Path A (experimental) | Print one session's snapshot as JSON. |
-| `cancel` | Path A (experimental) | Cancel one exact in-flight turn. |
-| `close` | Path A (experimental) | Close one session and reap its Claude process tree. |
-| `attach` | Path A (experimental) | Take over a live session's terminal. |
-| `probe` | Path A (experimental) | Print the redacted start DTO a launch would send. |
-| `agent` | Path A (experimental) | Store and revise launch configurations `--agent` names. |
-| `clear` | Path A call on a Path B cell | Type `/clear` into a `--cell minified` session you started by hand. |
+| `run` | API | One stateless `(model, effort, prompt)` call against the pool. Alias: `ask`. |
+| `ping` | Ops | Ask the daemon for its version and protocol number. |
+| `doctor` | Ops | Validate the socket, health tree, working directory and Claude executable. |
 
-`pmux <command> --help` is the flag reference. Path A is documented in
+`pmux <command> --help` is the flag reference. Session commands (`start`,
+`turn`, `oneshot`, and the rest) stay compiled and invokable; they are hidden
+from default `--help`. See
 [docs/experimental-path-a.md](docs/experimental-path-a.md).
 
 ### MCP
@@ -208,10 +200,8 @@ different set of subcommands or gives any one a different label.
 }
 ```
 
-It exposes exactly these tools: `start_session`, `run_turn`, `inspect_session`,
-`cancel_turn`, `close_session`, `run_once`, `subscribe_events`,
-`attach_session`, `run_stateless`, `create_agent`, `get_agent`, `list_agents`,
-`update_agent`. `run_stateless` is Path B — the MCP surface of `pmux run`.
+It exposes exactly these tools: `run_stateless`. That is the MCP surface of
+`pmux run`.
 
 ## Further reading
 

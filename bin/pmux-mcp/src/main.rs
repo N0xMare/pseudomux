@@ -180,7 +180,7 @@ async fn process_value(client: &PmuxClient, raw: Value) -> Option<Value> {
                         "name": "pmux-mcp",
                         "version": env!("CARGO_PKG_VERSION")
                     },
-                    "instructions": "This server is a thin mapper to one explicit pmuxd protocol-v1 socket. run_turn returns acceptance; use subscribe_events for bounded progress/completion replay."
+                    "instructions": "This server is a thin mapper to one explicit pmuxd protocol-v1 socket. run_stateless is (model, effort, prompt) -> text + usage. The caller names no resource."
                 }),
             ))
         }
@@ -193,7 +193,10 @@ async fn process_value(client: &PmuxClient, raw: Value) -> Option<Value> {
             if params.cursor.is_some() {
                 return Some(rpc_error(id, -32602, "Tool list cursor is not supported"));
             }
-            Some(rpc_success(id, json!({"tools": tools::tool_definitions()})))
+            Some(rpc_success(
+                id,
+                json!({"tools": tools::published_tool_definitions()}),
+            ))
         }
         "tools/call" => {
             let params: CallToolParams = match serde_json::from_value(params) {
@@ -547,7 +550,7 @@ mod tests {
         // what the test proves.
         assert_eq!(
             listed["result"]["tools"].as_array().unwrap().len(),
-            crate::tools::tool_definitions().len()
+            crate::tools::published_tool_definitions().len()
         );
     }
 

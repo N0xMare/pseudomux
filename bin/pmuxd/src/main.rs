@@ -52,9 +52,9 @@ struct Cli {
 enum Command {
     /// Bind the socket and serve protocol v1 until SIGINT or SIGTERM.
     ///
-    /// Path A (interactive sessions) is always served. Path B, the stateless
-    /// token engine `pmux run` reaches, is OFF unless --path-b-parent is given;
-    /// every other --path-b-* flag is refused without it.
+    /// The stateless token engine that `pmux run` reaches is OFF unless
+    /// --path-b-parent is given; every other --path-b-* flag is refused
+    /// without it. Interactive sessions remain served either way.
     ///
     /// Every refusal below happens before the socket is bound, so a rejected
     /// configuration leaves no socket, no runtime directory and no rmux
@@ -102,7 +102,7 @@ enum Command {
         /// Where stored agents live. Defaults to `agents/` beside the socket,
         /// which is how the daemon log directory is derived too.
         ///
-        /// Held to the SAME bar as the socket directory and the Path B pool
+        /// Held to the SAME bar as the socket directory and the pool
         /// parent: every level pmuxd creates is 0700 from birth and every file
         /// is 0600, and a directory that already exists and is not owner-only
         /// and owned by this user is REFUSED at boot, naming what is wrong and
@@ -119,8 +119,8 @@ enum Command {
         /// itself, 0700 and empty, and erases each one when its instance is
         /// destroyed. No caller can name any path under it.
         ///
-        /// Path B is off unless this is given. Every other `--path-b-*` flag is
-        /// refused without it, because a knob that silently does nothing is
+        /// The pool is off unless this is given. Every other `--path-b-*` flag
+        /// is refused without it, because a knob that silently does nothing is
         /// worse than an error.
         #[arg(long = "path-b-parent", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
         path_b_parent: Option<PathBuf>,
@@ -195,7 +195,7 @@ enum Command {
         path_b_rss_budget_mb: Option<u64>,
 
         /// Absolute directory, OUTSIDE the pool parent, holding the redacted
-        /// Path B evidence corpus. Defaults to `path-b-evidence/` beside the
+        /// pool evidence corpus. Defaults to `path-b-evidence/` beside the
         /// socket, alongside `logs/` and `agents/`.
         ///
         /// Each destroyed instance's transcripts are mirrored there pruned to
@@ -208,14 +208,14 @@ enum Command {
         #[arg(long = "path-b-evidence-dir", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
         path_b_evidence_dir: Option<PathBuf>,
 
-        /// Retain no Path B evidence at all. The pool then erases every
+        /// Retain no pool evidence at all. The pool then erases every
         /// transcript at teardown, as it did before the corpus existed, and a
         /// future promotion has nothing free to read.
         #[arg(long = "path-b-no-evidence", help_heading = PATH_B_HELP_HEADING)]
         path_b_no_evidence: bool,
 
         /// Loopback Anthropic Messages listener (`HOST:PORT`) in front of
-        /// the Path B pool. One conversation pins one warm instance; only the
+        /// the pool. One conversation pins one warm instance; only the
         /// delta is typed; `/clear` runs on release. Loopback only. Off unless
         /// given. Pi points `api: "anthropic-messages"` at `http://HOST:PORT`.
         #[arg(long = "path-b-messages-bind", value_name = "HOST:PORT", help_heading = PATH_B_HELP_HEADING)]
@@ -226,7 +226,7 @@ enum Command {
 /// Groups every stateless-engine flag in `--help`, so the one thing an operator
 /// must know -- that `--path-b-parent` is the enable switch -- is not buried
 /// among the session flags.
-const PATH_B_HELP_HEADING: &str = "Stateless token engine (Path B; off unless --path-b-parent)";
+const PATH_B_HELP_HEADING: &str = "Stateless token engine (off unless --path-b-parent)";
 
 /// CHOSEN: ten minutes, the same ceiling a Path A turn gets. A stateless turn
 /// is one model call with no tool surface, so it is far under this; the bound
@@ -637,7 +637,7 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
             let pool = service
                 .pool()
                 .cloned()
-                .ok_or_else(|| anyhow!("--path-b-messages-bind requires a started Path B pool"))?;
+                .ok_or_else(|| anyhow!("--path-b-messages-bind requires a started pool"))?;
             let book = Arc::new(conversation::ConversationBook::new(config, pool));
             Some(tokio::spawn(async move {
                 if let Err(error) = messages_http::serve_messages(listener, book).await {

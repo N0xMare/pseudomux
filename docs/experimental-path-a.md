@@ -1,9 +1,9 @@
-# Experimental: interactive sessions (Path A)
+# Experimental: interactive sessions
 
-The product is Path B: `pmux run` and the Messages facade. This page is the
-older interactive-session CLI, kept for people who want to drive a live Claude
-TUI by name. It is always compiled and served. It is not how you integrate a
-harness.
+The product is the local API: `pmux run`, MCP `run_stateless`, and the Messages
+facade. This page is the older interactive-session CLI, kept for people who
+want to drive a live Claude TUI by name. It is always compiled and served. It
+is hidden from `pmux --help`. It is not how you integrate a harness.
 
 Every call needs an absolute `--socket` or `PMUX_SOCKET`. Output is `text`,
 `json`, or `ndjson`. Only `oneshot` and `turn` stream events ahead of the
@@ -46,6 +46,7 @@ pmux --socket /absolute/path/pmux.sock close \
 launch. `attach` takes over the TUI. `clear` types `/clear` into a session
 *you* started as `--cell minified`; the pool already does that for `pmux run`.
 
-Native clients (Rust / TypeScript / Python) and `pmux-mcp` still speak
-protocol v1 over the same owner-only socket. `run_stateless` is Path B;
-`start_session` / `run_turn` / `run_once` are this experimental surface.
+Native clients (Rust / TypeScript / Python) still speak protocol v1 over the
+same owner-only socket. `pmux-mcp` lists only `run_stateless`;
+`start_session` / `run_turn` / `run_once` remain callable and are this
+experimental surface.

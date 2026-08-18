@@ -199,7 +199,11 @@ impl fmt::Display for ToolCallError {
 
 impl std::error::Error for ToolCallError {}
 
-/// Native tools exposed through MCP. Every input schema mirrors one v1 DTO.
+/// Native tools the server can dispatch. Every input schema mirrors one v1 DTO.
+///
+/// [`published_tool_definitions`] is the catalogue `tools/list` returns.
+/// Session and agent tools stay callable through `tools/call` so existing
+/// clients do not break, but they are not the product surface.
 pub fn tool_definitions() -> Vec<Value> {
     vec![
         tool(
@@ -270,8 +274,8 @@ pub fn tool_definitions() -> Vec<Value> {
                 "THE CALLER NAMES NO RESOURCE: there is no cwd, no configuration root, no system ",
                 "prompt and no session id in this tool's schema, because the daemon mints every ",
                 "one of them from its own configuration. ",
-                "Refused with unsupported_feature when the daemon was started without a Path B ",
-                "pool (--path-b-parent)."
+                "Refused with unsupported_feature when the daemon was started without a pool ",
+                "(--path-b-parent)."
             ),
             run_stateless_schema(),
             // Not read-only (it spends tokens), not destructive (it creates and
@@ -336,6 +340,17 @@ pub fn tool_definitions() -> Vec<Value> {
             annotations(false, false, false, false),
         ),
     ]
+}
+
+/// What `tools/list` returns: the provider surface only.
+///
+/// Derived from [`tool_definitions`] so a change to `run_stateless` cannot
+/// drift between the catalogue and the dispatcher.
+pub fn published_tool_definitions() -> Vec<Value> {
+    tool_definitions()
+        .into_iter()
+        .filter(|tool| tool["name"] == "run_stateless")
+        .collect()
 }
 
 fn tool(name: &str, description: &str, input_schema: Value, annotations: Value) -> Value {
@@ -1021,7 +1036,7 @@ fn attach_session_schema() -> Value {
     })
 }
 
-/// The whole Path B surface, as a JSON schema.
+/// The whole provider surface, as a JSON schema.
 ///
 /// `additionalProperties: false` is doing product work here, not hygiene. Every
 /// field this schema omits -- `cwd`, `config_isolation`, `system_prompt`,
@@ -1307,6 +1322,21 @@ mod tests {
         }
     }
 
+    #[test]
+    fn tools_list_is_the_provider_surface_only() {
+        let published = published_tool_definitions();
+        let names = published
+            .iter()
+            .map(|tool| tool["name"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["run_stateless"]);
+        let full = tool_definitions()
+            .into_iter()
+            .find(|tool| tool["name"] == "run_stateless")
+            .expect("run_stateless must stay in the dispatch catalogue");
+        assert_eq!(published[0], full);
+    }
+
     /// `start_session_schema` is `additionalProperties: false`, so a field the
     /// Rust DTO gained and this schema did not is UNREACHABLE from every MCP
     /// caller -- silently, and without a compile error anywhere. `cell` reached
@@ -1574,7 +1604,7 @@ mod tests {
     ///
     /// `run_stateless_schema` is `additionalProperties: false`, so a field the
     /// Rust DTO gained and this schema did not would be UNREACHABLE from every
-    /// MCP caller, silently. For Path B there is a second reading of the same
+    /// MCP caller, silently. For the provider there is a second reading of the same
     /// comparison, and it runs the other way: a field this SCHEMA gained and
     /// the DTO did not would be a resource name an agent could write and the
     /// daemon would refuse -- and the whole product statement is that there is
@@ -2088,7 +2118,7 @@ mod tests {
     /// **This surface used to render the constant string `"pmuxd rejected the
     /// native request"` for every refusal there is.** `redact_client_error`
     /// kept `code` and `retryable` and dropped `message` and the whole of
-    /// `details`, so on the one Path B surface whose reader cannot ask a human,
+    /// `details`, so on the one provider surface whose reader cannot ask a human,
     /// "the stateless token engine is not enabled on this daemon" and "your
     /// prompt starts with `/`" arrived as byte-identical payloads: both
     /// `unsupported_feature`, both not retryable, both that sentence.

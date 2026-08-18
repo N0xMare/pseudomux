@@ -196,14 +196,10 @@ fn public_runtime_error() -> NativeReply {
     }
 }
 
-/// The subcommand set is DERIVED from the binary, not restated in [`Surface`].
-///
-/// It was restated: `ALL` was eleven of `Command`'s thirteen variants, and the
-/// two it omitted were `ask` -- which `pmux --help` calls the entire surface of
-/// Path B -- and `agent`. Neither had a framed runtime failure, a malformed
-/// frame, an unavailable daemon, a parser boundary or a local-validation
-/// boundary asserted in any output mode, under a file whose every test is named
-/// "for every command".
+/// The published `--help` surface is derived from the binary. Session
+/// commands stay in [`Surface::ALL`] because they stay invokable: help
+/// lists only the product commands, and every matrix surface still has a
+/// `--help` of its own.
 #[test]
 fn the_matrix_covers_every_subcommand_pmux_publishes() {
     let sandbox = Sandbox::new("subcommand-census");
@@ -227,15 +223,38 @@ fn the_matrix_covers_every_subcommand_pmux_publishes() {
             (name != "help" && name.starts_with(char::is_lowercase)).then(|| name.to_owned())
         })
         .collect::<std::collections::BTreeSet<_>>();
-    assert!(
-        published.len() > 8,
-        "parsed only {published:?} out of `pmux --help`"
+    assert_eq!(
+        published,
+        ["doctor", "ping", "run"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<std::collections::BTreeSet<_>>(),
+        "the published --help surface is ping/run/doctor; session commands stay invokable"
     );
     let covered = Surface::ALL
         .iter()
         .map(|surface| surface.name().to_owned())
         .collect::<std::collections::BTreeSet<_>>();
-    assert_eq!(published, covered);
+    assert!(
+        published.is_subset(&covered),
+        "a published command is missing from Surface::ALL: {published:?} vs {covered:?}"
+    );
+    for surface in Surface::ALL {
+        let output = run(
+            {
+                let mut process = command(&sandbox.socket, &sandbox.root);
+                process.args([surface.name(), "--help"]);
+                process
+            },
+            None,
+        );
+        assert!(
+            output.status.success(),
+            "`pmux {} --help` must stay invokable: {}",
+            surface.name(),
+            output.stderr_text()
+        );
+    }
 }
 
 fn wrong_result(surface: Surface) -> NativeReply {

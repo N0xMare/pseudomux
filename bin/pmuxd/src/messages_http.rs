@@ -42,7 +42,7 @@ pub fn parse_messages_bind(value: &str) -> Result<SocketAddr> {
 pub async fn bind_messages(bind: SocketAddr) -> Result<TcpListener> {
     let listener = TcpListener::bind(bind)
         .await
-        .with_context(|| format!("failed to bind Path B Messages listener on {bind}"))?;
+        .with_context(|| format!("failed to bind Messages listener on {bind}"))?;
     let actual = listener.local_addr().unwrap_or(bind);
     info!(addr = %actual, "pmuxd Path B Messages listening");
     Ok(listener)
@@ -264,7 +264,7 @@ pub fn split_model_and_effort(model: &str) -> (String, Option<EffortLevel>) {
 
 fn reject_unsupported(body: &Value) -> Result<(), String> {
     if walk_for_type(body, "image") {
-        return Err("image content is not supported on the Path B token engine".to_owned());
+        return Err("image content is not supported on the stateless token engine".to_owned());
     }
     Ok(())
 }
