@@ -3236,3 +3236,125 @@ async fn a_sticky_turn_that_commits_during_shutdown_does_not_stay_leased() {
     );
     assert_invariants(&harness).await;
 }
+
+#[tokio::test]
+async fn a_replay_touch_keeps_a_leased_cell_past_the_ttl() {
+    let harness = build(|settings| settings.instance_idle_ttl_ms = 1_000);
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime");
+    assert_eq!(harness.pool.census().await.leased, 1);
+
+    harness.clock.advance(10_000);
+    assert!(
+        harness.pool.touch_conversation("conv-a").await,
+        "a leased conversation is touchable"
+    );
+    harness.pool.sweep_idle().await;
+    harness.spawner.drain().await;
+    assert_eq!(
+        harness.pool.census().await.leased,
+        1,
+        "touch must refresh idle_since_ms so the leased TTL does not /clear"
+    );
+    assert!(harness.host.journal().await.clears.is_empty());
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn a_leased_ttl_expires_when_the_cell_is_not_touched() {
+    let harness = build(|settings| settings.instance_idle_ttl_ms = 1_000);
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime");
+    harness.clock.advance(10_000);
+    harness.pool.sweep_idle().await;
+    harness.spawner.drain().await;
+    assert_eq!(harness.pool.census().await.leased, 0);
+    assert_eq!(harness.host.journal().await.clears.len(), 1);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn a_protected_lease_is_not_released_by_the_ttl_sweep() {
+    let harness = build(|settings| settings.instance_idle_ttl_ms = 1_000);
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime");
+    harness.pool.protect_conversation("conv-a").await;
+    harness.clock.advance(10_000);
+    harness.pool.sweep_idle().await;
+    harness.spawner.drain().await;
+    assert_eq!(
+        harness.pool.census().await.leased,
+        1,
+        "an in-flight continue pin must not be /clear'ed out from under resume_lease"
+    );
+    assert!(harness.host.journal().await.clears.is_empty());
+    let resumed = harness
+        .pool
+        .run_sticky("conv-a", ask("again"), true)
+        .await
+        .expect("resume after a skipped sweep");
+    assert!(resumed.cell.starts_with('s'));
+    harness.pool.unprotect_conversation("conv-a").await;
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn sticky_resume_is_not_refused_at_the_recycle_cap() {
+    let harness = build(|settings| settings.recycle_turns = 1);
+    let first = harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime already sits at the cap");
+    let second = harness
+        .pool
+        .run_sticky("conv-a", ask("again"), true)
+        .await
+        .expect("recycle is lease-end only");
+    assert_eq!(second.cell, first.cell);
+    assert_eq!(harness.spawner.pending(), 0);
+    assert!(harness.host.journal().await.clears.is_empty());
+    assert_eq!(harness.pool.census().await.leased, 1);
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn leased_ttl_recycle_remints_down_to_the_warm_floor() {
+    let harness = build(|settings| {
+        settings.pool_size = 2;
+        settings.rss_budget_mb = 2 * 1024;
+        settings.recycle_turns = 1;
+        settings.instance_idle_ttl_ms = 1_000;
+        settings.warm_set = vec![WarmClassSetting {
+            model: "claude-opus-5".to_owned(),
+            effort: Some(EffortLevel::High),
+            count: 1,
+        }];
+    });
+    harness
+        .pool
+        .run_sticky("conv-a", ask("hello"), false)
+        .await
+        .expect("prime");
+    assert_eq!(harness.host.journal().await.mints.len(), 1);
+    harness.clock.advance(10_000);
+    harness.pool.sweep_idle().await;
+    harness.spawner.drain().await;
+    let census = harness.pool.census().await;
+    assert_eq!(census.leased, 0);
+    assert_eq!(
+        census.idle, 1,
+        "recycle at leased TTL must remint when the class would fall below its floor"
+    );
+    assert_eq!(harness.host.journal().await.mints.len(), 2);
+    assert_invariants(&harness).await;
+}

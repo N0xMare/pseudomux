@@ -139,6 +139,10 @@ struct PoolState {
     /// Conversation ids whose first sticky turn has been admitted but not yet
     /// bound to a slot. Stops two concurrent primes minting two cells.
     pending_leases: BTreeSet<String>,
+    /// Conversations the Messages book has pinned across the lock-drop →
+    /// `resume_lease` window. The leased TTL sweep skips these; `resume_lease`
+    /// does not refuse them (unlike `pending_leases`).
+    protected_leases: BTreeSet<String>,
     halted: Option<&'static str>,
     shutting_down: bool,
 }
@@ -298,6 +302,7 @@ impl Pool {
                 leaked_slots: BTreeSet::new(),
                 rewarming: BTreeSet::new(),
                 pending_leases: BTreeSet::new(),
+                protected_leases: BTreeSet::new(),
                 halted: None,
                 shutting_down: false,
             }),
@@ -421,6 +426,10 @@ impl Pool {
     /// `resume` is whether this conversation already holds an instance. A
     /// continuation that lost its cell (`SessionNotFound`) is the caller's cue
     /// to send the full primer rather than a suffix.
+    ///
+    /// Recycle is lease-end only: a resume increments `turns_started` and does
+    /// not refuse at the cap. Remint happens when the lease ends (`/clear` or
+    /// idle TTL) and `turns_started >= recycle_turns`.
     ///
     /// # Errors
     ///
@@ -681,6 +690,47 @@ impl Pool {
         Ok(slot)
     }
 
+    /// Refresh `idle_since_ms` on a `Leased` conversation. A Messages replay
+    /// is activity; the pool clock is the TTL owner.
+    ///
+    /// Returns whether a leased instance for this id was found and touched.
+    pub async fn touch_conversation(&self, conversation_id: &str) -> bool {
+        let mut state = self.state.lock().await;
+        let now = self.clock.now_ms();
+        let Some(instance) = state.instances.values_mut().find(|instance| {
+            instance.conversation_id.as_deref() == Some(conversation_id)
+                && instance.state == InstanceState::Leased
+        }) else {
+            return false;
+        };
+        instance.idle_since_ms = now;
+        true
+    }
+
+    /// Pin a leased conversation so the idle TTL sweep cannot `/clear` it.
+    ///
+    /// Used by the Messages book after it marks a continue `in_flight` and
+    /// before `resume_lease` takes the cell out of `Leased`.
+    pub async fn protect_conversation(&self, conversation_id: &str) {
+        if conversation_id.trim().is_empty() {
+            return;
+        }
+        self.state
+            .lock()
+            .await
+            .protected_leases
+            .insert(conversation_id.to_owned());
+    }
+
+    /// Drop a pin taken by [`Self::protect_conversation`]. Missing is success.
+    pub async fn unprotect_conversation(&self, conversation_id: &str) {
+        self.state
+            .lock()
+            .await
+            .protected_leases
+            .remove(conversation_id);
+    }
+
     /// Destroy every instance idle past the TTL, down to each class's declared
     /// warm floor.
     ///
@@ -737,17 +787,29 @@ impl Pool {
         }
 
         // Leased conversations use the same TTL as idle instances. Expiry is
-        // `/clear` back to Idle, not a remint -- the cell stays warm.
+        // `/clear` back to Idle, or recycle at the turn cap (with a remint
+        // when that would drop the class below its warm floor). A book pin
+        // (`protected_leases`) skips the sweep so an in-flight continue is
+        // not `/clear`ed out from under `resume_lease`.
         let expired_leases = {
             let mut state = self.state.lock().await;
             let mut expired = Vec::new();
             let slots: Vec<SlotId> = state.instances.keys().copied().collect();
             for slot in slots {
-                let due = state.instances.get(&slot).is_some_and(|instance| {
-                    instance.state == InstanceState::Leased
-                        && now.saturating_sub(instance.idle_since_ms)
-                            >= self.config.instance_idle_ttl_ms
-                });
+                let (expired_lease, conversation_id) = match state.instances.get(&slot) {
+                    Some(instance)
+                        if instance.state == InstanceState::Leased
+                            && now.saturating_sub(instance.idle_since_ms)
+                                >= self.config.instance_idle_ttl_ms =>
+                    {
+                        (true, instance.conversation_id.clone())
+                    }
+                    _ => (false, None),
+                };
+                let due = expired_lease
+                    && !conversation_id
+                        .as_ref()
+                        .is_some_and(|id| state.protected_leases.contains(id));
                 if due
                     && self
                         .transition_locked(&mut state, slot, Transition::ReleaseLease)
@@ -1284,6 +1346,19 @@ impl Pool {
         }
     }
 
+    async fn remint_if_below_floor(self: &Arc<Self>, class: InstanceClass) {
+        let should = {
+            let mut state = self.state.lock().await;
+            let idle = state.idle.get(&class).map_or(0, |members| {
+                u32::try_from(members.len()).unwrap_or(u32::MAX)
+            });
+            idle < self.config.warm_floor(class) && state.rewarming.insert(class)
+        };
+        if should {
+            self.spawn_rewarm(class);
+        }
+    }
+
     fn spawn_rewarm(self: &Arc<Self>, class: InstanceClass) {
         // High-water-mark re-warm: a checkout that emptied a class's idle set
         // mints a replacement immediately, so the NEXT caller of that shape
@@ -1577,11 +1652,20 @@ impl Pool {
                         self.abandon_unpublishable(slot, Self::AFTER_CLEAR).await;
                     }
                 } else {
-                    {
+                    let class = {
                         let mut state = self.state.lock().await;
+                        let class = state.instances.get(&slot).map(|instance| instance.class);
                         let _ = self.transition_locked(&mut state, slot, Transition::RecycleDue);
-                    }
+                        class
+                    };
                     self.destroy(slot).await;
+                    // Recycle is lease-end only. Destroying at the cap must
+                    // remint when the class would fall below its warm floor;
+                    // leased-TTL expiry is a lease end and must not leave a
+                    // declared floor empty.
+                    if let Some(class) = class {
+                        self.remint_if_below_floor(class).await;
+                    }
                 }
             }
             Err(failure) => {
@@ -3151,6 +3235,7 @@ mod tests {
                             leaked_slots: BTreeSet::new(),
                             rewarming: BTreeSet::new(),
                             pending_leases: BTreeSet::new(),
+                            protected_leases: BTreeSet::new(),
                             halted: None,
                             shutting_down: false,
                         };

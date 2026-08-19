@@ -1,6 +1,6 @@
 # current-state.md
 
-**Position of pmux, 2026-08-18.** This file is normative for *where the project
+**Position of pmux, 2026-08-19.** This file is normative for *where the project
 stands*. `spec.md` is normative for product behaviour. `testing.md` is
 normative for test ownership. `docs/path-b.md` is normative for the Path B
 pool.
@@ -13,22 +13,23 @@ remains `docs/defect-log.md`. Neither archive is a CURRENT Path B document.
 
 ## 1. What pmux is
 
-A local control plane that drives the **real interactive Claude Code TUI**
-inside a private rmux PTY sidecar and treats **Claude's project JSONL** as the
-sole semantic authority.
+A local token engine: a warm pool of **real interactive Claude Code TUIs**
+inside a private rmux PTY sidecar. **Claude's project JSONL** is the sole
+semantic authority. A harness such as Pi owns tools and context. pmux owns
+the cells.
 
-Two products share one binary:
-
-| Product | Caller names | What happens |
+| Surface | Caller names | What happens |
 | --- | --- | --- |
-| **Path B** — the product | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. `pmux run` and MCP `run_stateless`. |
-| **Path A** — interactive sessions | cwd, Claude binary, config root, session id | Full tool surface, attach, stored agents. Always compiled and served. |
+| **Messages harness contract** — the product | pin + release + class | One leased minified cell per conversation. `/clear` on release. `--path-b-messages-bind`. |
+| **`pmux run` / MCP `run_stateless`** | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. |
+| **Interactive sessions** — experimental, hidden | cwd, Claude binary, config root, session id | Full tool surface, attach, stored agents. Always compiled. Hidden from `pmux --help`. |
+
+Internal engineering docs still say Path A / Path B for the session stack
+and the pool. Those names are not the product surface.
 
 Public **control** is an explicit owner-only Unix-domain socket. There is no
-discovery and no client autostart. An **optional** loopback Anthropic Messages
-facade (`--path-b-messages-bind`) sits in front of Path B so a harness such as
-Pi can own tools and context. That listener is off unless given, loopback-only,
-and is not a general HTTP/TCP control plane.
+discovery and no client autostart. The Messages listener is off unless given,
+loopback-only, and is not a general HTTP/TCP control plane.
 
 Windows and print-mode Claude are unsupported.
 
@@ -49,10 +50,15 @@ one instance: between turns the cell is not idle, not stealable by `pmux run`,
 and not `/clear`ed. `x-pmux-conversation` is the pin; `x-pmux-cell` is
 `s{slot}e{epoch}` (never a Claude `SessionId`). Release is
 `POST /v1/conversations/{id}/release`; idle TTL is the backstop.
+The pool clock owns that TTL (`idle_since_ms`); a replay is activity.
+A book row with no pool cell is an orphan and does not occupy the lease cap.
 
 `pmux doctor`'s pool layer reports `leased` and `conversation_leases`
-(`conversation`, `cell`, `state`). Occupancy for multi-agent is
-`live − idle` = leased + in-flight.
+(`conversation`, `cell`, `state`). Conversations holding a cell are
+those rows: each is `Leased`, `CheckedOut`, or `Delivering`. Census
+`leased` is only the between-turns bucket; `in_flight` is a turn in
+progress. Do not compute occupancy as `live − idle`: `live` also
+includes clearing, reserved, and tearing_down.
 
 ### Messages facade
 
@@ -84,9 +90,16 @@ invocation passes `--tested-claude-profile` with drain 250 ms (the linux
 minified estimator, **not** a pooled promotion receipt). The triad
 `promotion-2.1.233-linux-x86_64.json` /
 `promoted-profile-<floor>-linux-x86_64.json` /
-`pooled-transcript-drain-linux-x86_64.json` does not exist. Do not add a
-linux `PromotedProfile` until that triad exists and
-`promote_claude_version.py` can name a per-platform floor.
+`pooled-transcript-drain-linux-x86_64.json` does not exist.
+
+Promotion on this host is **no-go** until that triad exists and
+`promote_claude_version.py` can name a per-platform floor. Reasons that
+are not a missing flag: there is no linux pooled drain receipt; the
+minified linux pair (2.1.227 / 2.1.232) both fit 250 ms, so shipping 250
+as a pooled bound is vacuous; the tool's floor sentence is still the
+macos 2.1.220 cell. PATH `claude` here is 2.1.235; the measured operator
+binary is the pinned `~/.local/share/pmux/claude/2.1.233/claude`. Do not
+run `promote_claude_version.py` and do not invent the drain file.
 
 `evidence/linux-minified-post-answer-x86_64.json` is pinned as **not** a
 promotion drain receipt (max 46 ms, recommend 250, versions 2.1.227 and
@@ -104,8 +117,10 @@ At the owner-set cap of 15:
 --path-b-warm claude-fable-5/xhigh=1
 ```
 
-One cell per live Pi conversation (root + each live subagent). Agent end is
-`/clear` (release), not remint. Spawn/steer/delete stay Pi orchestration.
+One cell per live Pi conversation (root + each live subagent) when each
+conversation is its own process. The shipped adapter holds one
+`conversationId` per process. Agent end is `/clear` (release), not remint.
+Spawn/steer/delete stay Pi orchestration.
 
 Path A is not being deleted. Pool mint still goes
 `start_session_pool` → `start_session_owned`.
@@ -116,8 +131,8 @@ Path A is not being deleted. Pool mint still goes
 
 | Dimension | Status |
 | --- | --- |
-| Path B pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
-| Sticky `Leased` + Messages facade | Shipped, opt-in, measured on linux/x86_64 with Pi. |
+| Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
+| Sticky `Leased` + Messages harness | Shipped, opt-in, measured on linux/x86_64 with Pi. |
 | Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 only. |
 | Linux 2.1.233 without a flag | **Not shipped.** Operator profile. |
 | Path A deletion | **Not started, not planned in this landing.** |

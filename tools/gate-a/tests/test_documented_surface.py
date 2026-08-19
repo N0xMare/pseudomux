@@ -1,7 +1,7 @@
 """The README's documented surface, DERIVED from the things that ship it.
 
 `README.md` published a command surface of ten subcommands while the binary
-offered thirteen, and `pmux ask` -- the entire provider product -- appeared in
+offered thirteen, and `pmux run` -- the entire provider product -- appeared in
 it zero times. The MCP section named eight tools while the server answered
 `tools/list` with thirteen. Neither drift was reachable by any check: the
 README's lists were prose, and prose is a claim.
@@ -539,7 +539,7 @@ class DocumentedSurfaceTest(unittest.TestCase):
         """The defect this test exists for, stated as a derivation.
 
         The quickstart used to start `pmuxd serve --socket .. --runtime-parent
-        ..` and nothing else, which is a daemon on which EVERY `pmux ask` is
+        ..` and nothing else, which is a daemon on which EVERY `pmux run` is
         refused -- so a reader who followed the README end to end could not
         reach the priority product at all.
 
@@ -570,8 +570,49 @@ class DocumentedSurfaceTest(unittest.TestCase):
                     first,
                     f"the first `pmuxd serve` the README prints omits {flag}, so a "
                     f"reader who follows the quickstart gets a daemon that refuses "
-                    f"every `pmux ask`",
+                    f"every `pmux run`",
                 )
+        self.assertIsNone(
+            re.search(r"--path-b-messages-bind(?![a-z0-9-])", first),
+            "the first `pmuxd serve` requires Messages bind; the facade is an "
+            "add-on to an already-enabled pool",
+        )
+
+    def test_the_readme_names_the_messages_pin_and_models_catalog(self):
+        """Harness contract: pin header + catalog. The model table is MODEL_TABLE.
+
+        `GET /v1/models` is how a harness learns the ids; the table under
+        Models and effort is already derived from MODEL_TABLE by
+        `test_the_readme_model_table_is_the_pools_own_model_table`.
+        """
+
+        readme = self.readme()
+        self.assertRegex(
+            readme,
+            r"x-pmux-conversation(?![A-Za-z0-9-])",
+            "README.md never mentions the conversation pin a harness must send",
+        )
+        self.assertIn(
+            "GET /v1/models",
+            readme,
+            "README.md never mentions GET /v1/models, which is how a harness "
+            "learns the ids MODEL_TABLE admits",
+        )
+
+    def test_ask_remains_an_alias_of_run(self):
+        """`pmux ask` is still `run`. The alias cannot vanish."""
+
+        pmux = str(binary("pmux"))
+        socket = str(WORKSPACE / "target" / "no-such-socket-for-ask-help.sock")
+        ask = run([pmux, "--socket", socket, "ask", "--help"])
+        run_help = run([pmux, "--socket", socket, "run", "--help"])
+        # clap renders the canonical name (`run`); the alias is that this
+        # invocation succeeded and shows the same flags.
+        self.assertRegex(ask, r"Usage: pmux .* run ")
+        self.assertIn("--model", ask)
+        self.assertIn("--effort", ask)
+        self.assertIn("--model", run_help)
+        self.assertIn("--effort", run_help)
 
 
 if __name__ == "__main__":

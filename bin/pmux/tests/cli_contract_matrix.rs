@@ -255,6 +255,24 @@ fn the_matrix_covers_every_subcommand_pmux_publishes() {
             output.stderr_text()
         );
     }
+    let ask = run(
+        {
+            let mut process = command(&sandbox.socket, &sandbox.root);
+            process.args(["ask", "--help"]);
+            process
+        },
+        None,
+    );
+    assert!(
+        ask.status.success(),
+        "`pmux ask --help` must stay invokable as the run alias: {}",
+        ask.stderr_text()
+    );
+    let ask_help = String::from_utf8(ask.stdout).expect("ask --help is utf-8");
+    assert!(
+        ask_help.contains("--model"),
+        "`pmux ask --help` lost --model: {ask_help}"
+    );
 }
 
 fn wrong_result(surface: Surface) -> NativeReply {

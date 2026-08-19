@@ -6,8 +6,9 @@
 //! prefix and prompt-cache hits.
 //!
 //! The cell itself is a Path B pool instance. Between turns it sits `Leased`
-//! (no `/clear`). Release or idle TTL runs `/clear` and returns the instance
-//! to the idle set.
+//! (no `/clear`). Release or the pool's idle TTL runs `/clear` and returns
+//! the instance to the idle set. The pool clock is the owner; a replay
+//! refreshes `idle_since_ms`. Recycle is lease-end only.
 //!
 //! Harness contract (also implemented by `examples/pi/pmux.ts`):
 //!
@@ -19,9 +20,10 @@
 //!   backstop. `/clear` happens here, not after every HTTP request.
 //!
 //! An implicit hash of the first user message is off unless the operator
-//! starts the listener with `--path-b-allow-implicit-conversation`. That id
-//! cannot be released on purpose and collides when two sessions start the
-//! same way.
+//! starts the listener with `--path-b-allow-implicit-conversation`. You did
+//! not choose that id; release using the `x-pmux-conversation` the response
+//! echoed (or the hash `doctor` prints). Two sessions that start the same
+//! way share a cell.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -31,7 +33,8 @@ use pseudomux_protocol::v1::{
     EffortLevel, ErrorBody, ErrorCode, RunStatelessRequest, StatelessResult,
 };
 use pseudomux_service::driver_io::validate_prompt;
-use pseudomux_service::pool::Pool;
+use pseudomux_service::pool::{ModelEffortRefusal, Pool, resolve_pool_class};
+use pseudomux_service::v1::DriverFailure;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
@@ -42,9 +45,11 @@ use crate::messages_http::{
 
 const CONVERSATION_HEADER: &str = "x-pmux-conversation";
 
-/// Operator knobs for the lease book. The pool owns the cells.
+/// Operator knobs for the lease book. The pool owns the cells and the idle TTL.
 #[derive(Clone, Debug)]
 pub struct ConversationConfig {
+    /// Advertised as `x-pmux-idle-ttl-ms`. Same duration as the pool clock;
+    /// the book does not expire cells on its own `Instant`.
     pub idle_ttl: Duration,
     pub max_leases: u32,
     /// When false (the default), POST /v1/messages without an explicit pin
@@ -100,7 +105,7 @@ pub fn classify_prefix(
     previous: &ConversationFingerprint,
     next: &ConversationFingerprint,
 ) -> PrefixDecision {
-    if previous.model != next.model || previous.effort != next.effort {
+    if pool_class_changed(previous, next) {
         return PrefixDecision::Reprime;
     }
     if previous.system_tools != next.system_tools {
@@ -117,6 +122,16 @@ pub fn classify_prefix(
         };
     }
     PrefixDecision::Reprime
+}
+
+fn pool_class_changed(previous: &ConversationFingerprint, next: &ConversationFingerprint) -> bool {
+    match (
+        resolve_pool_class(&previous.model, previous.effort),
+        resolve_pool_class(&next.model, next.effort),
+    ) {
+        (Ok((left, _)), Ok((right, _))) => left != right,
+        _ => previous.model != next.model || previous.effort != next.effort,
+    }
 }
 
 pub fn fingerprint_body(
@@ -307,6 +322,16 @@ impl ConversationBook {
         self.config.allow_implicit
     }
 
+    #[cfg(test)]
+    async fn last_used_for_test(&self, conversation_id: &str) -> Option<Instant> {
+        self.leases
+            .lock()
+            .await
+            .live
+            .get(conversation_id)
+            .map(|lease| lease.last_used)
+    }
+
     pub async fn complete(
         &self,
         headers: &[(String, String)],
@@ -318,86 +343,89 @@ impl ConversationBook {
             .ok_or_else(|| ErrorBody::new(ErrorCode::InvalidConfig, "model is required"))?;
         let (model, effort_from_id) = split_model_and_effort(raw_model);
         let effort = effort_from_id.or(effort_from_body(body)?);
+        let (class, resolved) =
+            resolve_pool_class(&model, effort).map_err(ModelEffortRefusal::into_error_body)?;
+        let model = class.canonical_model.to_owned();
+        let effort = resolved.effort_level;
         let conversation_id =
             conversation_id_from(headers, body, &model, effort, self.config.allow_implicit)?;
         let next = fingerprint_body(body, &model, effort);
+        // Flatten for Prime / Reprime / SessionNotFound fallback. Continue
+        // validates only the suffix; Replay types nothing.
         let primer = sanitize_prompt(
             &flatten_prompt(body)
                 .map_err(|message| ErrorBody::new(ErrorCode::InvalidConfig, message))?,
         );
-        validate_prompt(&primer).map_err(pseudomux_service::v1::DriverFailure::into_protocol)?;
 
+        let pool_ids = self.pool_conversation_ids().await;
         let planned = {
             let mut guard = self.leases.lock().await;
-            let expired_here = guard.live.get(&conversation_id).is_some_and(|lease| {
-                !lease.in_flight && lease.last_used.elapsed() >= self.config.idle_ttl
-            });
-            if expired_here {
-                // Hold reserved across the pool release so a concurrent prime
-                // cannot bind a new cell that this release would then /clear.
-                guard.live.remove(&conversation_id);
-                guard.reserved.insert(conversation_id.clone());
-                drop(guard);
-                let _ = self.pool.release_conversation(&conversation_id).await;
-                guard = self.leases.lock().await;
-                guard.reserved.remove(&conversation_id);
-            }
-            let others = self.take_expired(&mut guard, Some(&conversation_id));
-            drop(guard);
-            for id in others {
-                let _ = self.pool.release_conversation(&id).await;
-                let mut g = self.leases.lock().await;
-                g.reserved.remove(&id);
-            }
-            guard = self.leases.lock().await;
-            if let Some(lease) = guard.live.get_mut(&conversation_id) {
-                if lease.in_flight {
-                    return Err(ErrorBody::new(
-                        ErrorCode::SessionBusy,
-                        "this conversation already has a turn in flight; nothing is queued",
-                    )
-                    .retryable(true));
-                }
-                let decision = classify_prefix(&lease.fingerprint, &next);
-                if matches!(decision, PrefixDecision::Replay) {
-                    lease.last_used = Instant::now();
-                    return Ok(LeaseTurn {
-                        conversation_id,
-                        cell: lease.cell.clone(),
-                        kind: LeaseKind::Replayed,
-                        idle_ttl_ms: self.idle_ttl_ms(),
-                        model,
-                        result: lease.last_result.clone(),
-                    });
-                }
-                lease.in_flight = true;
-                Planned {
-                    conversation_id: conversation_id.clone(),
-                    model: model.clone(),
-                    effort,
-                    next: next.clone(),
-                    kind: match decision {
-                        PrefixDecision::Continue { from } => PlannedKind::Continue { from },
-                        PrefixDecision::Reprime => PlannedKind::Reprime,
-                        PrefixDecision::Replay => unreachable!(),
-                    },
-                }
-            } else if guard.reserved.contains(&conversation_id) {
-                return Err(ErrorBody::new(
-                    ErrorCode::SessionBusy,
-                    "this conversation already has a turn in flight; nothing is queued",
+            self.drop_orphans(&mut guard, &pool_ids);
+
+            let existing = guard.live.get(&conversation_id).map(|lease| {
+                (
+                    lease.in_flight,
+                    classify_prefix(&lease.fingerprint, &next),
+                    lease.cell.clone(),
+                    lease.last_result.clone(),
                 )
-                .retryable(true));
+            });
+            let mut planned = None;
+            if let Some((in_flight, decision, cell, last_result)) = existing {
+                if in_flight {
+                    return Err(session_busy_in_flight());
+                }
+                match decision {
+                    PrefixDecision::Replay => {
+                        if self.pool.touch_conversation(&conversation_id).await {
+                            if let Some(lease) = guard.live.get_mut(&conversation_id) {
+                                lease.last_used = Instant::now();
+                            }
+                            return Ok(LeaseTurn {
+                                conversation_id,
+                                cell,
+                                kind: LeaseKind::Replayed,
+                                idle_ttl_ms: self.idle_ttl_ms(),
+                                model,
+                                result: last_result,
+                            });
+                        }
+                        guard.live.remove(&conversation_id);
+                    }
+                    PrefixDecision::Continue { from } => {
+                        if let Some(lease) = guard.live.get_mut(&conversation_id) {
+                            lease.in_flight = true;
+                        }
+                        self.pool.protect_conversation(&conversation_id).await;
+                        planned = Some(Planned {
+                            conversation_id: conversation_id.clone(),
+                            model: model.clone(),
+                            effort,
+                            next: next.clone(),
+                            kind: PlannedKind::Continue { from },
+                        });
+                    }
+                    PrefixDecision::Reprime => {
+                        if let Some(lease) = guard.live.get_mut(&conversation_id) {
+                            lease.in_flight = true;
+                        }
+                        planned = Some(Planned {
+                            conversation_id: conversation_id.clone(),
+                            model: model.clone(),
+                            effort,
+                            next: next.clone(),
+                            kind: PlannedKind::Reprime,
+                        });
+                    }
+                }
+            }
+            if let Some(planned) = planned {
+                planned
+            } else if guard.reserved.contains(&conversation_id) {
+                return Err(session_busy_in_flight());
             } else {
                 if u32::try_from(guard.occupied()).unwrap_or(u32::MAX) >= self.config.max_leases {
-                    return Err(ErrorBody::new(
-                        ErrorCode::SessionBusy,
-                        format!(
-                            "conversation lease cap is {}; release an idle conversation or raise --path-b-pool-size",
-                            self.config.max_leases
-                        ),
-                    )
-                    .retryable(true));
+                    return Err(session_busy_cap(self.config.max_leases));
                 }
                 guard.reserved.insert(conversation_id.clone());
                 Planned {
@@ -410,15 +438,12 @@ impl ConversationBook {
             }
         };
 
+        let kind = planned.kind;
         let outcome = self.execute(planned, body, &primer).await;
-        if outcome.is_err() {
-            let mut guard = self.leases.lock().await;
-            guard.reserved.remove(&conversation_id);
-            guard.live.remove(&conversation_id);
-            drop(guard);
-            // Pool bind may already be gone (quarantine) or still Leased
-            // after a failed reprime's pre-release. Missing is success.
-            let _ = self.pool.release_conversation(&conversation_id).await;
+        self.pool.unprotect_conversation(&conversation_id).await;
+        if let Err(error) = &outcome {
+            self.recover_failed_turn(&conversation_id, kind, error.code)
+                .await;
         }
         outcome
     }
@@ -432,11 +457,7 @@ impl ConversationBook {
                     .get(conversation_id)
                     .is_some_and(|lease| lease.in_flight)
             {
-                return Err(ErrorBody::new(
-                    ErrorCode::SessionBusy,
-                    "this conversation already has a turn in flight; nothing is queued",
-                )
-                .retryable(true));
+                return Err(session_busy_in_flight());
             }
             guard.live.remove(conversation_id);
         }
@@ -444,33 +465,59 @@ impl ConversationBook {
     }
 
     pub async fn sweep_expired(&self) {
+        let pool_ids = self.pool_conversation_ids().await;
         let mut guard = self.leases.lock().await;
-        let expired = self.take_expired(&mut guard, None);
-        drop(guard);
-        for id in expired {
-            let _ = self.pool.release_conversation(&id).await;
-            let mut g = self.leases.lock().await;
-            g.reserved.remove(&id);
+        self.drop_orphans(&mut guard, &pool_ids);
+    }
+
+    async fn pool_conversation_ids(&self) -> HashSet<String> {
+        self.pool
+            .conversation_leases()
+            .await
+            .into_iter()
+            .map(|lease| lease.conversation_id)
+            .collect()
+    }
+
+    /// Drop book rows whose pool cell is gone. Orphans do not occupy `max_leases`.
+    fn drop_orphans(&self, guard: &mut BookState, pool_ids: &HashSet<String>) {
+        let orphans: Vec<String> = guard
+            .live
+            .iter()
+            .filter(|(id, lease)| !lease.in_flight && !pool_ids.contains(*id))
+            .map(|(id, _)| id.clone())
+            .collect();
+        for id in orphans {
+            guard.live.remove(&id);
         }
     }
 
-    /// Remove expired leases from the book and mark them `reserved` so a
-    /// concurrent prime cannot bind a new cell before `/clear` finishes.
-    fn take_expired(&self, guard: &mut BookState, except: Option<&str>) -> Vec<String> {
-        let ttl = self.config.idle_ttl;
-        let expired: Vec<String> = guard
-            .live
-            .iter()
-            .filter(|(id, lease)| {
-                except != Some(id.as_str()) && !lease.in_flight && lease.last_used.elapsed() >= ttl
-            })
-            .map(|(id, _)| id.clone())
-            .collect();
-        for id in &expired {
-            guard.live.remove(id);
-            guard.reserved.insert(id.clone());
+    /// A refused suffix must not `/clear` a still-leased cell. A failed prime
+    /// or a pool teardown drops the book row; `release_conversation` is
+    /// success if the cell is already gone.
+    async fn recover_failed_turn(
+        &self,
+        conversation_id: &str,
+        kind: PlannedKind,
+        code: ErrorCode,
+    ) {
+        let keep_leased_continue = matches!(kind, PlannedKind::Continue { .. })
+            && code == ErrorCode::InvalidConfig
+            && self
+                .pool_conversation_ids()
+                .await
+                .contains(conversation_id);
+        let mut guard = self.leases.lock().await;
+        if keep_leased_continue {
+            if let Some(lease) = guard.live.get_mut(conversation_id) {
+                lease.in_flight = false;
+            }
+            return;
         }
-        expired
+        guard.reserved.remove(conversation_id);
+        guard.live.remove(conversation_id);
+        drop(guard);
+        let _ = self.pool.release_conversation(conversation_id).await;
     }
 
     async fn execute(
@@ -489,17 +536,19 @@ impl ConversationBook {
         };
 
         let (kind, turn) = match planned.kind {
-            PlannedKind::Prime => (
-                LeaseKind::Primed,
-                self.pool
-                    .run_sticky(&conversation_id, request_for(primer.to_owned()), false)
-                    .await?,
-            ),
+            PlannedKind::Prime => {
+                validate_typed_prompt(primer)?;
+                (
+                    LeaseKind::Primed,
+                    self.pool
+                        .run_sticky(&conversation_id, request_for(primer.to_owned()), false)
+                        .await?,
+                )
+            }
             PlannedKind::Continue { from } => {
                 let prompt = continuation_prompt(body, from)
                     .map_err(|message| ErrorBody::new(ErrorCode::InvalidConfig, message))?;
-                validate_prompt(&prompt)
-                    .map_err(pseudomux_service::v1::DriverFailure::into_protocol)?;
+                validate_typed_prompt(&prompt)?;
                 match self
                     .pool
                     .run_sticky(&conversation_id, request_for(prompt), true)
@@ -507,6 +556,7 @@ impl ConversationBook {
                 {
                     Ok(turn) => (LeaseKind::Continued, turn),
                     Err(error) if error.code == ErrorCode::SessionNotFound => {
+                        validate_typed_prompt(primer)?;
                         let turn = self
                             .pool
                             .run_sticky(&conversation_id, request_for(primer.to_owned()), false)
@@ -517,6 +567,7 @@ impl ConversationBook {
                 }
             }
             PlannedKind::Reprime => {
+                validate_typed_prompt(primer)?;
                 let _ = self.pool.release_conversation(&conversation_id).await;
                 (
                     LeaseKind::Reprimed,
@@ -561,10 +612,34 @@ struct Planned {
     kind: PlannedKind,
 }
 
+#[derive(Clone, Copy)]
 enum PlannedKind {
     Prime,
     Continue { from: usize },
     Reprime,
+}
+
+fn validate_typed_prompt(prompt: &str) -> Result<(), ErrorBody> {
+    validate_prompt(prompt).map_err(DriverFailure::into_protocol)?;
+    Ok(())
+}
+
+fn session_busy_in_flight() -> ErrorBody {
+    ErrorBody::new(
+        ErrorCode::SessionBusy,
+        "this conversation already has a turn in flight; nothing is queued",
+    )
+    .retryable(true)
+}
+
+fn session_busy_cap(max_leases: u32) -> ErrorBody {
+    ErrorBody::new(
+        ErrorCode::SessionBusy,
+        format!(
+            "conversation lease cap is {max_leases}; release an idle conversation or raise --path-b-pool-size"
+        ),
+    )
+    .retryable(true)
 }
 
 fn effort_from_body(body: &Value) -> Result<Option<EffortLevel>, ErrorBody> {
@@ -754,5 +829,415 @@ mod tests {
         assert!(refused.message.contains("x-pmux-conversation"));
         let implicit = conversation_id_from(&[], &body, &model, effort, true).unwrap();
         assert_eq!(implicit, implicit_conversation_id(&body, &model, effort));
+    }
+
+    #[test]
+    fn sonnet_then_claude_sonnet_5_continues_at_the_same_effort() {
+        let first = fingerprint_body(
+            &body(vec![json!({"role":"user","content":"hello"})]),
+            "sonnet",
+            Some(EffortLevel::Low),
+        );
+        let second = fingerprint_body(
+            &json!({
+                "model": "claude-sonnet-5-low",
+                "system": "Be terse.",
+                "tools": [{"name":"read","input_schema":{"type":"object"}}],
+                "messages": [
+                    {"role":"user","content":"hello"},
+                    {"role":"assistant","content":"hi"},
+                    {"role":"user","content":"again"}
+                ]
+            }),
+            "claude-sonnet-5",
+            Some(EffortLevel::Low),
+        );
+        assert_eq!(
+            classify_prefix(&first, &second),
+            PrefixDecision::Continue { from: 1 }
+        );
+    }
+
+    #[test]
+    fn opus_aliases_continue_at_the_same_effort() {
+        let first = fingerprint_body(
+            &json!({
+                "model": "opus",
+                "messages": [{"role":"user","content":"hello"}]
+            }),
+            "opus",
+            Some(EffortLevel::High),
+        );
+        let second = fingerprint_body(
+            &json!({
+                "model": "claude-opus-5",
+                "messages": [
+                    {"role":"user","content":"hello"},
+                    {"role":"assistant","content":"hi"},
+                    {"role":"user","content":"again"}
+                ]
+            }),
+            "claude-opus-5",
+            Some(EffortLevel::High),
+        );
+        assert_eq!(
+            classify_prefix(&first, &second),
+            PrefixDecision::Continue { from: 1 }
+        );
+    }
+
+    #[test]
+    fn a_large_history_continue_validates_only_the_suffix() {
+        use pseudomux_service::driver_io::MAX_PROMPT_BYTES;
+        let huge = "a".repeat(MAX_PROMPT_BYTES);
+        let history = vec![
+            json!({"role":"user","content": huge}),
+            json!({"role":"assistant","content":"ok"}),
+        ];
+        let mut continued = history.clone();
+        continued.push(json!({"role":"user","content":"next"}));
+        let next = json!({
+            "model": "claude-sonnet-5-low",
+            "messages": continued
+        });
+        let primer = sanitize_prompt(&flatten_prompt(&next).unwrap());
+        assert!(primer.len() > MAX_PROMPT_BYTES);
+        assert!(
+            validate_prompt(&primer).is_err(),
+            "the flattened primer must exceed the 1 MiB service limit"
+        );
+        let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
+        let previous = fingerprint_body(
+            &json!({"model":"claude-sonnet-5-low","messages": history}),
+            &model,
+            effort,
+        );
+        let next_fp = fingerprint_body(&next, &model, effort);
+        assert_eq!(
+            classify_prefix(&previous, &next_fp),
+            PrefixDecision::Continue { from: 2 }
+        );
+        let suffix = continuation_prompt(&next, 2).unwrap();
+        assert!(validate_prompt(&suffix).is_ok());
+        assert_eq!(classify_prefix(&next_fp, &next_fp), PrefixDecision::Replay);
+        assert!(
+            validate_prompt(&primer).is_err(),
+            "Replay types nothing, so a 1 MiB primer must not be the check"
+        );
+    }
+
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::Duration;
+
+    use async_trait::async_trait;
+    use pseudomux_protocol::v1::{SessionGenerationId, SessionId, UsageBreakdown};
+    use pseudomux_service::pool::{
+        Destroyed, HostFailure, HostTurn, InstanceHandle, InstanceHost, MintSpec, PoolSettings,
+        Spawner,
+    };
+    use pseudomux_service::v1::Clock;
+
+    struct TestClock {
+        now_ms: AtomicU64,
+    }
+
+    impl TestClock {
+        fn advance(&self, delta: u64) {
+            self.now_ms.fetch_add(delta, Ordering::Relaxed);
+        }
+    }
+
+    impl Clock for TestClock {
+        fn now_ms(&self) -> u64 {
+            self.now_ms.load(Ordering::Relaxed)
+        }
+    }
+
+    #[derive(Default)]
+    struct QueueSpawner {
+        queued:
+            std::sync::Mutex<Vec<std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>>>,
+    }
+
+    impl QueueSpawner {
+        async fn drain(&self) {
+            loop {
+                let batch: Vec<_> = std::mem::take(&mut *self.queued.lock().expect("spawner lock"));
+                if batch.is_empty() {
+                    return;
+                }
+                for work in batch {
+                    work.await;
+                }
+            }
+        }
+    }
+
+    impl Spawner for QueueSpawner {
+        fn spawn(&self, work: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>) {
+            self.queued.lock().expect("spawner lock").push(work);
+        }
+    }
+
+    struct BookHost;
+
+    #[async_trait]
+    impl InstanceHost for BookHost {
+        async fn mint(&self, spec: MintSpec) -> Result<InstanceHandle, HostFailure> {
+            let mut bytes = [0_u8; 16];
+            bytes[0..4].copy_from_slice(&spec.slot.to_be_bytes());
+            bytes[4..12].copy_from_slice(&spec.epoch.to_be_bytes());
+            Ok(InstanceHandle {
+                session_id: SessionId::from_bytes(bytes),
+                generation_id: SessionGenerationId::default(),
+                pid: Some(1_000),
+                claude_version: "2.1.220".to_owned(),
+            })
+        }
+
+        async fn run_turn(
+            &self,
+            _handle: &InstanceHandle,
+            prompt: String,
+            _deadline_unix_ms: u64,
+        ) -> Result<HostTurn, HostFailure> {
+            Ok(HostTurn {
+                text: format!("answered: {prompt}"),
+                reported_model: None,
+                stop_reason: None,
+                usage: UsageBreakdown::default(),
+                sidechain_rows: Some(0),
+            })
+        }
+
+        async fn clear(
+            &self,
+            _handle: &InstanceHandle,
+        ) -> Result<(), pseudomux_service::pool::ClearFailure> {
+            Ok(())
+        }
+
+        async fn destroy(&self, _handle: &InstanceHandle) -> Result<Destroyed, HostFailure> {
+            Ok(Destroyed {
+                process_reaped: true,
+            })
+        }
+    }
+
+    struct BookHarness {
+        book: ConversationBook,
+        pool: std::sync::Arc<Pool>,
+        clock: std::sync::Arc<TestClock>,
+        spawner: std::sync::Arc<QueueSpawner>,
+        _temp: tempfile::TempDir,
+    }
+
+    fn book_harness(pool_size: u32, ttl_ms: u64) -> BookHarness {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let parent = temp.path().join("pool");
+        let mut settings = PoolSettings::defaults(parent, PathBuf::from("/usr/bin/claude"));
+        settings.pool_size = pool_size;
+        settings.rss_budget_mb = u64::from(pool_size) * 1024;
+        settings.instance_idle_ttl_ms = ttl_ms;
+        let config = settings.validate().expect("test settings must validate");
+        let clock = std::sync::Arc::new(TestClock {
+            now_ms: AtomicU64::new(1_000),
+        });
+        let spawner = std::sync::Arc::new(QueueSpawner::default());
+        let pool = Pool::new(
+            config,
+            std::sync::Arc::new(BookHost) as std::sync::Arc<dyn InstanceHost>,
+            std::sync::Arc::clone(&clock) as std::sync::Arc<dyn Clock>,
+            std::sync::Arc::clone(&spawner) as std::sync::Arc<dyn Spawner>,
+        );
+        let book = ConversationBook::new(
+            ConversationConfig {
+                idle_ttl: Duration::from_millis(ttl_ms),
+                max_leases: pool_size,
+                allow_implicit: false,
+            },
+            std::sync::Arc::clone(&pool),
+        );
+        BookHarness {
+            book,
+            pool,
+            clock,
+            spawner,
+            _temp: temp,
+        }
+    }
+
+    fn pin(id: &str) -> Vec<(String, String)> {
+        vec![("x-pmux-conversation".to_owned(), id.to_owned())]
+    }
+
+    fn turn(model: &str, messages: Vec<Value>) -> Value {
+        json!({ "model": model, "messages": messages })
+    }
+
+    #[tokio::test]
+    async fn replay_after_the_pool_ttl_keeps_the_cell_because_replay_touches() {
+        let harness = book_harness(2, 1_000);
+        let first = turn(
+            "claude-sonnet-5-low",
+            vec![json!({"role":"user","content":"hello"})],
+        );
+        let primed = harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("prime");
+        assert_eq!(primed.kind, LeaseKind::Primed);
+        let used_before = harness
+            .book
+            .last_used_for_test("sess-a")
+            .await
+            .expect("primed row");
+        harness.clock.advance(10_000);
+        let replayed = harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("replay is activity");
+        assert_eq!(replayed.kind, LeaseKind::Replayed);
+        let used_after = harness
+            .book
+            .last_used_for_test("sess-a")
+            .await
+            .expect("replayed row");
+        assert!(used_after >= used_before);
+        harness.pool.sweep_idle().await;
+        harness.spawner.drain().await;
+        assert_eq!(
+            harness.pool.census().await.leased,
+            1,
+            "touch must refresh idle_since_ms so the pool TTL does not /clear"
+        );
+        let again = harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("book row still valid");
+        assert_eq!(again.kind, LeaseKind::Replayed);
+    }
+
+    #[tokio::test]
+    async fn orphan_book_rows_do_not_occupy_the_lease_cap() {
+        let harness = book_harness(15, 60_000);
+        for index in 0..15 {
+            let id = format!("sess-{index}");
+            harness
+                .book
+                .complete(
+                    &pin(&id),
+                    &turn(
+                        "claude-sonnet-5-low",
+                        vec![json!({"role":"user","content":"hello"})],
+                    ),
+                )
+                .await
+                .expect("prime");
+        }
+        for index in 0..15 {
+            harness
+                .pool
+                .release_conversation(&format!("sess-{index}"))
+                .await
+                .expect("drop the pool cell, leave the book row");
+        }
+        harness.spawner.drain().await;
+        let next = harness
+            .book
+            .complete(
+                &pin("sess-new"),
+                &turn(
+                    "claude-sonnet-5-low",
+                    vec![json!({"role":"user","content":"fresh"})],
+                ),
+            )
+            .await
+            .expect("orphans must not occupy max_leases");
+        assert_eq!(next.kind, LeaseKind::Primed);
+    }
+
+    #[tokio::test]
+    async fn a_large_history_continue_does_not_fail_the_primer_limit() {
+        use pseudomux_service::driver_io::MAX_PROMPT_BYTES;
+        let harness = book_harness(2, 60_000);
+        let block = "a".repeat(600_000);
+        let first = turn(
+            "claude-sonnet-5-low",
+            vec![json!({"role":"user","content": block})],
+        );
+        harness
+            .book
+            .complete(&pin("sess-big"), &first)
+            .await
+            .expect("prime stays under 1 MiB");
+        let next = turn(
+            "claude-sonnet-5-low",
+            vec![
+                json!({"role":"user","content": block}),
+                json!({"role":"assistant","content": block}),
+                json!({"role":"user","content":"next"}),
+            ],
+        );
+        let primer = sanitize_prompt(&flatten_prompt(&next).unwrap());
+        assert!(primer.len() > MAX_PROMPT_BYTES);
+        assert!(validate_prompt(&primer).is_err());
+        let continued = harness
+            .book
+            .complete(&pin("sess-big"), &next)
+            .await
+            .expect("Continue must not validate the flattened primer");
+        assert_eq!(continued.kind, LeaseKind::Continued);
+        let replayed = harness
+            .book
+            .complete(&pin("sess-big"), &next)
+            .await
+            .expect("Replay of a large history must skip primer validation");
+        assert_eq!(replayed.kind, LeaseKind::Replayed);
+    }
+
+    #[tokio::test]
+    async fn a_refused_suffix_does_not_release_the_leased_cell() {
+        let harness = book_harness(2, 60_000);
+        let first = turn(
+            "claude-sonnet-5-low",
+            vec![json!({"role":"user","content":"hello"})],
+        );
+        harness
+            .book
+            .complete(&pin("sess-keep"), &first)
+            .await
+            .expect("prime");
+        let next = turn(
+            "claude-sonnet-5-low",
+            vec![
+                json!({"role":"user","content":"hello"}),
+                json!({"role":"assistant","content":"hi"}),
+                json!({
+                    "role":"user",
+                    "content": "x".repeat(pseudomux_service::driver_io::MAX_PROMPT_BYTES + 1)
+                }),
+            ],
+        );
+        let error = match harness.book.complete(&pin("sess-keep"), &next).await {
+            Ok(_) => panic!("an oversized suffix must be InvalidConfig"),
+            Err(error) => error,
+        };
+        assert_eq!(error.code, ErrorCode::InvalidConfig);
+        assert_eq!(
+            harness.pool.census().await.leased,
+            1,
+            "a refused suffix must not /clear the still-leased cell"
+        );
+        let replayed = harness
+            .book
+            .complete(&pin("sess-keep"), &first)
+            .await
+            .expect("the book row and cell must still be there");
+        assert_eq!(replayed.kind, LeaseKind::Replayed);
     }
 }

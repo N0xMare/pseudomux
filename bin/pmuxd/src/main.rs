@@ -137,7 +137,7 @@ enum Command {
         #[arg(long = "path-b-pool-size", default_value_t = DEFAULT_POOL_SIZE, help_heading = PATH_B_HELP_HEADING)]
         path_b_pool_size: u32,
 
-        /// Turns one instance serves before it is recycled.
+        /// Turns one instance serves before it is recycled at lease end.
         #[arg(long = "path-b-recycle-turns", default_value_t = DEFAULT_RECYCLE_TURNS, help_heading = PATH_B_HELP_HEADING)]
         path_b_recycle_turns: u32,
 
@@ -224,9 +224,11 @@ enum Command {
 
         /// Allow POST /v1/messages without a conversation pin. The listener
         /// then hashes the first user message, system, tools, and model into
-        /// an implicit id. That id cannot be released on purpose and collides
-        /// when two sessions start the same way. Harnesses should send
-        /// `x-pmux-conversation` instead. Requires --path-b-messages-bind.
+        /// an implicit id. You did not choose that id; release using the
+        /// `x-pmux-conversation` the response echoed (or the hash `doctor`
+        /// prints). Two sessions that start the same way share a cell.
+        /// Harnesses should send `x-pmux-conversation` instead.
+        /// Requires --path-b-messages-bind.
         #[arg(long = "path-b-allow-implicit-conversation", help_heading = PATH_B_HELP_HEADING)]
         path_b_allow_implicit_conversation: bool,
     },

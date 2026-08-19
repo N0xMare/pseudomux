@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, bail};
-use pseudomux_protocol::v1::{EffortLevel, ErrorBody, StatelessResult};
+use pseudomux_protocol::v1::{EffortLevel, ErrorBody, ErrorCode, StatelessResult};
 use serde_json::{Value, json};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -735,6 +735,11 @@ fn capabilities_document(allow_implicit: bool) -> Value {
         "cache_control_on_tools": false,
         "temperature": false,
         "effort": "model_id_suffix_or_output_config",
+        "effort_sources": [
+            "model_id_suffix",
+            "output_config.effort",
+            "thinking.type != disabled → high"
+        ],
         "implicit_conversation": allow_implicit,
         "models": "GET /v1/models",
     })
@@ -818,7 +823,9 @@ async fn write_http_extra(
         400 => "Bad Request",
         401 => "Unauthorized",
         404 => "Not Found",
+        409 => "Conflict",
         413 => "Payload Too Large",
+        429 => "Too Many Requests",
         _ => "Error",
     };
     let mut header = format!(
@@ -844,7 +851,20 @@ async fn write_dispatch_error(
     // message_start/message_stop is not a valid pi stream. Report request
     // failure as JSON regardless of the requested stream flag.
     let _ = stream_wanted;
-    write_http(stream, 400, "application/json", &dispatch_error_body(error)).await
+    write_http(
+        stream,
+        dispatch_error_status(error),
+        "application/json",
+        &dispatch_error_body(error),
+    )
+    .await
+}
+
+fn dispatch_error_status(error: &ErrorBody) -> u16 {
+    match error.code {
+        ErrorCode::SessionBusy => 409,
+        _ => 400,
+    }
 }
 
 fn dispatch_error_body(error: &ErrorBody) -> String {
@@ -854,6 +874,7 @@ fn dispatch_error_body(error: &ErrorBody) -> String {
             "type": "api_error",
             "message": error.message,
             "details": error.details,
+            "retryable": error.retryable,
         }
     })
     .to_string()
@@ -1012,6 +1033,31 @@ mod tests {
                 .any(|header| header == "x-pmux-conversation")
         );
         assert!(capabilities_document(true)["implicit_conversation"] == true);
+        let sources = caps["effort_sources"].as_array().expect("effort_sources");
+        assert!(
+            sources.iter().any(|source| source
+                .as_str()
+                .is_some_and(|text| { text.contains("thinking.type") && text.contains("high") })),
+            "capabilities must name thinking.type → high: {caps}"
+        );
+    }
+
+    #[test]
+    fn session_busy_is_conflict_and_names_retryable() {
+        let error = ErrorBody::new(
+            ErrorCode::SessionBusy,
+            "this conversation already has a turn in flight; nothing is queued",
+        )
+        .retryable(true);
+        assert_eq!(dispatch_error_status(&error), 409);
+        let body: Value = serde_json::from_str(&dispatch_error_body(&error)).unwrap();
+        assert_eq!(body["type"], "error");
+        assert_eq!(body["error"]["type"], "api_error");
+        assert_eq!(body["error"]["retryable"], true);
+        let other = ErrorBody::new(ErrorCode::InvalidConfig, "model is required");
+        assert_eq!(dispatch_error_status(&other), 400);
+        let other_body: Value = serde_json::from_str(&dispatch_error_body(&other)).unwrap();
+        assert_eq!(other_body["error"]["retryable"], false);
     }
 
     #[test]

@@ -1249,9 +1249,10 @@ fn claim_refusal_names_a_true_budget(
         });
         // The census clause is the operator-facing half, and its parts must add
         // up to the whole it claims: every slot the pool is holding is in
-        // exactly one of the four counted states.
+        // exactly one of the six counted states.
         let clearing = number("clearing");
-        let parts = [in_flight, clearing, idle, reserved, tearing_down]
+        let leased = number("leased");
+        let parts = [in_flight, clearing, idle, leased, reserved, tearing_down]
             .into_iter()
             .sum::<Option<u64>>();
         report.check(parts == live, || {
@@ -1267,6 +1268,7 @@ fn claim_refusal_names_a_true_budget(
             (in_flight, "serving a turn"),
             (clearing, "clearing between turns, with no caller waiting"),
             (idle, "idle"),
+            (leased, "holding a conversation lease"),
             (reserved, "reserved or warming"),
             (tearing_down, "in teardown"),
         ] {
@@ -1375,13 +1377,20 @@ async fn claim_slot_accounting(
         format!("a quiesced pool is still clearing: {evidence}")
     });
     // The whole of the census closes: every slot the pool says it holds is in
-    // exactly one of the five counted states. Summed from the layer's own
+    // exactly one of the six counted states. Summed from the layer's own
     // numbers rather than from a subset, because a subset that adds up is the
     // check that misses the state nobody thought to include.
-    let counted = ["in_flight", "clearing", "idle", "reserved", "tearing_down"]
-        .into_iter()
-        .map(number)
-        .sum::<Option<u64>>();
+    let counted = [
+        "in_flight",
+        "clearing",
+        "idle",
+        "leased",
+        "reserved",
+        "tearing_down",
+    ]
+    .into_iter()
+    .map(number)
+    .sum::<Option<u64>>();
     report.check(counted == number("live"), || {
         format!("the pool layer's states sum to {counted:?}, not its live count: {evidence}")
     });

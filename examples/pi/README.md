@@ -33,8 +33,11 @@ Recommended warm set (at the owner-set cap of 15):
 ```
 
 Use medium as the workhorse, xhigh sparingly, fable for phase-gates. One
-pool instance per live Pi conversation (root + each live subagent). Spawn,
-steer, and delete stay Pi's job. Session end POSTs
+pool instance per live Pi conversation (root + each live subagent) when
+each conversation is its own process. The shipped `pmux.ts` holds one
+`conversationId` per process; a second in-process session reuses that pin
+and `/clear`s the first. The measured parallel-subagent receipt used child
+processes. Spawn, steer, and delete stay Pi's job. Session end POSTs
 `/v1/conversations/{id}/release` so the cell `/clear`s.
 
 Measured: `evidence/linux-pi-agentic-subagent-x86_64.json`.

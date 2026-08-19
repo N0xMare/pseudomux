@@ -154,8 +154,9 @@ pub struct Instance {
     /// itself appended as a row. A counter incremented at check-in miscounts a
     /// turn that was submitted and then failed.
     pub turns_started: u32,
-    /// Set on every entry into the idle set. LRU victim choice and the TTL
-    /// sweep read it; nothing else does.
+    /// Set on entry into the idle set, on [`super::machine::Transition::LeaseHeld`],
+    /// and on a Messages replay ([`super::Pool::touch_conversation`]). LRU
+    /// victim choice and the TTL sweep read it.
     pub idle_since_ms: u64,
     pub state: InstanceState,
     /// The transition that produced `state`. Read by the idle-set invariant, so

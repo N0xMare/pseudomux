@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::io::{self, Read, Write};
+use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::os::unix::fs::{FileTypeExt, PermissionsExt};
 use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,7 @@ use pseudomux_protocol::v1::{
     ErrorCode, MAX_NATIVE_FRAME_BYTES, PROTOCOL_VERSION, Request, RequestEnvelope, RequestId,
     ResponseEnvelope, ResponsePayload, ResponseResult,
 };
+use pseudomux_service::pool::class::MODEL_TABLE;
 use serde_json::{Value, json};
 
 #[path = "../../../tests/support/candidate_binary.rs"]
@@ -279,7 +281,16 @@ fn wait_until_ready(daemon: &mut Daemon, socket: &Path) {
     let deadline = Instant::now() + STARTUP_TIMEOUT;
     loop {
         if let Some(status) = daemon.try_status() {
-            panic!("pmuxd exited before readiness: {status}");
+            let mut stderr = Vec::new();
+            if let Some(child) = daemon.0.as_mut() {
+                if let Some(pipe) = child.stderr.as_mut() {
+                    let _ = pipe.read_to_end(&mut stderr);
+                }
+            }
+            panic!(
+                "pmuxd exited before readiness: {status}: {}",
+                String::from_utf8_lossy(&stderr)
+            );
         }
         if let Ok(response) = ping(socket, 1, Duration::from_millis(300)) {
             if matches!(
@@ -611,4 +622,271 @@ fn startup_failures_are_bounded_preserve_existing_paths_and_redact_config_values
     );
     assert!(!socket.exists());
     assert!(fs::read_dir(&runtime_parent).unwrap().next().is_none());
+}
+
+fn owner_only_dir(path: &Path) {
+    fs::create_dir(path).unwrap();
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+}
+
+fn path_b_serve_command(socket: &Path, runtime_parent: &Path, pool_parent: &Path) -> Command {
+    let mut command = base_serve_command(socket, runtime_parent);
+    command
+        .arg("--path-b-parent")
+        .arg(pool_parent)
+        .arg("--path-b-claude")
+        .arg("/bin/sh")
+        .arg("--path-b-pool-size")
+        .arg("1")
+        .arg("--path-b-no-evidence");
+    command
+}
+
+fn free_loopback() -> SocketAddr {
+    TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+}
+
+/// Same derivation as `messages_model_ids` in `messages_http.rs`.
+fn expected_messages_model_ids() -> Vec<String> {
+    let mut ids = Vec::new();
+    for entry in MODEL_TABLE {
+        if entry.efforts.is_empty() {
+            ids.push(entry.canonical.to_owned());
+            continue;
+        }
+        for effort in entry.efforts {
+            ids.push(format!("{}-{}", entry.canonical, effort.argv));
+        }
+    }
+    ids
+}
+
+fn expected_models_document() -> Value {
+    json!({
+        "object": "list",
+        "data": expected_messages_model_ids()
+            .into_iter()
+            .map(|id| json!({"type": "model", "id": id}))
+            .collect::<Vec<_>>(),
+        "has_more": false,
+    })
+}
+
+fn expected_capabilities_document() -> Value {
+    json!({
+        "pin_headers": ["x-pmux-conversation", "x-session-id", "x-session-affinity"],
+        "release": "POST /v1/conversations/{id}/release",
+        "stream": "post_commit",
+        "images": false,
+        "cache_control_on_tools": false,
+        "temperature": false,
+        "effort": "model_id_suffix_or_output_config",
+        "effort_sources": [
+            "model_id_suffix",
+            "output_config.effort",
+            "thinking.type != disabled → high"
+        ],
+        "implicit_conversation": false,
+        "models": "GET /v1/models",
+    })
+}
+
+struct HttpResponse {
+    status: u16,
+    body: String,
+}
+
+fn http_request(path: &str, method: &str, headers: &[(&str, &str)], body: &str) -> String {
+    let mut request = format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close");
+    for (name, value) in headers {
+        request.push_str(&format!("\r\n{name}: {value}"));
+    }
+    if !body.is_empty() {
+        request.push_str(&format!("\r\nContent-Length: {}", body.len()));
+    }
+    request.push_str("\r\n\r\n");
+    request.push_str(body);
+    request
+}
+
+fn http_exchange(addr: SocketAddr, request: &str) -> io::Result<HttpResponse> {
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(2))?;
+    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(2)))?;
+    stream.write_all(request.as_bytes())?;
+    let _ = stream.shutdown(Shutdown::Write);
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf)?;
+    let text = String::from_utf8_lossy(&buf);
+    let (head, body) = text
+        .split_once("\r\n\r\n")
+        .ok_or_else(|| io::Error::other(format!("no HTTP header terminator in {text:?}")))?;
+    let status = head
+        .lines()
+        .next()
+        .unwrap_or("")
+        .split_whitespace()
+        .nth(1)
+        .and_then(|code| code.parse().ok())
+        .ok_or_else(|| io::Error::other(format!("no HTTP status in {head:?}")))?;
+    Ok(HttpResponse {
+        status,
+        body: body.to_owned(),
+    })
+}
+
+fn wait_until_messages(daemon: &mut Daemon, addr: SocketAddr) {
+    let deadline = Instant::now() + STARTUP_TIMEOUT;
+    let probe = http_request("/v1/models", "GET", &[("x-api-key", "test")], "");
+    loop {
+        if let Some(status) = daemon.try_status() {
+            let mut stderr = Vec::new();
+            if let Some(child) = daemon.0.as_mut() {
+                if let Some(pipe) = child.stderr.as_mut() {
+                    let _ = pipe.read_to_end(&mut stderr);
+                }
+            }
+            panic!(
+                "pmuxd exited before Messages readiness: {status}: {}",
+                String::from_utf8_lossy(&stderr)
+            );
+        }
+        if let Ok(response) = http_exchange(addr, &probe) {
+            if response.status == 200 {
+                return;
+            }
+        }
+        assert!(
+            Instant::now() < deadline,
+            "Path B Messages listener did not become ready on {addr}"
+        );
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn json_body(response: &HttpResponse) -> Value {
+    serde_json::from_str(response.body.trim()).unwrap_or_else(|error| {
+        panic!(
+            "HTTP {} body is not JSON ({error}): {}",
+            response.status, response.body
+        )
+    })
+}
+
+#[test]
+fn path_b_allow_implicit_conversation_without_messages_bind_is_refused_by_name() {
+    let root = private_root("implicit-no-bind");
+    let socket = root.path().join("p.sock");
+    let runtime_parent = root.path().join("runtime");
+    owner_only_dir(&runtime_parent);
+    let pool_parent = root.path().join("pool");
+    let mut command = path_b_serve_command(&socket, &runtime_parent, &pool_parent);
+    command.arg("--path-b-allow-implicit-conversation");
+    let output = run_bounded(&mut command, Duration::from_secs(5));
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(
+        output
+            .stderr_text()
+            .contains("--path-b-allow-implicit-conversation requires --path-b-messages-bind"),
+        "{}",
+        output.stderr_text()
+    );
+    assert!(!socket.exists(), "startup error left a public socket");
+}
+
+#[test]
+fn messages_listener_speaks_the_harness_http_contract() {
+    // Empty warm set: GET/401/missing-pin never mint a cell.
+    let root = private_root("messages-http");
+    let socket = root.path().join("p.sock");
+    let runtime_parent = root.path().join("runtime");
+    owner_only_dir(&runtime_parent);
+    let pool_parent = root.path().join("pool");
+    owner_only_dir(&pool_parent);
+    let bind = free_loopback();
+    let mut command = path_b_serve_command(&socket, &runtime_parent, &pool_parent);
+    command.arg("--path-b-messages-bind").arg(bind.to_string());
+    let mut daemon = Daemon::spawn(&mut command);
+    wait_until_ready(&mut daemon, &socket);
+    wait_until_messages(&mut daemon, bind);
+    let sidecar_pid = wait_for_direct_child(daemon.id());
+
+    for path in ["/v1/models", "/v1/capabilities", "/models"] {
+        let response = http_exchange(bind, &http_request(path, "GET", &[], "")).unwrap();
+        assert_eq!(response.status, 401, "{path}: {}", response.body);
+        let body = json_body(&response);
+        assert_eq!(
+            body["error"]["type"], "authentication_error",
+            "{path}: {body}"
+        );
+    }
+    let blank_key = http_exchange(
+        bind,
+        &http_request("/v1/models", "GET", &[("x-api-key", "   ")], ""),
+    )
+    .unwrap();
+    assert_eq!(blank_key.status, 401, "{}", blank_key.body);
+
+    let expected_models = expected_models_document();
+    for path in ["/v1/models", "/models", "/v1/v1/models"] {
+        let response = http_exchange(
+            bind,
+            &http_request(path, "GET", &[("x-api-key", "anything")], ""),
+        )
+        .unwrap();
+        assert_eq!(response.status, 200, "{path}: {}", response.body);
+        assert_eq!(json_body(&response), expected_models, "{path}");
+    }
+    let bearer = http_exchange(
+        bind,
+        &http_request("/v1/models", "GET", &[("Authorization", "Bearer x")], ""),
+    )
+    .unwrap();
+    assert_eq!(bearer.status, 200, "{}", bearer.body);
+    assert_eq!(json_body(&bearer), expected_models);
+
+    let expected_caps = expected_capabilities_document();
+    for path in ["/v1/capabilities", "/capabilities", "/v1/v1/capabilities"] {
+        let response = http_exchange(
+            bind,
+            &http_request(path, "GET", &[("x-api-key", "anything")], ""),
+        )
+        .unwrap();
+        assert_eq!(response.status, 200, "{path}: {}", response.body);
+        assert_eq!(json_body(&response), expected_caps, "{path}");
+    }
+
+    let post_body = r#"{"model":"claude-sonnet-5","messages":[{"role":"user","content":"hi"}]}"#;
+    let unpinned = http_exchange(
+        bind,
+        &http_request(
+            "/v1/messages",
+            "POST",
+            &[
+                ("x-api-key", "anything"),
+                ("Content-Type", "application/json"),
+            ],
+            post_body,
+        ),
+    )
+    .unwrap();
+    assert_eq!(unpinned.status, 400, "{}", unpinned.body);
+    let unpinned_json = json_body(&unpinned);
+    let message = unpinned_json["error"]["message"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        message.contains("x-pmux-conversation"),
+        "missing-pin refusal did not name x-pmux-conversation: {unpinned_json}"
+    );
+
+    daemon.signal(libc::SIGTERM);
+    let output = daemon.wait(PROCESS_TIMEOUT);
+    assert!(output.status.success(), "{}", output.stderr_text());
+    wait_for_process_exit(sidecar_pid);
+    assert!(!socket.exists());
 }

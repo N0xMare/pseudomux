@@ -47,6 +47,8 @@ launch. `attach` takes over the TUI. `clear` types `/clear` into a session
 *you* started as `--cell minified`; the pool already does that for `pmux run`.
 
 Native clients (Rust / TypeScript / Python) still speak protocol v1 over the
-same owner-only socket. `pmux-mcp` lists only `run_stateless`;
-`start_session` / `run_turn` / `run_once` remain callable and are this
-experimental surface.
+same owner-only socket. `pmux-mcp` lists only `run_stateless`. These
+session tools stay callable on `tools/call` and are this experimental
+surface: `start_session`, `run_turn`, `inspect_session`, `cancel_turn`,
+`close_session`, `run_once`, `subscribe_events`, `attach_session`,
+`create_agent`, `get_agent`, `list_agents`, `update_agent`.

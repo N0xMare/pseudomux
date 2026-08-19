@@ -141,7 +141,7 @@ asked for.
 ### 2.1 The sidechain guard: fired, but only in a double
 
 `pool/refusal.rs:462` (`sidechain_on_toolless_cell`) refuses a turn whose transcript carried a
-sidechain row at all, and `pool/mod.rs:1412` is the commit-time predicate
+sidechain row at all, and `pool/mod.rs:1487` is the commit-time predicate
 (`counted_rows > 0 || turn.usage.sidechain != Default::default()`). **It did not fire once here, and
 I could not make it fire against a real Claude**: every phrasing of "spawn a subagent", direct and
 indirect, produced a text refusal. 100 transcripts of structural zero is the invariant holding, and
@@ -933,8 +933,8 @@ this commit, which puts them under the existing grader — and the grader then r
 as rotted**, every one invisible until it carried its path:
 
 ```
-docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:650
-docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1138
+docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:652
+docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1140
 docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1360
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:849
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2220

@@ -3137,7 +3137,7 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
             format!(
                 "the stateless engine would launch Claude Code {version}, which none of the \
                  {admitted} Claude compatibility cell(s) matching this platform admits, so every \
-                 `pmux ask` is refused with unsupported_claude_version ({refusal}); measure this \
+                 `pmux run` is refused with unsupported_claude_version ({refusal}); measure this \
                  version and admit it with `pmuxd --tested-claude-profile`, or run a version pmux \
                  has already promoted"
             ),
@@ -3438,14 +3438,17 @@ fn pool_layer(
             LayerFinding::Exercised,
             format!(
                 "the stateless pool holds {} live instance(s) against a capacity of {}: {} idle, \
-                 {} serving a turn, {} clearing between turns, {} reserved; the sidecar reports a \
+                 {} serving a turn, {} holding a conversation lease, {} clearing between turns, \
+                 {} reserved, {} tearing down; the sidecar reports a \
                  terminal for all {} registered instance(s)",
                 census.live,
                 census.capacity,
                 census.idle,
                 census.in_flight,
+                census.leased,
                 census.clearing,
                 census.reserved,
+                census.tearing_down,
                 terminals_present.unwrap_or_default(),
             ),
         )
@@ -8694,6 +8697,55 @@ mod tests {
             LayerFinding::Faulted,
             "a fast control plane does not excuse an actor that never answered"
         );
+    }
+
+    /// Fifteen leased Pi cells used to read as "15 live … 0 idle, 0 serving,
+    /// 0 clearing, 0 reserved" — leased and tearing_down were in the JSON
+    /// evidence and missing from the sentence an operator acts on.
+    #[test]
+    fn pool_exercised_sentence_names_leased_and_tearing_down() {
+        let pool_live = diagnose_live(&["pmux-pool-0", "pmux-pool-1"]);
+        let terminals = vec!["pmux-pool-0".to_owned(), "pmux-pool-1".to_owned()];
+        let subject = PoolSubject {
+            pool_size: 15,
+            declared_warm: 0,
+            census: crate::pool::PoolCensus {
+                live: 2,
+                idle: 0,
+                in_flight: 0,
+                clearing: 0,
+                leased: 1,
+                reserved: 0,
+                tearing_down: 1,
+                leaked: 0,
+                capacity: 15,
+                halted: None,
+            },
+            conversation_leases: vec![crate::pool::ConversationLease {
+                conversation_id: "pi-root".to_owned(),
+                cell: "s0e1".to_owned(),
+                state: "leased".to_owned(),
+            }],
+        };
+        let layer = pool_layer(Some(&subject), &terminals, Some(&pool_live));
+        assert_eq!(layer.finding, LayerFinding::Exercised);
+        assert!(
+            layer.detail.contains("1 holding a conversation lease"),
+            "{}",
+            layer.detail
+        );
+        assert!(
+            layer.detail.contains("1 tearing down"),
+            "{}",
+            layer.detail
+        );
+        assert_eq!(
+            layer.evidence["leased"],
+            1,
+            "structured evidence already published leased; the sentence must match it"
+        );
+        assert_eq!(layer.evidence["conversation_leases"].as_array().unwrap().len(), 1);
+        assert_eq!(layer.evidence["tearing_down"], 1);
     }
 
     /// A correct Path B daemon rolls up HEALTHY, and a genuinely unproven layer

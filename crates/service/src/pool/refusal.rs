@@ -96,7 +96,7 @@ impl BucketCounts {
     /// the difference is deliberate: the set is what a checkout reads and the
     /// state is what an instance is, and `Pool::check_invariants` is what ties
     /// them. Two independent derivations of one number means a divergence is
-    /// visible -- the pool layer's five counts are asserted to sum to its live
+    /// visible -- the pool layer's six counts are asserted to sum to its live
     /// count, and an idle set that has drifted from the states breaks that sum.
     #[must_use]
     pub const fn idle(self) -> u32 {
@@ -302,8 +302,8 @@ impl PoolPressure {
 /// Rule 4 fires when **no instance of the requested class is idle, no other
 /// class is idle either, and no slot is free** -- not, as this doc said until
 /// the claim was checked against the code, "iff every instance is mid-turn".
-/// The three are different: `in_flight` counts `CheckedOut | Delivering |
-/// Clearing`, while a slot is equally unavailable when its instance is
+/// The three are different: `in_flight` counts `CheckedOut | Delivering`,
+/// while a slot is equally unavailable when its instance is
 /// `Reserved`, `Warming`, `Quarantined` or `Destroying`. A pool whose two
 /// instances are both in teardown refuses here with `in_flight == 0`, which the
 /// old message rendered as "serving 0 of its 2 configured instances".

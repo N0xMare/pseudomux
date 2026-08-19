@@ -71,8 +71,9 @@ owns the cells. The Messages listener is three verbs:
    break; the same pin reprimes.
 
 Without a pin the request is refused. `--path-b-allow-implicit-conversation`
-is the single-session curl hatch; two sessions that start the same way then
-share a cell and cannot be released on purpose.
+is the single-session curl hatch: you did not choose the id. Release using
+the `x-pmux-conversation` the response echoed, or the hash `doctor` prints
+on `conversation_leases`. Two sessions that start the same way share a cell.
 
 `GET /v1/models` lists the ids. `GET /v1/capabilities` states the closed set:
 no images, reconstructed SSE after the turn commits, no `cache_control` on
@@ -104,7 +105,8 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 
 `settings.json` sets `defaultProvider` to `pmux`, default model
 `claude-opus-5-medium`, and `packages: ["npm:pi-subagents"]`. One pool
-instance per live conversation. The contract itself is
+instance per live conversation when each conversation is its own process
+(the measured Pi subagent receipt used child processes). The contract itself is
 [examples/README.md](examples/README.md).
 
 ## One-shot from the CLI
@@ -156,7 +158,7 @@ refused without it.
 | `--path-b-parent DIR` | — | **Enables the pool.** Absolute parent for the per-slot trees. |
 | `--path-b-claude PATH` | — | Required with `--path-b-parent`, and absolute. |
 | `--path-b-pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15, at boot. |
-| `--path-b-recycle-turns N` | `50` | Turns one instance serves before it is replaced. |
+| `--path-b-recycle-turns N` | `50` | Turns one instance serves before it is replaced at lease end (sticky resume is not refused). |
 | `--path-b-warm MODEL[/EFFORT]=COUNT` | none | Warm floor for one class, repeatable. |
 | `--path-b-system-prompt TEXT` | see below | REPLACE-mode prompt every instance launches with. 512 bytes. |
 | `--path-b-system-prompt-file FILE` | — | Same prompt, from a file. |
@@ -165,7 +167,7 @@ refused without it.
 | `--path-b-retain-dir DIR` | erase | Where a quarantined tree is kept. |
 | `--path-b-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
 | `--path-b-messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
-| `--path-b-allow-implicit-conversation` | off | Permit headerless Messages turns (unsafe under concurrency). |
+| `--path-b-allow-implicit-conversation` | off | Permit headerless Messages turns. You did not choose the id; two same-start sessions share a cell. |
 | `--path-b-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
 | `--path-b-no-evidence` | off | Retain no pool evidence. |
 

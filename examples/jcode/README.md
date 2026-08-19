@@ -17,9 +17,12 @@ This directory is a named-profile fragment, not a swarm-safe adapter.
 
 ## What this does not deliver
 
-- One cell per jcode session or swarm worker.
+- One cell per jcode session or swarm worker. Two `jcode run 'hello'` that
+  start the same way share one implicit cell.
 - Eager `POST /v1/conversations/{id}/release` on `/quit`, detach, or worker
-  exit. Idle TTL is the only recycle.
+  exit. Idle TTL is the only recycle unless you release using the
+  `x-pmux-conversation` the response echoed (or the hash `doctor` prints).
+  jcode will not do that for you.
 - A stable pin across memory/skill injects. Those change system/tools; an
   implicit id includes them, so a new lease can open every turn.
 

@@ -9,13 +9,18 @@ speaks Anthropic Messages on loopback and does three things:
    `output_config.effort`.
 
 `GET /v1/models` and `GET /v1/capabilities` are the closed catalogue. Any
-non-empty `x-api-key` or `Authorization` is enough; loopback is the trust
-boundary. Images, live token streaming, `cache_control` on tools, and
-temperature are not offered. Compact, rewind, or a class change is a prefix
-break; keep the pin and pmux reprimes.
+non-empty `x-api-key` or `Authorization` is enough; a dummy key is fine.
+Loopback is the trust boundary. Images, live token streaming,
+`cache_control` on tools, and temperature are not offered. Compact, rewind,
+or a class change is a prefix break; keep the pin and pmux reprimes.
 
-Headerless `POST /v1/messages` needs `--path-b-allow-implicit-conversation`
-and is not swarm-safe.
+Every successful `POST /v1/messages` echoes lease headers:
+`x-pmux-conversation`, `x-pmux-cell` (`s{slot}e{epoch}`), `x-pmux-lease`
+(`primed` / `continued` / `reprimed` / `replayed`), `x-pmux-idle-ttl-ms`.
+
+Headerless `POST /v1/messages` needs `--path-b-allow-implicit-conversation`.
+You did not choose the id; release using the echoed
+`x-pmux-conversation`. Two sessions that start the same way share a cell.
 
 | Adapter | Can pin and release per session? | Measured? |
 | --- | --- | --- |
