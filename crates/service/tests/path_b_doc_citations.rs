@@ -97,9 +97,9 @@
 //!
 //! Nothing here is a list of citations. The document set is read out of
 //! `docs/path-b.md` §0.0, the anchor is read out of the prose, and the line is
-//! read out of the file. `tools/phase0/verify_calibration.py` states the same
+//! read out of the file. A since-deleted Phase 0 verifier stated the same
 //! rule for the numbers a tool prints -- *"a citation nobody re-measures has
-//! already rotted"* -- and resolves them from anchors at import. A markdown
+//! already rotted"* -- and resolved them from anchors at import. A markdown
 //! file cannot do that to itself, so the check is external and the anchor is
 //! what the prose was already naming.
 
@@ -759,9 +759,11 @@ fn grade_citations(
     let mut grade = Grade::default();
     let document_lines = text.lines().collect::<Vec<_>>();
     for citation in citations_in(text) {
-        grade.seen += 1;
         let resolved = match resolve(root, by_basename, &citation.path) {
             Resolution::One(path) => path,
+            // Stdlib and deleted freeze paths are not this test's set. Counting
+            // them as `seen` without `graded` made `graded == seen` fail as if
+            // a living citation had escaped, which is the wrong message.
             Resolution::Outside => continue,
             Resolution::Ambiguous(count) => {
                 if total {
@@ -775,6 +777,7 @@ fn grade_citations(
                 continue;
             }
         };
+        grade.seen += 1;
         let lines = cache.entry(resolved.clone()).or_insert_with(|| {
             std::fs::read_to_string(&resolved)
                 .unwrap_or_default()
@@ -783,6 +786,12 @@ fn grade_citations(
                 .collect()
         });
         if lines.is_empty() {
+            if total {
+                grade.offences.push(format!(
+                    "{where_}:{} cites {} -- the file is empty, so nothing can land",
+                    citation.line, citation.raw,
+                ));
+            }
             continue;
         }
         // The wrapped sentence, not the line and not the paragraph.
@@ -985,6 +994,21 @@ fn basename_index(files: &[PathBuf]) -> BTreeMap<String, Vec<PathBuf>> {
         }
     }
     index
+}
+
+/// An outside path (stdlib, or a deleted freeze file) is not this test's set.
+/// Counting it as `seen` without `graded` used to fail `graded == seen`.
+#[test]
+fn an_outside_citation_is_not_an_ungraded_seen() {
+    let root = workspace_root();
+    let files = scanned_files(&root);
+    let by_basename = basename_index(&files);
+    let mut cache = BTreeMap::new();
+    let text = "see `library/std/src/sys/fs/unix.rs:1212` for the stdlib.\n";
+    let grade = grade_citations(&root, &by_basename, &mut cache, "synthetic", text, true);
+    assert_eq!(grade.seen, 0, "outside citations must not count as seen");
+    assert_eq!(grade.graded, 0);
+    assert!(grade.offences.is_empty());
 }
 
 /// Rule 2: EVERY citation in a Path B document lands on a line that holds

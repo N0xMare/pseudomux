@@ -34,8 +34,8 @@ use crate::tasks::TrackedTasks;
 /// whole product statement of Path B is that the caller names no resource.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SessionOwner {
-    /// Started by a client over the wire. Reachable by every session-addressed
-    /// method, and by the generic idle reaper.
+    /// Historical owner tag. Public wire session methods refuse; pool uses
+    /// [`Self::Pool`]. Still reachable by the generic idle reaper.
     Caller,
     /// Minted by the stateless pool. Unreachable by every session-addressed
     /// method, and excluded from the generic idle reaper positively -- the pool
@@ -126,7 +126,7 @@ impl SessionRegistry {
         // The launch half of assert-empty, at the admission boundary rather than
         // in the wire path. It is the same argument `SessionActor::spawn` makes
         // for the require-tested rule one line further in: this registry is
-        // `pub`, so a rule that lives only in `NativeService::start_session` is a
+        // `pub`, so a rule that lives only in `start_session_owned_with_retention` is a
         // rule a direct embedder does not get -- and, more to the point, one
         // whose deletion no test that can run without a real Claude would
         // notice. Refusing here means no actor is created and no state is

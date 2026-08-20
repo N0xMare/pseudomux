@@ -2,8 +2,8 @@
 
 **Position of pmux, 2026-08-19.** This file is normative for *where the project
 stands*. `spec.md` is normative for product behaviour. `testing.md` is
-normative for test ownership. `docs/path-b.md` is normative for the Path B
-pool.
+normative for test ownership. The product is the local API (Messages +
+`run_stateless`) over a warm pool of constrained Claude cells.
 
 The 3,618-line 2026-08 essay that previously lived here is archived at
 `docs/archive/current-state-2026-08.md`. The historical commit-message ledger
@@ -20,9 +20,9 @@ the cells.
 
 | Surface | Caller names | What happens |
 | --- | --- | --- |
-| **Messages harness contract** — the product | pin + release + class | One leased minified cell per conversation. `/clear` on release. `--path-b-messages-bind`. |
+| **Messages harness contract** — the product | pin + release + class | One leased minified cell per conversation. `/clear` on release. `--messages-bind`. |
 | **`pmux run` / MCP `run_stateless`** | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. |
-| **Interactive sessions** — experimental, hidden | cwd, Claude binary, config root, session id | Full tool surface, attach, stored agents. Always compiled. Hidden from `pmux --help`. |
+| **Interactive sessions** | — | Not a product. Public wire refused. Thin CLI is `run` / `ping` / `doctor`. |
 
 Internal engineering docs still say Path A / Path B for the session stack
 and the pool. Those names are not the product surface.
@@ -62,17 +62,19 @@ includes clearing, reserved, and tearing_down.
 
 ### Messages facade
 
-`--path-b-messages-bind HOST:PORT` binds loopback only. Auth is
+`--messages-bind HOST:PORT` binds loopback only. Auth is
 **presence-only**: any non-empty `x-api-key` or `Authorization` is accepted;
 loopback is the trust boundary. A conversation pin
-(`x-pmux-conversation`) is required; `--path-b-allow-implicit-conversation`
+(`x-pmux-conversation`) is required; `--messages-allow-implicit`
 is the single-session opt-in. `GET /v1/models` and `GET /v1/capabilities`
 advertise the closed set. The first turn is flattened into a primer;
 later turns type only the new suffix so Anthropic's prompt cache can hit.
 Claude's tool surface stays denied; the harness runs tools and sends
 `tool_result`. Token streaming is reconstructed after the turn commits.
 
-Measured on this Linux host (Claude Code 2.1.233, operator profile):
+Measured on this Linux host. Operator cell is **2.1.236**
+(`evidence/linux-operator-eval-2.1.236-x86_64.json`). Earlier 2.1.233
+receipts remain historical:
 
 | Receipt | What it showed |
 | --- | --- |
@@ -85,21 +87,16 @@ Measured on this Linux host (Claude Code 2.1.233, operator profile):
 
 `PROMOTED_PROFILES` still ships **one** cell: Claude Code 2.1.220 through
 2.1.227 on macos/aarch64, transparent/sdk, pooled drain 1000 ms. Linux
-2.1.233 is an **operator cell**, not a product promotion. An operator
-invocation passes `--tested-claude-profile` with drain 250 ms (the linux
-minified estimator, **not** a pooled promotion receipt). The triad
-`promotion-2.1.233-linux-x86_64.json` /
-`promoted-profile-<floor>-linux-x86_64.json` /
-`pooled-transcript-drain-linux-x86_64.json` does not exist.
+is an **operator cell**, not a product promotion. The measured Linux
+operator binary is `~/.local/share/pmux/claude/2.1.236/claude` with
+`--tested-claude-profile` drain 250 ms (the linux minified estimator,
+**not** a pooled promotion receipt). That is a pin update, not a
+widening of `PROMOTED_PROFILES`.
 
-Promotion on this host is **no-go** until that triad exists and
-`promote_claude_version.py` can name a per-platform floor. Reasons that
-are not a missing flag: there is no linux pooled drain receipt; the
-minified linux pair (2.1.227 / 2.1.232) both fit 250 ms, so shipping 250
-as a pooled bound is vacuous; the tool's floor sentence is still the
-macos 2.1.220 cell. PATH `claude` here is 2.1.235; the measured operator
-binary is the pinned `~/.local/share/pmux/claude/2.1.233/claude`. Do not
-run `promote_claude_version.py` and do not invent the drain file.
+Shipping Linux without a flag still needs a real pooled-drain receipt
+and `tools/dev/promote.py` (which refuses without that per-OS file). There is
+no `pooled-transcript-drain-linux-x86_64.json`. Do not invent one. Do not
+treat the macos 2.1.220..=2.1.227 range as covering Linux.
 
 `evidence/linux-minified-post-answer-x86_64.json` is pinned as **not** a
 promotion drain receipt (max 46 ms, recommend 250, versions 2.1.227 and
@@ -111,10 +108,10 @@ versions fit 250.
 At the owner-set cap of 15:
 
 ```text
---path-b-pool-size 15
---path-b-warm claude-opus-5/medium=12
---path-b-warm claude-opus-5/xhigh=2
---path-b-warm claude-fable-5/xhigh=1
+--pool-size 15
+--pool-warm claude-opus-5/medium=12
+--pool-warm claude-opus-5/xhigh=2
+--pool-warm claude-fable-5/xhigh=1
 ```
 
 One cell per live Pi conversation (root + each live subagent) when each
@@ -122,8 +119,10 @@ conversation is its own process. The shipped adapter holds one
 `conversationId` per process. Agent end is `/clear` (release), not remint.
 Spawn/steer/delete stay Pi orchestration.
 
-Path A is not being deleted. Pool mint still goes
-`start_session_pool` → `start_session_owned`.
+The public session surface is refused. Pool mint still goes
+`start_session_pool` → `start_session_owned` →
+`start_session_owned_with_retention`. Public `start_session` is not the
+mint.
 
 ---
 
@@ -134,11 +133,14 @@ Path A is not being deleted. Pool mint still goes
 | Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
 | Sticky `Leased` + Messages harness | Shipped, opt-in, measured on linux/x86_64 with Pi. |
 | Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 only. |
-| Linux 2.1.233 without a flag | **Not shipped.** Operator profile. |
-| Path A deletion | **Not started, not planned in this landing.** |
+| Linux without a flag | **Not shipped.** Operator pin is 2.1.236. |
+| Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |
-| Gate A on this tree | Not re-run as a full capture. Targeted tests are the claim. |
-| Gate B / Gate C | Unchanged from the archive. |
+| `tools/dev/check.sh` | Living commit/push check. `--push` adds e2e + process blackbox. |
+| `tools/dev/operator_eval.py` | Confirms a Claude binary on **this** OS (grades + Messages sticky). No pooled drain required. Does not edit `PROMOTED_PROFILES`. |
+| `tools/dev/promote.py` | Drops `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists. Missing linux drain ≠ this Claude does not work. |
+| Gate A | **Removed.** Living verification is `tools/dev/`. |
+| Phase 0 / linux-docker / package-smoke | **Removed.** Historical freeze envelope, not a living pin. |
 
 ---
 
@@ -151,21 +153,24 @@ Path A is not being deleted. Pool mint still goes
 - Default daemon: owner-only UDS, no INET. Messages stays opt-in loopback.
 - `/clear` only at lease end (or TTL), never after every HTTP request.
 - `PROMOTED_PROFILES` entries require the receipt triad. Do not invent one.
-- Do not delete `start_session_owned`. Do not split `native.rs` as a drive-by.
+- Do not delete `start_session_owned_with_retention` or
+  `start_session_owned`. Do not split `native.rs` as a drive-by. Public
+  `start_session` is not the mint.
 
 ---
 
 ## 9. Design debt (mechanical contracts)
 
-The long debt ledger is in the archive. Two headings below are **load-bearing**
-for `scripts/path_b_done.py` criterion 4 and Gate A `test_run_gate.py`. Do not
-rename them without co-editing those tools.
+The long debt ledger is in the archive. Headings below remain so old trees parse.
+Do not rename them without co-editing `scripts/path_b_done.py`. Criterion 4 is
+MET because `run_gate.py` is gone and `tools/dev/check.sh` exists; living
+verification is `tools/dev/`.
 
-### 9.4 Post-commit findings still open (C6)
+### 9.4 Post-commit findings tombstone (C6)
 
 | # | file:line · defect · cost of leaving it · risk | Δ | Disposition |
 |---:|---|---:|---|
-| **C6** | `tools/linux-docker/gate-a-manifest.json` + `suite.sh:452-457` · Linux Docker lane still red on `linux_docker_self_tests` because the container manifest was not re-projected when the host manifest was trimmed · **KNOWN-REGRESSION** · **NEEDS-CARE** | ~7 cells | Open. Full finding and the two Gate C tests that block a drive-by repair are in `docs/archive/current-state-2026-08.md` §9.4. Closing C6 is a Gate C decision. |
+| **C6** | linux-docker lane · **TOMBSTONE** · Gate A candidate was already gone; the container lane is now deleted (`tools/linux-docker/` is not in the tree) | — | Lane deleted. Finding remains in `docs/archive/current-state-2026-08.md` §9.4. Not a living Linux pin. |
 
 ### 9.5 REJECTED / NONCLAIM — advisory rows 42-56 (NEVER pre-v1)
 
@@ -174,6 +179,6 @@ Unchanged. See the archive.
 ### 9.29 THE BUG CLASS, instance thirty-three — a reordering "verified gate-equivalent" for one property, and a revision that was never a mutation counter
 
 The ledger has now found thirty-three times. The Rust sites that spell that
-sentence (`crates/protocol/src/v1.rs`, `crates/service/src/pool/mod.rs`,
-`crates/service/tests/agent_resource.rs`) still agree with this heading.
+sentence (`crates/protocol/src/v1.rs`, `crates/service/src/pool/mod.rs`)
+still agree with this heading.
 The body of instance thirty-three is in the archive at the same heading.

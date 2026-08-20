@@ -8,13 +8,16 @@ reference adapter for the three-verb contract in
 ## Install
 
 ```bash
+# The extension imports `pmux-client` (Messages pin/release).
+(cd clients/typescript && npm install && npm run build)
+npm install --prefix ~/.pi/agent "$PWD/clients/typescript"
 mkdir -p ~/.pi/agent/extensions
 cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 # merge examples/pi/settings.json into ~/.pi/agent/settings.json
 ```
 
 `pmuxd` must already be serving the pool with
-`--path-b-messages-bind 127.0.0.1:8765`. Override the URL with
+`--messages-bind 127.0.0.1:8765`. Override the URL with
 `PMUX_MESSAGES_URL` if you bound a different loopback port.
 
 ## Models
@@ -26,10 +29,10 @@ families (`claude-opus-5-*`, `claude-sonnet-5-*`, `claude-fable-5-*`).
 Recommended warm set (at the owner-set cap of 15):
 
 ```text
---path-b-pool-size 15
---path-b-warm claude-opus-5/medium=12
---path-b-warm claude-opus-5/xhigh=2
---path-b-warm claude-fable-5/xhigh=1
+--pool-size 15
+--pool-warm claude-opus-5/medium=12
+--pool-warm claude-opus-5/xhigh=2
+--pool-warm claude-fable-5/xhigh=1
 ```
 
 Use medium as the workhorse, xhigh sparingly, fable for phase-gates. One

@@ -1,14 +1,19 @@
-//! Native Rust client for pmux protocol v1.
+//! Rust client for the pmux token engine.
 //!
-//! A client is configured with one explicit Unix-domain socket path. It never
+//! Harnesses use [`messages::MessagesClient`] against the loopback Messages
+//! listener (pin header, release, catalog). One-shot callers use
+//! [`PmuxClient::run_stateless`] on the owner-only Unix socket.
+//! Interactive session methods (`start_session`, `run_turn`) remain compiled
+//! and are refused by current daemons.
+//!
+//! A UDS client is configured with one explicit socket path. It never
 //! discovers or starts a daemon. Each request uses a fresh connection, making
 //! retries and event-stream reconnection deterministic and avoiding hidden
 //! shared connection state.
 
 #![cfg(unix)]
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::ffi::OsString;
+use std::collections::VecDeque;
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -22,12 +27,12 @@ use pseudomux_protocol::v1::{
     self, AgentDescriptor, AgentId, AgentList, AgentSpec, AgentVersion, AttachCapability,
     AttachSessionRequest, CancelTurnRequest, CancelTurnResult, ClearSessionRequest,
     ClearSessionResult, ClosePolicy, CloseSessionRequest, CloseSessionResult, CreateAgentRequest,
-    DaemonDiagnosis, EnvironmentSpec, ErrorBody, EventBatch, EventEnvelope, GetAgentRequest,
-    InspectSessionRequest, ListAgentsRequest, Pong, ReplayGap, Request, RequestEnvelope,
-    ResponseEnvelope, ResponsePayload, ResponseResult, RunOnceRequest, RunStatelessRequest,
-    RunTurnRequest, SessionGenerationId, SessionHandle, SessionId, SessionIdentity,
-    SessionSnapshot, StartSessionRequest, StatelessResult, SubscribeEventsRequest, TurnAccepted,
-    TurnId, TurnRequest, TurnResult, UpdateAgentRequest,
+    DaemonDiagnosis, ErrorBody, EventBatch, EventEnvelope, GetAgentRequest, InspectSessionRequest,
+    ListAgentsRequest, Pong, ReplayGap, Request, RequestEnvelope, ResponseEnvelope,
+    ResponsePayload, ResponseResult, RunOnceRequest, RunStatelessRequest, RunTurnRequest,
+    SessionGenerationId, SessionHandle, SessionId, SessionIdentity, SessionSnapshot,
+    StartSessionRequest, StatelessResult, SubscribeEventsRequest, TurnAccepted, TurnId,
+    TurnRequest, TurnResult, UpdateAgentRequest,
 };
 use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -35,13 +40,10 @@ use tokio::net::UnixStream;
 use tokio::time::timeout;
 use uuid::Uuid;
 
-pub mod agent_profile;
+pub mod messages;
 pub mod prompt;
 
-pub use agent_profile::{
-    AGENT_PROFILE_VERSION, AgentProfile, AgentProfileError, MAX_AGENT_CHAIN_DEPTH,
-    load_agent_profile, verify_required_environment,
-};
+pub use messages::MessagesClient;
 pub use prompt::normalize_cli_prompt;
 
 pub const DEFAULT_MAX_FRAME_BYTES: usize = v1::MAX_NATIVE_FRAME_BYTES;
@@ -57,39 +59,6 @@ pub const DEFAULT_RUN_ONCE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 pub const RUN_ONCE_RESPONSE_MARGIN: Duration = Duration::from_secs(120);
 
 pub type ClientResult<T> = Result<T, ClientError>;
-
-/// Captures the process environment exactly or refuses non-UTF-8 entries.
-///
-/// Protocol v1 carries UTF-8 JSON. Silently dropping or lossy-converting an
-/// entry would change the requested Claude launch, while `std::env::vars()`
-/// can panic. Every native Rust entry point shares this explicit conversion.
-pub fn exact_environment_snapshot() -> Result<EnvironmentSpec, EnvironmentSnapshotError> {
-    let mut snapshot = BTreeMap::new();
-    for (key, value) in std::env::vars_os() {
-        let key = environment_os_string_to_utf8(key, "environment variable name")?;
-        let value =
-            environment_os_string_to_utf8(value, &format!("value of environment variable {key}"))?;
-        snapshot.insert(key, value);
-    }
-    Ok(EnvironmentSpec {
-        snapshot,
-        set: BTreeMap::new(),
-        unset: BTreeSet::new(),
-    })
-}
-
-fn environment_os_string_to_utf8(
-    value: OsString,
-    label: &str,
-) -> Result<String, EnvironmentSnapshotError> {
-    value
-        .into_string()
-        .map_err(|_| EnvironmentSnapshotError(label.to_owned()))
-}
-
-#[derive(Debug, Error)]
-#[error("{0} is not valid UTF-8; exact launch snapshot refused")]
-pub struct EnvironmentSnapshotError(String);
 
 #[derive(Clone, Debug)]
 pub struct ClientOptions {
@@ -225,6 +194,9 @@ impl PmuxClient {
                 actual: wire_version,
             });
         }
+        if matches!(expected_request, Request::RunStateless(_)) {
+            refuse_stateless_resource_fields(&wire_value)?;
+        }
         let response: ResponseEnvelope = serde_json::from_value(wire_value)?;
         if response.request_id != request_id {
             return Err(ClientError::MismatchedRequestId {
@@ -277,6 +249,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `start_session` with `session_surface_removed`.
     pub async fn start_session(&self, request: StartSessionRequest) -> ClientResult<SessionHandle> {
         match self.request(Request::StartSession(request)).await? {
             ResponseResult::SessionStarted(result) => Ok(result),
@@ -284,6 +258,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `inspect_session` with `session_surface_removed`.
     pub async fn inspect_session(
         &self,
         session_id: SessionId,
@@ -301,6 +277,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `run_turn` with `session_surface_removed`.
     pub async fn run_turn(
         &self,
         session_id: SessionId,
@@ -320,6 +298,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `cancel_turn` with `session_surface_removed`.
     pub async fn cancel_turn(
         &self,
         session_id: SessionId,
@@ -339,6 +319,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `attach_session` with `session_surface_removed`.
     pub async fn attach_session(
         &self,
         request: AttachSessionRequest,
@@ -349,6 +331,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `close_session` with `session_surface_removed`.
     pub async fn close_session(
         &self,
         session_id: SessionId,
@@ -368,22 +352,12 @@ impl PmuxClient {
         }
     }
 
-    /// Clears one minified-cell session's context between turns.
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `clear_session` with `session_surface_removed`.
     ///
-    /// `expected_transcript_session_id` is the transcript the caller believes is
-    /// bound: at start it is the session id, and afterwards it is whatever the
-    /// previous [`ClearSessionResult`] returned, or whatever
-    /// [`SessionSnapshot::transcript_session_id`] currently reports. It is a
-    /// compare-and-swap fence: any value other than the currently bound
-    /// transcript is refused, including one that is stale by exactly one
-    /// rotation. There is no "your clear already landed" answer, because the
-    /// one-behind value is indistinguishable from the fence a session starts
-    /// with, which is what a second caller holds.
-    ///
-    /// To recover a lost response, read the fence back from
-    /// [`SessionSnapshot::transcript_session_id`] and, if certainty about the
-    /// cell's contents is wanted, clear again on it; clearing an already-empty
-    /// cell is semantically idempotent.
+    /// Living recovery for a Messages lease is `x-pmux-cell` /
+    /// `pmux doctor` conversation leases. The pool's internal `/clear`
+    /// still fences on `expected_transcript_session_id`.
     pub async fn clear_session(
         &self,
         session_id: SessionId,
@@ -405,6 +379,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `run_once` with `session_surface_removed`.
     pub async fn run_once(&self, request: RunOnceRequest) -> ClientResult<TurnResult> {
         match self.request(Request::RunOnce(request)).await? {
             ResponseResult::TurnResult(result) => Ok(*result),
@@ -412,11 +388,8 @@ impl PmuxClient {
         }
     }
 
-    /// Stores one reusable launch configuration and returns it at version 1.
-    ///
-    /// The daemon mints the id. An agent never carries a `cwd`, a
-    /// `config_isolation` root, a session identity, a prompt or an environment
-    /// snapshot: those are per-session and are named on every `start_session`.
+    /// Protocol method kept for goldens. Current daemons refuse every agent
+    /// Request with `session_surface_removed`. Do not build new callers on this.
     pub async fn create_agent(&self, spec: AgentSpec) -> ClientResult<AgentDescriptor> {
         match self
             .request(Request::CreateAgent(CreateAgentRequest { spec }))
@@ -427,6 +400,9 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse every agent
+    /// Request with `session_surface_removed`. Do not build new callers on this.
+    ///
     /// Reads one stored agent version, or the current head when `version` is
     /// `None`.
     ///
@@ -447,6 +423,9 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse every agent
+    /// Request with `session_surface_removed`. Do not build new callers on this.
+    ///
     /// Lists every stored agent's id, current version, digest, name and cell.
     /// Deliberately not full specs.
     pub async fn list_agents(&self) -> ClientResult<AgentList> {
@@ -459,6 +438,9 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse every agent
+    /// Request with `session_surface_removed`. Do not build new callers on this.
+    ///
     /// Stores a new immutable version of one agent and returns it.
     ///
     /// `expected_version` is a fence: any value that is not the current head is
@@ -485,6 +467,8 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `subscribe_events` with `session_surface_removed`.
     pub async fn subscribe_events(
         &self,
         request: SubscribeEventsRequest,
@@ -501,6 +485,9 @@ impl PmuxClient {
         }
     }
 
+    /// Protocol method kept for goldens. Current daemons refuse
+    /// `subscribe_events` with `session_surface_removed`.
+    ///
     /// Creates a reconnectable long-poll event stream beginning after a known sequence.
     #[must_use]
     pub fn event_stream(
@@ -519,6 +506,76 @@ impl PmuxClient {
             pending: VecDeque::new(),
             in_flight: None,
         }
+    }
+}
+
+const STATELESS_RESULT_RESOURCE_FIELDS: [&str; 5] = [
+    "session_id",
+    "generation_id",
+    "cwd",
+    "config_root",
+    "system_prompt",
+];
+
+fn refuse_stateless_resource_fields(wire: &serde_json::Value) -> ClientResult<()> {
+    let Some(result) = wire.get("result") else {
+        return Ok(());
+    };
+    if result.get("type").and_then(serde_json::Value::as_str) != Some("stateless_result") {
+        return Ok(());
+    }
+    let Some(data) = result.get("data").and_then(serde_json::Value::as_object) else {
+        return Ok(());
+    };
+    for named in STATELESS_RESULT_RESOURCE_FIELDS {
+        if data.contains_key(named) {
+            return Err(ClientError::UnexpectedResult {
+                expected: "stateless_result without a named pool resource",
+                actual: named,
+            });
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod stateless_result_refuse_tests {
+    use super::*;
+
+    #[test]
+    fn five_resource_names_refuse_as_protocol_error_not_invalid_options() {
+        for named in STATELESS_RESULT_RESOURCE_FIELDS {
+            let wire = serde_json::json!({
+                "result": {
+                    "type": "stateless_result",
+                    "data": { named.to_owned(): "x" }
+                }
+            });
+            let error = refuse_stateless_resource_fields(&wire).unwrap_err();
+            assert!(
+                !matches!(error, ClientError::InvalidOptions(_)),
+                "{named} must not be InvalidOptions: {error:?}"
+            );
+            assert!(
+                matches!(
+                    error,
+                    ClientError::UnexpectedResult { actual, .. } if actual == named
+                ),
+                "{named} must be a protocol error: {error:?}"
+            );
+            assert!(error.to_string().contains(named), "{error}");
+        }
+    }
+
+    #[test]
+    fn a_stateless_result_without_resource_fields_is_admitted() {
+        let wire = serde_json::json!({
+            "result": {
+                "type": "stateless_result",
+                "data": { "text": "ok", "model": "claude-sonnet-5" }
+            }
+        });
+        refuse_stateless_resource_fields(&wire).unwrap();
     }
 }
 
@@ -773,19 +830,6 @@ mod timeout_tests {
             ),
             Duration::from_secs(300)
         );
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn non_utf8_environment_entries_are_explicit_errors_not_panics() {
-        use std::os::unix::ffi::OsStringExt;
-
-        let error = environment_os_string_to_utf8(
-            OsString::from_vec(vec![b'V', b'A', b'L', 0xff]),
-            "environment value",
-        )
-        .unwrap_err();
-        assert!(error.to_string().contains("not valid UTF-8"));
     }
 }
 

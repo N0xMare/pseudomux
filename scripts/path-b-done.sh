@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Historical Path B certification. Not living verification.
+# Living: tools/dev/check.sh, operator_eval.py, promote.py.
+# Gate A has been removed. Criterion 4 is MET when run_gate.py is gone.
+#
 # The Path B done-gate: the owner's five criteria, run rather than read.
 #
 # WHAT THIS IS
@@ -25,25 +29,12 @@
 #
 # USAGE
 #
+# Living tree check is tools/dev/check.sh. This script is leftover Path B
+# certification. Criterion 4 is MET iff run_gate.py is gone and check.sh exists.
+#
 #   bash scripts/path-b-done.sh \
-#     --gate-a-receipt .context/gate-a/pinned-receipt-gate-a-<commit>.json \
-#     [--gate-a-receipt .context/gate-a/pinned-receipt-gate-b-<commit>.json] \
 #     [--commit <rev>] [--only N] [--max-receipt-age-days N]
 #
-# A receipt argument may be either a Gate A receipt written by
-# `tools/gate-a/run_gate.py` -- which names no commit, and is therefore accepted
-# only against the tree in front of it -- or a receipt written by
-# `scripts/gate-in-worktree.sh`, which names the commit it graded. Repeat the
-# flag until the receipts between them cover every cell in the manifest; the
-# criterion names the cells nothing covered.
-#
-# The paths above carry `<commit>` because the spelling is not this script's to
-# decide. When criterion 4 finds cells nothing graded it asks
-# `scripts/gate-in-worktree.sh --print-receipt-path` where a pinned run for the
-# judged commit would write, and prints that path, the phases still missing, and
-# the command that would produce them, under `remedy:`. A refusal that leaves
-# the reader to work out the remedy is how a certification came to hold two
-# receipts for 62 and 8 cells and a criterion reporting `cells_executed=0`.
 
 set -euo pipefail
 umask 077

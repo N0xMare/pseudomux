@@ -10,28 +10,29 @@ measurement session: `docs/2.1.226-compatibility.md` and
 Nothing in them is runnable, so 2.1.227 costs another improvisation, and an
 improvisation is exactly where a promotion stops being repeatable.
 
-This tool is that session's checks, in order, with their pass criteria, as a
+Living entrypoint: `tools/dev/promote.py`. That wrapper is what refuses a
+missing per-OS drain as “cannot drop the operator flag”, and points pin
+confirmation at `tools/dev/operator_eval.py`.
+
+This file is that session's checks, in order, with their pass criteria, as a
 program. It is deliberately NOT a new promotion policy: every number it
 asserts against is derived from something already committed, and the one number
-it must never invent is the drain.
+it must never invent is the drain. It is not how you confirm an operator pin.
 
 WHAT IT EXERCISES, AND WHY A MINIFIED CELL IS THE WHOLE POINT
 -------------------------------------------------------------
 
-`require_tested_for_minified_cell` (`crates/service/src/v1/registry.rs`) gates
-exactly one thing: `SessionCell::Minified`. `tools/phase0` cannot configure one
--- `_forwarded_launch_args` forwards six options and `--cell` is not among them
-(`tools/phase0/phase0_lib.py::LAUNCH_OPTIONS_PHASE0_DOES_NOT_FORWARD` says so,
-checked against the clap declarations in `bin/pmux/src/cli.rs`) -- so no phase0
-campaign has ever exercised the cell the gate protects, including the one that
-promoted 2.1.220.
+`require_tested_for_minified_cell` (`crates/service/src/v1/actor.rs`) gates
+exactly one thing: `SessionCell::Minified`. Living probe is `pmux run`
+(always the minified pool). Session launch flags are refused; this tool is
+the graded no-tools oracle.
 
 Every turn here goes through `pmux run`, which is Path B and therefore always
 `SessionCell::Minified`, and the caller can name no resource on it. The oracle
 is a nonce plus a result the prompt makes computable, so it needs no tool: a
-cell launched with `--disallowedTools "*"` can satisfy it, and
-`tools/phase0/prompts/03-09` -- which instruct the model to run `shasum` --
-cannot be satisfied by one at all.
+cell launched with `--disallowedTools "*"` can satisfy it. Historical Phase 0
+prompts that instructed the model to run `shasum` cannot be satisfied by one
+at all (those prompts were deleted with the freeze envelope).
 
 THE DRAIN IS READ, NEVER FITTED
 -------------------------------
@@ -346,10 +347,23 @@ def pooled_bound(
     path = evidence_dir / f"pooled-transcript-drain-{host_os}-{host_arch}.json"
     if not path.is_file():
         raise PromotionRefused(
-            f"{path} does not exist. The drain this tool checks against is the "
-            "POOLED bound's own receipt, never a fit taken here"
+            f"{path} does not exist, so this OS cannot drop "
+            "`--tested-claude-profile`. Confirm the binary with "
+            "tools/dev/operator_eval.py instead. Do not invent this file and "
+            "do not use another OS's pooled-drain receipt."
         )
-    receipt = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise PromotionRefused(f"{path} is unreadable as a drain receipt: {error}") from error
+    rec_os = receipt.get("os")
+    rec_arch = receipt.get("arch")
+    if rec_os != host_os or rec_arch != host_arch:
+        raise PromotionRefused(
+            f"{path} is a {rec_os}/{rec_arch} drain receipt, not "
+            f"{host_os}/{host_arch}. Do not copy another OS's pooled-drain "
+            "receipt."
+        )
     bound = receipt.get("recommended_transcript_drain_ms")
     if not isinstance(bound, int) or bound <= 0:
         raise PromotionRefused(
@@ -470,7 +484,7 @@ class Run:
         """Where the daemon says it mirrors Path B transcripts.
 
         Asked of the running daemon rather than reconstructed from the socket
-        path: `--path-b-evidence-dir` moves it and `--path-b-no-evidence` turns
+        path: `--pool-evidence-dir` moves it and `--pool-no-evidence` turns
         it off, so a path this tool derived itself could name a directory the
         daemon was never going to write.
         """
@@ -1144,16 +1158,13 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         },
         "repromotion_triggers_this_path_exercises": triggers,
         "checks": results,
-        # Real model round trips this run made. `pmux ask` reserves no ledger
-        # ordinal (`evidence/README.md`), so this figure is how the budget
-        # report learns that the ledger under-reports, and by how much:
-        # `phase0.py budget` reads exactly this key.
+        # Real model round trips this run made. The historical attempt ledger
+        # is frozen; this key is still published so a reader can see how many
+        # turns this promotion spent.
         "real_claude_turns": {
             "count": len(run.turns) if run.real else 0,
             "reserved_ledger_ordinals": 0,
-            "why": "`pmux ask` reserves nothing. Counted here so "
-            "`tools/phase0/phase0.py budget` can report the ledger's shortfall "
-            "instead of the ledger implying it has none.",
+            "why": "`pmux run` reserves nothing on the frozen attempt ledger.",
         },
         "turns": run.turns,
         # Derived from the check table rather than written out: a check added

@@ -206,7 +206,7 @@ fn refuse_writable_attach_on_minified_cell(cell: SessionCell) -> Result<(), Erro
     .with_details(json!({
         "field": "writable",
         "violation": "writable_attach_forbidden_on_minified_cell",
-        "recommendation": "attach read-only, or drive the session through run_turn",
+        "recommendation": "remint the cell; writable attach and run_turn are not a product",
     })))
 }
 
@@ -2896,8 +2896,8 @@ fn unrecognised_screen_veto(shape: ScreenShape, held_ms: u64) -> ErrorBody {
     }))
     .advising(
         "Claude rendered something pmux has no rule for and stopped producing transcript rows. \
-         Look at it with `pmux attach`; if this screen is legitimate, it is a rendering pmux \
-         must be taught rather than one it should wait out.",
+         Remint the cell. If this screen is legitimate, it is a rendering pmux must be taught \
+         rather than one it should wait out.",
     )
 }
 
@@ -3033,8 +3033,8 @@ impl TurnWorker {
         //
         // The START of the run, and deliberately not the shape seen there. The
         // refusal names the frame that was on screen when the veto fired, which
-        // is the LAST one, because that is what a person opening `pmux attach`
-        // a moment later will be looking at. This carried the first frame's
+        // is the LAST one, because that is the frame still on the PTY when
+        // the veto fires. This carried the first frame's
         // shape for exactly as long as it took to notice that nothing read it.
         let mut unrecognised_screen_since: Option<u64> = None;
 
@@ -4144,22 +4144,22 @@ fn needs_input_error_code(needs_input: &NeedsInput) -> ErrorCode {
 const fn needs_input_recommendation(kind: NeedsInputKind) -> &'static str {
     match kind {
         NeedsInputKind::Trust => {
-            "Claude is holding its workspace-trust modal for this cwd. Answer it with `pmux attach`, or start the session in a directory this configuration root already trusts."
+            "Claude is holding its workspace-trust modal. The pool must mint a pre-trusted empty cwd; remint the cell. pmux will not answer the modal."
         }
         NeedsInputKind::Login => {
-            "Claude is not authenticated in this configuration root. Run `claude` there once and log in, or start the session with --auth inherit and a provider API key in the environment."
+            "Claude is not authenticated in this configuration root. Run `claude` against the pool Claude once and log in. pmux will not answer the modal."
         }
         NeedsInputKind::Permission => {
-            "Claude is holding a permission prompt. Answer it with `pmux attach`, or start the session with --permission-mode and --allowed-tool covering the tool it asked about."
+            "Claude is holding a permission prompt. A minified cell denies tools; remint the cell. pmux will not answer the modal."
         }
         NeedsInputKind::Update => {
-            "Claude is holding an update prompt. Answer it with `pmux attach`, or update the Claude executable this session was started with."
+            "Claude is holding an update prompt. Update the pool's `--pool-claude` executable and remint. pmux will not answer the modal."
         }
         NeedsInputKind::Quota => {
             "Claude reports the account is out of quota. Wait for the window to reset or use a different account; pmux cannot clear this from here."
         }
         NeedsInputKind::UnknownModal => {
-            "Claude is holding a modal pmux does not recognize. Look at it with `pmux attach`, and close the session if it cannot be cleared."
+            "Claude is holding a modal pmux does not recognize. Remint the cell. pmux will not answer the modal."
         }
     }
 }

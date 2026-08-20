@@ -2337,7 +2337,7 @@ async fn a_turn_refused_by_a_modal_names_the_modal_and_what_to_do_about_it() {
         .as_str()
         .expect("a blocked session must publish a recommendation");
     assert!(
-        recommendation.contains("pmux attach"),
+        recommendation.contains("remint"),
         "the recommendation does not name an action a caller can take: {recommendation}"
     );
 

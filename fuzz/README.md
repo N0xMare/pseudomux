@@ -1,6 +1,6 @@
 # Tracked fuzz targets
 
-These targets are bounded Gate A searches for panic, hang, unsafe acceptance,
+These targets are bounded fuzz searches for panic, hang, unsafe acceptance,
 and state corruption at pmux's two untrusted parsing boundaries. They are not
 a second transcript or protocol implementation:
 
@@ -27,5 +27,5 @@ and hashes every source/corpus/tool input plus all evidence. Its default is the
 normative 50,000 runs per target; `PMUX_FUZZ_RUNS` is only for clearly recorded
 developer smoke runs. Per-target arguments, seeds, tool identities, and input
 hashes are emitted into each private evidence directory;
-[`../TESTING.md`](../TESTING.md) invokes only this canonical runner so a
-hand-written command cannot silently weaken the gate.
+[`../docs/testing.md`](../docs/testing.md) historically invoked this canonical freeze runner so a
+hand-written command cannot silently weaken the freeze. Living verification is `tools/dev/check.sh`.

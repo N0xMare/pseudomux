@@ -1,0 +1,89 @@
+{
+  "schema": "pmux.linux-operator-eval.v1",
+  "kind": "operator_compatibility",
+  "not_a_promotion": true,
+  "verdict": "GREEN_OPERATOR",
+  "claude_version": "2.1.236",
+  "os": "linux",
+  "arch": "x86_64",
+  "pin": {
+    "version": "2.1.236",
+    "os": "linux",
+    "arch": "x86_64",
+    "sha256": "6c8818fa22187aa555c242be4abbacc44d6b71a32ac9631ee7b2b5d12f51f752",
+    "source": "npm @anthropic-ai/claude-code-linux-x64@2.1.236",
+    "path": "<HOME>/.local/share/pmux/claude/2.1.236/claude",
+    "bytes": 334645552
+  },
+  "promotion_status": {
+    "promote_claude_version_py": "refused exit 2: evidence/pooled-transcript-drain-linux-x86_64.json does not exist",
+    "PROMOTED_PROFILES": "unchanged; macos 2.1.220..=2.1.227 only",
+    "may_replace_linux_operator_pin": true,
+    "may_ship_without_flag": false
+  },
+  "launch_bundle_parses": {
+    "ok": true,
+    "accepted": [
+      "--session-id",
+      "--model",
+      "--effort",
+      "--permission-mode",
+      "--disallowedTools",
+      "--system-prompt-file",
+      "--strict-mcp-config"
+    ],
+    "negative_control_rejected": true
+  },
+  "minified_warm": {
+    "ok": true,
+    "doctor_status": "healthy",
+    "idle": 1,
+    "halted": null,
+    "leaked": 0
+  },
+  "grades": {
+    "ok": true,
+    "suite": [
+      {"id": "01-arithmetic-nonce", "effort": "low", "answered": true, "wall_ms": 2584.0, "text": "X5WF-63"},
+      {"id": "02-context-is-empty-after-clear", "effort": "low", "answered": true, "wall_ms": 2530.7, "text": "NONE"},
+      {"id": "03-unicode-echo", "effort": "low", "answered": true, "wall_ms": 2578.1, "text": "QXW2 café — 日本語 ✓"},
+      {"id": "04-ordered-long-reply", "effort": "low", "answered": true, "wall_ms": 2740.2, "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 INNJ"},
+      {"id": "01-arithmetic-nonce", "effort": "high", "answered": true, "wall_ms": 3962.5, "text": "6GZD-87"}
+    ],
+    "claude_version_on_results": "2.1.236",
+    "sidechain_all_zero": true,
+    "pool_halted": false
+  },
+  "messages_sticky": {
+    "ok": true,
+    "note": "T2 must send the full messages[] history (harness contract). A suffix-only T2 reprimed; that was the eval, not the version.",
+    "turn1": {
+      "lease": "primed",
+      "cell": "s2e0",
+      "cache_creation_input_tokens": 1795,
+      "cache_read_input_tokens": 0,
+      "text": "ACK Otter-Cache-1134"
+    },
+    "turn2": {
+      "lease": "continued",
+      "cell": "s2e0",
+      "cache_creation_input_tokens": 144,
+      "cache_read_input_tokens": 1795,
+      "text": "Otter-Cache-1134"
+    },
+    "same_cell": true,
+    "cache_hit": true,
+    "release": 200
+  },
+  "process_tree_note": {
+    "run_stateless_pgrep_set_is_not_stable": true,
+    "reason": "both 2.1.233 and 2.1.236 show extra claude PIDs with new --session-id during pmux run. Official promote_claude_version.py pid-set equality is therefore not a 2.1.236-specific fail. Messages sticky same-cell is the product identity.",
+    "control_2.1.233": "warm pid stayed; extra session-ids accumulated",
+    "measured_2.1.236": "warm pid can drop; extra session-ids appear similarly"
+  },
+  "nothing_survived": true,
+  "compared_to_linux_2.1.233_receipts": {
+    "linux-pool-leased-sticky-x86_64.json": "same pattern: continued + cache_read equals cache_write + same s{slot}e{epoch}",
+    "linux-messages-sticky-eval-x86_64.json": "same cache-hit shape; this run 1795/1795 vs prior 1733/1733 and 8976/8976"
+  }
+}

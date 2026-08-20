@@ -7,8 +7,8 @@ implemented.** The ledger is untouched and nothing here spent an ordinal.
 | --- | --- | --- |
 | **P1** — pooled conservative bound, not a per-version fit | **implemented** | `tools/promotion/measure_transcript_drain.py` (repeatable `--version`, `--bound-ms`), `evidence/pooled-transcript-drain-macos-aarch64.json`, `compatibility.rs::every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit` |
 | **P2** — range key plus five re-promotion triggers | **implemented** | `crates/service/src/compatibility.rs` (`ClaudeVersion`, `VersionRange`, `RepromotionTrigger`), `driver_io.rs` (`AssertEmptyRefusal`), `native.rs` (`LAUNCH_BUNDLE_REJECTED_MARKER`) |
-| **P3** — split promotion into a free part and a paid part | proposed | decided separately |
-| **P4** — retain Path B evidence going forward | **implemented** | `crates/service/src/pool/evidence.rs`, `PoolConfig::evidence_dir`, `--path-b-evidence-dir` / `--path-b-no-evidence`, `measure_transcript_drain.py`'s `FIELDS_READ` |
+| **P3** — split promotion into a free part and a paid part | **implemented** | living drop-flag door is `tools/dev/promote.py`; checks live in `tools/promotion/promote_claude_version.py` (free checks 1, 2, 3, 8; paid check 4). Pin confirmation is `tools/dev/operator_eval.py`, not a promotion. |
+| **P4** — retain Path B evidence going forward | **implemented** | `crates/service/src/pool/evidence.rs`, `PoolConfig::evidence_dir`, `--pool-evidence-dir` / `--pool-no-evidence`, `measure_transcript_drain.py`'s `FIELDS_READ` |
 
 The owner asked: **is our process for every Claude Code update optimal, robust and efficient?**
 
@@ -47,8 +47,8 @@ row in **file** order. Read whole, they are HTTP-client retry records:
 | `entrypoint` | `sdk-ts` on all 87 |
 | `retryInMs` | the backoff the client is about to sleep |
 
-So a minified cell **can** hit one: nothing in `--disallowedTools "*" --strict-mcp-config
---safe-mode` removes the CLI's own HTTP client. That is not the question the table asks, though.
+So a minified cell **can** hit one: nothing in `--disallowedTools "*" --strict-mcp-config`
+removes the CLI's own HTTP client. That is not the question the table asks, though.
 `ROW_KINDS` asks whether a minified cell can produce the row **after the answer** — which is why
 `("user", None)` is already classified unreachable even though minified cells obviously write user
 rows.
@@ -314,7 +314,7 @@ profile, and §3.3 shows it barely moves. Meanwhile pmux carries a dozen constan
   post-`/clear` transcripts"*
 - `crates/rmux/src/backend.rs:172-173` — *"MEASURED on Claude Code 2.1.220, that menu marks its
   selected row with a foreground colour change"*
-- `crates/service/src/claude_launch.rs:1352-1355` — the `--effort` level vocabulary, *"MEASURED against
+- `crates/service/src/claude_launch.rs:1345-1347` — the `--effort` level vocabulary, *"MEASURED against
   Claude Code 2.1.220 (aarch64 macOS), 2026-08-04, three ways that agree"*
 
 **The version gate protects the quantity that is stable and does not protect the ones a UI change
@@ -337,7 +337,7 @@ drain costs.*
 What Gate B alone proves, and the corpus cannot:
 
 1. **The minified launch bundle is still accepted at this version** — `--disallowedTools "*"`,
-   `--strict-mcp-config`, `--safe-mode`, the env bundle. A renamed or removed flag is a total
+   `--strict-mcp-config`, the env bundle. A renamed or removed flag is a total
    failure and is invisible in JSONL.
 2. **The answer pmux returns is byte-identical to what Claude produced** — the hash oracle over 9
    grades including long and unicode payloads. No transcript proves what crossed pmux's own reader.
@@ -348,7 +348,7 @@ What Gate B alone proves, and the corpus cannot:
 
 ## 5. STEP 3 — the proposed protocol
 
-Presented for approval; **nothing here is implemented.**
+This was the proposal. Each heading below records whether it is implemented.
 
 ### P1. Stop fitting the drain per version. Keep 1000 ms. — **IMPLEMENTED**
 
@@ -423,7 +423,7 @@ and earlier at *zero* reachable `cli` arrivals — unestablished, not safe. The 
 evidence stops, and each ceiling was measured the same way: the launch bundle accepted with zero
 rejections, the post-`/clear` frame at 2 rendered rows below the cursor, the 5-row preamble
 identical in rows and order, the local-command menu's foreground-only selection, the `--effort`
-vocabulary byte-identical, and `pmux start --cell minified` reaching `state: ready` —
+vocabulary byte-identical, and a pool mint reaching `state: ready` —
 `docs/2.1.226-compatibility.md` for 2.1.226 and `docs/2.1.227-compatibility.md` for 2.1.227. The
 drain is **not** measurable from the free corpus at a fresh version — it held zero 2.1.226 rows on
 the day 2.1.226 was promoted and zero 2.1.227 rows on the day 2.1.227 was, and
@@ -515,7 +515,9 @@ classification returns all three to green.
 
 ### P3. Split promotion into a free part and a paid part. — **IMPLEMENTED**
 
-`tools/promotion/promote_claude_version.py` is the split, as one ordered runnable path.
+Living drop-flag door is `tools/dev/promote.py`. Pin confirmation is
+`tools/dev/operator_eval.py`. The checks themselves live in
+`tools/promotion/promote_claude_version.py`, as one ordered runnable path.
 `--describe` prints the check list, its pass criteria, and which of the five re-promotion triggers
 each check exercises, without running anything.
 
@@ -532,7 +534,7 @@ from being the normal case.
 effort: five turns at the default `--effort low --effort high`. The earlier draft of this paragraph
 proposed *"trivial, unicode-hash, long-output"*, and **the middle one cannot be run on the cell that
 needs promoting** — a `--disallowedTools "*"` cell cannot execute `shasum`, which is the same reason
-`tools/phase0/prompts/03-09` are unusable here. The shipped suite replaces the hash with an exact
+Historical Phase 0 prompts `03-09` (now deleted) were unusable here. The shipped suite replaces the hash with an exact
 **unicode echo**: a nonce plus non-ASCII text returned byte for byte, which proves the same delivery
 property with an oracle a toolless cell can satisfy. Every grade is `nonce + a result the prompt
 makes computable`, checked by equality, and instance reuse is proven by **pid identity**.
@@ -558,11 +560,11 @@ the only proposal here that changes the shape of the problem rather than its pri
 **What was built.** Every destroyed pool instance's transcripts are mirrored into a corpus before
 the tree is erased. The four things the owner asked to have stated:
 
-- **Where it writes.** `<socket parent>/path-b-evidence/`, beside `logs/` and `agents/` and derived
+- **Where it writes.** `<socket parent>/pool-evidence/`, beside `logs/` and derived
   through the same `daemon_sibling_dir` those two are, owner-only at every level pmux creates. It is
-  deliberately outside the pool parent, held to the rule `--path-b-retain-dir` already had, because
-  it is written from a config root the next line erases. `--path-b-evidence-dir` moves it,
-  `--path-b-no-evidence` turns it off, and the running daemon publishes the answer in
+  deliberately outside the pool parent, held to the rule `--pool-retain-dir` already had, because
+  it is written from a config root the next line erases. `--pool-evidence-dir` moves it,
+  `--pool-no-evidence` turns it off, and the running daemon publishes the answer in
   `configuration.path_b.evidence_dir` — so "on by default" is a claim the daemon answers rather than
   one this document makes.
 - **When.** In `Pool::destroy`, after the process is proven reaped and before `erase_tree`. That is
@@ -610,11 +612,12 @@ deleted.
 
 The 5 is the tool's own turn count, not an estimate: four grades on one instance plus one per
 additional effort. It reserves no ledger ordinal, and the receipt says so in
-`real_claude_turns` — which is the key `phase0.py budget` reads to report how far the ledger
-under-counts real exposure.
+`real_claude_turns` — which is the key a since-deleted Phase 0 budget report
+used to read to report how far the ledger under-counts real exposure.
 
-**What that census says today, measured rather than argued.** `phase0.py budget --ledger
-evidence/model-attempt-ledger.ndjson`:
+**What that census said when measured, not a living command.** Phase 0 is
+deleted; do not run `phase0.py budget`. The figures below are the historical
+report against `evidence/model-attempt-ledger.ndjson`:
 
 | figure | value |
 | --- | ---: |

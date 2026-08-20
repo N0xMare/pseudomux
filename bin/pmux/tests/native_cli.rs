@@ -11,7 +11,7 @@ use pseudomux_protocol::v1::{
     ErrorBody, ErrorCode, Pong, Request, RequestEnvelope, ResponseEnvelope, ResponseResult,
 };
 
-use support::{pmux_process, run};
+use support::{GENERATION_ID, SESSION_ID, TURN_ID, pmux_process, run};
 
 fn read_request(stream: &mut UnixStream) -> RequestEnvelope {
     let mut header = [0_u8; 4];
@@ -104,100 +104,122 @@ fn server_error_keeps_stdout_empty_and_diagnostics_on_stderr() {
     assert!(stderr.contains("quota exhausted"));
 }
 
-/// `--agent` distinguishes a flag the caller TYPED from a variable their
-/// environment exports, IN THE REAL PROCESS.
-///
-/// MEASURED before this split:
-///
-/// ```text
-/// $ PMUX_MODEL=opus pmux start --agent ... --agent-version 1 --cwd /tmp
-/// pmux: --agent supplies the whole launch policy, so it cannot be combined with --model. ...
-/// ```
-///
-/// naming a flag the caller never typed, and locking anyone with `PMUX_MODEL`
-/// exported in a shell rc out of `--agent` for good. `env` is clap's lowest
-/// precedence source below argv; `--agent` is a higher one, so the ambient
-/// value is overridden and the override is reported by VARIABLE.
-///
-/// It runs the binary as a subprocess deliberately: the distinction only exists
-/// inside clap's `ArgMatches`, and an in-process test would have to mutate this
-/// test binary's own environment out from under every other test in it.
+/// Former session subcommands are unknown: clap exits 2 before any socket is
+/// opened.
 #[test]
-fn an_exported_launch_variable_is_overridden_by_agent_and_a_typed_flag_is_still_refused() {
+fn session_subcommands_are_unknown() {
     let directory = tempfile::tempdir().unwrap();
     let socket = directory.path().join("pmuxd.sock");
-    let listener = UnixListener::bind(&socket).unwrap();
-    // One connection, for the admitted case: it reaches the transport, which is
-    // proof that the CLI did not refuse it.
-    let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
-        let request = read_request(&mut stream);
-        assert!(matches!(request.request, Request::StartSession(_)));
-        write_response(
-            &mut stream,
-            &ResponseEnvelope::failure(
-                request.request_id,
-                ErrorBody::new(ErrorCode::InvalidConfig, "no such agent").retryable(false),
-            ),
-        );
-    });
+    assert!(!socket.exists());
 
-    let agent = "00000000-0000-4000-8000-000000000006";
-    let start = |extra: &[&str], model: Option<&str>| {
+    let commands: &[&[&str]] = &[
+        &["start"],
+        &["oneshot"],
+        &["turn", SESSION_ID, "--generation", GENERATION_ID],
+        &["inspect", SESSION_ID, "--generation", GENERATION_ID],
+        &["cancel", SESSION_ID, "--generation", GENERATION_ID, TURN_ID],
+        &["close", SESSION_ID, "--generation", GENERATION_ID],
+        &[
+            "clear",
+            SESSION_ID,
+            "--generation",
+            GENERATION_ID,
+            "--expect-transcript",
+            SESSION_ID,
+        ],
+        &["attach", SESSION_ID, "--generation", GENERATION_ID],
+        &["probe"],
+        &["agent", "list"],
+    ];
+
+    for args in commands {
         let mut process = pmux_process();
-        process.env_remove("PMUX_MODEL");
-        if let Some(model) = model {
-            process.env("PMUX_MODEL", model);
-        }
-        process.args([
-            "--socket",
-            socket.to_str().unwrap(),
-            "start",
-            "--agent",
-            agent,
-            "--agent-version",
-            "1",
-            "--cwd",
-            directory.path().to_str().unwrap(),
-        ]);
-        process.args(extra);
-        run(process, None)
-    };
+        process
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("HOME", directory.path())
+            .arg("--socket")
+            .arg(&socket)
+            .args(*args);
+        let output = run(process, None);
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{args:?} must exit 2: {}",
+            output.stderr_text()
+        );
+        assert!(
+            output.stdout.is_empty(),
+            "{args:?} polluted stdout: {}",
+            output.stdout_text()
+        );
+        let stderr = output.stderr_text();
+        assert!(
+            stderr.starts_with("error:"),
+            "{args:?} must be a clap rejection: {stderr}"
+        );
+        assert!(
+            stderr.contains("unrecognized subcommand"),
+            "{args:?} must be unknown: {stderr}"
+        );
+        assert!(
+            !socket.exists(),
+            "{args:?} created a socket at {}",
+            socket.display()
+        );
+    }
+}
 
-    // EXPORTED: admitted, and reported by the variable's own name.
-    let exported = start(&[], Some("opus"));
-    let stderr = exported.stderr_text();
-    assert!(
-        stderr.contains("PMUX_MODEL"),
-        "the note must name the variable the value came from: {stderr}"
-    );
-    assert!(
-        !stderr.contains("cannot be combined with"),
-        "an exported variable is not a flag the caller typed: {stderr}"
-    );
-    assert!(
-        stderr.contains("no such agent"),
-        "the start must have reached the daemon: {stderr}"
-    );
-    server.join().unwrap();
+/// `pmux run` names no resource. Session launch flags are unknown arguments.
+#[test]
+fn run_refuses_session_launch_flags() {
+    let directory = tempfile::tempdir().unwrap();
+    let socket = directory.path().join("pmuxd.sock");
+    assert!(!socket.exists());
 
-    // TYPED, with nothing exported: refused, naming the flag.
-    let typed = start(&["--model", "opus"], None);
-    let stderr = typed.stderr_text();
-    assert!(!typed.status.success());
-    assert!(
-        stderr.contains("cannot be combined with --model"),
-        "a typed flag beside --agent is refused by its own spelling: {stderr}"
-    );
+    let flags: &[&[&str]] = &[
+        &["run", "--model", "sonnet", "--cwd", "/tmp"],
+        &["run", "--model", "sonnet", "--claude", "/usr/bin/true"],
+        &["run", "--model", "sonnet", "--permission-mode", "dont-ask"],
+        &["run", "--model", "sonnet", "--denied-tool", "*"],
+        &["run", "--model", "sonnet", "--system-prompt", "x"],
+        &["run", "--model", "sonnet", "--session-id", SESSION_ID],
+        &["run", "--model", "sonnet", "--generation", GENERATION_ID],
+        &[
+            "run",
+            "--model",
+            "sonnet",
+            "--config-isolation-root",
+            "/tmp",
+        ],
+    ];
 
-    // TYPED while the same variable is also exported: still refused, because
-    // the caller did name it on this command.
-    let both = start(&["--model", "opus"], Some("sonnet"));
-    assert!(!both.status.success());
-    assert!(
-        both.stderr_text()
-            .contains("cannot be combined with --model"),
-        "{}",
-        both.stderr_text()
-    );
+    for args in flags {
+        let mut process = pmux_process();
+        process
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("HOME", directory.path())
+            .arg("--socket")
+            .arg(&socket)
+            .args(*args);
+        let output = run(process, None);
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{args:?} must exit 2: {}",
+            output.stderr_text()
+        );
+        assert!(output.stdout.is_empty(), "{args:?} polluted stdout");
+        let stderr = output.stderr_text();
+        assert!(
+            stderr.starts_with("error:"),
+            "{args:?} must be a clap rejection: {stderr}"
+        );
+        assert!(
+            stderr.contains("unexpected argument"),
+            "{args:?} must reject the flag: {stderr}"
+        );
+        assert!(!socket.exists(), "{args:?} created a socket");
+    }
 }

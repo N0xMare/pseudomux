@@ -585,8 +585,7 @@ impl TurnPhaseSample {
 }
 
 /// Nearest-rank statistics in milliseconds. Deliberately has no comparison
-/// operators: this record is read by `tools/gate-a/perf_report.py`, never by an
-/// assertion.
+/// operators: this record is diagnostic output, never an assertion.
 #[derive(Clone, Copy)]
 struct PhaseStats {
     count: usize,

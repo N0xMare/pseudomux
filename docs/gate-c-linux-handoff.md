@@ -1,13 +1,15 @@
 # Gate C / Linux handoff
 
-**Audience:** an agent starting cold on a Linux server, with no memory of the macOS
-work. Nothing in this file assumes you were here for any of it.
+**Audience:** historical (2026-07). Living Linux verification is `tools/dev/`
+(`check.sh`, `operator_eval.py`, `promote.py`). Do not run Gate A. Phase 0,
+linux-docker, and package-smoke have been deleted; they are not a Claude pin.
 
-**Status of this document:** written 2026-07-28, immediately after the macOS Gate A
-and Gate B work concluded, and re-verified line by line on 2026-07-29 during the
-validated pre-push review round (branch `N0xMare/plan-pmux-architecture`, remote
-`git@github.com:N0xMare/pseudomux.git`). Run `git rev-parse HEAD` first and record it.
-Where a cited document contradicts the tree, this file says which one is right.
+**Status of this document:** leftover Gate C freeze notes, written 2026-07-28,
+immediately after the macOS Gate A and Gate B work concluded, and re-verified
+line by line on 2026-07-29 during the validated pre-push review round (branch
+`N0xMare/plan-pmux-architecture`, remote `git@github.com:N0xMare/pseudomux.git`).
+Run `git rev-parse HEAD` first and record it. Where a cited document contradicts
+the tree, this file says which one is right.
 
 One history note you need before touching any commit id: a pre-push reword of one
 commit message renumbered **every commit id** from this file's introduction onward.
@@ -612,7 +614,9 @@ no third field. A third field or a header line fails
 
 ---
 
-### Step 2 — Install the Gate A tool set
+### Step 2 — HISTORICAL. Install the Gate A tool set
+
+**HISTORICAL.** Do not install a deleted Gate A tool set. Living toolchain is `tools/dev/check.sh`. The Debian package list below is history.
 
 `TOOL_EXECUTABLES` (`tools/gate-a/run_gate.py:87-91`) requires `bash`, `cargo`, `cargo-fuzz`, `node`, `python`
 (the interpreter running the driver), `rustfmt` and `shellcheck` to resolve; any of them can
@@ -634,24 +638,19 @@ reports 0.13.2 (the manifest cell `cargo_fuzz_version` asserts that string exact
 
 ---
 
-### Step 3 — Run Gate A on Linux, with the existing driver, before touching Docker
+### Step 3 — Historical freeze: Gate A on Linux, before touching Docker (not living confirmation)
 
-The driver is platform-neutral by construction (`run_gate.py:42-44`, `:57-61`). Run it directly on the
-Linux host. **First re-read §3b** — `npm ci` in `clients/typescript`, an existing *empty*
-`typescript-dist` under the validation root (re-emptied between runs), and a frozen tree
-with nothing else in flight. All three were learned the expensive way.
+Do not paste. `run_gate.py` and `phase-manifest.json` are deleted. Linux pin is `tools/dev/operator_eval.py`.
 
-```bash
-python3 tools/gate-a/run_gate.py \
-  --manifest        tools/gate-a-candidate/phase-manifest.json \
-  --workspace       "$PWD" \
-  --release-dir     <owner-only dir, outside the workspace, ALREADY containing the 8 release binaries> \
-  --validation-root <owner-only dir, outside the workspace> \
-  --receipt         <outside the workspace>/receipt-linux-native.json
+The 2026-07 driver was platform-neutral by construction (`run_gate.py:42-44`, `:57-61`). Historical
+invocation (will fail: those files are gone):
+
+```text
+# DELETED. Do not run.
+# python3 tools/gate-a/run_gate.py --manifest tools/gate-a-candidate/phase-manifest.json ...
 ```
 
-All five arguments are `required=True` (`run_gate.py:917`). Three details that decide
-whether this works on first contact:
+Historical notes (the driver is gone). Five arguments were `required=True` (`run_gate.py:917`). Three details that decided whether a 2026-07 freeze run worked on first contact:
 
 - `--release-dir` must **already exist** — it is resolved with `strict=True` at `:448` and
   the driver never builds it. Cells bind the frozen binaries through it, e.g.
@@ -1087,8 +1086,10 @@ one directory level and nothing else changes.
 
 ## 8. If you read only one thing
 
-Get out of a polled workspace. Get `cargo test --locked --workspace --all-targets --all-features`
-green on Linux. Install the tool set, then run `tools/gate-a/run_gate.py` natively before you
-build a single container. Then D6, then C6, then Docker. Do not spend a live-model attempt for
-any reason on this lane. And when something disagrees with what macOS proved, that disagreement
-is the deliverable — write it down and report it rather than making it go away.
+Living Linux work is `tools/dev/check.sh` (tree) and `tools/dev/operator_eval.py`
+(Claude pin). Do not run `tools/gate-a/run_gate.py` or `tools/linux-docker/run.sh`
+to pin Claude or end a Linux session. The rest of this file is leftover C6
+freeze notes. Get out of a polled workspace. Do not spend a live-model attempt
+for any reason on this leftover Docker lane. And when something disagrees with
+what macOS proved, that disagreement is the deliverable — write it down and
+report it rather than making it go away.

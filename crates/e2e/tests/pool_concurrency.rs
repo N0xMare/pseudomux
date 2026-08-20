@@ -131,7 +131,7 @@ impl ClassSpec {
         }
     }
 
-    /// The `--path-b-warm` declaration for this class, in the operator's own
+    /// The `--pool-warm` declaration for this class, in the operator's own
     /// spelling grammar.
     fn warm(self, count: u32) -> String {
         match self.effort {
@@ -437,15 +437,10 @@ impl Lane {
     /// `cross_cell_contamination.rs:2258` does for its own real lane. This used
     /// to `.expect(..)` -- while the doc comment on [`real_wave`] said the lane
     /// was "`#[ignore]`d AND gated on `PMUX_POOL_REAL_CLAUDE`", which is a
-    /// promise of a gate where the code had an assertion. Gate A cell
-    /// `release_full_stack_e2e` runs this whole crate under `--include-ignored`
-    /// and supplies only `PMUX_E2E_BIN_DIR` and `PMUX_E2E_TYPESCRIPT_DIST_DIR`,
-    /// so all five real waves panicked here and the cell could not pass on any
-    /// host: MEASURED as `FAIL 79/81 ... failed: release_full_stack_e2e`, whose
-    /// only fault was `14 passed; 5 failed` with five identical panics at this
-    /// line. An operator could not opt in either -- the variable is not in the
-    /// driver's `ENVIRONMENT_ALLOWLIST` (`tools/gate-a/run_gate.py:85`), so
-    /// nothing exported around the gate reaches a cell.
+    /// promise of a gate where the code had an assertion. `--include-ignored`
+    /// without `PMUX_POOL_REAL_CLAUDE` used to panic all five real waves
+    /// (MEASURED as five identical panics). `tools/dev/check.sh --push` unsets
+    /// that variable so the waves skip.
     ///
     /// Nothing below this point changed: with the variable set, every one of
     /// the five runs exactly as it did before.
@@ -571,20 +566,20 @@ impl PoolDaemon {
             command.arg("--tested-claude-profile").arg(profile);
         }
         command
-            .arg("--path-b-parent")
+            .arg("--pool-parent")
             .arg(&sandbox.pool_parent)
-            .arg("--path-b-claude")
+            .arg("--pool-claude")
             .arg(&lane.claude)
-            .arg("--path-b-pool-size")
+            .arg("--pool-size")
             .arg(options.pool_size.to_string())
-            .arg("--path-b-recycle-turns")
+            .arg("--pool-recycle-turns")
             .arg(options.recycle_turns.to_string())
-            .arg("--path-b-instance-idle-ttl-ms")
+            .arg("--pool-idle-ttl-ms")
             .arg(IDLE_TTL_MS.to_string())
-            .arg("--path-b-turn-timeout-ms")
+            .arg("--pool-turn-timeout-ms")
             .arg(lane.turn_timeout_ms.to_string());
         for warm in &options.warm {
-            command.arg("--path-b-warm").arg(warm);
+            command.arg("--pool-warm").arg(warm);
         }
         command.env_clear();
         for (key, value) in &lane.environment {
@@ -1059,14 +1054,17 @@ fn claim_fungibility(report: &mut Report, outcomes: &[Outcome], evidence: &Child
                 )
             },
         );
-        report.check(argv_value(argv, "--effort") == class.expected_effort, || {
-            format!(
+        report.check(
+            argv_value(argv, "--effort") == class.expected_effort,
+            || {
+                format!(
                 "caller {} asked for {} and was answered by a process launched with effort {:?}",
                 outcome.caller.index,
                 class.label(),
                 argv_value(argv, "--effort")
             )
-        });
+            },
+        );
     }
 }
 
@@ -2645,8 +2643,8 @@ async fn eight_concurrent_real_callers() {
 ///
 /// NOT `#[ignore]`d, on purpose: this is the check that the five ignored waves
 /// can be enumerated and entered by `--include-ignored` -- which is exactly how
-/// Gate A cell `release_full_stack_e2e` runs this crate -- without spending a
-/// model turn and without panicking. It discriminates in the direction that
+/// `tools/dev/check.sh --push` runs this crate -- without spending a model
+/// turn and without panicking. It discriminates in the direction that
 /// matters, because on every gate host the variable is unset, so a reintroduced
 /// `.expect(..)` fails HERE, in one deterministic test, rather than five cells
 /// and nine minutes later as five identical panics.

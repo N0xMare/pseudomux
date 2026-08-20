@@ -6,34 +6,21 @@ mod output;
 use std::os::unix::fs::{FileTypeExt, PermissionsExt};
 use std::path::Path;
 
-use anyhow::{Context, Result, bail};
-use futures_util::StreamExt;
-use pseudomux_client::{
-    ClientError, DEFAULT_RUN_ONCE_TIMEOUT, EventStreamItem, EventStreamOptions, PmuxClient,
-    RUN_ONCE_RESPONSE_MARGIN, SequencedEventStream,
-};
+use anyhow::{Result, bail};
+use clap::Parser;
+use pseudomux_client::{ClientError, PmuxClient};
 use pseudomux_protocol::v1::{
-    AgentDescriptor, AgentVersion, AttachSessionRequest, CancelOutcome, CancelTurnResult,
-    ClosePolicy, CloseSessionResult, DaemonDiagnosis, EffortLevel, EventPayload, HealthLayerName,
-    ProbeOutcome, RunStatelessRequest, RuntimeFinding, SessionFinding, SessionGenerationId,
-    SessionId, StartSessionRequest, TerminalSize, TurnId, TurnOutcome, TurnRequest, TurnResult,
+    DaemonDiagnosis, EffortLevel, HealthLayerName, ProbeOutcome, RunStatelessRequest,
+    RuntimeFinding, SessionFinding,
 };
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::cli::{
-    AgentCommand, Cli, Command, OutputMode, build_agent_create_spec, build_start_request,
-    build_turn_request, dropped_environment_names, read_agent_spec, read_prompt, resolve_cwd,
-    resolve_executable,
-};
+use crate::cli::{Cli, Command, OutputMode, read_prompt, resolve_executable};
 
 #[tokio::main]
 async fn main() {
-    // NOT `Cli::parse()`. The launch flags carry an `env =` binding, and once
-    // the derived struct exists a value clap read from the environment and one
-    // the caller typed are the same `Some`. `--agent` refuses the second and
-    // must not refuse the first: see `Cli::parse_recording_argument_sources`.
-    if let Err(error) = execute(Cli::parse_recording_argument_sources()).await {
+    if let Err(error) = execute(Cli::parse()).await {
         eprintln!("pmux: {error:#}");
         if let Some(recommendation) = server_error_details(&error) {
             eprintln!("pmux: {recommendation}");
@@ -75,81 +62,6 @@ async fn main() {
 /// instead of a channel that goes quiet in two of them.
 use pseudomux_protocol::v1::RECOMMENDATION_KEY;
 
-/// A stored agent version number, refused at the client where the caller can
-/// still fix it.
-fn agent_version(value: u64) -> Result<AgentVersion> {
-    AgentVersion::new(value)
-        .map_err(|_| anyhow::anyhow!("an agent version starts at 1; there is no version 0"))
-}
-
-/// The text rendering of one stored agent version.
-///
-/// It prints the digest, which is IDENTITY, beside the version, which is only
-/// ORDER -- because the question a caller actually has after an update is "is
-/// this the configuration I wrote", and two versions with equal digests are the
-/// same configuration.
-///
-/// Environment values and inline document bodies arrive already redacted by the
-/// daemon; nothing is redacted here, so this rendering cannot disagree with the
-/// `--output json` frame beside it.
-fn render_agent_descriptor(descriptor: &AgentDescriptor) -> Result<String> {
-    // Decoded with the STRICT type, which is where `deny_unknown_fields` is
-    // wanted: a daemon that answered with a field this build does not
-    // understand is named here rather than rendered as if it were understood.
-    // The `--output json` frame beside this one still carried the whole
-    // document, so nothing is lost by refusing to summarize it.
-    let spec = descriptor.typed_spec().with_context(|| {
-        format!(
-            "agent {} version {} carries a configuration this pmux does not understand; read it \
-             with --output json",
-            descriptor.agent_id, descriptor.version
-        )
-    })?;
-    let spec = &spec;
-    let mut lines = vec![
-        format!("agent_id={}", descriptor.agent_id),
-        format!("version={}", descriptor.version),
-        format!("config_digest={}", descriptor.config_digest),
-        format!("name={}", spec.name),
-    ];
-    if let Some(description) = &spec.description {
-        lines.push(format!("description={description}"));
-    }
-    lines.push(format!("claude={}", spec.claude.executable));
-    if let Some(model) = &spec.claude.model {
-        lines.push(format!("model={model}"));
-    }
-    if let Some(effort) = spec.claude.effort {
-        lines.push(format!("effort={effort}"));
-    }
-    lines.push(format!("cell={}", spec.cell));
-    if let Some(root) = &spec.containment.workspace_root {
-        lines.push(format!("containment.workspace_root={root}"));
-    }
-    lines.push(format!(
-        "containment.require_config_isolation={}",
-        spec.containment.require_config_isolation
-    ));
-    if !spec.environment.set.is_empty() {
-        lines.push(format!(
-            "environment.set={} (values are sha256 digests; the daemon never returns them in the clear)",
-            spec.environment.set.keys().cloned().collect::<Vec<_>>().join(",")
-        ));
-    }
-    if !spec.environment.unset.is_empty() {
-        lines.push(format!(
-            "environment.unset={}",
-            spec.environment
-                .unset
-                .iter()
-                .cloned()
-                .collect::<Vec<_>>()
-                .join(",")
-        ));
-    }
-    Ok(lines.join("\n"))
-}
-
 fn server_error_details(error: &anyhow::Error) -> Option<String> {
     error
         .chain()
@@ -183,176 +95,6 @@ async fn execute(cli: Cli) -> Result<()> {
                     pong.server_version, pong.protocol_version
                 ),
             )
-        }
-        Command::Start { launch } => {
-            let request = build_start_request(&launch)?;
-            let handle = client.start_session(request).await?;
-            emit(
-                mode,
-                "session_started",
-                &handle,
-                &format!(
-                    "session_id={}\ngeneration_id={}",
-                    handle.session_id, handle.generation_id
-                ),
-            )
-        }
-        Command::Oneshot {
-            launch,
-            prompt,
-            turn,
-        } => {
-            let start = build_start_request(&launch)?;
-            let prompt = read_prompt(&prompt)?;
-            let turn = build_turn_request(&turn, prompt)?;
-            let handle = client.start_session(start).await?;
-            eprintln!("pmux: session {} started", handle.session_id);
-            let result =
-                execute_turn(&client, handle.session_id, handle.generation_id, turn, mode).await;
-            let close_policy = if result.is_ok() {
-                ClosePolicy::Graceful
-            } else {
-                ClosePolicy::Force
-            };
-            let cleanup = close_session_with_proof(
-                &client,
-                handle.session_id,
-                handle.generation_id,
-                close_policy,
-            )
-            .await
-            .map(|_| ());
-            finish_run(mode, result, cleanup)
-        }
-        Command::Turn {
-            session,
-            generation,
-            prompt,
-            turn,
-        } => {
-            let prompt = read_prompt(&prompt)?;
-            let turn = build_turn_request(&turn, prompt)?;
-            let result = execute_turn(
-                &client,
-                session,
-                SessionGenerationId::from_uuid(generation),
-                turn,
-                mode,
-            )
-            .await?;
-            require_completed_turn(&result)?;
-            emit_turn_result(mode, &result)
-        }
-        Command::Inspect {
-            session,
-            generation,
-        } => {
-            let snapshot = client
-                .inspect_session(session, SessionGenerationId::from_uuid(generation))
-                .await?;
-            let text = serde_json::to_string_pretty(&snapshot)?;
-            emit(mode, "session_snapshot", &snapshot, &text)
-        }
-        Command::Cancel {
-            session,
-            generation,
-            turn,
-        } => {
-            let result = client
-                .cancel_turn(session, SessionGenerationId::from_uuid(generation), turn)
-                .await?;
-            require_successful_cancel(&result)?;
-            emit(
-                mode,
-                "turn_cancelled",
-                &result,
-                &format!(
-                    "turn={} outcome={:?} session_state={:?}",
-                    result.turn_id, result.outcome, result.session_state
-                ),
-            )
-        }
-        Command::Close {
-            session,
-            generation,
-            policy,
-        } => {
-            let result = close_session_with_proof(
-                &client,
-                session,
-                SessionGenerationId::from_uuid(generation),
-                policy.into(),
-            )
-            .await?;
-            emit(
-                mode,
-                "session_closed",
-                &result,
-                &format!(
-                    "session={} already_closed={} process_reaped={}",
-                    result.session_id, result.already_closed, result.process_reaped
-                ),
-            )
-        }
-        Command::Clear {
-            session,
-            generation,
-            expect_transcript,
-            deadline_unix_ms,
-        } => {
-            let result = client
-                .clear_session(
-                    session,
-                    SessionGenerationId::from_uuid(generation),
-                    expect_transcript,
-                    deadline_unix_ms,
-                )
-                .await?;
-            emit(
-                mode,
-                "session_cleared",
-                &result,
-                &format!(
-                    "session={} transcript={} rotated={} state={:?}",
-                    result.session_id, result.transcript_session_id, result.rotated, result.state
-                ),
-            )
-        }
-        Command::Attach {
-            session,
-            generation,
-            read_only,
-            rows,
-            cols,
-        } => {
-            let capability = client
-                .attach_session(AttachSessionRequest {
-                    session_id: session,
-                    generation_id: SessionGenerationId::from_uuid(generation),
-                    read_only,
-                    size: rows
-                        .zip(cols)
-                        .map(|(rows, cols)| TerminalSize { rows, cols }),
-                })
-                .await?;
-            if mode == OutputMode::Text {
-                let endpoint = std::path::PathBuf::from(capability.endpoint);
-                let token = capability.token;
-                tokio::task::spawn_blocking(move || {
-                    pseudomux_rmux::attach_capability_terminal(&endpoint, &token)
-                })
-                .await
-                .context("attach terminal worker failed")??;
-                return Ok(());
-            }
-            let text = format!(
-                "endpoint={}\ntoken={}\nexpires_at_ms={}\nread_only={}",
-                capability.endpoint,
-                capability.token,
-                capability.expires_at_ms,
-                capability.read_only
-            );
-            emit(mode, "attach_capability", &capability, &text)
         }
         Command::Run {
             model,
@@ -403,89 +145,8 @@ async fn execute(cli: Cli) -> Result<()> {
             );
             emit(mode, "stateless_result", &result, &text)
         }
-        Command::Agent { command } => match command {
-            AgentCommand::Create {
-                spec_file,
-                from_profile,
-                profile_file,
-                name,
-                claude,
-            } => {
-                let spec = build_agent_create_spec(
-                    spec_file.as_deref(),
-                    from_profile.as_deref(),
-                    profile_file.as_deref(),
-                    name.as_deref(),
-                    claude.as_deref(),
-                )?;
-                let descriptor = client.create_agent(spec).await?;
-                emit(
-                    mode,
-                    "agent_created",
-                    &descriptor,
-                    &render_agent_descriptor(&descriptor)?,
-                )
-            }
-            AgentCommand::List => {
-                let list = client.list_agents().await?;
-                let mut lines: Vec<String> = list
-                    .agents
-                    .iter()
-                    .map(|summary| {
-                        format!(
-                            "{} v{} {} cell={} {}",
-                            summary.agent_id,
-                            summary.version,
-                            &summary.config_digest[..12.min(summary.config_digest.len())],
-                            summary.cell,
-                            summary.name
-                        )
-                    })
-                    .collect();
-                if lines.is_empty() && list.unreadable.is_empty() {
-                    lines.push("no stored agents".to_owned());
-                }
-                // PRINTED, NEVER DROPPED. The daemon reports the records it
-                // could not read instead of answering the whole listing with
-                // the first one's refusal; a client that then omitted them
-                // would show a stored agent simply ceasing to exist.
-                for failure in &list.unreadable {
-                    lines.push(format!(
-                        "{} UNREADABLE {}",
-                        failure.agent_id, failure.reason
-                    ));
-                }
-                emit(mode, "agent_list", &list, &lines.join("\n"))
-            }
-            AgentCommand::Get { agent_id, version } => {
-                let version = version.map(agent_version).transpose()?;
-                let descriptor = client.get_agent(agent_id, version).await?;
-                emit(
-                    mode,
-                    "agent",
-                    &descriptor,
-                    &render_agent_descriptor(&descriptor)?,
-                )
-            }
-            AgentCommand::Update {
-                agent_id,
-                expected_version,
-                spec_file,
-            } => {
-                let spec = read_agent_spec(&spec_file)?;
-                let descriptor = client
-                    .update_agent(agent_id, agent_version(expected_version)?, spec)
-                    .await?;
-                emit(
-                    mode,
-                    "agent_updated",
-                    &descriptor,
-                    &render_agent_descriptor(&descriptor)?,
-                )
-            }
-        },
-        Command::Doctor { claude, cwd } => {
-            let report = doctor(&client, &cli.socket, &claude, cwd.as_deref()).await;
+        Command::Doctor { claude } => {
+            let report = doctor(&client, &cli.socket, &claude).await;
             let status = report.status;
             let text = serde_json::to_string_pretty(&report)?;
             emit(mode, "doctor", &report, &text)?;
@@ -500,363 +161,6 @@ async fn execute(cli: Cli) -> Result<()> {
                 DoctorStatus::Unproven => bail!("doctor could not prove every check it ran"),
             }
         }
-        Command::Probe {
-            launch_args,
-            launch,
-            keep,
-        } => {
-            let request = build_start_request(&launch_args)?;
-            let sanitized = sanitized_start_request(&request)?;
-            // Computed before the launch so the dry run and `--launch` report
-            // the same audit surface; see `EnvironmentRemovals`.
-            let environment_removed = EnvironmentRemovals::new(dropped_environment_names(&request));
-            if !launch {
-                let report = ProbeReport {
-                    request: sanitized,
-                    environment_removed,
-                    launched: false,
-                    session: None,
-                    snapshot: None,
-                    close: None,
-                };
-                let text = serde_json::to_string_pretty(&report)?;
-                return emit(mode, "probe", &report, &text);
-            }
-
-            let handle = client.start_session(request).await?;
-            let snapshot = match client
-                .inspect_session(handle.session_id, handle.generation_id)
-                .await
-            {
-                Ok(snapshot) => snapshot,
-                Err(inspect_error) => {
-                    // A failed probe has not handed a usable session handle to
-                    // the caller. Even `--keep` therefore cannot transfer
-                    // ownership: force-close the exact generation and preserve
-                    // both failures without including the launch request.
-                    let cleanup = close_session_with_proof(
-                        &client,
-                        handle.session_id,
-                        handle.generation_id,
-                        ClosePolicy::Force,
-                    )
-                    .await
-                    .map(|_| ());
-                    return Err(probe_inspection_failure(
-                        inspect_error.into(),
-                        cleanup,
-                        handle.session_id,
-                        handle.generation_id,
-                    ));
-                }
-            };
-            let close = if keep {
-                None
-            } else {
-                Some(serde_json::to_value(
-                    close_session_with_proof(
-                        &client,
-                        handle.session_id,
-                        handle.generation_id,
-                        ClosePolicy::Graceful,
-                    )
-                    .await?,
-                )?)
-            };
-            let report = ProbeReport {
-                request: sanitized,
-                environment_removed,
-                launched: true,
-                session: Some(serde_json::to_value(handle)?),
-                snapshot: Some(serde_json::to_value(snapshot)?),
-                close,
-            };
-            let text = serde_json::to_string_pretty(&report)?;
-            emit(mode, "probe", &report, &text)
-        }
-    }
-}
-
-async fn execute_turn(
-    client: &PmuxClient,
-    session_id: SessionId,
-    generation_id: SessionGenerationId,
-    turn: TurnRequest,
-    mode: OutputMode,
-) -> Result<TurnResult> {
-    for replay_attempt in 0..=1 {
-        let accepted = client
-            .run_turn(session_id, generation_id, turn.clone())
-            .await?;
-        eprintln!(
-            "pmux: turn {} accepted (replayed={})",
-            accepted.turn_id, accepted.replayed
-        );
-        let stream = client.event_stream(
-            session_id,
-            generation_id,
-            accepted.next_sequence.saturating_sub(1),
-            EventStreamOptions::default(),
-        );
-        let wait = wait_for_turn(stream, turn.turn_id, mode);
-        tokio::pin!(wait);
-        let guard = tokio::time::sleep(turn_infrastructure_guard(turn.deadline_unix_ms));
-        tokio::pin!(guard);
-        let outcome = tokio::select! {
-            biased;
-            result = &mut wait => result?,
-            signal = tokio::signal::ctrl_c() => {
-                signal.context("failed to install Ctrl-C handler")?;
-                eprintln!("pmux: interrupt received; cancelling turn {}", turn.turn_id);
-                best_effort_cancel(client, session_id, generation_id, turn.turn_id).await;
-                bail!("turn interrupted by user");
-            }
-            () = &mut guard => {
-                // The actor owns the immutable turn deadline. This later guard
-                // bounds a daemon or event transport that remained unavailable
-                // after the full recovery and transcript-drain response margin.
-                // Exact cancellation is idempotent and is the only safe final
-                // reconciliation attempt; it never resubmits prompt input.
-                eprintln!(
-                    "pmux: infrastructure guard expired; cancelling turn {}",
-                    turn.turn_id
-                );
-                best_effort_cancel(client, session_id, generation_id, turn.turn_id).await;
-                bail!(
-                    "turn outcome was not published before the infrastructure guard; inspect session {} turn {}",
-                    session_id,
-                    turn.turn_id
-                );
-            }
-        };
-        match outcome {
-            WaitOutcome::Complete(result) => return Ok(*result),
-            WaitOutcome::ReplayGap => {
-                if replay_attempt == 1 {
-                    bail!(
-                        "turn result replay was unavailable after retry; inspect session {session_id}"
-                    );
-                }
-                eprintln!(
-                    "pmux: replay gap encountered; resubmitting idempotent turn {}",
-                    turn.turn_id
-                );
-            }
-        }
-    }
-    unreachable!("bounded replay loop always returns")
-}
-
-fn turn_infrastructure_guard(deadline_unix_ms: Option<u64>) -> std::time::Duration {
-    let now_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |duration| {
-            u64::try_from(duration.as_millis()).unwrap_or(u64::MAX)
-        });
-    turn_infrastructure_guard_at(deadline_unix_ms, now_ms)
-}
-
-fn turn_infrastructure_guard_at(deadline_unix_ms: Option<u64>, now_ms: u64) -> std::time::Duration {
-    deadline_unix_ms.map_or(DEFAULT_RUN_ONCE_TIMEOUT, |deadline| {
-        std::time::Duration::from_millis(deadline.saturating_sub(now_ms))
-            .saturating_add(RUN_ONCE_RESPONSE_MARGIN)
-    })
-}
-
-enum WaitOutcome {
-    Complete(Box<TurnResult>),
-    ReplayGap,
-}
-
-async fn wait_for_turn(
-    mut events: SequencedEventStream,
-    turn_id: TurnId,
-    mode: OutputMode,
-) -> Result<WaitOutcome> {
-    while let Some(item) = events.next().await {
-        let item = match item {
-            Ok(item) => item,
-            Err(error @ (ClientError::Io(_) | ClientError::Timeout { .. })) => {
-                eprintln!(
-                    "pmux: event connection interrupted after sequence {}; retrying: {error}",
-                    events.after_sequence()
-                );
-                continue;
-            }
-            Err(error) => return Err(error.into()),
-        };
-
-        match item {
-            EventStreamItem::ReplayGap(gap) => {
-                if mode == OutputMode::Ndjson {
-                    output::ndjson("replay_gap", &gap)?;
-                }
-                eprintln!(
-                    "pmux: event replay gap after {}; recovery snapshot sequence {}",
-                    gap.requested_after, gap.snapshot.last_sequence
-                );
-                return Ok(WaitOutcome::ReplayGap);
-            }
-            EventStreamItem::Event(event) => {
-                let event = *event;
-                if mode == OutputMode::Ndjson {
-                    output::ndjson("event", &event)?;
-                }
-                let event_turn_id = event.turn_id;
-                if event_turn_id.is_some_and(|id| id != turn_id) {
-                    continue;
-                }
-                match event.event {
-                    EventPayload::TurnCompleted(result) if result.turn_id == turn_id => {
-                        return Ok(WaitOutcome::Complete(result));
-                    }
-                    EventPayload::TurnFailed(error) if event_turn_id == Some(turn_id) => {
-                        bail!(
-                            "turn failed code={:?} message={:?} retryable={}",
-                            error.code,
-                            error.message,
-                            error.retryable
-                        );
-                    }
-                    EventPayload::TurnCancelled(cancelled) if event_turn_id == Some(turn_id) => {
-                        bail!("turn cancelled: {:?}", cancelled.outcome);
-                    }
-                    EventPayload::NeedsInput(input) => {
-                        eprintln!(
-                            "pmux: Claude needs input ({:?}): {}",
-                            input.kind, input.message
-                        );
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-    bail!("event stream ended before turn {turn_id} completed")
-}
-
-fn emit_turn_result(mode: OutputMode, result: &TurnResult) -> Result<()> {
-    match mode {
-        OutputMode::Text => output::text(&result.text),
-        OutputMode::Json => output::json(result),
-        OutputMode::Ndjson => output::ndjson("result", result),
-    }
-}
-
-fn finish_run(mode: OutputMode, turn: Result<TurnResult>, cleanup: Result<()>) -> Result<()> {
-    match (turn, cleanup) {
-        (Ok(result), Ok(())) => {
-            // The final record is the one-shot commit marker. Validate the
-            // semantic outcome before writing any text/JSON/NDJSON success so
-            // a failed or cancelled TurnResult cannot be mistaken for a
-            // committed run by a downstream parser.
-            require_completed_turn(&result)?;
-            emit_turn_result(mode, &result)
-        }
-        (Ok(result), Err(cleanup_error)) => match require_completed_turn(&result) {
-            Ok(()) => Err(cleanup_error),
-            Err(turn_error) => combine_turn_and_cleanup(Err(turn_error), Err(cleanup_error)),
-        },
-        (Err(turn_error), Ok(())) => Err(turn_error),
-        (Err(turn_error), Err(cleanup_error)) => {
-            combine_turn_and_cleanup(Err(turn_error), Err(cleanup_error))
-        }
-    }
-}
-
-fn require_completed_turn(result: &TurnResult) -> Result<()> {
-    if result.outcome == TurnOutcome::Completed {
-        Ok(())
-    } else {
-        bail!(
-            "turn {} ended with outcome {:?}",
-            result.turn_id,
-            result.outcome
-        )
-    }
-}
-
-fn require_successful_cancel(result: &CancelTurnResult) -> Result<()> {
-    if result.outcome != CancelOutcome::RecoveryFailed {
-        Ok(())
-    } else {
-        bail!(
-            "turn {} cancellation did not recover the session; inspect session {} and close it if tainted",
-            result.turn_id,
-            result.session_id
-        )
-    }
-}
-
-async fn best_effort_cancel(
-    client: &PmuxClient,
-    session_id: SessionId,
-    generation_id: SessionGenerationId,
-    turn_id: TurnId,
-) {
-    if let Err(error) = client.cancel_turn(session_id, generation_id, turn_id).await {
-        eprintln!("pmux: cancellation request failed: {error}");
-    }
-}
-
-async fn close_session_with_proof(
-    client: &PmuxClient,
-    session_id: SessionId,
-    generation_id: SessionGenerationId,
-    policy: ClosePolicy,
-) -> Result<CloseSessionResult> {
-    let result = client
-        .close_session(session_id, generation_id, policy)
-        .await?;
-    require_process_reaped(result)
-}
-
-fn require_process_reaped(result: CloseSessionResult) -> Result<CloseSessionResult> {
-    if result.process_reaped {
-        Ok(result)
-    } else {
-        bail!(
-            "session {} closed without confirming that its process was reaped",
-            result.session_id
-        )
-    }
-}
-
-fn probe_inspection_failure(
-    inspect_error: anyhow::Error,
-    cleanup: Result<()>,
-    session_id: SessionId,
-    generation_id: SessionGenerationId,
-) -> anyhow::Error {
-    match cleanup {
-        Ok(()) => inspect_error,
-        Err(cleanup_error) => anyhow::anyhow!(
-            "{}",
-            serde_json::json!({
-                "code": "recovery_failed",
-                "message": "probe inspection failed and session cleanup could not be confirmed",
-                "session_id": session_id,
-                "generation_id": generation_id,
-                "inspection_error": format!("{inspect_error:#}"),
-                "cleanup_error": format!("{cleanup_error:#}"),
-            })
-        ),
-    }
-}
-
-fn combine_turn_and_cleanup(turn: Result<()>, cleanup: Result<()>) -> Result<()> {
-    match (turn, cleanup) {
-        (Ok(()), Ok(())) => Ok(()),
-        (Err(error), Ok(())) | (Ok(()), Err(error)) => Err(error),
-        (Err(turn_error), Err(cleanup_error)) => Err(anyhow::anyhow!(
-            "{}",
-            serde_json::json!({
-                "code": "recovery_failed",
-                "message": "turn processing failed and session cleanup could not be confirmed",
-                "turn_error": format!("{turn_error:#}"),
-                "cleanup_error": format!("{cleanup_error:#}"),
-            })
-        )),
     }
 }
 
@@ -870,9 +174,9 @@ fn emit<T: Serialize>(mode: OutputMode, kind: &str, value: &T, text: &str) -> Re
 
 /// The one thing `doctor` is allowed to say, and the three answers it has.
 ///
-/// `doctor` is a VIEW of the daemon's health tree plus the four local checks
-/// only a client can make -- socket mode, socket type, Claude executable,
-/// working directory. It is deliberately not a second health story: every claim
+/// `doctor` is a VIEW of the daemon's health tree plus the local checks only a
+/// client can make -- socket mode, socket type, and Claude executable. It is
+/// deliberately not a second health story: every claim
 /// it makes about the daemon comes from `diagnose`'s layers, rendered through
 /// their own `detail` strings, and the fold below is `ProbeOutcome`'s severity
 /// order with the same three values under different names.
@@ -909,7 +213,6 @@ struct DoctorReport {
     server_version: Option<String>,
     protocol_version: Option<u16>,
     claude_executable: Option<String>,
-    cwd: Option<String>,
     /// The daemon's own answer, verbatim.
     ///
     /// `None` means the daemon did not produce one, which is the case
@@ -941,12 +244,7 @@ impl DoctorReport {
     }
 }
 
-async fn doctor(
-    client: &PmuxClient,
-    socket: &Path,
-    claude: &Path,
-    cwd: Option<&Path>,
-) -> DoctorReport {
+async fn doctor(client: &PmuxClient, socket: &Path, claude: &Path) -> DoctorReport {
     let mut errors = Vec::new();
     let mut unproven = Vec::new();
     let metadata = std::fs::metadata(socket);
@@ -1008,13 +306,6 @@ async fn doctor(
             None
         }
     };
-    let cwd = match resolve_cwd(cwd) {
-        Ok(path) => Some(path.display().to_string()),
-        Err(error) => {
-            errors.push(format!("working directory: {error:#}"));
-            None
-        }
-    };
     DoctorReport {
         status: DoctorReport::fold(&errors, &unproven),
         socket: socket.display().to_string(),
@@ -1024,7 +315,6 @@ async fn doctor(
         server_version,
         protocol_version,
         claude_executable,
-        cwd,
         diagnosis,
         errors,
         unproven,
@@ -1144,191 +434,9 @@ const fn session_finding_text(finding: SessionFinding) -> &'static str {
     }
 }
 
-#[derive(Serialize)]
-struct ProbeReport {
-    request: Value,
-    environment_removed: EnvironmentRemovals,
-    launched: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    session: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    snapshot: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    close: Option<Value>,
-}
-
-/// The probe's audit surface for the launch environment.
-///
-/// `spec.md:459-463` makes the removal set the thing `pmux probe` renders, and
-/// makes it render **names only** — the sanitized request already reduces both
-/// `snapshot` and `set` to counts, and this must not reintroduce a value.
-///
-/// Two honest limitations are recorded in the payload rather than in a comment
-/// no caller reads. First, a dry-run probe reaches no daemon (`spec.md:1214`),
-/// so the set is evaluated locally. Second, protocol v1 has no field carrying
-/// `ResolvedClaudeLaunch::removed_environment_keys`, so `--launch` reports the
-/// same locally evaluated set rather than the daemon's own.
-#[derive(Serialize)]
-struct EnvironmentRemovals {
-    count: usize,
-    names: Vec<String>,
-    source: &'static str,
-    note: &'static str,
-}
-
-impl EnvironmentRemovals {
-    fn new(names: Vec<String>) -> Self {
-        Self {
-            count: names.len(),
-            names,
-            source: "client_policy_mirror",
-            note: "Names the launch allowlist, the auth policy, or the terminal profile keeps \
-                   from the child. Values are never reported. Protocol v1 publishes no removal \
-                   set, so --launch shows this same locally computed list. Restore a name with \
-                   --env KEY=VALUE, or --env-passthrough KEY to keep its value off the command \
-                   line.",
-        }
-    }
-}
-
-fn sanitized_start_request(request: &StartSessionRequest) -> Result<Value> {
-    let mut value = serde_json::to_value(request)?;
-    if let Some(environment) = value
-        .as_object_mut()
-        .and_then(|object| object.get_mut("environment"))
-        .and_then(Value::as_object_mut)
-    {
-        let snapshot_count = environment
-            .get("snapshot")
-            .and_then(Value::as_object)
-            .map_or(0, serde_json::Map::len);
-        let set_count = environment
-            .get("set")
-            .and_then(Value::as_object)
-            .map_or(0, serde_json::Map::len);
-        environment.insert(
-            "snapshot".into(),
-            serde_json::json!({"redacted": true, "variable_count": snapshot_count}),
-        );
-        environment.insert(
-            "set".into(),
-            serde_json::json!({"redacted": true, "variable_count": set_count}),
-        );
-    }
-    if let Some(claude) = value
-        .as_object_mut()
-        .and_then(|object| object.get_mut("claude"))
-        .and_then(Value::as_object_mut)
-    {
-        for key in ["settings", "mcp_configs"] {
-            if let Some(sources) = claude.get_mut(key).and_then(Value::as_array_mut) {
-                for source in sources {
-                    if source.get("source").and_then(Value::as_str) == Some("inline") {
-                        source["document"] = serde_json::json!({"redacted": true});
-                    }
-                }
-            }
-        }
-        if let Some(system_prompt) = claude
-            .get_mut("system_prompt")
-            .and_then(Value::as_object_mut)
-            && let Some(prompt) = system_prompt.remove("prompt")
-        {
-            let character_count = prompt.as_str().map_or(0, |value| value.chars().count());
-            system_prompt.insert("prompt_redacted".into(), Value::Bool(true));
-            system_prompt.insert("character_count".into(), character_count.into());
-        }
-    }
-    Ok(value)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn turn_result(outcome: TurnOutcome) -> TurnResult {
-        serde_json::from_value(serde_json::json!({
-            "session_id": "00000000-0000-4000-8000-000000000001",
-            "generation_id": "00000000-0000-4000-8000-000000000002",
-            "turn_id": "00000000-0000-4000-8000-000000000003",
-            "outcome": match outcome {
-                TurnOutcome::Completed => "completed",
-                TurnOutcome::Cancelled => "cancelled",
-                TurnOutcome::Failed => "failed",
-            },
-            "text": "done",
-            "usage": {
-                "main": {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "cache_creation_input_tokens": 0,
-                    "cache_read_input_tokens": 0
-                },
-                "sidechain": {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "cache_creation_input_tokens": 0,
-                    "cache_read_input_tokens": 0
-                },
-                "combined": {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "cache_creation_input_tokens": 0,
-                    "cache_read_input_tokens": 0
-                }
-            },
-            "timings": {"submitted_at_ms": 1, "completed_at_ms": 2},
-            "claude_version": "test",
-            "compatibility": {
-                "claude_version": "test",
-                "os": "test",
-                "arch": "test",
-                "terminal_profile": "transparent",
-                "input_transport": "sdk",
-                "tested": true,
-                "transcript_drain_ms": 1
-            },
-            "completion": {
-                "authority": "transcript",
-                "prompt_acknowledged": true,
-                "terminal_message_observed": true,
-                "terminal_prompt_observed": true,
-                "terminal_quiet_observed": true,
-                "transcript_drained": true,
-                "lifecycle_hook_observed": false
-            },
-            "final_sequence": 1
-        }))
-        .unwrap()
-    }
-
-    #[test]
-    fn probe_never_serializes_environment_values() {
-        let mut request = serde_json::from_value::<StartSessionRequest>(serde_json::json!({
-            "identity": {"mode": "new"},
-            "cwd": "/tmp",
-            "claude": {
-                "executable": "/bin/sh",
-                "settings": [{"source": "inline", "document": {"token": "settings-secret"}}],
-                "mcp_configs": [{"source": "inline", "document": {"token": "mcp-secret"}}],
-                "system_prompt": {"mode": "replace", "prompt": "prompt-secret"}
-            },
-            "environment": {"snapshot": {"SECRET": "do-not-print"}}
-        }))
-        .unwrap();
-        request
-            .environment
-            .snapshot
-            .insert("TOKEN".into(), "also-secret".into());
-        let sanitized = sanitized_start_request(&request).unwrap();
-        let encoded = serde_json::to_string(&sanitized).unwrap();
-        assert!(!encoded.contains("do-not-print"));
-        assert!(!encoded.contains("also-secret"));
-        assert!(!encoded.contains("settings-secret"));
-        assert!(!encoded.contains("mcp-secret"));
-        assert!(!encoded.contains("prompt-secret"));
-        assert_eq!(sanitized["environment"]["snapshot"]["variable_count"], 2);
-    }
 
     /// A daemon refusal's advice reaches the operator, and NOTHING else in
     /// `details` does.
@@ -1390,64 +498,48 @@ mod tests {
     }
 
     #[test]
-    fn failed_and_cancelled_turn_results_are_cli_failures() {
-        assert!(require_completed_turn(&turn_result(TurnOutcome::Completed)).is_ok());
-        assert!(require_completed_turn(&turn_result(TurnOutcome::Failed)).is_err());
-        assert!(require_completed_turn(&turn_result(TurnOutcome::Cancelled)).is_err());
-    }
+    fn doctor_report_does_not_name_process_cwd() {
+        let report = DoctorReport {
+            status: DoctorStatus::Healthy,
+            socket: "/tmp/pmux.sock".into(),
+            socket_exists: true,
+            socket_is_unix_socket: true,
+            socket_owner_only: true,
+            server_version: None,
+            protocol_version: None,
+            claude_executable: None,
+            diagnosis: None,
+            errors: Vec::new(),
+            unproven: Vec::new(),
+        };
+        let value = serde_json::to_value(&report).unwrap();
+        assert!(value.get("cwd").is_none(), "{value}");
+        assert_eq!(DoctorReport::fold(&[], &[]), DoctorStatus::Healthy);
 
-    #[test]
-    fn turn_and_cleanup_failures_are_both_preserved() {
-        let error = combine_turn_and_cleanup(
-            Err(anyhow::anyhow!("turn failed")),
-            Err(anyhow::anyhow!("cleanup failed")),
-        )
-        .unwrap_err();
-        let details: serde_json::Value = serde_json::from_str(&error.to_string()).unwrap();
-        assert_eq!(details["code"], "recovery_failed");
-        assert_eq!(details["turn_error"], "turn failed");
-        assert_eq!(details["cleanup_error"], "cleanup failed");
-    }
-
-    #[test]
-    fn infrastructure_guard_is_after_the_actor_response_margin() {
-        assert_eq!(
-            turn_infrastructure_guard_at(Some(11_000), 10_000),
-            std::time::Duration::from_secs(121)
-        );
-        assert_eq!(
-            turn_infrastructure_guard_at(Some(9_000), 10_000),
-            RUN_ONCE_RESPONSE_MARGIN
-        );
-        assert_eq!(
-            turn_infrastructure_guard_at(None, 10_000),
-            DEFAULT_RUN_ONCE_TIMEOUT
-        );
-    }
-
-    #[test]
-    fn run_withholds_success_when_cleanup_is_unconfirmed() {
-        let error = finish_run(
-            OutputMode::Json,
-            Ok(turn_result(TurnOutcome::Completed)),
-            Err(anyhow::anyhow!("cleanup failed")),
-        )
-        .unwrap_err();
-        assert_eq!(error.to_string(), "cleanup failed");
-
-        let combined = finish_run(
-            OutputMode::Json,
-            Ok(turn_result(TurnOutcome::Failed)),
-            Err(anyhow::anyhow!("cleanup failed")),
-        )
-        .unwrap_err();
-        let details: serde_json::Value = serde_json::from_str(&combined.to_string()).unwrap();
-        assert_eq!(details["code"], "recovery_failed");
+        const SOURCE: &str = include_str!("main.rs");
+        let start = SOURCE
+            .find("async fn doctor(")
+            .expect("doctor() is no longer in this module");
+        let tail = &SOURCE[start..];
+        let end = tail
+            .find("\nfn collect_diagnosis_findings(")
+            .expect("doctor() is no longer followed by collect_diagnosis_findings");
+        let doctor = &tail[..end];
         assert!(
-            details["turn_error"]
-                .as_str()
-                .unwrap()
-                .contains("outcome Failed")
+            !doctor.contains("resolve_cwd"),
+            "doctor() must not resolve a process cwd"
+        );
+        assert!(
+            !doctor.contains("current directory"),
+            "doctor() must not name the process current directory"
+        );
+        assert!(
+            !doctor.contains("current_dir"),
+            "doctor() must not call std::env::current_dir for health"
+        );
+        assert!(
+            !doctor.contains("cwd:") && !doctor.contains("cwd ="),
+            "doctor() must not assign a cwd field"
         );
     }
 }

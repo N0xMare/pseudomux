@@ -1,4 +1,6 @@
 {
+  "schema": "pmux.linux-operator-eval.v1",
+  "real_claude_turns": {"count": 3},
   "turn1": {
     "elapsed_s": 3.29,
     "lease": "primed",

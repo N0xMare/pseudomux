@@ -52,7 +52,7 @@ test("exact staged output is hashed and imports as ESM outside the package tree"
     await populate(root);
     const first = await verifyTypescriptDistStage(root, { outsideRoot: WORKSPACE });
     const second = await verifyTypescriptDistStage(root, { outsideRoot: WORKSPACE });
-    assert.equal(first.manifest.length, 17);
+    assert.equal(first.manifest.length, TYPESCRIPT_DIST_FILES.length);
     assert.equal(first.sha256, second.sha256);
     assert.match(first.sha256, /^[0-9a-f]{64}$/);
     const api = await import(`${pathToFileURL(join(root, "index.js")).href}?stage-test=1`);

@@ -1014,7 +1014,11 @@ function decodeResponse(payload: Buffer, requestId: string): ResponseResult {
   return validateResponseResult(parsed.result);
 }
 
-function requestTimeoutFor(request: PmuxRequest, configured: number): number {
+export function requestTimeoutFor(
+  request: PmuxRequest,
+  configured: number,
+  nowMs = Date.now(),
+): number {
   if (request.method === "subscribe_events") {
     return Math.max(configured, (request.params.wait_ms ?? 0) + 5_000);
   }
@@ -1022,7 +1026,7 @@ function requestTimeoutFor(request: PmuxRequest, configured: number): number {
     const deadline = request.params.turn.deadline_unix_ms;
     const turnWindow = deadline === undefined
       ? DEFAULT_RUN_ONCE_TIMEOUT_MS
-      : Math.max(0, deadline - Date.now()) + RUN_ONCE_RESPONSE_MARGIN_MS;
+      : Math.max(0, deadline - nowMs) + RUN_ONCE_RESPONSE_MARGIN_MS;
     return Math.max(configured, turnWindow);
   }
   // A caller-supplied submission deadline widens the client's patience the same
@@ -1031,7 +1035,19 @@ function requestTimeoutFor(request: PmuxRequest, configured: number): number {
   if (request.method === "clear_session") {
     const deadline = request.params.deadline_unix_ms;
     if (deadline === undefined) return configured;
-    return Math.max(configured, Math.max(0, deadline - Date.now()) + RUN_ONCE_RESPONSE_MARGIN_MS);
+    return Math.max(configured, Math.max(0, deadline - nowMs) + RUN_ONCE_RESPONSE_MARGIN_MS);
+  }
+  // Same shape as `run_once`, and for a stronger reason. A stateless call is
+  // answered by the pool, which may have to mint a cold class (~4.4s TUI
+  // launch) before the model is asked. The default 45s request timeout gave
+  // up first and turned a completed, billed turn into an unretryable
+  // transport error.
+  if (request.method === "run_stateless") {
+    const deadline = request.params.deadline_unix_ms;
+    const answerWindow = deadline === undefined
+      ? DEFAULT_RUN_ONCE_TIMEOUT_MS
+      : Math.max(0, deadline - nowMs) + RUN_ONCE_RESPONSE_MARGIN_MS;
+    return Math.max(configured, answerWindow);
   }
   return configured;
 }
@@ -1335,6 +1351,10 @@ export class PmuxClient {
     return expectResult(await this.request({ method: "ping" }, options), "pong");
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `start_session` with `session_surface_removed`.
+   */
   async startSession(
     request: StartSessionRequest,
     options?: RequestOptions,
@@ -1345,6 +1365,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `inspect_session` with `session_surface_removed`.
+   */
   async inspectSession(
     sessionId: SessionId,
     generationId: SessionGenerationId,
@@ -1362,6 +1386,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `run_turn` with `session_surface_removed`.
+   */
   async runTurn(
     sessionId: SessionId,
     generationId: SessionGenerationId,
@@ -1380,6 +1408,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `cancel_turn` with `session_surface_removed`.
+   */
   async cancelTurn(
     sessionId: SessionId,
     generationId: SessionGenerationId,
@@ -1402,6 +1434,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `attach_session` with `session_surface_removed`.
+   */
   async attachSession(
     request: AttachSessionRequest,
     options?: RequestOptions,
@@ -1412,6 +1448,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `close_session` with `session_surface_removed`.
+   */
   async closeSession(
     sessionId: SessionId,
     generationId: SessionGenerationId,
@@ -1431,18 +1471,11 @@ export class PmuxClient {
   }
 
   /**
-   * Clears one minified-cell session's context between turns.
+   * Protocol method kept for goldens. Current daemons refuse
+   * `clear_session` with `session_surface_removed`.
    *
-   * `expectedTranscriptSessionId` is the transcript the caller believes is
-   * bound: at start it is the session id, and afterwards it is whatever the
-   * previous result returned, or whatever `inspectSession` reports as
-   * `transcript_session_id`. It is a compare-and-swap fence and every stale
-   * value is refused, including one that is stale by exactly one rotation:
-   * there is no "your clear already landed" answer, because the one-behind
-   * value is indistinguishable from the fence a session starts with, which is
-   * what a second caller holds. To recover a lost response, re-read
-   * `transcript_session_id` and clear again on it if certainty is wanted;
-   * clearing an already-empty cell is semantically idempotent.
+   * Living recovery for a Messages lease is `x-pmux-cell` /
+   * `pmux doctor` conversation leases.
    */
   async clearSession(
     sessionId: SessionId,
@@ -1495,12 +1528,8 @@ export class PmuxClient {
   }
 
   /**
-   * Stores one reusable launch configuration and returns it at version 1.
-   *
-   * The daemon mints the id. An agent carries LAUNCH POLICY and never a
-   * resource: no cwd, no configuration root, no session identity, no prompt and
-   * no environment snapshot, because each is per-session and is named on every
-   * `startSession`.
+   * Protocol method kept for goldens. Current daemons refuse every agent
+   * Request with `session_surface_removed`. Do not build new callers on this.
    */
   async createAgent(spec: AgentSpec, options?: RequestOptions): Promise<AgentDescriptor> {
     return expectResult(
@@ -1510,6 +1539,9 @@ export class PmuxClient {
   }
 
   /**
+   * Protocol method kept for goldens. Current daemons refuse every agent
+   * Request with `session_surface_removed`. Do not build new callers on this.
+   *
    * Reads one stored agent version, or the current head when `version` is
    * omitted.
    *
@@ -1527,6 +1559,9 @@ export class PmuxClient {
   }
 
   /**
+   * Protocol method kept for goldens. Current daemons refuse every agent
+   * Request with `session_surface_removed`. Do not build new callers on this.
+   *
    * Lists every stored agent's id, current version, digest, name and cell.
    * Deliberately not full specs.
    */
@@ -1538,6 +1573,9 @@ export class PmuxClient {
   }
 
   /**
+   * Protocol method kept for goldens. Current daemons refuse every agent
+   * Request with `session_surface_removed`. Do not build new callers on this.
+   *
    * Stores a new immutable version of one agent and returns it.
    *
    * `expectedVersion` is a fence: any value that is not the current head is
@@ -1564,6 +1602,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `run_once` with `session_surface_removed`.
+   */
   async runOnce(request: RunOnceRequest, options?: RequestOptions): Promise<TurnResult> {
     return expectResult(
       await this.request({ method: "run_once", params: request }, options),
@@ -1571,6 +1613,10 @@ export class PmuxClient {
     );
   }
 
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `subscribe_events` with `session_surface_removed`.
+   */
   async subscribeEvents(
     request: SubscribeEventsRequest,
     options?: RequestOptions,
@@ -1594,7 +1640,12 @@ export class PmuxClient {
     return batch;
   }
 
-  /** Long-poll subscription with durable cursor and transport reconnection. */
+  /**
+   * Protocol method kept for goldens. Current daemons refuse
+   * `subscribe_events` with `session_surface_removed`.
+   *
+   * Long-poll subscription with durable cursor and transport reconnection.
+   */
   events(
     sessionId: SessionId,
     generationId: SessionGenerationId,

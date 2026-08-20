@@ -16,7 +16,7 @@ use pseudomux_protocol::v1::EffortLevel;
 
 use super::class::{InstanceClass, ModelEffortRefusal, resolve_pool_class};
 
-/// Owner-set upper limit on live instances. `--path-b-pool-size` is refused
+/// Owner-set upper limit on live instances. `--pool-size` is refused
 /// above this at parse, so the runtime never has to consider a larger pool.
 pub const MAX_POOL_SIZE: u32 = 15;
 /// Owner-set default, equal to the limit.
@@ -159,7 +159,7 @@ impl PoolSettings {
             // `None` HERE and on by default at the daemon: this constructor
             // takes only the two paths that have no default, and the evidence
             // directory is derived from `--socket` exactly as `logs/` and
-            // `agents/` are. A default invented here would be a second
+            // `pool-evidence/` are. A default invented here would be a second
             // derivation, in a type that cannot see the socket.
             evidence_dir: None,
             warm_set: Vec::new(),
@@ -361,10 +361,10 @@ pub enum ConfigField {
 impl std::fmt::Display for ConfigField {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = match self {
-            Self::ParentDir => "--path-b-parent",
-            Self::ClaudeExecutable => "--path-b-claude",
-            Self::RetainDir => "--path-b-retain-dir",
-            Self::EvidenceDir => "--path-b-evidence-dir",
+            Self::ParentDir => "--pool-parent",
+            Self::ClaudeExecutable => "--pool-claude",
+            Self::RetainDir => "--pool-retain-dir",
+            Self::EvidenceDir => "--pool-evidence-dir",
         };
         formatter.write_str(name)
     }
@@ -426,11 +426,11 @@ impl std::fmt::Display for ConfigRefusal {
         match self {
             Self::PoolSizeOutOfRange { requested, maximum } => write!(
                 formatter,
-                "--path-b-pool-size {requested} is outside 1..={maximum}"
+                "--pool-size {requested} is outside 1..={maximum}"
             ),
             Self::RecycleTurnsOutOfRange { requested, maximum } => write!(
                 formatter,
-                "--path-b-recycle-turns {requested} is outside 1..={maximum}"
+                "--pool-recycle-turns {requested} is outside 1..={maximum}"
             ),
             Self::EmptySystemPrompt => {
                 formatter.write_str("the stateless system prompt must not be empty")
@@ -461,14 +461,14 @@ impl std::fmt::Display for ConfigRefusal {
                 parent_dir.display()
             ),
             Self::ZeroIdleTtl => {
-                formatter.write_str("--path-b-instance-idle-ttl-ms must be greater than zero")
+                formatter.write_str("--pool-idle-ttl-ms must be greater than zero")
             }
             Self::ZeroTurnTimeout => {
-                formatter.write_str("--path-b-turn-timeout-ms must be greater than zero")
+                formatter.write_str("--pool-turn-timeout-ms must be greater than zero")
             }
             Self::ZeroWarmCount { model } => write!(
                 formatter,
-                "the warm set declares model {model} with a count of zero; give it a count of at least one, or drop the --path-b-warm for it"
+                "the warm set declares model {model} with a count of zero; give it a count of at least one, or drop the --pool-warm for it"
             ),
             Self::WarmClassNotAdmitted { model, refusal } => write!(
                 formatter,
@@ -476,14 +476,14 @@ impl std::fmt::Display for ConfigRefusal {
             ),
             Self::DuplicateWarmClass { class } => write!(
                 formatter,
-                "the warm set declares class {class} twice; state each MODEL[/EFFORT] in exactly one --path-b-warm and add the counts together"
+                "the warm set declares class {class} twice; state each MODEL[/EFFORT] in exactly one --pool-warm and add the counts together"
             ),
             Self::WarmSetExceedsPool {
                 declared,
                 pool_size,
             } => write!(
                 formatter,
-                "the warm set declares {declared} instances against a pool of {pool_size}; raise --path-b-pool-size to at least {declared} (the cap is {MAX_POOL_SIZE}) or lower the --path-b-warm counts to {pool_size} in total"
+                "the warm set declares {declared} instances against a pool of {pool_size}; raise --pool-size to at least {declared} (the cap is {MAX_POOL_SIZE}) or lower the --pool-warm counts to {pool_size} in total"
             ),
             Self::RssBudgetTooSmall {
                 pool_size,
@@ -491,7 +491,7 @@ impl std::fmt::Display for ConfigRefusal {
                 budget_mb,
             } => write!(
                 formatter,
-                "a pool of {pool_size} needs {required_mb} MB at the {RSS_CEILING_MB_PER_INSTANCE} MB per-instance ceiling, over the {budget_mb} MB budget; raise --path-b-rss-budget-mb to at least {required_mb} on a host that has it, or lower --path-b-pool-size to {}",
+                "a pool of {pool_size} needs {required_mb} MB at the {RSS_CEILING_MB_PER_INSTANCE} MB per-instance ceiling, over the {budget_mb} MB budget; raise --pool-rss-budget-mb to at least {required_mb} on a host that has it, or lower --pool-size to {}",
                 budget_mb / RSS_CEILING_MB_PER_INSTANCE
             ),
         }
@@ -795,7 +795,7 @@ mod tests {
     /// An undeclared warm set totals ZERO, and that zero is load-bearing: it is
     /// what makes a cold pool vacuous rather than faulted in the health tree.
     /// The default is the case that must never drift, because it is every
-    /// daemon that gave `--path-b-parent` and no `--path-b-warm`.
+    /// daemon that gave `--pool-parent` and no `--pool-warm`.
     #[test]
     fn an_undeclared_warm_set_totals_zero() {
         let config = settings().validate().expect("defaults must boot");

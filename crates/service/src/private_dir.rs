@@ -18,7 +18,7 @@
 //! drwxr-xr-x  /tmp/pmux-14th/deep
 //! drwx------  /tmp/pmux-14th/deep/run     <- the only level the chmod reached
 //!
-//! # pmuxd serve --path-b-parent /tmp/pmux-parent-probe ...
+//! # historical: pmuxd serve --path-b-parent /tmp/pmux-parent-probe ...
 //! drwxr-xr-x  /tmp/pmux-parent-probe
 //! drwxr-xr-x  /tmp/pmux-parent-probe/0
 //! drwx------  /tmp/pmux-parent-probe/0/0  <- likewise

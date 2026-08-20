@@ -12,11 +12,13 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use pseudomux_protocol::v1::{
-    ErrorCode, MAX_NATIVE_FRAME_BYTES, PROTOCOL_VERSION, Request, RequestEnvelope, RequestId,
-    ResponseEnvelope, ResponsePayload, ResponseResult,
+    ErrorCode, InspectSessionRequest, MAX_NATIVE_FRAME_BYTES, PROTOCOL_VERSION, Request,
+    RequestEnvelope, RequestId, ResponseEnvelope, ResponsePayload, ResponseResult,
+    SessionGenerationId,
 };
 use pseudomux_service::pool::class::MODEL_TABLE;
 use serde_json::{Value, json};
+use uuid::Uuid;
 
 #[path = "../../../tests/support/candidate_binary.rs"]
 mod candidate_binary;
@@ -539,6 +541,253 @@ fn run_bounded(command: &mut Command, timeout: Duration) -> ProcessOutput {
     Daemon::spawn(command).wait(timeout)
 }
 
+fn request_from_json(value: Value) -> Request {
+    serde_json::from_value(value).unwrap_or_else(|error| {
+        panic!("fixture is not a Request: {error}");
+    })
+}
+
+/// One of every protocol-v1 [`Request`]. Adding a variant fails
+/// [`request_method`] at compile time; add a fixture here in the same change.
+fn every_request_variant() -> Vec<(&'static str, Request)> {
+    let session = "00000000-0000-0000-0000-000000000001";
+    let generation = "00000000-0000-0000-0000-000000000002";
+    let turn = "00000000-0000-0000-0000-000000000003";
+    let agent = "00000000-0000-0000-0000-000000000004";
+    let start = json!({
+        "identity": {"mode": "new"},
+        "cwd": "/tmp",
+        "claude": {"executable": "/usr/bin/true"}
+    });
+    let agent_spec = json!({
+        "name": "reviewer",
+        "claude": {"executable": "/usr/bin/true"}
+    });
+    vec![
+        ("ping", Request::Ping),
+        (
+            "start_session",
+            request_from_json(json!({
+                "method": "start_session",
+                "params": start.clone()
+            })),
+        ),
+        (
+            "run_turn",
+            request_from_json(json!({
+                "method": "run_turn",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "turn": {"turn_id": turn, "prompt": "x"}
+                }
+            })),
+        ),
+        (
+            "cancel_turn",
+            request_from_json(json!({
+                "method": "cancel_turn",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "turn_id": turn
+                }
+            })),
+        ),
+        (
+            "inspect_session",
+            Request::InspectSession(InspectSessionRequest {
+                session_id: Uuid::from_u128(1),
+                generation_id: SessionGenerationId::from_u128(1),
+            }),
+        ),
+        (
+            "attach_session",
+            request_from_json(json!({
+                "method": "attach_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "close_session",
+            request_from_json(json!({
+                "method": "close_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "subscribe_events",
+            request_from_json(json!({
+                "method": "subscribe_events",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "run_once",
+            request_from_json(json!({
+                "method": "run_once",
+                "params": {
+                    "session": start,
+                    "turn": {"turn_id": turn, "prompt": "x"}
+                }
+            })),
+        ),
+        (
+            "clear_session",
+            request_from_json(json!({
+                "method": "clear_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "expected_transcript_session_id": session
+                }
+            })),
+        ),
+        ("diagnose", Request::Diagnose),
+        (
+            "run_stateless",
+            request_from_json(json!({
+                "method": "run_stateless",
+                "params": {"model": "sonnet", "prompt": "hi"}
+            })),
+        ),
+        (
+            "create_agent",
+            request_from_json(json!({
+                "method": "create_agent",
+                "params": {"spec": agent_spec.clone()}
+            })),
+        ),
+        (
+            "get_agent",
+            request_from_json(json!({
+                "method": "get_agent",
+                "params": {"agent_id": agent}
+            })),
+        ),
+        (
+            "list_agents",
+            request_from_json(json!({
+                "method": "list_agents",
+                "params": {}
+            })),
+        ),
+        (
+            "update_agent",
+            request_from_json(json!({
+                "method": "update_agent",
+                "params": {
+                    "agent_id": agent,
+                    "expected_version": 1,
+                    "spec": agent_spec
+                }
+            })),
+        ),
+    ]
+}
+
+fn request_method(request: &Request) -> &'static str {
+    match request {
+        Request::Ping => "ping",
+        Request::StartSession(_) => "start_session",
+        Request::RunTurn(_) => "run_turn",
+        Request::CancelTurn(_) => "cancel_turn",
+        Request::InspectSession(_) => "inspect_session",
+        Request::AttachSession(_) => "attach_session",
+        Request::CloseSession(_) => "close_session",
+        Request::SubscribeEvents(_) => "subscribe_events",
+        Request::RunOnce(_) => "run_once",
+        Request::ClearSession(_) => "clear_session",
+        Request::Diagnose => "diagnose",
+        Request::RunStateless(_) => "run_stateless",
+        Request::CreateAgent(_) => "create_agent",
+        Request::GetAgent(_) => "get_agent",
+        Request::ListAgents(_) => "list_agents",
+        Request::UpdateAgent(_) => "update_agent",
+    }
+}
+
+fn exchange_request(socket: &Path, request_number: u128, request: Request) -> ResponseEnvelope {
+    let envelope = RequestEnvelope::new(RequestId::from_u128(request_number), request);
+    let mut stream = connect_with_timeout(socket, Duration::from_secs(2)).unwrap();
+    write_payload(&mut stream, &serde_json::to_vec(&envelope).unwrap()).unwrap();
+    serde_json::from_value(read_value(&mut stream).unwrap()).unwrap()
+}
+
+#[test]
+fn public_session_methods_are_refused_on_the_real_socket() {
+    let root = private_root("session-surface");
+    let socket = root.path().join("p.sock");
+    let runtime_parent = root.path().join("runtime");
+    fs::create_dir(&runtime_parent).unwrap();
+    fs::set_permissions(&runtime_parent, fs::Permissions::from_mode(0o700)).unwrap();
+    let mut command = base_serve_command(&socket, &runtime_parent);
+    let mut daemon = Daemon::spawn(&mut command);
+    wait_until_ready(&mut daemon, &socket);
+
+    let fixtures = every_request_variant();
+    assert_eq!(
+        fixtures.len(),
+        16,
+        "protocol v1 currently has 16 Request variants; add a fixture when one lands"
+    );
+    for (index, (name, request)) in fixtures.into_iter().enumerate() {
+        assert_eq!(request_method(&request), name);
+        let response = exchange_request(&socket, 2 + index as u128, request);
+        match (name, response.payload) {
+            ("ping", ResponsePayload::Success(result)) => {
+                assert!(
+                    matches!(*result, ResponseResult::Pong(_)),
+                    "ping must stay living"
+                );
+            }
+            ("diagnose", ResponsePayload::Success(result)) => {
+                assert!(
+                    matches!(*result, ResponseResult::Diagnosis(_)),
+                    "diagnose must stay living"
+                );
+            }
+            ("run_stateless", ResponsePayload::Failure(error)) => {
+                assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
+                assert_eq!(
+                    error.details.get("violation").and_then(Value::as_str),
+                    Some("path_b_not_enabled"),
+                    "{name} must dispatch as living: {error:?}"
+                );
+            }
+            (removed, ResponsePayload::Failure(error))
+                if !matches!(removed, "ping" | "diagnose" | "run_stateless") =>
+            {
+                assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
+                assert_eq!(
+                    error.details.get("violation").and_then(Value::as_str),
+                    Some("session_surface_removed"),
+                    "{name}"
+                );
+                assert!(
+                    error.message.contains("not part of this product"),
+                    "{name}: {}",
+                    error.message
+                );
+            }
+            (name, other) => panic!("unexpected {name} outcome: {other:?}"),
+        }
+    }
+
+    daemon.signal(libc::SIGTERM);
+    let output = daemon.wait(PROCESS_TIMEOUT);
+    assert!(output.status.success(), "{}", output.stderr_text());
+}
+
 #[test]
 fn startup_failures_are_bounded_preserve_existing_paths_and_redact_config_values() {
     let mut relative = Command::new(pmuxd_binary());
@@ -632,13 +881,13 @@ fn owner_only_dir(path: &Path) {
 fn path_b_serve_command(socket: &Path, runtime_parent: &Path, pool_parent: &Path) -> Command {
     let mut command = base_serve_command(socket, runtime_parent);
     command
-        .arg("--path-b-parent")
+        .arg("--pool-parent")
         .arg(pool_parent)
-        .arg("--path-b-claude")
+        .arg("--pool-claude")
         .arg("/bin/sh")
-        .arg("--path-b-pool-size")
+        .arg("--pool-size")
         .arg("1")
-        .arg("--path-b-no-evidence");
+        .arg("--pool-no-evidence");
     command
 }
 
@@ -777,6 +1026,27 @@ fn json_body(response: &HttpResponse) -> Value {
 }
 
 #[test]
+fn messages_bind_refuses_non_loopback_and_other_127() {
+    let root = private_root("messages-bind-refuse");
+    let socket = root.path().join("p.sock");
+    let runtime_parent = root.path().join("runtime");
+    owner_only_dir(&runtime_parent);
+    let pool_parent = root.path().join("pool");
+    for bind in ["0.0.0.0:8765", "127.0.0.2:8765"] {
+        let mut command = path_b_serve_command(&socket, &runtime_parent, &pool_parent);
+        command.arg("--messages-bind").arg(bind);
+        let output = run_bounded(&mut command, Duration::from_secs(5));
+        assert_eq!(output.status.code(), Some(1), "{bind}");
+        assert!(
+            output.stderr_text().contains("loopback"),
+            "{bind}: {}",
+            output.stderr_text()
+        );
+        assert!(!socket.exists(), "{bind} left a public socket");
+    }
+}
+
+#[test]
 fn path_b_allow_implicit_conversation_without_messages_bind_is_refused_by_name() {
     let root = private_root("implicit-no-bind");
     let socket = root.path().join("p.sock");
@@ -784,14 +1054,14 @@ fn path_b_allow_implicit_conversation_without_messages_bind_is_refused_by_name()
     owner_only_dir(&runtime_parent);
     let pool_parent = root.path().join("pool");
     let mut command = path_b_serve_command(&socket, &runtime_parent, &pool_parent);
-    command.arg("--path-b-allow-implicit-conversation");
+    command.arg("--messages-allow-implicit");
     let output = run_bounded(&mut command, Duration::from_secs(5));
     assert_eq!(output.status.code(), Some(1));
     assert!(output.stdout.is_empty());
     assert!(
         output
             .stderr_text()
-            .contains("--path-b-allow-implicit-conversation requires --path-b-messages-bind"),
+            .contains("--messages-allow-implicit requires --messages-bind"),
         "{}",
         output.stderr_text()
     );
@@ -809,7 +1079,7 @@ fn messages_listener_speaks_the_harness_http_contract() {
     owner_only_dir(&pool_parent);
     let bind = free_loopback();
     let mut command = path_b_serve_command(&socket, &runtime_parent, &pool_parent);
-    command.arg("--path-b-messages-bind").arg(bind.to_string());
+    command.arg("--messages-bind").arg(bind.to_string());
     let mut daemon = Daemon::spawn(&mut command);
     wait_until_ready(&mut daemon, &socket);
     wait_until_messages(&mut daemon, bind);
@@ -883,6 +1153,50 @@ fn messages_listener_speaks_the_harness_http_contract() {
         message.contains("x-pmux-conversation"),
         "missing-pin refusal did not name x-pmux-conversation: {unpinned_json}"
     );
+
+    let unsafe_pin = http_exchange(
+        bind,
+        &http_request(
+            "/v1/messages",
+            "POST",
+            &[
+                ("x-api-key", "anything"),
+                ("Content-Type", "application/json"),
+                ("x-pmux-conversation", "a/b"),
+            ],
+            post_body,
+        ),
+    )
+    .unwrap();
+    assert_eq!(unsafe_pin.status, 400, "{}", unsafe_pin.body);
+    let unsafe_json = json_body(&unsafe_pin);
+    let unsafe_message = unsafe_json["error"]["message"].as_str().unwrap_or_default();
+    assert!(
+        unsafe_message.contains("path-safe"),
+        "path-unsafe pin must be refused as path-safe: {unsafe_json}"
+    );
+
+    for id in ["a!b", "100%"] {
+        let response = http_exchange(
+            bind,
+            &http_request(
+                &format!("/v1/conversations/{id}/release"),
+                "POST",
+                &[("x-api-key", "anything")],
+                "",
+            ),
+        )
+        .unwrap();
+        assert_ne!(
+            response.status, 400,
+            "{id} must be accepted as path-safe, not refused as 400: {}",
+            response.body
+        );
+        assert_eq!(response.status, 200, "{id}: {}", response.body);
+        let body = json_body(&response);
+        assert_eq!(body["released"], json!(true), "{id}: {body}");
+        assert_eq!(body["conversation"], json!(id), "{id}: {body}");
+    }
 
     daemon.signal(libc::SIGTERM);
     let output = daemon.wait(PROCESS_TIMEOUT);

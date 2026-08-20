@@ -16,15 +16,15 @@ use pseudomux_rmux::{EnvironmentSnapshot, LaunchSpec};
 // `pseudomux_protocol::v1::launch_environment`, and this module is its one
 // enforcement point.
 //
-// It is not here because `pmux probe` and the client's `require_env` check both
-// have to predict the same answer without contacting a daemon, which makes the
-// prediction part of the observable v1 contract. Three hand-kept copies used to
-// satisfy that need, pinned only by source-text-parsing drift fences; there is
-// now one definition and no fence to keep honest.
+// This used to live here so `pmux probe` and the client's `require_env` check
+// could both predict the same answer without contacting a daemon. Three
+// hand-kept copies used to satisfy that need, pinned only by source-text-parsing
+// drift fences; there is now one definition and no fence to keep honest. The
+// remaining reader of this module is the daemon launch path.
 //
 // `inherits` is imported under this module's own vocabulary
-// (`inherited_from_snapshot`), which `docs/spec.md` §4.5 and
-// `docs/current-state.md` both name.
+// (`inherited_from_snapshot`), which `docs/spec.md` §4 names as the
+// snapshot → allowlist → set/unset fold.
 use pseudomux_protocol::v1::launch_environment::{
     SUBSCRIPTION_AUTH_KEYS, inherits as inherited_from_snapshot, transparent_profile_removes,
 };
@@ -169,7 +169,7 @@ pub const MINIFIED_CELL_FLAGS: &[&str] = &["--strict-mcp-config"];
 /// Every option token a minified cell's argv carries, in argv order, for the
 /// launch `request` describes.
 ///
-/// DERIVED, by performing the same three steps `NativeService::start_session`
+/// DERIVED, by performing the same three steps `NativeService::start_session_owned_with_retention`
 /// performs -- materialize the sensitive files, resolve the launch, apply the
 /// private pathnames -- and keeping the `--` tokens. There is no second list
 /// here to keep honest, which is the whole point: three prose sites describe
@@ -248,18 +248,14 @@ pub fn select_session_id(request: &StartSessionRequest) -> Result<SessionId> {
 /// Resolve a new/resumed UUID and build the only argv accepted by the native driver.
 pub fn resolve_claude_launch(request: &StartSessionRequest) -> Result<ResolvedClaudeLaunch> {
     validate_start(request)?;
-    // A start that still names an agent has not been through
-    // `agent::resolve_agent_start`, and there is nothing here to launch. This
-    // is unreachable from every wire path -- `start_session_owned` resolves
-    // before anything reads the launch configuration -- and it is a refusal
-    // rather than an `expect` because `resolve_claude_launch` is `pub` and a
-    // direct embedder can call it with any DTO it can construct.
-    let claude = request.claude.as_ref().ok_or_else(|| {
-        anyhow::anyhow!(
-            "start request carries no inline launch configuration; a request naming `agent` must \
-             be resolved against the stored version before it can be launched"
-        )
-    })?;
+    // A start that names `agent` is refused on the public wire; this function
+    // launches only an inline `claude` configuration. The refusal rather than
+    // an `expect` is because `resolve_claude_launch` is `pub` and a direct
+    // embedder can call it with any DTO it can construct.
+    let claude = request
+        .claude
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("start request carries no inline launch configuration"))?;
     let (session_id, resume) = match request.identity {
         SessionIdentity::New { session_id } => {
             (session_id.unwrap_or_else(SessionId::new_v4), false)
@@ -393,16 +389,15 @@ fn validate_config_isolation(request: &StartSessionRequest) -> Result<()> {
     // because a minified cell with no `config_isolation` at all is already
     // refused there, on a rule that says the same thing more directly.
     //
-    // PATH A KEEPS THE DOOR. An ordinary (`cell: full`) caller owns its own
-    // isolation story: `pmux start --env CLAUDE_CONFIG_DIR=...` is a supported
-    // way to point one session at a different root, `pmux probe` predicts it
-    // without contacting a daemon, and pmux seeds nothing there. Such a start
-    // is still admitted against every live session's resources by
+    // PATH A KEEPS THE DOOR as an internal launch-path control. A full-cell
+    // (`cell: full`) `environment.set` of those names can still point one
+    // internal start at a different root; pmux seeds nothing there. Public
+    // `start_session` is refused. There is no `pmux probe`, `pmux start`, or
+    // `--config-isolation-root` on the product CLI. Such an internal start is
+    // still admitted against every live session's resources by
     // `native::admit_bound_resources`, on the inode, exactly like any other
     // spelling. Nothing in the tree -- no test, no client, no CLI path --
-    // combines `cell: minified` with any name in [`CONFIG_ROOT_ENV_DOORS`]; the
-    // only caller-facing statement about the combination is `pmux --help` for
-    // `--config-isolation-root`, which already calls them mutually exclusive.
+    // combines `cell: minified` with any name in [`CONFIG_ROOT_ENV_DOORS`].
     //
     // LEAK 9, AND WHY THE LIST GREW BY THREE NAMES.
     //
@@ -489,7 +484,7 @@ fn validate_config_isolation(request: &StartSessionRequest) -> Result<()> {
     // this feature exists to remove.
     //
     // Keyed on the resource rather than on the spelling for the same reason
-    // `native::admit_bound_resources` is: `--config-isolation-root` naming
+    // `native::admit_bound_resources` is: a `config_isolation.root` naming
     // `/System/Volumes/Data<HOME>/.claude` is the operator's own root under the
     // firmlink alias, and a comparison of canonicalized strings says it is not.
     if let Some(inherited) = pre_isolation_config_root(&request.environment)
@@ -646,16 +641,14 @@ pub fn directory_lies_within(root: &Path, candidate: &Path) -> bool {
 
 /// The public admission for caller-supplied Claude arguments.
 ///
-/// Exposed so an [`crate::agent::AgentSpec`]-shaped configuration is held to
-/// the launcher's own closed allowlist rather than to a second copy of it: a
-/// driver-owned flag added to `FORBIDDEN_DRIVER_FLAGS` is refused for stored
-/// agents on the same day, with no second edit.
+/// Exposed so a [`pseudomux_protocol::v1::AgentSpec`]-shaped configuration is
+/// held to the launcher's own closed allowlist rather than to a second copy of
+/// it: a driver-owned flag added to `FORBIDDEN_DRIVER_FLAGS` is refused on the
+/// same day, with no second edit.
 ///
 /// # Errors
 ///
 /// The launcher's own refusal, verbatim.
-///
-/// [`crate::agent::AgentSpec`]: pseudomux_protocol::v1::AgentSpec
 pub fn validate_public_extra_args(args: &[String]) -> Result<()> {
     validate_extra_args(args)
 }
@@ -904,8 +897,8 @@ fn push_value(args: &mut Vec<String>, flag: &str, value: &str) -> Result<()> {
 /// caller offered that is absent from the result, whether the allowlist, the
 /// denylist, or the auth policy dropped it. The two reasons are not
 /// distinguished, because doing so would change the public
-/// `ResolvedClaudeLaunch::removed_environment_keys` type; completeness is what
-/// `pmux probe` needs to stay an honest audit surface.
+/// `ResolvedClaudeLaunch::removed_environment_keys` type; completeness is an
+/// internal launch invariant, asserted by tests, not a public probe surface.
 fn build_environment(
     spec: &EnvironmentSpec,
     auth_policy: AuthPolicy,
@@ -2428,7 +2421,7 @@ mod tests {
             launch
                 .removed_environment_keys
                 .contains("SOME_RANDOM_THING"),
-            "`pmux probe` must see allowlist drops, not only denylist drops"
+            "internal launch completeness must report allowlist drops, not only denylist drops"
         );
         assert_eq!(
             launch.process.environment.variables.get("ANOTHER_UNKNOWN"),
@@ -3248,8 +3241,8 @@ mod tests {
 
     /// The same rule, under the alias that defeated the string comparison.
     ///
-    /// `--config-isolation-root /System/Volumes/Data<the caller's own root>` is
-    /// the caller's own root -- same device, same inode -- and canonicalizing
+    /// A `config_isolation.root` of `/System/Volumes/Data<the caller's own root>`
+    /// is the caller's own root -- same device, same inode -- and canonicalizing
     /// both sides says it is not, so pmux would have put its trust-table writer
     /// on the very file this feature exists to keep it off. The private root a
     /// `config_isolation` request is entitled to is a DIFFERENT DIRECTORY, and

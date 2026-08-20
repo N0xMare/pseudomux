@@ -7,9 +7,9 @@
 //! is behind a method on `NativeService`, `NativeService` held an
 //! `Arc<PrivateRuntime>`, and a `PrivateRuntime` cannot exist without a real
 //! `pmux-rmuxd` sidecar, a real launcher socket and a completed rmux handshake.
-//! The only tests that build one are the three in
-//! `crates/service/tests/native_service.rs`, and all three are `#[ignore]`d. So the completion proof
-//! (`wait_for_turn`), three generation fences (`clear_boundary`, `attach`,
+//! The only tests that built one were the Path A lanes in
+//! `crates/service/tests/native_service.rs`, now removed. So the completion proof
+//! (`wait_for_turn`), generation fences (`clear_boundary`,
 //! `close_session_with_state`), the idle reaper, the pool-disclosure filter in
 //! `diagnose`, the clear deadline domain and `shutdown`'s first-error rule were
 //! all untested -- not lightly tested, untested -- and a mutation run is how
@@ -54,17 +54,10 @@ impl Seam {
             .prefix("pmux-seam-")
             .tempdir()
             .unwrap();
-        let agent_store = config
-            .agent_store
-            .as_deref()
-            .map(crate::agent::AgentStore::open)
-            .transpose()
-            .unwrap();
         let runtime = Arc::new(ScriptedRuntime::new());
-        let service = Arc::new(NativeService::from_runtime_with_agent_store(
+        let service = Arc::new(NativeService::from_runtime(
             Arc::clone(&runtime) as Arc<dyn SessionRuntime>,
             config,
-            agent_store,
         ));
         Self {
             service,
@@ -161,7 +154,6 @@ fn seam_config() -> NativeServiceConfig {
         // job on a loaded host measured 250 ms as a flake. A timeout whose only
         // job is to bound a hang costs nothing by being generous.
         version_timeout: Duration::from_secs(10),
-        attach_ttl: Duration::from_secs(5),
         ..NativeServiceConfig::default()
     }
 }
@@ -421,65 +413,6 @@ async fn a_clear_boundary_is_the_pair_of_the_generation_the_caller_named() {
     assert_eq!(refusal.code, ErrorCode::StaleSessionGeneration);
 }
 
-/// Register: `native.rs::attach`, `replace == with !=`.
-///
-/// The same fence on the attach path, where the consequence is a writable
-/// proxy onto another incarnation's pane. The registry answers under `live` and
-/// the metadata map holds `superseded`, which is the exact disagreement the
-/// fence is placed there to refuse -- and the only state in which the mutation
-/// is observable at all, because a matching pair is admitted either way.
-#[cfg(unix)]
-#[tokio::test]
-async fn a_writable_attach_is_refused_when_the_backend_is_another_generations() {
-    let seam = Seam::build();
-    let session_id = SessionId::new_v4();
-    let live = SessionGenerationId::new();
-    let superseded = SessionGenerationId::new();
-    let terminal = seam_terminal(SeamClose::Reaped);
-    let transcript = Arc::new(
-        FileTranscriptSource::new(seam.root.path(), seam.root.path(), session_id).unwrap(),
-    );
-    seam.service
-        .registry
-        .register(SessionRegistration {
-            agent: None,
-            session_id,
-            generation_id: live,
-            owner: SessionOwner::Caller,
-            cwd: seam.root.path().to_string_lossy().into_owned(),
-            compatibility: seam_compatibility(),
-            dangerous_permission_bypass: false,
-            resumable: true,
-            cell: SessionCell::Full,
-            idle_ttl_ms: None,
-            initial_needs_input: None,
-            terminal: Arc::clone(&terminal) as Arc<dyn TerminalControl>,
-            transcript: Arc::clone(&transcript) as Arc<dyn TranscriptSource>,
-        })
-        .await
-        .unwrap();
-    seam.insert_metadata(
-        session_id,
-        superseded,
-        SessionOwner::Caller,
-        terminal,
-        transcript,
-    )
-    .await;
-
-    let refusal = seam
-        .service
-        .attach(AttachSessionRequest {
-            session_id,
-            generation_id: live,
-            read_only: false,
-            size: None,
-        })
-        .await
-        .expect_err("no attach may be granted onto another generation's pane");
-    assert_eq!(refusal.code, ErrorCode::StaleSessionGeneration);
-}
-
 // ---------------------------------------------------------------------------
 // The clear deadline's domain
 // ---------------------------------------------------------------------------
@@ -516,7 +449,7 @@ async fn the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_
     .await;
     let Err(admitted) = seam
         .service
-        .clear_session(seam_clear_request(
+        .clear_session_internal(seam_clear_request(
             session_id,
             generation_id,
             Some(MAX_SAFE_JSON_INTEGER),
@@ -542,7 +475,7 @@ async fn the_clear_deadline_domain_admits_its_own_top_and_refuses_a_synthesised_
         .await;
     let Err(refused) = saturating
         .service
-        .clear_session(seam_clear_request(session_id, generation_id, None))
+        .clear_session_internal(seam_clear_request(session_id, generation_id, None))
         .await
     else {
         panic!("a deadline outside the wire domain cannot be handed to an actor");
@@ -872,11 +805,14 @@ async fn a_close_removes_only_the_generation_it_named() {
     let service = Arc::clone(&seam.service);
     let closing_call = tokio::spawn(async move {
         service
-            .close_session(CloseSessionRequest {
-                session_id,
-                generation_id: closing,
-                policy: ClosePolicy::Force,
-            })
+            .close_session_owned(
+                SessionOwner::Caller,
+                CloseSessionRequest {
+                    session_id,
+                    generation_id: closing,
+                    policy: ClosePolicy::Force,
+                },
+            )
             .await
     });
     gate.wait_until_entered().await;
@@ -1188,103 +1124,8 @@ async fn a_turn_still_running_is_waited_for_rather_than_declared_lost() {
 }
 
 // ---------------------------------------------------------------------------
-// Agent resolution, and the clock every synthesized deadline is built from
+// The clock every synthesized deadline is built from
 // ---------------------------------------------------------------------------
-
-/// Register: `native.rs::resolve_agent_reference`, `replace ->
-/// Result<Option<SessionAgentPin>, ErrorBody> with Ok(None)`.
-///
-/// Read as `Ok(None)` a start that named a stored agent launches the CALLER's
-/// inline policy instead of the agent's, and reports no pin -- which is the
-/// exact merge the protocol layer refuses by name. The free function beneath
-/// this method is already tested; the method is what every start actually
-/// calls, and until now nothing could call it.
-#[tokio::test]
-async fn a_start_naming_a_stored_agent_resolves_that_agents_configuration() {
-    use pseudomux_protocol::v1::{
-        AgentContainment, AgentEnvironmentSpec, AgentRef, AgentSpec, AuthPolicy, EnvironmentSpec,
-        LifecycleMode, RetentionPolicy, SessionIdentity, TerminalSpec,
-    };
-
-    let temp = tempfile::tempdir().unwrap();
-    let cwd = owner_only_child(temp.path(), "work");
-    let store_directory = temp.path().join("agents");
-    let stored = crate::agent::AgentStore::open(&store_directory)
-        .unwrap()
-        .create(
-            AgentSpec {
-                name: "seam-reviewer".into(),
-                description: None,
-                claude: ClaudeLaunchConfig {
-                    // The one field the assertion reads back: nothing in the
-                    // request below carries it, so it can only have come from
-                    // the stored agent.
-                    executable: "/bin/seam-agent-claude".into(),
-                    model: None,
-                    effort: None,
-                    permission_mode: None,
-                    allowed_tools: Vec::new(),
-                    denied_tools: Vec::new(),
-                    settings: Vec::new(),
-                    mcp_configs: Vec::new(),
-                    plugin_dirs: Vec::new(),
-                    system_prompt: SystemPromptPolicy::Default,
-                    extra_args: Vec::new(),
-                },
-                environment: AgentEnvironmentSpec::default(),
-                auth_policy: AuthPolicy::default(),
-                terminal: TerminalSpec::default(),
-                lifecycle: LifecycleMode::default(),
-                retention: RetentionPolicy::default(),
-                compatibility: CompatibilityPolicy::default(),
-                cell: SessionCell::Full,
-                containment: AgentContainment::default(),
-            },
-            1_700_000_000_000,
-        )
-        .unwrap();
-    let mut config = seam_config();
-    config.agent_store = Some(store_directory);
-    let seam = Seam::with_config(config);
-
-    let mut request = StartSessionRequest {
-        identity: SessionIdentity::New { session_id: None },
-        cwd: cwd.to_string_lossy().into_owned(),
-        claude: None,
-        agent: Some(AgentRef {
-            agent_id: stored.agent_id,
-            version: stored.version,
-        }),
-        environment: EnvironmentSpec::default(),
-        auth_policy: AuthPolicy::default(),
-        config_isolation: None,
-        terminal: TerminalSpec::default(),
-        lifecycle: LifecycleMode::default(),
-        retention: RetentionPolicy::default(),
-        compatibility: CompatibilityPolicy::default(),
-        cell: SessionCell::Full,
-    };
-
-    let pin = seam
-        .service
-        .resolve_agent_reference(&mut request, Retention::AsResolved)
-        .expect("the stored agent resolves")
-        .expect("a start that named an agent is pinned to the version it named");
-
-    assert_eq!(pin.config_digest, stored.config_digest);
-    assert_eq!(pin.agent_id, stored.agent_id);
-    assert_eq!(
-        request
-            .claude
-            .expect("the agent's launch replaced the request's")
-            .executable,
-        "/bin/seam-agent-claude"
-    );
-    assert!(
-        request.agent.is_none(),
-        "a resolved reference is consumed, never left for a second resolver"
-    );
-}
 
 /// Register: `native.rs::unix_now_ms`, `replace -> Result<u64, ErrorBody> with
 /// Ok(0)` and `with Ok(1)`.
@@ -1403,7 +1244,6 @@ async fn start_one_cell(seam: &Seam, cell: SessionCell) -> ErrorBody {
                 cell,
             },
             SessionOwner::Caller,
-            Retention::AsResolved,
         )
         .await
         .expect_err("no seam start can produce a terminal");
@@ -1492,5 +1332,383 @@ async fn a_start_whose_terminal_never_renders_a_prompt_publishes_nothing_and_kee
         closes.load(Ordering::SeqCst),
         1,
         "a start that failed after creating a pane closes the pane it created"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The public session surface is gone; dispatch keeps three living methods
+// ---------------------------------------------------------------------------
+
+fn refused_start_request() -> StartSessionRequest {
+    use pseudomux_protocol::v1::{
+        AuthPolicy, EnvironmentSpec, LifecycleMode, RetentionPolicy, SessionIdentity, TerminalSpec,
+    };
+
+    StartSessionRequest {
+        identity: SessionIdentity::New { session_id: None },
+        cwd: "/tmp".to_owned(),
+        agent: None,
+        claude: Some(ClaudeLaunchConfig {
+            executable: "/usr/bin/true".to_owned(),
+            model: None,
+            effort: None,
+            permission_mode: None,
+            allowed_tools: Vec::new(),
+            denied_tools: Vec::new(),
+            settings: Vec::new(),
+            mcp_configs: Vec::new(),
+            plugin_dirs: Vec::new(),
+            system_prompt: SystemPromptPolicy::Default,
+            extra_args: Vec::new(),
+        }),
+        environment: EnvironmentSpec {
+            snapshot: BTreeMap::new(),
+            set: BTreeMap::new(),
+            unset: BTreeSet::new(),
+        },
+        auth_policy: AuthPolicy::Inherit,
+        config_isolation: None,
+        terminal: TerminalSpec::default(),
+        lifecycle: LifecycleMode::Transcript,
+        retention: RetentionPolicy::OneShot,
+        compatibility: CompatibilityPolicy::AllowUntested,
+        cell: SessionCell::Full,
+    }
+}
+
+fn refused_turn() -> pseudomux_protocol::v1::TurnRequest {
+    pseudomux_protocol::v1::TurnRequest {
+        turn_id: SessionId::from_u128(3),
+        prompt: "x".to_owned(),
+        deadline_unix_ms: None,
+        lease: pseudomux_protocol::v1::TurnLeasePolicy::default(),
+    }
+}
+
+fn request_from_json(value: serde_json::Value) -> Request {
+    serde_json::from_value(value).unwrap_or_else(|error| {
+        panic!("fixture is not a Request: {error}");
+    })
+}
+
+/// One of every [`Request`] variant. Adding a variant fails
+/// [`request_method`] at compile time; add a fixture here in the same change.
+fn every_request_variant() -> Vec<(&'static str, Request)> {
+    let session = "00000000-0000-0000-0000-000000000001";
+    let generation = "00000000-0000-0000-0000-000000000002";
+    let turn = "00000000-0000-0000-0000-000000000003";
+    let agent = "00000000-0000-0000-0000-000000000004";
+    let start = json!({
+        "identity": {"mode": "new"},
+        "cwd": "/tmp",
+        "claude": {"executable": "/usr/bin/true"}
+    });
+    let agent_spec = json!({
+        "name": "reviewer",
+        "claude": {"executable": "/usr/bin/true"}
+    });
+    vec![
+        ("ping", Request::Ping),
+        (
+            "start_session",
+            request_from_json(json!({
+                "method": "start_session",
+                "params": start.clone()
+            })),
+        ),
+        (
+            "run_turn",
+            request_from_json(json!({
+                "method": "run_turn",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "turn": {"turn_id": turn, "prompt": "x"}
+                }
+            })),
+        ),
+        (
+            "cancel_turn",
+            request_from_json(json!({
+                "method": "cancel_turn",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "turn_id": turn
+                }
+            })),
+        ),
+        (
+            "inspect_session",
+            request_from_json(json!({
+                "method": "inspect_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "attach_session",
+            request_from_json(json!({
+                "method": "attach_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "close_session",
+            request_from_json(json!({
+                "method": "close_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "subscribe_events",
+            request_from_json(json!({
+                "method": "subscribe_events",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation
+                }
+            })),
+        ),
+        (
+            "run_once",
+            request_from_json(json!({
+                "method": "run_once",
+                "params": {
+                    "session": start,
+                    "turn": {"turn_id": turn, "prompt": "x"}
+                }
+            })),
+        ),
+        (
+            "clear_session",
+            request_from_json(json!({
+                "method": "clear_session",
+                "params": {
+                    "session_id": session,
+                    "generation_id": generation,
+                    "expected_transcript_session_id": session
+                }
+            })),
+        ),
+        ("diagnose", Request::Diagnose),
+        (
+            "run_stateless",
+            request_from_json(json!({
+                "method": "run_stateless",
+                "params": {"model": "sonnet", "prompt": "hi"}
+            })),
+        ),
+        (
+            "create_agent",
+            request_from_json(json!({
+                "method": "create_agent",
+                "params": {"spec": agent_spec.clone()}
+            })),
+        ),
+        (
+            "get_agent",
+            request_from_json(json!({
+                "method": "get_agent",
+                "params": {"agent_id": agent}
+            })),
+        ),
+        (
+            "list_agents",
+            request_from_json(json!({
+                "method": "list_agents",
+                "params": {}
+            })),
+        ),
+        (
+            "update_agent",
+            request_from_json(json!({
+                "method": "update_agent",
+                "params": {
+                    "agent_id": agent,
+                    "expected_version": 1,
+                    "spec": agent_spec
+                }
+            })),
+        ),
+    ]
+}
+
+fn request_method(request: &Request) -> &'static str {
+    match request {
+        Request::Ping => "ping",
+        Request::StartSession(_) => "start_session",
+        Request::RunTurn(_) => "run_turn",
+        Request::CancelTurn(_) => "cancel_turn",
+        Request::InspectSession(_) => "inspect_session",
+        Request::AttachSession(_) => "attach_session",
+        Request::CloseSession(_) => "close_session",
+        Request::SubscribeEvents(_) => "subscribe_events",
+        Request::RunOnce(_) => "run_once",
+        Request::ClearSession(_) => "clear_session",
+        Request::Diagnose => "diagnose",
+        Request::RunStateless(_) => "run_stateless",
+        Request::CreateAgent(_) => "create_agent",
+        Request::GetAgent(_) => "get_agent",
+        Request::ListAgents(_) => "list_agents",
+        Request::UpdateAgent(_) => "update_agent",
+    }
+}
+
+fn assert_session_surface_removed(label: &str, error: &ErrorBody) {
+    assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{label}");
+    assert_eq!(
+        error.details.get("violation").and_then(|value| value.as_str()),
+        Some("session_surface_removed"),
+        "{label}: {error:?}"
+    );
+    assert!(
+        error.message.contains("not part of this product"),
+        "{label}: {}",
+        error.message
+    );
+}
+
+async fn assert_public_session_verbs_refuse(seam: &Seam) {
+    let start = refused_start_request();
+    let session_id = SessionId::from_u128(1);
+    let generation_id = SessionGenerationId::from_u128(1);
+
+    let refusals = [
+        (
+            "start_session",
+            seam.service.start_session(start.clone()).await.unwrap_err(),
+        ),
+        (
+            "run_once",
+            seam.service
+                .run_once(RunOnceRequest {
+                    session: start,
+                    turn: refused_turn(),
+                })
+                .await
+                .unwrap_err(),
+        ),
+        (
+            "run_turn",
+            seam.service
+                .run_turn(RunTurnRequest {
+                    session_id,
+                    generation_id,
+                    turn: refused_turn(),
+                })
+                .await
+                .unwrap_err(),
+        ),
+        (
+            "clear_session",
+            seam.service
+                .clear_session(seam_clear_request(session_id, generation_id, None))
+                .await
+                .unwrap_err(),
+        ),
+        (
+            "close_session",
+            seam.service
+                .close_session(CloseSessionRequest {
+                    session_id,
+                    generation_id,
+                    policy: ClosePolicy::Force,
+                })
+                .await
+                .unwrap_err(),
+        ),
+    ];
+    for (name, error) in refusals {
+        assert_session_surface_removed(name, &error);
+    }
+    assert!(
+        seam.published_sessions().await.is_empty(),
+        "a refused public verb must not mint"
+    );
+    assert!(
+        seam.runtime.creations().is_empty(),
+        "a refused public verb must not create a pane"
+    );
+}
+
+/// Public verbs refuse on a constructed service. Mint stays on
+/// `start_session_owned`.
+#[tokio::test]
+async fn public_session_verbs_refuse_without_minting() {
+    let seam = Seam::build();
+    assert_public_session_verbs_refuse(&seam).await;
+}
+
+/// The registry getter is crate-visible so the pool can mint; an embedder
+/// outside this crate cannot take that door. Public verbs still refuse.
+#[tokio::test]
+async fn registry_is_crate_visible_and_public_verbs_still_refuse() {
+    let seam = Seam::build();
+    assert_public_session_verbs_refuse(&seam).await;
+    let _ = seam.service.registry();
+    const NATIVE: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/native.rs"));
+    assert!(
+        NATIVE.contains("pub(crate) fn registry("),
+        "NativeService::registry must stay crate-visible for the pool"
+    );
+    assert!(
+        !NATIVE.contains("pub fn registry("),
+        "an embedder outside the crate must not take the registry door"
+    );
+}
+
+/// Every non-living `Request` is refused by `dispatch` itself. Ping and
+/// Diagnose still answer; `run_stateless` is living and reaches the pool
+/// door (`path_b_not_enabled` with no pool), not `session_surface_removed`.
+#[tokio::test]
+async fn dispatch_refuses_every_non_living_request_and_keeps_the_living_allowlist() {
+    let seam = Seam::build();
+    let fixtures = every_request_variant();
+    assert_eq!(
+        fixtures.len(),
+        16,
+        "protocol v1 currently has 16 Request variants; add a fixture when one lands"
+    );
+
+    for (name, request) in fixtures {
+        assert_eq!(request_method(&request), name);
+        match seam.service.dispatch(request).await {
+            Ok(ResponseResult::Pong(_)) if name == "ping" => {}
+            Ok(ResponseResult::Diagnosis(_)) if name == "diagnose" => {}
+            Err(error) if name == "run_stateless" => {
+                assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
+                assert_eq!(
+                    error
+                        .details
+                        .get("violation")
+                        .and_then(|value| value.as_str()),
+                    Some("path_b_not_enabled"),
+                    "{name} must dispatch as living: {error:?}"
+                );
+            }
+            Err(error)
+                if !matches!(name, "ping" | "diagnose" | "run_stateless") =>
+            {
+                assert_session_surface_removed(name, &error);
+            }
+            other => panic!("{name}: unexpected dispatch outcome: {other:?}"),
+        }
+    }
+    assert!(
+        seam.published_sessions().await.is_empty(),
+        "dispatch of a removed method must not mint"
+    );
+    assert!(
+        seam.runtime.creations().is_empty(),
+        "dispatch of a removed method must not create a pane"
     );
 }

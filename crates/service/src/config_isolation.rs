@@ -67,7 +67,7 @@
 //! ([`SeedDisposition`]); when one is, it performs a read-only check and
 //! refuses the start rather than racing. Seeds within one daemon are already
 //! serialized by `NativeService::start_guard`, which is held across the whole
-//! of `start_session_internal`, so no second lock is introduced here.
+//! of `start_session_owned_with_retention`, so no second lock is introduced here.
 
 use std::fs::OpenOptions;
 use std::io::{ErrorKind, Read, Write};

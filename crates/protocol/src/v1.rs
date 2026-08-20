@@ -10,14 +10,13 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use uuid::Uuid;
 
-// The single authoritative launch-environment inheritance policy. It lives here
-// rather than in the daemon that enforces it because a client that must predict
-// which inherited variables the daemon will drop -- `pmux probe` and
-// `agent_profile`'s `require_env` check both must, without contacting a daemon
-// -- is consuming an observable clause of the v1 contract, not a service
-// implementation detail. The module's own documentation carries the argument;
-// it is deliberately not repeated here as an outer doc comment, because
-// rustdoc would then resolve the module's intra-doc links in this scope.
+// The single authoritative launch-environment inheritance policy. It lives
+// here rather than only in the daemon that enforces it so every crate that
+// already depends on `pseudomux-protocol` shares one table. `pmux probe` and
+// `agent_profile` used to be the second readers; both are gone from the
+// product. The module's own documentation carries the argument; it is
+// deliberately not repeated here as an outer doc comment, because rustdoc
+// would then resolve the module's intra-doc links in this scope.
 pub mod launch_environment;
 
 /// The only wire version understood by this crate.
@@ -926,7 +925,7 @@ pub enum LayerFinding {
     /// empty set that nothing declared should be occupied (a registry holding
     /// no sessions; a pool with no declared warm floor holding no instances) or
     /// when the layer does not apply to how this daemon was configured (the
-    /// pool on a daemon with no `--path-b-parent`; the compatibility profile on
+    /// pool on a daemon with no `--pool-parent`; the compatibility profile on
     /// a daemon with no pool, which is what makes a promoted cell mandatory).
     /// In every case the layer was reached, evaluated, and found to have no
     /// subject.
@@ -1540,13 +1539,12 @@ struct WireStartSessionRequest {
 ///
 /// THIS COUNTER IS ITSELF DERIVED-AGAINST NOW. It is one number restated in
 /// four places, which is the defect it describes, and
-/// `test_run_gate.py::test_every_statement_of_the_bug_class_counter_spells_the_same_ordinal`
-/// is the only thing that compares them -- against the last
+/// `tools/dev/tests/test_workflow.py::LivingDocs.test_bug_class_ordinal_matches_current_state`
+/// is the thing that compares them -- against the last
 /// `THE BUG CLASS, instance …` heading in `docs/current-state.md`, which is the
-/// document that decides it. It lives in the gate driver's own tests and not
-/// beside this counter because every `pseudomux-service` test target runs once
-/// per mutant, in a tree `cargo-mutants` copies, and a test that reads `docs/`
-/// there is a bet on that tool's copy rules.
+/// document that decides it. It lives beside the living check, not in a mutant
+/// copy of this crate, because a test that reads `docs/` under `cargo-mutants`
+/// is a bet on that tool's copy rules.
 /// Its first run over the files those campaigns had covered found **69
 /// survivors in 478 decided mutants**, including a whole guard that deletes with
 /// the suite green and a re-export whose doc says "never a copy" that nothing
@@ -1758,8 +1756,8 @@ impl Serialize for StartSessionRequest {
     /// `lifecycle`, `retention`, `compatibility` and `auth_policy` are
     /// non-`Option` and unconditionally serialized, so a request naming an
     /// agent would otherwise emit five fields the daemon then refuses -- which
-    /// would make `pmux start --agent ...` fail every time, for a launch policy
-    /// the caller never wrote. Omitting them when they are at their type
+    /// would make a `start_session` carrying `agent` fail every time, for a
+    /// launch policy the caller never wrote. Omitting them when they are at their type
     /// default is what makes the DTO expressible at all.
     ///
     /// A NON-DEFAULT VALUE BESIDE AN AGENT IS AN ERROR, not a silent drop. A
@@ -1934,15 +1932,15 @@ impl SessionCell {
         matches!(self, Self::Full)
     }
 
-    /// The ONE spelling of this cell: the wire value, the `--cell` value the
-    /// CLI accepts, and the word to put in a message beside a literal `--cell`.
+    /// The ONE spelling of this cell: the wire value, and the word to put in a
+    /// message beside a literal `cell`.
     ///
     /// Exists for the same reason [`EffortLevel::as_str`] does, and against the
     /// same defect: `{cell:?}` renders `Minified`, which is a Rust identifier
-    /// that neither the wire nor `pmux --cell` accepts. Derived from an
-    /// exhaustive `match`, so a variant added to this enum is a compile error
-    /// here rather than a message that silently renders a spelling the flag it
-    /// names would reject. Pinned against `Serialize` in `v1_wire`.
+    /// the wire does not accept. Derived from an exhaustive `match`, so a
+    /// variant added to this enum is a compile error here rather than a
+    /// message that silently renders a spelling the field it names would
+    /// reject. Pinned against `Serialize` in `v1_wire`.
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -2027,13 +2025,13 @@ pub enum EffortLevel {
 }
 
 impl EffortLevel {
-    /// The ONE spelling of this tier: the wire value, the `--effort` value both
-    /// CLIs accept, and the word to put in a message beside a literal
+    /// The ONE spelling of this tier: the wire value, the `--effort` value
+    /// `pmux run` accepts, and the word to put in a message beside a literal
     /// `--effort`.
     ///
     /// Exists because `{effort:?}` does not spell any of those. `XHigh` is the
-    /// Rust identifier and nothing accepts it: `pmux --effort XHigh` is refused
-    /// by clap, and `"XHigh"` is refused by this type's own `Deserialize`. A
+    /// Rust identifier and nothing accepts it: `pmux run --effort XHigh` is
+    /// refused by clap, and `"XHigh"` is refused by this type's own `Deserialize`. A
     /// refusal that renders the tier with `Debug` therefore names a spelling
     /// that is rejected by the very flag the same sentence tells the operator
     /// to use -- which is what `pseudomux_service::pool::class`'s
@@ -2820,13 +2818,11 @@ pub struct SessionSnapshot {
     pub generation_id: SessionGenerationId,
     /// The transcript this session's turns are currently proven from.
     ///
-    /// Equal to `session_id` until a [`Request::ClearSession`] rotates it, and
-    /// published because a caller that lost its
-    /// [`ClearSessionRequest::expected_transcript_session_id`] must be able to
-    /// READ the fence rather than re-derive it from its own bookkeeping. A
-    /// re-derived fence is a guess, and the one thing a fence must never be is
-    /// a guess: a wrong one is either refused or -- worse -- answered as an
-    /// already-completed clear.
+    /// Equal to `session_id` until a [`Request::ClearSession`] rotates it.
+    /// Public `inspect_session` / `clear_session` refuse
+    /// (`session_surface_removed`); the field remains on the wire type.
+    /// Living recovery for a Messages lease is `x-pmux-cell` /
+    /// `pmux doctor` conversation leases, not this snapshot.
     #[serde(deserialize_with = "deserialize_canonical_uuid")]
     pub transcript_session_id: SessionId,
     /// Which cell this session is driven as. Fixed at start and never mutated,
@@ -3021,12 +3017,10 @@ pub struct ClearSessionRequest {
     /// it never cleared is empty is how its turn lands behind the first caller's
     /// prompt.
     ///
-    /// Recovering a lost response therefore costs one round trip and never a
-    /// wrong answer: read [`SessionSnapshot::transcript_session_id`]. If it
-    /// moved, a clear landed; if certainty about the cell's contents is needed,
-    /// clear again on the current fence, which is semantically idempotent -- an
-    /// empty transcript is abandoned for another empty transcript, and the
-    /// emptiness proof runs again.
+    /// Public `inspect_session` / `clear_session` refuse
+    /// (`session_surface_removed`). Living recovery for a Messages lease is
+    /// `x-pmux-cell` / `pmux doctor` conversation leases. The pool's internal
+    /// `/clear` still fences on this field.
     #[serde(deserialize_with = "deserialize_canonical_uuid")]
     pub expected_transcript_session_id: SessionId,
     /// Absolute Unix deadline for submitting the command to the TUI. Omit to
@@ -3453,10 +3447,10 @@ pub struct AgentDescriptor {
     /// The stored spec, with every environment VALUE and every inline
     /// settings/MCP document body replaced by `sha256:<hex>` of its bytes.
     ///
-    /// `system_prompt` is deliberately NOT redacted. `pmux probe` redacts it
-    /// because `probe` prints to a terminal; an agent's system prompt is the
-    /// single most important thing about it and an inspection surface that
-    /// hides it is useless.
+    /// `system_prompt` is deliberately NOT redacted. The deleted `pmux probe`
+    /// command redacted it because `probe` printed to a terminal; an agent's
+    /// system prompt is the single most important thing about it and an
+    /// inspection surface that hides it is useless.
     ///
     /// **OPAQUE ON THE RESPONSE, and typed with [`Self::typed_spec`].** It is
     /// an echoed REQUEST document, and the two halves of the wire contract pull
@@ -3504,7 +3498,7 @@ pub struct AgentList {
     /// **A LIST REPORTS WHAT IT COULD NOT READ, AND NEVER LOSES WHAT IT
     /// COULD.** The daemon used to answer the whole listing with the first
     /// record's refusal, which made `no agent <id>`'s own recommendation --
-    /// "list the stored agents with `pmux agent list`" -- unreachable in
+    /// "list the stored agents" -- unreachable in
     /// precisely the state it was offered. Dropping the bad record instead
     /// would have been worse: a stored agent that stopped appearing without a
     /// word is the accepted-and-ignored shape this protocol refuses.

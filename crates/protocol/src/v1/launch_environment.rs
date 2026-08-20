@@ -11,15 +11,10 @@
 //! will drop, then that prediction is part of the observable v1 contract, not a
 //! service implementation detail.**
 //!
-//! Two shipped behaviors need exactly that prediction, and neither can obtain it
-//! from the daemon:
-//!
-//! * `pmux probe` renders, by name only, the set of variables the launched
-//!   Claude will not receive (`docs/spec.md` §4.5) — and a dry-run probe is
-//!   required to reach no daemon at all (`docs/spec.md` §9.1). It has to answer
-//!   in-process.
-//! * `agent_profile::verify_required_environment` warns when a `require_env`
-//!   name will not survive to the child. It runs before any request is framed.
+//! The daemon is the remaining reader. `pmux probe` and
+//! `agent_profile::verify_required_environment` used to need the same
+//! prediction without contacting a daemon; both are gone from the product.
+//! The table stays here so a second reader cannot grow a private copy.
 //!
 //! Protocol v1 carries no field for the daemon's own
 //! `removed_environment_keys`, so those two callers compute the answer locally.
@@ -54,7 +49,7 @@
 //!    `PATH` prune, and `TERM=xterm-256color`.
 //!
 //! Steps 4 and 5 run *after* `set`, which is why a name they remove cannot be
-//! restored through `--env-passthrough` while a name step 1 drops can.
+//! restored through [`super::EnvironmentSpec::set`] while a name step 1 drops can.
 //!
 //! # Matching is case-sensitive, deliberately
 //!
@@ -276,7 +271,7 @@ pub const INHERITED_PREFIXES: &[&str] = &[
 /// [`SUBSCRIPTION_AUTH_KEYS`].
 ///
 /// `Inherit` is an explicit caller decision to keep the ambient credential
-/// environment (`spec.md` §4.5). Provider routing is not one variable: Bedrock
+/// environment (`spec.md` §4). Provider routing is not one variable: Bedrock
 /// resolves credentials through the AWS SDK's own environment, Vertex through
 /// Google ADC, Foundry through Azure. Allowing the ten selector keys while
 /// denying the credentials they select would leave `Inherit` broken in a way
@@ -385,8 +380,8 @@ pub fn subscription_policy_removes(name: &str, auth_policy: AuthPolicy) -> bool 
 
 /// Whether the transparent terminal profile removes one name at step 5.
 ///
-/// Runs after the caller's explicit `set`, so `--env-passthrough` cannot restore
-/// anything this returns `true` for. Case-sensitive in both forms.
+/// Runs after the caller's explicit `set`, so [`super::EnvironmentSpec::set`]
+/// cannot restore anything this returns `true` for. Case-sensitive in both forms.
 #[must_use]
 pub fn transparent_profile_removes(name: &str) -> bool {
     TRANSPARENT_EXACT_KEYS.contains(&name)

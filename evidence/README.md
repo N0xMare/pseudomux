@@ -20,10 +20,10 @@ carries `schema` = `"pmux.phase0.attempt-reservation.v1"` instead.
   every reservation written since uses the second spelling, so it is the current
   format and the first is the legacy one. A scan that knows only `global_attempt`
   stops at 29 and reports the budget dozens of attempts cheaper than it is. Both
-  spellings live in ONE tuple, `phase0_lib.ORDINAL_SPELLINGS`; read the budget
-  through the tool below rather than through a fresh one-liner.
+  spellings live in ONE tuple, `phase0_lib.ORDINAL_SPELLINGS`; the budget
+  tool is deleted. Count ordinals from the file, not a one-liner.
 
-No SHA-256 is pinned here. This file is appended to by every live campaign, so a
+No SHA-256 is pinned here. This file is a frozen historical ledger, so a
 literal digest in prose is stale the moment the next attempt reserves, and a
 stale digest that looks authoritative is worse than none. Recompute it when you
 need it; the file is its own authority.
@@ -45,7 +45,7 @@ byte-identical.
 
 BY WHAT RULE. `tools/evidence_common/portable_paths.py`, whose needles are asked
 of the running machine and never written down, in its root-preserving form
-(`machine_identifiers(absolute_placeholders=True)`). An absolute needle gets an
+(historical `absolute_placeholders=True`, now deleted). An absolute needle gets an
 absolute placeholder spelled with that needle's own root, so a home directory
 becomes `/<HOME>` and this checkout becomes `/<REPO>`. That is not cosmetic:
 `_validate_reservation_record` reads `artifact_directory` back through
@@ -55,7 +55,7 @@ requires `is_absolute()` **and** `str(Path(value)) == value`. `<HOME>/x` is a
 relative path; a substitution using the default placeholder would have turned
 almost every reservation into one the validator refuses.
 
-BY WHAT WRITER. `tools/phase0/reseal_ledger.py`, which substitutes and then
+BY WHAT WRITER. Historical `tools/phase0/reseal_ledger.py` (deleted), which substituted then
 recomputes, with `phase0_lib`'s own functions and in the appender's own order:
 the sibling digests it can first reproduce (`revision_identity_sha256`, then
 `campaign_contract_sha256`), then `ledger_prefix_sha256` over the rewritten
@@ -81,7 +81,7 @@ history before this commit and nowhere else.
 
 WHY THE NOTE IS HERE AND NOT IN THE FILE. The ledger schema cannot carry it, and
 that was checked by running it rather than reasoned about — see
-`python3 tools/phase0/reseal_ledger.py --explain-note`, which prints the six
+`python3 tools/phase0/reseal_ledger.py --explain-note` (tool deleted), which printed the six
 placements tried and what each validator did with them. A note with no ordinal
 is refused by `summarize_attempt_ledger` in every position including the prefix
 region; a note with a fresh ordinal spends an irreplaceable attempt; a note with
@@ -91,9 +91,8 @@ validator, so the statement lives here.
 
 WHAT THE SEAL STILL MEANS, CORRECTED. Substituting into a sealed record without
 re-sealing does not redact it, it forges it — that is still true, it is still
-why `portable_paths.py --rewrite` refuses this file, and
-`tools/gate-a/tests/test_redaction.py::test_the_writers_refusal_is_real_and_not_a_story`
-still proves it by doing it. Two things said here were broader than what any
+why a blind `--rewrite` used to refuse this file, and a since-removed
+redaction test used to prove it by substituting into a copy. Two things said here were broader than what any
 predicate tested, and both are withdrawn:
 
 - *"a forged one refuses a live campaign restart."* MEASURED, and it does not.
@@ -106,8 +105,8 @@ predicate tested, and both are withdrawn:
   allowed."* `_reconcile_prior_usage_locked` audits post-prefix records of the
   **current** campaign only, so it never opens a committed record's directory.
 
-What does re-verify this file's chain, on every gate, is
-`portable_paths.sealed_records`, and it now checks all four bindings a
+What used to re-verify this file's chain, on every gate, was
+`portable_paths.sealed_records` (deleted with Phase 0). It checked all four bindings a
 reservation carries rather than two, because the re-seal recomputes all four and
 a binding nothing re-verifies is decoration.
 
@@ -118,20 +117,20 @@ original, which was checked before and after.
 **No record count, no last ordinal, and no remaining-attempt figure is written
 in this document, for exactly the same reason.** One was, and it went stale by
 38 ordinals against a hard ceiling of 100 while this paragraph sat above it
-saying digests must not be pinned. Ask the file:
+saying digests must not be pinned. Historical tool (deleted):
 
-    python3 tools/phase0/phase0.py budget --ledger evidence/model-attempt-ledger.ndjson
+    # DELETED. Do not run. python3 tools/phase0/phase0.py budget --ledger evidence/model-attempt-ledger.ndjson
 
-It prints `records`, `first_ordinal`, `last_ordinal`, `predating_the_file`,
+It printed `records`, `first_ordinal`, `last_ordinal`, `predating_the_file`,
 `detached`, `consumed`, `ceiling` and `remaining`, every one of them computed
 from the file on the call. `consumed` is the ledger's own last ordinal plus the
 four detached reservations described below; `ceiling` is the one the records
-themselves were reserved against, not a constant in prose. The command refuses
-rather than reports if the ordinals are not contiguous, if a record spells its
+themselves were reserved against, not a constant in prose. The command refused
+rather than reported if the ordinals are not contiguous, if a record spells its
 ordinal in none of the recognized ways, or if consumption has passed the
 ceiling. `test_run_gate.py::test_the_evidence_readme_states_no_budget_figure_and_its_command_derives_one`
-runs in Gate A (`gate_f/gate_driver_self_tests`) and fails if this document
-starts stating one again, or if the command above stops agreeing with the file.
+ran in Gate A (`gate_f/gate_driver_self_tests`, now gone) and failed if this
+document started stating a figure, or if the command stopped agreeing with the file.
 
 The ceiling is a total across all campaigns, enforced at reservation time
 (`tools/phase0/phase0_lib.py`), not a per-run allowance. A restart, a new runner,
@@ -139,7 +138,7 @@ a failed call, or a source invalidation never resets it.
 
 ### Four detached reservations, all numbered 31 (2026-07-28)
 
-`phase0.py budget` counts **four attempts this file does not contain**, as its
+A deleted Phase 0 budget report counted **four attempts this file does not contain**, as its
 `detached` field. This is deliberate and self-penalizing; do not "correct" it
 away, and do not pass `--detached 0` to make the arithmetic tidier.
 
@@ -155,6 +154,7 @@ Reconciliation, from the four retained run directories:
 
 - `f0ad703f` rejected at the agent-team guard (`claude_launch.rs:397-408`);
   no Claude process was launched.
+
 - `ca52a109`, `16849243`, `e2260f34` each started a session and launched a real
   Claude, then stopped at `NeedsTrust`/`NeedsInput` because the working
   directory had never been trusted. No prompt was submitted.
@@ -172,7 +172,7 @@ next run. A driver that reserves against a copy it later discards silently
 resets the global budget.
 
 This file is append-only and is the budget authority. Do not edit, reformat, or
-regenerate it. `tools/phase0` locates it by explicit `--ledger` path.
+regenerate it. Phase 0 (deleted) located it by explicit `--ledger` path.
 
 ### Real Claude runs this ledger never saw, and the one it under-counted
 
@@ -289,7 +289,7 @@ scrubbed so it reads from any checkout.
 
 Its producer is recorded in the file's own `provenance` block:
 
-- `python3 tools/phase0/verify_calibration.py --evidence-root <root> --json`, a
+- `# DELETED.` `python3 tools/phase0/verify_calibration.py --evidence-root <root> --json`, a
   deliberately independent second implementation that recomputes each gap and
   each reported hash straight from published artifacts rather than trusting the
   tool that measured them (`tools/phase0/README.md` § "Gate B drain-calibration
@@ -769,3 +769,7 @@ These are **not** promotion receipts. They do not admit a linux
 | `linux-pool-leased-sticky-x86_64.json` | Pool `Leased`: same `s{slot}e{epoch}`, T2 `cache_read` equals T1 write. |
 | `linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky eval. Cache hits only above the ~1024-token floor. |
 | `linux-pi-agentic-subagent-x86_64.json` | Pi on Messages: agentic tools, sequential reviewer, parallel reviewers. |
+
+Phase 0 has been removed. `model-attempt-ledger.ndjson` is a frozen historical
+ledger. Do not reseal it. Do not run `phase0.py budget`. Living pin confirmation
+is `tools/dev/operator_eval.py`. Drop-flag promotion is `tools/dev/promote.py`.

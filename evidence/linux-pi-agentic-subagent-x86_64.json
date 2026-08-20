@@ -1,4 +1,6 @@
 {
+  "schema": "pmux.linux-operator-eval.v1",
+  "real_claude_turns": {"count": 17},
   "title": "Pi through pool-leased pmux \u2014 agentic + subagent live eval",
   "daemon": {
     "pool_size": 12,

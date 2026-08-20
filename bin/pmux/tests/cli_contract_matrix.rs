@@ -3,15 +3,13 @@
 #[allow(dead_code)]
 mod support;
 
-use std::fs;
 use std::path::Path;
 use std::process::Command;
 
 use serde_json::{Value, json};
 
 use support::{
-    GENERATION_ID, NativeReply, SESSION_ID, Sandbox, TURN_ID, command, json_lines, run,
-    session_handle, spawn_native_server, success,
+    NativeReply, Sandbox, command, json_lines, run, session_handle, spawn_native_server, success,
 };
 
 const OUTPUT_MODES: [&str; 3] = ["text", "json", "ndjson"];
@@ -24,161 +22,38 @@ const CAPABILITY_SECRET: &str = "attach-capability-token-secret";
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Surface {
     Ping,
-    Start,
-    Turn,
-    Oneshot,
-    Inspect,
-    Cancel,
-    Close,
-    Clear,
-    Attach,
     Doctor,
-    Probe,
     Run,
-    Agent,
 }
 
 impl Surface {
-    const ALL: [Self; 13] = [
-        Self::Ping,
-        Self::Start,
-        Self::Turn,
-        Self::Oneshot,
-        Self::Inspect,
-        Self::Cancel,
-        Self::Close,
-        Self::Clear,
-        Self::Attach,
-        Self::Doctor,
-        Self::Probe,
-        Self::Run,
-        Self::Agent,
-    ];
+    const ALL: [Self; 3] = [Self::Ping, Self::Run, Self::Doctor];
 
     const fn name(self) -> &'static str {
         match self {
             Self::Ping => "ping",
-            Self::Start => "start",
-            Self::Turn => "turn",
-            Self::Oneshot => "oneshot",
-            Self::Inspect => "inspect",
-            Self::Cancel => "cancel",
-            Self::Close => "close",
-            Self::Clear => "clear",
-            Self::Attach => "attach",
             Self::Doctor => "doctor",
-            Self::Probe => "probe",
             Self::Run => "run",
-            Self::Agent => "agent",
         }
     }
 
     fn valid_command(self, socket: &Path, root: &Path, mode: &str) -> Command {
         let mut process = command(socket, root);
         process.args(["--output", mode]);
-        self.append_valid_args(&mut process, root);
+        self.append_valid_args(&mut process);
         process
     }
 
-    fn append_valid_args(self, process: &mut Command, root: &Path) {
+    fn append_valid_args(self, process: &mut Command) {
         match self {
             Self::Ping => {
                 process.arg("ping");
             }
-            Self::Start => {
-                process.args([
-                    "start",
-                    "--session-id",
-                    SESSION_ID,
-                    "--claude",
-                    "/bin/sh",
-                    "--cwd",
-                ]);
-                process.arg(root).args([
-                    "--settings-json",
-                    r#"{"token":"settings-config-secret"}"#,
-                    "--system-prompt",
-                    SYSTEM_PROMPT_SECRET,
-                ]);
-            }
-            Self::Turn => {
-                process.args([
-                    "turn",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "--turn-id",
-                    TURN_ID,
-                    TURN_PROMPT_SECRET,
-                ]);
-            }
-            Self::Oneshot => {
-                process.args([
-                    "oneshot",
-                    "--session-id",
-                    SESSION_ID,
-                    "--turn-id",
-                    TURN_ID,
-                    "--claude",
-                    "/bin/sh",
-                    "--cwd",
-                ]);
-                process.arg(root).args([
-                    "--settings-json",
-                    r#"{"token":"settings-config-secret"}"#,
-                    "--system-prompt",
-                    SYSTEM_PROMPT_SECRET,
-                    TURN_PROMPT_SECRET,
-                ]);
-            }
-            Self::Inspect => {
-                process.args(["inspect", SESSION_ID, "--generation", GENERATION_ID]);
-            }
-            Self::Cancel => {
-                process.args(["cancel", SESSION_ID, "--generation", GENERATION_ID, TURN_ID]);
-            }
-            Self::Close => {
-                process.args(["close", SESSION_ID, "--generation", GENERATION_ID]);
-            }
-            Self::Clear => {
-                process.args([
-                    "clear",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "--expect-transcript",
-                    SESSION_ID,
-                ]);
-            }
-            Self::Attach => {
-                process.args(["attach", SESSION_ID, "--generation", GENERATION_ID]);
-            }
             Self::Doctor => {
-                process.args(["doctor", "--claude", "/bin/sh", "--cwd"]);
-                process.arg(root);
-            }
-            Self::Probe => {
-                process.args([
-                    "probe",
-                    "--launch",
-                    "--session-id",
-                    SESSION_ID,
-                    "--claude",
-                    "/bin/sh",
-                    "--cwd",
-                ]);
-                process.arg(root).args([
-                    "--settings-json",
-                    r#"{"token":"settings-config-secret"}"#,
-                    "--system-prompt",
-                    SYSTEM_PROMPT_SECRET,
-                ]);
+                process.args(["doctor", "--claude", "/bin/sh"]);
             }
             Self::Run => {
                 process.args(["run", "--model", "sonnet", TURN_PROMPT_SECRET]);
-            }
-            Self::Agent => {
-                process.args(["agent", "list"]);
             }
         }
     }
@@ -196,10 +71,8 @@ fn public_runtime_error() -> NativeReply {
     }
 }
 
-/// The published `--help` surface is derived from the binary. Session
-/// commands stay in [`Surface::ALL`] because they stay invokable: help
-/// lists only the product commands, and every matrix surface still has a
-/// `--help` of its own.
+/// The published `--help` surface is derived from the binary. The product
+/// commands are ping/run/doctor; `ask` is the run alias.
 #[test]
 fn the_matrix_covers_every_subcommand_pmux_publishes() {
     let sandbox = Sandbox::new("subcommand-census");
@@ -229,7 +102,7 @@ fn the_matrix_covers_every_subcommand_pmux_publishes() {
             .into_iter()
             .map(str::to_owned)
             .collect::<std::collections::BTreeSet<_>>(),
-        "the published --help surface is ping/run/doctor; session commands stay invokable"
+        "the published --help surface is ping/run/doctor"
     );
     let covered = Surface::ALL
         .iter()
@@ -422,83 +295,17 @@ fn every_daemon_using_command_has_a_bounded_unavailable_boundary() {
 fn parser_misuse_is_exit_two_for_every_command() {
     for surface in Surface::ALL {
         let sandbox = Sandbox::new(&format!("{}-parser", surface.name()));
-        let prompt_file = sandbox.root.join("prompt.txt");
-        fs::write(&prompt_file, "file prompt").unwrap();
         let mut process = command(&sandbox.socket, &sandbox.root);
 
         match surface {
             Surface::Ping => {
                 process.args(["ping", "--definitely-invalid"]);
             }
-            Surface::Start => {
-                process.args(["start", "--session-id", SESSION_ID, "--resume", SESSION_ID]);
-            }
-            Surface::Turn => {
-                process.args([
-                    "turn",
-                    "not-a-uuid",
-                    "--generation",
-                    GENERATION_ID,
-                    "prompt",
-                ]);
-            }
-            Surface::Oneshot => {
-                process.args(["oneshot", "--claude", "/bin/sh", "positional"]);
-                process.arg("--prompt-file").arg(&prompt_file);
-            }
-            Surface::Inspect => {
-                process.args(["inspect", SESSION_ID]);
-            }
-            Surface::Cancel => {
-                process.args([
-                    "cancel",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "not-a-uuid",
-                ]);
-            }
-            Surface::Close => {
-                process.args([
-                    "close",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "--policy",
-                    "not-a-policy",
-                ]);
-            }
-            Surface::Clear => {
-                process.args([
-                    "clear",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "--expect-transcript",
-                    "not-a-uuid",
-                ]);
-            }
-            Surface::Attach => {
-                process.args([
-                    "attach",
-                    SESSION_ID,
-                    "--generation",
-                    GENERATION_ID,
-                    "--rows",
-                    "24",
-                ]);
-            }
             Surface::Doctor => {
                 process.args(["doctor", "--definitely-invalid"]);
             }
-            Surface::Probe => {
-                process.args(["probe", "--keep", "--claude", "/bin/sh"]);
-            }
             Surface::Run => {
                 process.args(["run", "--effort", "definitely-not-a-tier", "prompt"]);
-            }
-            Surface::Agent => {
-                process.args(["agent", "get", "not-a-uuid"]);
             }
         }
 

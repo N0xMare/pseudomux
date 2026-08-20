@@ -2,7 +2,6 @@
 
 mod process_support;
 
-use std::collections::{BTreeMap, BTreeSet};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
@@ -10,14 +9,7 @@ use std::process::Stdio;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
-use pseudomux_client::PmuxClient;
-use pseudomux_protocol::v1::{
-    AuthPolicy, ClaudeLaunchConfig, CompatibilityPolicy, EnvironmentSpec, InputTransport,
-    LifecycleMode, PermissionMode, RetentionPolicy, SessionCell, SessionIdentity,
-    StartSessionRequest, SystemPromptPolicy, TerminalProfile, TerminalSpec,
-};
 use pseudomux_rmux::{EnvironmentSnapshot, LaunchSpec, TerminalSession};
-use pseudomux_service::compatibility::TestedCompatibilityProfile;
 use pseudomux_service::runtime::{
     PINNED_RMUX_VERSION, PrivateRuntime, PrivateRuntimeConfig, SessionRuntime,
 };
@@ -372,171 +364,6 @@ async fn owner_pipe_reaps_sidecar_after_pmuxd_sigkill_once(candidates: &Candidat
         "owner-loss cleanup retained private runtime artifacts: {residue:?}"
     );
     cleanup.disarm();
-}
-
-/// End-to-end owner-death proof with a real rmux PTY and a deliberately
-/// HUP/TERM-ignoring `/bin/sh` descendant. No Claude process is invoked.
-#[tokio::test]
-#[ignore = "SIGKILLs a dedicated pmuxd with a fake shell pane and verifies bounded descendant cleanup"]
-async fn owner_sigkill_reaps_active_pane_descendant() {
-    let candidates =
-        CandidateFiles::discover(&["pmuxd", "pmux-rmuxd", "pmux-launcher", "pmux-hook"]).unwrap();
-    for _ in 0..FAULT_ITERATIONS {
-        owner_sigkill_reaps_active_pane_descendant_once(&candidates).await;
-    }
-    candidates.assert_unchanged().unwrap();
-}
-
-async fn owner_sigkill_reaps_active_pane_descendant_once(candidates: &CandidateFiles) {
-    let root = tempfile::Builder::new()
-        .prefix("pmux-pane-kill-")
-        .tempdir_in("/tmp")
-        .unwrap();
-    let root_path = root.path().canonicalize().unwrap();
-    set_owner_only(&root_path).unwrap();
-    let runtime_parent = root_path.join("runtimes");
-    let cwd = root_path.join("workspace");
-    let config_root = root_path.join("claude-config");
-    std::fs::create_dir(&runtime_parent).unwrap();
-    std::fs::create_dir(&cwd).unwrap();
-    std::fs::create_dir_all(config_root.join("projects/fake")).unwrap();
-    set_owner_only(&runtime_parent).unwrap();
-    let public_socket = root_path.join("pmuxd.sock");
-    let child_pid_file = root_path.join("pane-child.pid");
-    let child_marker = format!("pmux-owner-kill-{}", Uuid::new_v4().simple());
-    let fake_claude = root_path.join(format!("fake-claude-{child_marker}"));
-    write_fake_shell_claude(&fake_claude, &child_marker);
-
-    let profile = serde_json::to_string(&TestedCompatibilityProfile {
-        claude_version: "9.9.9".to_owned(),
-        claude_version_tested_through: None,
-        os: std::env::consts::OS.to_owned(),
-        arch: std::env::consts::ARCH.to_owned(),
-        terminal_profile: TerminalProfile::Transparent,
-        input_transport: InputTransport::Sdk,
-        transcript_drain_ms: 50,
-    })
-    .unwrap();
-    let mut owner = Command::new(candidates.path("pmuxd"))
-        .arg("serve")
-        .arg("--socket")
-        .arg(&public_socket)
-        .arg("--rmuxd")
-        .arg(candidates.path("pmux-rmuxd"))
-        .arg("--launcher")
-        .arg(candidates.path("pmux-launcher"))
-        .arg("--runtime-parent")
-        .arg(&runtime_parent)
-        .arg("--tested-claude-profile")
-        .arg(profile)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .unwrap();
-    let owner_pid = owner.id().expect("spawned pmuxd must have a pid");
-    let owner_identity = ProcessIdentity::capture(owner_pid, public_socket.to_string_lossy())
-        .expect("pmuxd must retain its exact start identity");
-    let mut owner_cleanup = ExactProcessGuard::new(owner_identity);
-    let observed = wait_for_private_sidecar(
-        &mut owner,
-        owner_pid,
-        candidates.path("pmux-rmuxd"),
-        &runtime_parent,
-        Duration::from_secs(10),
-    )
-    .await
-    .unwrap();
-    let mut sidecar_cleanup = ExactProcessGuard::new(observed.process_identity.clone());
-    let client = wait_for_pmux_client(&public_socket, Duration::from_secs(10))
-        .await
-        .unwrap();
-    let session_id = Uuid::new_v4();
-    client
-        .start_session(StartSessionRequest {
-            identity: SessionIdentity::New {
-                session_id: Some(session_id),
-            },
-            cwd: cwd.canonicalize().unwrap().to_string_lossy().into_owned(),
-            agent: None,
-            claude: Some(ClaudeLaunchConfig {
-                executable: fake_claude
-                    .canonicalize()
-                    .unwrap()
-                    .to_string_lossy()
-                    .into_owned(),
-                model: None,
-                effort: None,
-                permission_mode: Some(PermissionMode::Default),
-                allowed_tools: Vec::new(),
-                denied_tools: Vec::new(),
-                settings: Vec::new(),
-                mcp_configs: Vec::new(),
-                plugin_dirs: Vec::new(),
-                system_prompt: SystemPromptPolicy::Default,
-                extra_args: Vec::new(),
-            }),
-            environment: EnvironmentSpec {
-                snapshot: BTreeMap::from([
-                    ("HOME".to_owned(), root_path.to_string_lossy().into_owned()),
-                    (
-                        "CLAUDE_CONFIG_DIR".to_owned(),
-                        config_root.to_string_lossy().into_owned(),
-                    ),
-                    ("PATH".to_owned(), "/usr/bin:/bin".to_owned()),
-                    (
-                        "PMUX_CHILD_PID_FILE".to_owned(),
-                        child_pid_file.to_string_lossy().into_owned(),
-                    ),
-                ]),
-                set: BTreeMap::new(),
-                unset: BTreeSet::new(),
-            },
-            auth_policy: AuthPolicy::Inherit,
-            config_isolation: None,
-            terminal: TerminalSpec {
-                rows: 24,
-                cols: 120,
-                profile: TerminalProfile::Transparent,
-                input_transport: InputTransport::Sdk,
-            },
-            lifecycle: LifecycleMode::Transcript,
-            retention: RetentionPolicy::Persistent {
-                idle_ttl_ms: 60_000,
-            },
-            compatibility: CompatibilityPolicy::RequireTested,
-            cell: SessionCell::Full,
-        })
-        .await
-        .unwrap();
-    let child_pid = wait_for_pid_file(&child_pid_file, Duration::from_secs(5))
-        .await
-        .unwrap();
-    let child_identity = ProcessIdentity::capture(child_pid, child_marker).unwrap();
-    let mut child_cleanup = ExactProcessGuard::new(child_identity);
-    child_cleanup.identity().assert_running().unwrap();
-
-    owner_cleanup.identity().signal(libc::SIGKILL).unwrap();
-    let status = tokio::time::timeout(Duration::from_secs(5), owner.wait())
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(status.signal(), Some(libc::SIGKILL));
-    owner_cleanup.disarm();
-    wait_for_sidecar_exit(&observed, Duration::from_secs(15))
-        .await
-        .unwrap();
-    wait_for_process_absence(child_cleanup.identity(), Duration::from_secs(5))
-        .await
-        .unwrap();
-    child_cleanup.disarm();
-    sidecar_cleanup.disarm();
-    let residue = runtime_entries(&runtime_parent).unwrap();
-    assert!(
-        residue.is_empty(),
-        "owner-loss cleanup retained active-session runtime artifacts: {residue:?}"
-    );
 }
 
 /// How long a read is left outstanding against a stalled sidecar before pmux's
@@ -1367,42 +1194,6 @@ fn in_flight_when_dropped<T>(
 
 fn unique_marker(prefix: &str) -> String {
     format!("{prefix}{}", Uuid::new_v4().simple())
-}
-
-async fn wait_for_pmux_client(path: &std::path::Path, timeout: Duration) -> Result<PmuxClient> {
-    let client = PmuxClient::new(path.to_path_buf()).context("invalid test pmux socket")?;
-    let deadline = Instant::now() + timeout;
-    loop {
-        if client.ping().await.is_ok() {
-            return Ok(client);
-        }
-        if Instant::now() >= deadline {
-            bail!("timed out waiting for dedicated pmuxd socket");
-        }
-        tokio::time::sleep(Duration::from_millis(25)).await;
-    }
-}
-
-fn write_fake_shell_claude(path: &std::path::Path, marker: &str) {
-    let script = format!(
-        r###"#!/bin/sh
-if [ "$1" = "--version" ]; then
-  echo "9.9.9 (Claude Code cleanup fake)"
-  exit 0
-fi
-marker='{marker}'
-(trap '' HUP TERM INT; while :; do sleep 30; done) &
-child=$!
-printf '%s\n' "$child" > "$PMUX_CHILD_PID_FILE"
-# Match Claude's current input geometry: prompt row 22 with two terminal/footer
-# rows beneath it. A historical prompt rendered near the top must not count as
-# readiness evidence.
-printf '\033[2J\033[22;1H❯ '
-while :; do sleep 30; done
-"###
-    );
-    std::fs::write(path, script).unwrap();
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
 }
 
 async fn read_owner_stderr(owner: &mut Child) -> String {

@@ -1568,10 +1568,9 @@ mod tests {
         );
         assert_eq!(POST_MARKER_CATCH_WINDOW_FLOOR_MS, 438);
         assert_eq!(LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS, 46);
-        assert!(
-            LINUX_MINIFIED_POST_ANSWER_ARRIVAL_MAX_MS < POST_MARKER_CATCH_WINDOW_FLOOR_MS,
-            "linux 46ms is inside the 438ms floor, not a replacement for it"
-        );
+        // 46 < 438 is the claim: the linux minified max is inside the floor,
+        // not a replacement for it. The two equalities above prove the
+        // inequality; a runtime assert of two consts is optimized out.
 
         assert_eq!(
             receipt["post_marker_arrivals_after_turn_duration"]["count"].as_u64(),

@@ -82,18 +82,13 @@ const SCAN_SKIPPED_DIRECTORIES: [&str; 8] = [
 /// The lanes that must RUN the derived set, and the file each one is written in.
 ///
 /// Membership is not derived and cannot be: a lane that runs nothing looks
-/// exactly like a file that is not a lane. What IS derived is everything
-/// inside them — the filter each must carry and the gate name the three must
-/// agree on — and the tree scan over the two home boundaries independently
-/// catches a lane that goes back to naming regressions one at a time.
-const REGRESSION_LANES: [&str; 3] = [
-    "tools/gate-a-candidate/phase-manifest.json",
-    "tools/linux-docker/suite.sh",
+/// exactly like a file that is not a lane. What IS derived is the filter
+/// each must carry. Living verification is `tools/dev/check.sh`; the other
+/// is the freeze-census copy in `docs/testing.md`.
+const REGRESSION_LANES: [&str; 2] = [
+    "tools/dev/check.sh",
     "docs/testing.md",
 ];
-
-/// The Linux projection of the candidate manifest: gate names only, no argv.
-const LINUX_GATE_MANIFEST: &str = "tools/linux-docker/gate-a-manifest.json";
 
 /// English cardinals by value. The patch document and `docs/testing.md` spell
 /// the size of the regression set in prose; a spelled count is a claim, and a
@@ -848,7 +843,7 @@ fn vendored_server_is_published_archive_plus_documented_attach_eof_patch() {
 ///
 /// `PMUX-PATCH.md` is the one file other than the source that may spell these
 /// names, and it exists because nothing else in the tree can parse Rust: the
-/// shell suite and the Linux runner self-tests read it. That makes its list a
+/// living check and the freeze-census copy in `docs/testing.md` read it. That makes its list a
 /// SECOND spelling of the patch, so it is compared here against the first --
 /// element for element, not merely for containment, which is all
 /// `vendored_server_is_published_archive_plus_documented_attach_eof_patch`
@@ -928,61 +923,32 @@ fn every_gate_lane_runs_the_derived_regression_module_and_no_file_restates_a_nam
     let derived = patch_regression_names(&patched);
     let filter = patch_regression_module_filter();
 
-    let manifest: Value = serde_json::from_str(&read_workspace_text(REGRESSION_LANES[0]))
-        .expect("the candidate phase manifest must be valid JSON");
-    let mut carriers = Vec::new();
-    for cells in manifest["phases"]
-        .as_object()
-        .expect("the manifest declares phases")
-        .values()
-    {
-        for cell in cells.as_array().expect("a phase is a list of cells") {
-            let argv = cell["argv"]
-                .as_array()
-                .expect("a cell declares an argv")
-                .iter()
-                .filter_map(Value::as_str)
-                .collect::<Vec<_>>();
-            if !argv.contains(&filter.as_str()) {
-                continue;
-            }
-            let id = cell["id"].as_str().expect("a cell declares an id");
-            for demanded in [
-                "--manifest-path",
-                "vendor/rmux-server/Cargo.toml",
-                "--lib",
-                "--no-default-features",
-                "--test-threads=1",
-            ] {
-                assert!(
-                    argv.contains(&demanded),
-                    "cell {id} filters {filter} without {demanded}"
-                );
-            }
-            assert!(
-                !argv.contains(&"--exact"),
-                "cell {id} pairs the module filter with --exact, which turns it \
-                 into a name nobody wrote and runs nothing"
-            );
-            carriers.push(id.to_owned());
-        }
+    let living = read_workspace_text(REGRESSION_LANES[0]);
+    for demanded in [
+        "vendor/rmux-server/Cargo.toml",
+        "--lib",
+        "--no-default-features",
+        "--test-threads=1",
+        filter.as_str(),
+    ] {
+        assert!(
+            living.contains(demanded),
+            "{} does not run {filter} with {demanded}",
+            REGRESSION_LANES[0]
+        );
     }
-    assert_eq!(
-        carriers.len(),
-        1,
-        "exactly one candidate cell must run the patch regression module, got {carriers:?}"
-    );
-    let gate = &carriers[0];
-
-    let projection: Value = serde_json::from_str(&read_workspace_text(LINUX_GATE_MANIFEST))
-        .expect("the Linux gate manifest must be valid JSON");
     assert!(
-        projection["gates"]
-            .as_array()
-            .expect("the Linux manifest declares gates")
-            .iter()
-            .any(|declared| declared["name"].as_str() == Some(gate.as_str())),
-        "{LINUX_GATE_MANIFEST} does not declare {gate}"
+        living.contains(
+            "cargo check --locked --offline --manifest-path vendor/rmux-server/Cargo.toml --all-targets --no-default-features"
+        ),
+        "{} dropped the product-feature all-target compile of vendor/rmux-server",
+        REGRESSION_LANES[0]
+    );
+    assert!(
+        !living.contains("--exact"),
+        "{} pairs the module filter with --exact, which turns it into a name \
+         nobody wrote and runs nothing",
+        REGRESSION_LANES[0]
     );
 
     for lane in REGRESSION_LANES {
@@ -992,11 +958,6 @@ fn every_gate_lane_runs_the_derived_regression_module_and_no_file_restates_a_nam
             "{lane} does not run the derived regression module {filter}"
         );
     }
-    assert!(
-        read_workspace_text(REGRESSION_LANES[1]).contains(&format!("run_gate {gate}")),
-        "{} does not run the {gate} gate",
-        REGRESSION_LANES[1]
-    );
 
     let mut files = Vec::new();
     scannable_files(&root, &mut files);

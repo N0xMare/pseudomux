@@ -19,13 +19,24 @@ use serde_json::{Value, json};
 mod candidate_binary;
 use candidate_binary::CandidateBinaries;
 
-const SESSION_ID: &str = "00000000-0000-4000-8000-000000000022";
-const GENERATION_ID: &str = "00000000-0000-4000-8000-000000000044";
-const TURN_ID: &str = "00000000-0000-4000-8000-000000000033";
-const AGENT_ID: &str = "00000000-0000-4000-8000-000000000066";
 const MAX_MCP_FRAME_BYTES: usize = 8 * 1024 * 1024;
 const SAFE_JSON_INTEGER_EXCLUSIVE_LIMIT: f64 = 9_007_199_254_740_992.0;
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(10);
+
+const UNPUBLISHED_TOOLS: &[&str] = &[
+    "start_session",
+    "run_turn",
+    "inspect_session",
+    "cancel_turn",
+    "close_session",
+    "run_once",
+    "subscribe_events",
+    "attach_session",
+    "create_agent",
+    "get_agent",
+    "list_agents",
+    "update_agent",
+];
 
 static NEXT_SANDBOX: AtomicU64 = AtomicU64::new(1);
 
@@ -283,94 +294,8 @@ fn expected_request(method: &str, arguments: &Value) -> Request {
     serde_json::from_value(json!({"method": method, "params": arguments})).unwrap()
 }
 
-fn compatibility() -> Value {
-    json!({
-        "claude_version": "9.9.9",
-        "os": "test",
-        "arch": "test",
-        "terminal_profile": "transparent",
-        "input_transport": "sdk",
-        "tested": true,
-        "transcript_drain_ms": 25,
-    })
-}
-
-fn session_handle() -> Value {
-    json!({
-        "session_id": SESSION_ID,
-        "generation_id": GENERATION_ID,
-        "state": "ready",
-        "compatibility": compatibility(),
-        "created_at_ms": 1,
-        "last_sequence": 2,
-    })
-}
-
-fn snapshot() -> Value {
-    json!({
-        "session_id": SESSION_ID,
-        "generation_id": GENERATION_ID,
-        "transcript_session_id": SESSION_ID,
-        "cell": "full",
-        "state": "ready",
-        "cwd": "/work/project",
-        "compatibility": compatibility(),
-        "created_at_ms": 1,
-        "updated_at_ms": 2,
-        "resumable": true,
-        "last_sequence": 2,
-    })
-}
-
 /// The one provider success shape. Deliberately carries no `session_id`: not even
 /// through the envelope does a pool instance get a name.
-/// The smallest complete agent an MCP caller can store.
-///
-/// Deliberately minimal: `name` and `claude` are the only required fields, and
-/// a fixture that filled in every optional one would not prove that.
-fn agent_spec() -> Value {
-    json!({
-        "name": "reviewer",
-        "claude": {"executable": "/opt/claude/bin/claude"},
-    })
-}
-
-/// The descriptor as the MCP server RE-EMITS it.
-///
-/// The daemon's frame carries the minimal spec above; the server decodes it
-/// into the typed DTO and re-serializes, which fills in every `#[serde(default)]`
-/// field. Writing the round-tripped form out here is what makes this an
-/// end-to-end assertion about the bytes an agent reads rather than an assertion
-/// about the bytes the fake daemon sent.
-fn agent_descriptor(version: u64) -> Value {
-    json!({
-        "agent_id": AGENT_ID,
-        "version": version,
-        "config_digest": "0".repeat(64),
-        "spec": {
-            "name": "reviewer",
-            "claude": {
-                "executable": "/opt/claude/bin/claude",
-                "system_prompt": {"mode": "default"},
-            },
-            "environment": {},
-            "auth_policy": "subscription",
-            "terminal": {
-                "rows": 24,
-                "cols": 120,
-                "profile": "transparent",
-                "input_transport": "auto",
-            },
-            "lifecycle": {"mode": "transcript"},
-            "retention": {"mode": "persistent", "idle_ttl_ms": 1_800_000},
-            "compatibility": "require_tested",
-            "containment": {"require_config_isolation": false},
-        },
-        "created_at_ms": 1000,
-        "updated_at_ms": 1000,
-    })
-}
-
 fn stateless_result() -> Value {
     json!({
         "model": "claude-opus-5",
@@ -401,50 +326,6 @@ fn stateless_result() -> Value {
     })
 }
 
-fn turn_result(outcome: &str) -> Value {
-    json!({
-        "session_id": SESSION_ID,
-        "generation_id": GENERATION_ID,
-        "turn_id": TURN_ID,
-        "outcome": outcome,
-        "text": "done",
-        "final_blocks": [{"kind": "text", "text": "done"}],
-        "usage": {
-            "main": {
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "cache_creation_input_tokens": 0,
-                "cache_read_input_tokens": 0,
-            },
-            "sidechain": {
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "cache_creation_input_tokens": 0,
-                "cache_read_input_tokens": 0,
-            },
-            "combined": {
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "cache_creation_input_tokens": 0,
-                "cache_read_input_tokens": 0,
-            },
-        },
-        "timings": {"submitted_at_ms": 1, "completed_at_ms": 2},
-        "claude_version": "9.9.9",
-        "compatibility": compatibility(),
-        "completion": {
-            "authority": "transcript",
-            "prompt_acknowledged": true,
-            "terminal_message_observed": true,
-            "terminal_prompt_observed": true,
-            "terminal_quiet_observed": true,
-            "transcript_drained": true,
-            "lifecycle_hook_observed": false,
-        },
-        "final_sequence": 3,
-    })
-}
-
 fn initialize(id: u64) -> Value {
     json!({
         "jsonrpc": "2.0",
@@ -465,6 +346,24 @@ fn tool_call(id: u64, name: &str, arguments: &Value) -> Value {
         "method": "tools/call",
         "params": {"name": name, "arguments": arguments},
     })
+}
+
+fn run_stateless_arguments() -> Value {
+    // Model, effort and prompt. There is nothing else to send: the
+    // request DTO is `deny_unknown_fields` and carries no cwd, no
+    // configuration root, no system prompt and no session id.
+    json!({"model": "claude-opus-5", "effort": "xhigh", "prompt": "what is two plus two"})
+}
+
+fn assert_unknown_tool(response: &Value, id: u64, name: &str) {
+    assert_eq!(response["jsonrpc"], "2.0");
+    assert_eq!(response["id"], id);
+    assert_eq!(response["error"]["code"], -32602);
+    assert_eq!(response["error"]["message"], "Unknown tool");
+    assert!(
+        !response.to_string().contains(name),
+        "unknown_tool must not echo the unpublished name: {response}"
+    );
 }
 
 #[test]
@@ -515,178 +414,15 @@ fn real_stdio_enforces_rpc_id_domain_and_recovers_on_one_stream() {
     assert!(stderr.is_empty(), "unexpected MCP diagnostics: {stderr}");
 }
 
-/// `tools/list` is the provider surface. `tools/call` still dispatches every
-/// native tool, including the unpublished session and agent ones.
+/// `tools/list` is the provider surface. Unpublished names on `tools/call`
+/// are `unknown_tool` and MUST NOT reach the native socket: mapping
+/// `start_session` against a listener that never `accept()`s hangs the process.
 ///
-/// `cases` is the dispatch catalogue this process actually exercises. It is
-/// not the advertised list: a server that listed every dispatchable tool
-/// would fail the `tools/list` comparison below, and a server that dropped
-/// `run_stateless` from the catalogue would fail it too. Session tools stay
-/// in `cases` so a regression that unhooks one from `map_tool_call` is still
-/// a black-box failure.
-///
-/// The closed name list of every dispatchable tool lives in
-/// `tools::tests::exposes_only_native_v1_tools_with_closed_schemas`. The
-/// published subset lives in
-/// `tools::tests::tools_list_is_the_provider_surface_only`.
+/// The native server is bound only for the one advertised tool, after the
+/// unpublished names have already been refused.
 #[test]
 fn real_stdio_maps_every_advertised_tool_to_an_exact_native_request() {
     let sandbox = Sandbox::new("tools");
-    let listener = UnixListener::bind(&sandbox.socket).unwrap();
-    let start = json!({
-        "identity": {"mode": "new", "session_id": SESSION_ID},
-        "cwd": "/work/project",
-        "claude": {"executable": "/opt/claude"},
-    });
-    let turn = json!({"turn_id": TURN_ID, "prompt": "inspect"});
-    let cases = [
-        (
-            "start_session",
-            start.clone(),
-            "session_started",
-            session_handle(),
-        ),
-        (
-            "run_turn",
-            json!({"session_id": SESSION_ID, "generation_id": GENERATION_ID, "turn": turn}),
-            "turn_accepted",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "turn_id": TURN_ID,
-                "replayed": false,
-                "state": "running",
-                "next_sequence": 3,
-            }),
-        ),
-        (
-            "inspect_session",
-            json!({"session_id": SESSION_ID, "generation_id": GENERATION_ID}),
-            "session_snapshot",
-            snapshot(),
-        ),
-        (
-            "cancel_turn",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "turn_id": TURN_ID,
-            }),
-            "turn_cancelled",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "turn_id": TURN_ID,
-                "outcome": "cancelled",
-                "session_state": "ready",
-            }),
-        ),
-        (
-            "close_session",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "policy": "force",
-            }),
-            "session_closed",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "already_closed": false,
-                "process_reaped": true,
-            }),
-        ),
-        (
-            "run_once",
-            json!({"session": start, "turn": {"turn_id": TURN_ID, "prompt": "inspect"}}),
-            "turn_result",
-            turn_result("completed"),
-        ),
-        (
-            "subscribe_events",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "after_sequence": 2,
-                "wait_ms": 0,
-                "max_events": 8,
-            }),
-            "events",
-            json!({"next_sequence": 3}),
-        ),
-        (
-            "attach_session",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "read_only": false,
-                "size": {"rows": 30, "cols": 100},
-            }),
-            "attach_capability",
-            json!({
-                "session_id": SESSION_ID,
-                "generation_id": GENERATION_ID,
-                "token": "sensitive-attach-token",
-                "endpoint": "/private/attach.sock",
-                "expires_at_ms": 1000,
-                "read_only": false,
-            }),
-        ),
-        (
-            "run_stateless",
-            // Model, effort and prompt. There is nothing else to send: the
-            // request DTO is `deny_unknown_fields` and carries no cwd, no
-            // configuration root, no system prompt and no session id.
-            json!({"model": "claude-opus-5", "effort": "xhigh", "prompt": "what is two plus two"}),
-            "stateless_result",
-            stateless_result(),
-        ),
-        (
-            "create_agent",
-            json!({"spec": agent_spec()}),
-            "agent_created",
-            agent_descriptor(1),
-        ),
-        (
-            "get_agent",
-            json!({"agent_id": AGENT_ID, "version": 1}),
-            "agent",
-            agent_descriptor(1),
-        ),
-        (
-            "list_agents",
-            json!({}),
-            "agent_list",
-            json!({"agents": [{
-                "agent_id": AGENT_ID,
-                "version": 1,
-                "config_digest": "0".repeat(64),
-                "name": "reviewer",
-                "cell": "full",
-                "updated_at_ms": 1000,
-            }]}),
-        ),
-        (
-            "update_agent",
-            json!({"agent_id": AGENT_ID, "expected_version": 1, "spec": agent_spec()}),
-            "agent_updated",
-            agent_descriptor(2),
-        ),
-    ];
-    let server = spawn_native_server(
-        listener,
-        cases
-            .iter()
-            .map(|(name, arguments, kind, data)| NativeExchange {
-                expected: expected_request(name, arguments),
-                reply: NativeReply::Success {
-                    kind,
-                    data: data.clone(),
-                },
-            })
-            .collect(),
-    );
-
     let mut mcp = McpProcess::start(&sandbox.socket);
     mcp.send(&initialize(1));
     let initialized = mcp.response();
@@ -706,44 +442,55 @@ fn real_stdio_maps_every_advertised_tool_to_an_exact_native_request() {
         .iter()
         .map(|tool| tool["name"].as_str().unwrap())
         .collect::<Vec<_>>();
-    // Advertised is the provider surface only. `cases` still walks every
-    // dispatchable tool, including unpublished session tools.
     assert_eq!(
         names,
         vec!["run_stateless"],
-        "tools/list must expose only run_stateless; session tools stay callable"
+        "tools/list must expose only run_stateless"
     );
-    let exercised = cases
-        .iter()
-        .map(|(name, _, _, _)| *name)
-        .collect::<Vec<_>>();
-    for name in &names {
-        assert!(
-            exercised.contains(name),
-            "advertised tool {name} has no dispatch exchange in cases"
-        );
+
+    // No listener is bound. A regression that maps any of these would try
+    // UnixStream::connect against a missing path and become
+    // transport_unavailable, not unknown_tool; a bound listener that
+    // accept()s would hang instead.
+    let start = json!({
+        "identity": {"mode": "new"},
+        "cwd": "/work/project",
+        "claude": {"executable": "/opt/claude"},
+    });
+    for (index, name) in UNPUBLISHED_TOOLS.iter().enumerate() {
+        let id = 10 + index as u64;
+        let arguments = if *name == "start_session" {
+            start.clone()
+        } else {
+            json!({})
+        };
+        mcp.send(&tool_call(id, name, &arguments));
+        assert_unknown_tool(&mcp.response(), id, name);
     }
 
-    for (index, (name, arguments, _, data)) in cases.iter().enumerate() {
-        let id = 10 + index as u64;
-        mcp.send(&tool_call(id, name, arguments));
-        let response = mcp.response();
-        assert_eq!(response["jsonrpc"], "2.0");
-        assert_eq!(response["id"], id);
-        assert_eq!(response["result"]["content"], json!([]));
-        assert_eq!(&response["result"]["structuredContent"], data);
-        assert_eq!(response["result"]["isError"], false);
-        if *name == "attach_session" {
-            assert_eq!(
-                response
-                    .to_string()
-                    .matches("sensitive-attach-token")
-                    .count(),
-                1,
-                "the sensitive capability must have one canonical representation"
-            );
-        }
-    }
+    let arguments = run_stateless_arguments();
+    let listener = UnixListener::bind(&sandbox.socket).unwrap();
+    let server = spawn_native_server(
+        listener,
+        vec![NativeExchange {
+            expected: expected_request("run_stateless", &arguments),
+            reply: NativeReply::Success {
+                kind: "stateless_result",
+                data: stateless_result(),
+            },
+        }],
+    );
+
+    mcp.send(&tool_call(99, "run_stateless", &arguments));
+    let response = mcp.response();
+    assert_eq!(response["jsonrpc"], "2.0");
+    assert_eq!(response["id"], 99);
+    assert_eq!(response["result"]["content"], json!([]));
+    assert_eq!(
+        &response["result"]["structuredContent"],
+        &stateless_result()
+    );
+    assert_eq!(response["result"]["isError"], false);
 
     let (status, stderr) = mcp.finish();
     server.join().unwrap();
@@ -755,8 +502,8 @@ fn real_stdio_maps_every_advertised_tool_to_an_exact_native_request() {
 fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
     let sandbox = Sandbox::new("errors");
     let listener = UnixListener::bind(&sandbox.socket).unwrap();
-    let arguments = json!({"session_id": SESSION_ID, "generation_id": GENERATION_ID});
-    let expected = expected_request("inspect_session", &arguments);
+    let arguments = run_stateless_arguments();
+    let expected = expected_request("run_stateless", &arguments);
     let server = spawn_native_server(
         listener,
         vec![
@@ -777,7 +524,7 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
                     retryable: false,
                     details: json!({
                         "violation": "path_b_not_enabled",
-                        "recommendation": "restart pmuxd with --path-b-parent DIR",
+                        "recommendation": "restart pmuxd with --pool-parent DIR",
                         "attach_token": "must-not-escape",
                     }),
                 },
@@ -797,7 +544,7 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
     );
 
     let mut mcp = McpProcess::start(&sandbox.socket);
-    mcp.send(&tool_call(1, "inspect_session", &arguments));
+    mcp.send(&tool_call(1, "run_stateless", &arguments));
     let rejected = mcp.response();
     assert_eq!(rejected["result"]["isError"], true);
     assert_eq!(
@@ -814,7 +561,7 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
 
     // The same refusal WITH advice: the one detail key a refusal writes for a
     // person to read crosses the real process, and nothing beside it does.
-    mcp.send(&tool_call(2, "inspect_session", &arguments));
+    mcp.send(&tool_call(2, "run_stateless", &arguments));
     let advised = mcp.response();
     assert_eq!(advised["result"]["isError"], true);
     assert_eq!(
@@ -823,20 +570,20 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
             "kind": "daemon_rejected",
             "code": "unsupported_feature",
             "retryable": false,
-            "recommendation": "restart pmuxd with --path-b-parent DIR",
+            "recommendation": "restart pmuxd with --pool-parent DIR",
         })
     );
     assert!(
         advised["result"]["content"][0]["text"]
             .as_str()
-            .is_some_and(|text| text.contains("restart pmuxd with --path-b-parent DIR")),
+            .is_some_and(|text| text.contains("restart pmuxd with --pool-parent DIR")),
         "the advice must reach the channel a model reads: {advised}"
     );
     let rendered = advised.to_string();
     assert!(!rendered.contains("secret prompt"));
     assert!(!rendered.contains("must-not-escape"));
 
-    mcp.send(&tool_call(3, "inspect_session", &arguments));
+    mcp.send(&tool_call(3, "run_stateless", &arguments));
     let malformed = mcp.response();
     assert_eq!(malformed["result"]["isError"], true);
     assert_eq!(
@@ -844,7 +591,7 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
         "invalid_daemon_response"
     );
 
-    mcp.send(&tool_call(4, "inspect_session", &arguments));
+    mcp.send(&tool_call(4, "run_stateless", &arguments));
     let wrong_result = mcp.response();
     assert_eq!(wrong_result["result"]["isError"], true);
     assert_eq!(
@@ -855,7 +602,7 @@ fn real_stdio_redacts_native_errors_and_malformed_or_unavailable_peers() {
 
     // The listener is now gone while the exact endpoint remains. A later call
     // must become a structured transport failure rather than terminating MCP.
-    mcp.send(&tool_call(5, "inspect_session", &arguments));
+    mcp.send(&tool_call(5, "run_stateless", &arguments));
     let unavailable = mcp.response();
     assert_eq!(unavailable["result"]["isError"], true);
     assert_eq!(
@@ -887,10 +634,10 @@ fn real_stdio_bounds_and_recovers_input_notifications_and_partial_eof() {
     let private_argument = "strict-tool-private-input";
     mcp.send(&tool_call(
         10,
-        "inspect_session",
+        "run_stateless",
         &json!({
-            "session_id": SESSION_ID,
-            "generation_id": GENERATION_ID,
+            "model": "claude-opus-5",
+            "prompt": "hello",
             "unknown": private_argument,
         }),
     ));
@@ -905,26 +652,17 @@ fn real_stdio_bounds_and_recovers_input_notifications_and_partial_eof() {
 
     mcp.send(&tool_call(
         11,
-        "subscribe_events",
+        "start_session",
         &json!({
-            "session_id": SESSION_ID,
-            "generation_id": GENERATION_ID,
-            "wait_ms": 30_001,
-            "max_events": 513,
+            "identity": {"mode": "new"},
+            "cwd": "/work/project",
+            "claude": {"executable": "/opt/claude"},
         }),
     ));
-    let invalid_bounds = mcp.response();
-    assert_eq!(invalid_bounds["id"], 11);
-    assert_eq!(
-        invalid_bounds["result"]["structuredContent"]["error"]["kind"],
-        "invalid_bounds"
-    );
+    assert_unknown_tool(&mcp.response(), 11, "start_session");
 
     mcp.send(&tool_call(12, "private-unknown-tool", &json!({})));
-    let unknown_tool = mcp.response();
-    assert_eq!(unknown_tool["id"], 12);
-    assert_eq!(unknown_tool["error"]["code"], -32602);
-    assert!(!unknown_tool.to_string().contains("private-unknown-tool"));
+    assert_unknown_tool(&mcp.response(), 12, "private-unknown-tool");
 
     mcp.send(&json!({
         "jsonrpc": "2.0",
@@ -980,19 +718,19 @@ fn real_stdio_bounds_oversized_output_and_recovers_on_one_stream() {
 
     let sandbox = Sandbox::new("oversized-output");
     let listener = UnixListener::bind(&sandbox.socket).unwrap();
-    let arguments = json!({"session_id": SESSION_ID, "generation_id": GENERATION_ID});
-    let mut oversized_snapshot = snapshot();
-    oversized_snapshot["cwd"] = Value::String(format!(
-        "/{PRIVATE_RESULT_MARKER}/{}",
+    let arguments = run_stateless_arguments();
+    let mut oversized_result = stateless_result();
+    oversized_result["text"] = Value::String(format!(
+        "{PRIVATE_RESULT_MARKER}/{}",
         "r".repeat(MAX_MCP_FRAME_BYTES / 2)
     ));
     let server = spawn_native_server(
         listener,
         vec![NativeExchange {
-            expected: expected_request("inspect_session", &arguments),
+            expected: expected_request("run_stateless", &arguments),
             reply: NativeReply::Success {
-                kind: "session_snapshot",
-                data: oversized_snapshot,
+                kind: "stateless_result",
+                data: oversized_result,
             },
         }],
     );
@@ -1011,7 +749,7 @@ fn real_stdio_bounds_oversized_output_and_recovers_on_one_stream() {
         "jsonrpc": "2.0",
         "id": correlated_id,
         "method": "tools/call",
-        "params": {"name": "inspect_session", "arguments": arguments},
+        "params": {"name": "run_stateless", "arguments": arguments},
     });
     assert!(serde_json::to_vec(&request).unwrap().len() <= MAX_MCP_FRAME_BYTES);
     mcp.send(&request);

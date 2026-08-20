@@ -47,8 +47,8 @@ pub(crate) struct DeclaredFunction {
 /// Bodies are cut by INDENTATION -- a free `fn` ends at a line that is
 /// exactly `}`, an `impl` item at a line that is exactly four spaces and
 /// `}` -- which is the rule
-/// `run_once_is_the_only_start_that_forces_one_shot_retention` already
-/// uses, and which `cargo fmt` guarantees and `gate_a/rust_fmt` asserts.
+/// the seam refuse tests already use, and which `cargo fmt`
+/// guarantees and `gate_a/rust_fmt` asserts.
 #[cfg(unix)]
 pub(crate) fn declared_functions() -> Vec<DeclaredFunction> {
     fn walk(directory: &Path, found: &mut Vec<PathBuf>) {

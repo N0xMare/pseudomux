@@ -17,15 +17,15 @@ export const TYPESCRIPT_DIST_FILES = Object.freeze([
   "index.d.ts.map",
   "index.js",
   "index.js.map",
+  "messages.d.ts",
+  "messages.d.ts.map",
+  "messages.js",
+  "messages.js.map",
   "package.json",
   "protocol.d.ts",
   "protocol.d.ts.map",
   "protocol.js",
   "protocol.js.map",
-  "smithers.d.ts",
-  "smithers.d.ts.map",
-  "smithers.js",
-  "smithers.js.map",
 ]);
 
 function check(condition, message) {

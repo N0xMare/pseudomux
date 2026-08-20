@@ -7,7 +7,7 @@
  *   claude-fable-5-{low,medium,high,xhigh,max}
  *
  * Effort is in the model id. The Messages facade splits it before the pool.
- * Requires pmuxd with --path-b-messages-bind 127.0.0.1:8765.
+ * Requires pmuxd with --messages-bind 127.0.0.1:8765.
  *
  * Cell lifetime contract:
  *   - Every request carries x-pmux-conversation = Pi session id
@@ -19,8 +19,10 @@
  *   - Compaction / rewind / class change is a prefix break; pmux repriming.
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { PmuxMessages, setConversationHeader } from "pmux-client";
 
 const BASE_URL = process.env.PMUX_MESSAGES_URL ?? "http://127.0.0.1:8765";
+const messages = new PmuxMessages({ baseUrl: BASE_URL, apiKey: "pmux" });
 
 const FAMILIES = [
 	{ id: "claude-sonnet-5", name: "Sonnet 5" },
@@ -35,16 +37,10 @@ const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export default function (pi: ExtensionAPI) {
 	let conversationId = crypto.randomUUID();
 
-	const release = (id: string) => {
-		const url = `${BASE_URL}/v1/conversations/${encodeURIComponent(id)}/release`;
-		return fetch(url, {
-			method: "POST",
-			headers: { "x-api-key": "pmux", authorization: "Bearer pmux" },
-			keepalive: true,
-		}).catch(() => {
+	const release = (id: string) =>
+		messages.release(id, { keepalive: true }).catch(() => {
 			/* idle TTL is the backstop */
 		});
-	};
 
 	pi.on("session_start", (_event, ctx) => {
 		const next = ctx.sessionManager.getSessionId();
@@ -57,7 +53,7 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("before_provider_headers", (event) => {
-		event.headers["x-pmux-conversation"] = conversationId;
+		setConversationHeader(event.headers, conversationId);
 	});
 
 	pi.on("session_shutdown", async () => {

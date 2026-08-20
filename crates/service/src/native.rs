@@ -12,13 +12,12 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pseudomux_claude::{TranscriptLocationError, TranscriptLocator};
 use pseudomux_protocol::v1::{
-    AttachSessionRequest, ClearSessionRequest, ClearSessionResult, CloseSessionRequest,
-    CloseSessionResult, DaemonDiagnosis, DisconnectAction, ErrorBody, ErrorCode, HealthLayer,
-    HealthLayerName, LayerFinding, ListAgentsRequest, MAX_SAFE_JSON_INTEGER, PROTOCOL_VERSION,
-    Pong, Request, ResponseResult, RetentionPolicy, RunOnceRequest, RunTurnRequest, RuntimeFinding,
-    RuntimeProbe, SessionAgentPin, SessionCell, SessionFinding, SessionGenerationId, SessionHandle,
-    SessionId, SessionIdentity, SessionProbe, SessionState, StartSessionRequest, TurnAccepted,
-    TurnResult, validate_v1_serializable,
+    ClearSessionRequest, ClearSessionResult, CloseSessionRequest, CloseSessionResult,
+    DaemonDiagnosis, DisconnectAction, ErrorBody, ErrorCode, HealthLayer, HealthLayerName,
+    LayerFinding, MAX_SAFE_JSON_INTEGER, PROTOCOL_VERSION, Pong, Request, ResponseResult,
+    RetentionPolicy, RunOnceRequest, RunTurnRequest, RuntimeFinding, RuntimeProbe, SessionCell,
+    SessionFinding, SessionGenerationId, SessionHandle, SessionId, SessionIdentity, SessionProbe,
+    SessionState, StartSessionRequest, TurnAccepted, TurnResult, validate_v1_serializable,
 };
 use pseudomux_rmux::{
     ControlPlaneFault, LaunchSpec, TerminalBackendError, TerminalSession, TerminalSnapshot,
@@ -40,7 +39,6 @@ use crate::compatibility::{
 use crate::config_isolation::{ConfigRootSeed, SeedDisposition, seed_private_config_root};
 use crate::driver_io::{
     FileTranscriptSource, RmuxTerminalControl, TerminalScreenState, classify_terminal_snapshot,
-    validate_prompt,
 };
 use crate::launch_broker::BrokerProbe;
 use crate::pool::{Pool, PoolConfig, TrackedSpawner};
@@ -51,7 +49,7 @@ use crate::tombstones::ClosedSessionTombstones;
 use crate::v1::{
     ClearRebind, DriverResult, SessionActorConfig, SessionOwner, SessionRegistration,
     SessionRegistry, StoredTurnTerminal, TerminalControl, TranscriptSource,
-    WritableAttachCompletion, require_tested_for_minified_cell,
+    require_tested_for_minified_cell,
 };
 
 const CLOSED_SESSION_TOMBSTONE_CAPACITY: usize = 4_096;
@@ -75,7 +73,6 @@ pub struct NativeServiceConfig {
     pub actor: SessionActorConfig,
     pub readiness_timeout: Duration,
     pub version_timeout: Duration,
-    pub attach_ttl: Duration,
     /// Frequency for atomically enforcing persistent-session idle deadlines.
     pub idle_reaper_interval: Duration,
     /// Absolute companion binary used only when Hybrid lifecycle is requested.
@@ -93,13 +90,6 @@ pub struct NativeServiceConfig {
     /// the meaningful one. A caller may shorten this; it cannot lengthen the
     /// rebind wait, which is a correctness deadline and not negotiable.
     pub default_clear_timeout_ms: u64,
-    /// Where stored agents live, or `None` for a daemon that serves none.
-    ///
-    /// The `Option` is the enable switch and nothing else. A daemon without one
-    /// refuses every agent method and every start naming an agent, by name and
-    /// with the flag to add, rather than growing a directory on a caller's
-    /// request path.
-    pub agent_store: Option<PathBuf>,
     /// The stateless token engine's configuration, or `None` for a daemon that
     /// does not serve Path B.
     ///
@@ -117,17 +107,11 @@ impl Default for NativeServiceConfig {
             actor: SessionActorConfig::default(),
             readiness_timeout: Duration::from_secs(90),
             version_timeout: Duration::from_secs(10),
-            attach_ttl: Duration::from_secs(30),
             idle_reaper_interval: Duration::from_secs(1),
             hybrid_hook_client: None,
             tested_claude_profiles: CompatibilityProfileRegistry::default(),
             untested_transcript_drain_ms: DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS,
             default_clear_timeout_ms: DEFAULT_CLEAR_TIMEOUT_MS,
-            // OFF by default, for the same reason `pool` is: a store that
-            // appeared merely because a daemon was built would create a
-            // directory holding environment values on every embedder that
-            // never asked for one.
-            agent_store: None,
             // OFF by default. A pool that appeared merely because a daemon was
             // built would mint instances -- real Claude processes, real
             // directories -- on every embedder that never asked for one.
@@ -302,7 +286,7 @@ impl PendingStartupCleanup {
     /// connection that would have confirmed it destroyed. `v1::actor::force_reap_terminal`
     /// answers that by detaching the whole close onto its own task. This is the
     /// same hazard on the unpublished-startup path, which `force_reap_terminal`
-    /// cannot reach: `finish_failed_start` runs inside `start_session`, whose
+    /// cannot reach: `finish_failed_start` runs inside `start_session_owned_with_retention`, whose
     /// future is dropped whenever the requesting client goes away, and at that
     /// point the terminal has no actor and no `TerminalControl` yet.
     ///
@@ -768,41 +752,8 @@ impl Drop for IdleReaper {
     }
 }
 
-/// Who decides one start's retention.
-///
-/// A DECISION RATHER THAN A VALUE, and that distinction is the whole point.
-/// `run_once` used to express "this session is one-shot" by writing
-/// `RetentionPolicy::OneShot` into the request before starting it -- and agent
-/// resolution, which replaces the entire launch policy with the stored version,
-/// then replaced that too. A value written into the request is a value the
-/// resolver owns; a decision carried beside it is one the method owns and can
-/// apply after resolution has run.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Retention {
-    /// Whatever the resolved request carries: the caller's own `retention` for
-    /// an inline start, or the stored agent's for one that named a version.
-    AsResolved,
-    /// One-shot, whatever the request or the agent said. Reserved for methods
-    /// that close the session themselves.
-    ForcedOneShot,
-}
-
-/// The retention one session is registered with, once every source has spoken.
-///
-/// PURE, and lifted out of `start_session_owned_with_retention` so the one
-/// interaction that used to be wrong -- a forced one-shot meeting an agent's
-/// stored `Persistent` -- is assertable without a Claude process, a PTY or a
-/// daemon. See `a_forced_one_shot_survives_an_agents_stored_retention`.
-fn decide_retention(decision: Retention, resolved: RetentionPolicy) -> RetentionPolicy {
-    match decision {
-        Retention::AsResolved => resolved,
-        Retention::ForcedOneShot => RetentionPolicy::OneShot,
-    }
-}
-
-/// The idle TTL a session is registered with, which is the OBSERVABLE half of
-/// [`decide_retention`]: a one-shot session has no TTL, because the method that
-/// asked for it closes it.
+/// The idle TTL a session is registered with: a one-shot session has no TTL,
+/// because the method that asked for it closes it.
 fn idle_ttl_ms_for(retention: &RetentionPolicy) -> Option<u64> {
     match retention {
         RetentionPolicy::OneShot => None,
@@ -835,9 +786,6 @@ pub struct NativeService {
     /// is write-once -- a daemon that could swap its pool could strand live
     /// instances in a pool nothing tears down.
     pool: std::sync::OnceLock<Arc<Pool>>,
-    /// The agent store, opened once at construction and REFUSED at boot if its
-    /// directory is not owner-only and owned by this user.
-    agent_store: Option<crate::agent::AgentStore>,
 }
 
 impl NativeService {
@@ -848,23 +796,10 @@ impl NativeService {
         validate_transcript_drain_ms(service_config.untested_transcript_drain_ms)
             .map_err(|error| ErrorBody::new(ErrorCode::InvalidConfig, error.to_string()))?;
         let pool_config = service_config.pool.clone();
-        // OPENED BEFORE THE RUNTIME EXISTS. A store whose directory is not
-        // owner-only fails startup, and it fails it before an rmux sidecar or
-        // a runtime directory has been created, so a refused configuration
-        // leaves nothing behind.
-        let agent_store = service_config
-            .agent_store
-            .as_deref()
-            .map(crate::agent::AgentStore::open)
-            .transpose()?;
         let runtime = PrivateRuntime::start(runtime_config)
             .await
             .map_err(|error| ErrorBody::new(ErrorCode::RmuxUnavailable, error.to_string()))?;
-        let service = Arc::new(Self::from_runtime_with_agent_store(
-            Arc::new(runtime),
-            service_config,
-            agent_store,
-        ));
+        let service = Arc::new(Self::from_runtime(Arc::new(runtime), service_config));
         service.start_idle_reaper();
         if let Some(pool_config) = pool_config {
             if let Err(error) = service.start_pool(pool_config).await {
@@ -880,7 +815,7 @@ impl NativeService {
                 // `abandon_mint` destroys) and abandoned every tree it had
                 // minted before it, so the leftover set went
                 // `L -> (L \ {min L}) union {0..min L - 1}`. Starting from the
-                // three trees a SIGTERM'd `--path-b-warm ...=3` leaves, that
+                // three trees a SIGTERM'd historical argv `--path-b-warm ...=3` leaves, that
                 // recurrence took **7 consecutive refusing restarts** before
                 // one served -- 2^3 - 1, exactly, and 2^15 - 1 = 32,767 at the
                 // owner's 15-instance cap. Draining here makes the leftover set
@@ -934,11 +869,7 @@ impl NativeService {
         self.pool.get()
     }
 
-    fn from_runtime_with_agent_store(
-        runtime: Arc<dyn SessionRuntime>,
-        config: NativeServiceConfig,
-        agent_store: Option<crate::agent::AgentStore>,
-    ) -> Self {
+    fn from_runtime(runtime: Arc<dyn SessionRuntime>, config: NativeServiceConfig) -> Self {
         // One counter covers every detached task this service is responsible
         // for, whichever layer spawns it: terminal creation that outlived its
         // request (`create_terminal_for_start`), the idle reaper, and the
@@ -963,7 +894,6 @@ impl NativeService {
             lifecycle_tasks: Arc::new(TrackedTasks::default()),
             shutdown_started: AtomicBool::new(false),
             pool: std::sync::OnceLock::new(),
-            agent_store,
         }
     }
 
@@ -1179,6 +1109,12 @@ impl NativeService {
     }
 
     pub async fn dispatch(self: &Arc<Self>, request: Request) -> Result<ResponseResult, ErrorBody> {
+        if !matches!(
+            request,
+            Request::Ping | Request::Diagnose | Request::RunStateless(_)
+        ) {
+            return Err(crate::pool::refusal::session_surface_removed());
+        }
         validate_native_request(&request)?;
         match request {
             // This arm never dereferences `self`, and that is not an oversight:
@@ -1193,201 +1129,33 @@ impl NativeService {
                 protocol_version: PROTOCOL_VERSION,
             })),
             Request::Diagnose => Ok(ResponseResult::Diagnosis(Box::new(self.diagnose().await))),
-            Request::StartSession(request) => self
-                .start_session(request)
-                .await
-                .map(ResponseResult::SessionStarted),
-            Request::RunTurn(request) => self
-                .run_turn(request)
-                .await
-                .map(ResponseResult::TurnAccepted),
-            Request::CancelTurn(request) => self
-                .registry
-                .cancel_turn(request)
-                .await
-                .map(ResponseResult::TurnCancelled),
-            Request::InspectSession(request) => self
-                .registry
-                .inspect(request)
-                .await
-                .map(|snapshot| ResponseResult::SessionSnapshot(Box::new(snapshot))),
-            Request::AttachSession(request) => self.attach(request).await,
-            Request::CloseSession(request) => {
-                dispatch_close_session(
-                    self.registry.as_ref(),
-                    &self.sessions,
-                    &self.closed_sessions,
-                    &self.start_guard,
-                    request,
-                )
-                .await
-            }
-            Request::SubscribeEvents(request) => {
-                validate_subscribe_events(&request)?;
-                self.registry
-                    .events(request)
-                    .await
-                    .map(ResponseResult::Events)
-            }
-            Request::RunOnce(request) => self
-                .run_once(request)
-                .await
-                .map(|result| ResponseResult::TurnResult(Box::new(result))),
-            Request::ClearSession(request) => self
-                .clear_session(request)
-                .await
-                .map(ResponseResult::SessionCleared),
-            // The stateless pool lives in `crate::pool` and is not wired into
-            // this service yet. This arm is the single line the integration
-            // step replaces with a call into `Pool::run`; until then the daemon
-            // refuses honestly rather than pretending the capability exists.
             Request::RunStateless(request) => crate::stateless::run_stateless(self.pool(), request)
                 .await
                 .map(|result| ResponseResult::StatelessResult(Box::new(result))),
-            Request::CreateAgent(request) => self
-                .agent_store()?
-                .create(request.spec, now_ms())
-                .map(|descriptor| ResponseResult::AgentCreated(Box::new(descriptor))),
-            Request::GetAgent(request) => self
-                .agent_store()?
-                .get(request.agent_id, request.version)
-                .map(|descriptor| ResponseResult::Agent(Box::new(descriptor))),
-            Request::ListAgents(ListAgentsRequest {}) => self
-                .agent_store()?
-                .list()
-                .map(|list| ResponseResult::AgentList(Box::new(list))),
-            Request::UpdateAgent(request) => self
-                .agent_store()?
-                .update(
-                    request.agent_id,
-                    request.expected_version,
-                    request.spec,
-                    now_ms(),
-                )
-                .map(|descriptor| ResponseResult::AgentUpdated(Box::new(descriptor))),
+            Request::StartSession(_)
+            | Request::RunTurn(_)
+            | Request::CancelTurn(_)
+            | Request::InspectSession(_)
+            | Request::AttachSession(_)
+            | Request::CloseSession(_)
+            | Request::SubscribeEvents(_)
+            | Request::RunOnce(_)
+            | Request::ClearSession(_)
+            | Request::CreateAgent(_)
+            | Request::GetAgent(_)
+            | Request::ListAgents(_)
+            | Request::UpdateAgent(_) => Err(crate::pool::refusal::session_surface_removed()),
         }
     }
-
-    /// The agent store, or the refusal a daemon that was started without one
-    /// owes a caller who asks for an agent.
-    ///
-    /// Named rather than defaulted: a daemon with no store does not silently
-    /// grow one on first use, because that would be a directory created on a
-    /// caller's request path, and every other directory in this product is
-    /// created at boot or refused.
-    fn agent_store(&self) -> Result<&crate::agent::AgentStore, ErrorBody> {
-        self.agent_store.as_ref().ok_or_else(missing_agent_store)
-    }
-
-    /// Replaces an [`AgentRef`] with the launch configuration it names, and
-    /// applies that agent's containment rules.
-    ///
-    /// The only impure step in the whole agent path: one read of one immutable
-    /// file, keyed by a version the request itself named. Everything after it
-    /// is [`crate::agent::resolve_agent_start`], which is pure.
-    ///
-    /// Containment runs HERE, before `admit_bound_resources`, and it can only
-    /// ADD a refusal: no value of `workspace_root` or
-    /// `require_config_isolation` makes an otherwise-refused start admissible,
-    /// because both are asked before the existing rules and neither writes
-    /// anything into the request.
-    fn resolve_agent_reference(
-        &self,
-        request: &mut StartSessionRequest,
-        retention: Retention,
-    ) -> Result<Option<SessionAgentPin>, ErrorBody> {
-        resolve_agent_and_retention(self.agent_store.as_ref(), request, retention)
-    }
-}
-
-/// Replaces an [`AgentRef`] with the launch configuration it names, and THEN
-/// applies the calling method's retention decision.
-///
-/// **THE ORDER IS THE FIX.** `run_once` used to express "this session is
-/// one-shot" by writing `RetentionPolicy::OneShot` into the request before the
-/// start ran; resolution replaced the whole launch policy with the stored
-/// agent's, including its `Persistent { idle_ttl_ms }`, and a `pmux run
-/// --agent` registered the agent's idle TTL instead of `None`. The two steps
-/// live in one function so the order is a property of one place, and
-/// `a_forced_one_shot_survives_the_agent_it_resolves` runs this exact function
-/// against a real store with no daemon, no PTY and no Claude.
-///
-/// It is a free function taking the store rather than a method for that reason:
-/// the impure step is one read of one immutable file, and nothing else about a
-/// `NativeService` is involved.
-fn resolve_agent_and_retention(
-    store: Option<&crate::agent::AgentStore>,
-    request: &mut StartSessionRequest,
-    retention: Retention,
-) -> Result<Option<SessionAgentPin>, ErrorBody> {
-    let pin = resolve_agent_reference_into(store, request)?;
-    // AFTER resolution, because it overrides what resolution produced. This is
-    // the ONE field a method is allowed to decide over an agent's stored value,
-    // and only because the method closes the session itself: a one-shot
-    // session's retention is a property of `run_once`, not of the configuration
-    // it launches.
-    request.retention = decide_retention(retention, request.retention.clone());
-    Ok(pin)
-}
-
-fn missing_agent_store() -> ErrorBody {
-    ErrorBody::new(
-        ErrorCode::InvalidConfig,
-        "this daemon serves no agent store, so no agent can be stored, read or referenced",
-    )
-    .with_details(json!({
-        "recommendation": "restart pmuxd with --agent-store DIR, or send the inline launch \
-                           fields on each start_session"
-    }))
-}
-
-fn resolve_agent_reference_into(
-    store: Option<&crate::agent::AgentStore>,
-    request: &mut StartSessionRequest,
-) -> Result<Option<SessionAgentPin>, ErrorBody> {
-    let Some(reference) = request.agent else {
-        return Ok(None);
-    };
-    let (spec, config_digest) = store
-        .ok_or_else(missing_agent_store)?
-        .load_for_launch(reference)?;
-    crate::agent::admit_agent_containment(
-        &spec.containment,
-        reference.agent_id,
-        Path::new(&request.cwd),
-        request.config_isolation.as_ref(),
-    )?;
-    let (resolved, pin) = crate::agent::resolve_agent_start(
-        &spec,
-        &config_digest,
-        reference,
-        std::mem::replace(request, placeholder_start_request()),
-    );
-    *request = resolved;
-    // The resolved DTO goes through the SAME public preflight an inline request
-    // went through on the way in. A stored spec that was admissible when it was
-    // written and is not admissible now -- because a validator moved -- is
-    // refused at the start it would have launched, rather than silently
-    // launched under the older rule.
-    validate_native_request(request)?;
-    validate_public_start_retention(&request.retention)?;
-    Ok(Some(pin))
 }
 
 impl NativeService {
     pub async fn start_session(
         self: &Arc<Self>,
-        request: StartSessionRequest,
+        _request: StartSessionRequest,
     ) -> Result<SessionHandle, ErrorBody> {
-        validate_native_request(&request)?;
-        // An agent-named start has no `retention` of its own yet: it is refused
-        // above if it carried one, and the stored value has not been read.
-        // `resolve_agent_reference` re-applies both preflights to the RESOLVED
-        // request, which is the one that describes what will launch.
-        if request.agent.is_none() {
-            validate_public_start_retention(&request.retention)?;
-        }
-        self.start_session_internal(request).await
+        let _ = self;
+        Err(crate::pool::refusal::session_surface_removed())
     }
 
     /// Brings a private configuration root to the state this session needs.
@@ -1399,10 +1167,10 @@ impl NativeService {
     /// write". A root already hosting a session gets a read-only check and,
     /// when the required state is absent, a refusal.
     ///
-    /// No per-root mutex is introduced. `start_session_internal` holds
-    /// `start_guard` across its whole body, so every seed in one daemon is
-    /// already serialized against every other; a second lock would only be able
-    /// to disagree with the first.
+    /// No per-root mutex is introduced. `start_session_owned_with_retention`
+    /// holds `start_guard` across its whole body, so every seed in one daemon
+    /// is already serialized against every other; a second lock would only be
+    /// able to disagree with the first.
     fn seed_config_isolation_root(
         config_root: &Path,
         resolved: &ResolvedClaudeLaunch,
@@ -1420,62 +1188,38 @@ impl NativeService {
         .map_err(|error| ErrorBody::new(ErrorCode::InvalidConfig, format!("{error:#}")))
     }
 
-    async fn start_session_internal(
-        self: &Arc<Self>,
-        request: StartSessionRequest,
-    ) -> Result<SessionHandle, ErrorBody> {
-        self.start_session_owned_with_retention(
-            request,
-            SessionOwner::Caller,
-            Retention::AsResolved,
-        )
-        .await
-    }
-
     /// The one start path, with the owner named at the call site.
     ///
     /// Every resource rule this function already enforces -- the containment
     /// walk over live claims, the pristine-root scan, the transcript-identity
-    /// check -- runs for a pool mint exactly as it runs for a caller start, and
-    /// that is why the pool's roots are published into `self.sessions` at all
-    /// rather than held somewhere the admission rules cannot see them. A pool
-    /// instance that were invisible to `live_resource_claims` would be a
-    /// directory a Path A caller could name and be admitted to.
+    /// check -- runs for a pool mint (the living door; public caller start is
+    /// `session_surface_removed`), which is why the pool's roots are published
+    /// into `self.sessions` at all rather than held somewhere the admission
+    /// rules cannot see them. A pool instance invisible to `live_resource_claims`
+    /// would be a directory another start could name and be admitted to.
     pub(crate) async fn start_session_owned(
         self: &Arc<Self>,
         request: StartSessionRequest,
         owner: SessionOwner,
     ) -> Result<SessionHandle, ErrorBody> {
-        self.start_session_owned_with_retention(request, owner, Retention::AsResolved)
+        // Retention::AsResolved: the request's retention is registered as written.
+        self.start_session_owned_with_retention(request, owner)
             .await
     }
 
-    /// The one start path, with the owner AND the retention decision named at
-    /// the call site.
+    /// The one start path, with the owner named at the call site.
     ///
-    /// [`Retention::ForcedOneShot`] exists because `run_once` decides its
-    /// session's retention itself and must decide it AFTER agent resolution.
-    /// `run_once` used to set `retention = OneShot` on the request before this
-    /// function ran; `resolve_agent_reference` then replaced the whole launch
-    /// policy with the stored agent's, including its `Persistent`, so a
-    /// `pmux run --agent` registered the agent's idle TTL instead of `None` --
-    /// a value pmux itself wrote and pmux itself discarded.
+    /// A stored `agent` on the request is refused: stored agents are not a
+    /// product, and the pool mints with `agent` unset. Retention is the
+    /// request's own [`RetentionPolicy`]; there is no second decision.
     pub(crate) async fn start_session_owned_with_retention(
         self: &Arc<Self>,
         mut request: StartSessionRequest,
         owner: SessionOwner,
-        retention: Retention,
     ) -> Result<SessionHandle, ErrorBody> {
-        // AGENT RESOLUTION IS THE FIRST THING THAT HAPPENS, and it happens
-        // exactly once, at the one door every start goes through.
-        //
-        // After this line the request is a `StartSessionRequest` that nothing
-        // downstream can distinguish from one a caller typed inline: `agent` is
-        // cleared and `claude` is present. That is what keeps `docs/spec.md`
-        // Sec. 4.4 literally true -- argv is a pure function of the request and of
-        // the immutable version the request names -- and it is why not one
-        // admission rule below had to learn what an agent is.
-        let agent_pin = self.resolve_agent_reference(&mut request, retention)?;
+        if request.agent.is_some() {
+            return Err(crate::pool::refusal::session_surface_removed());
+        }
         validate_v1_terminal_support(request.terminal.profile, request.terminal.input_transport)?;
         let _guard = self.start_guard.lock().await;
         if self.shutdown_started.load(Ordering::Acquire) {
@@ -1710,7 +1454,7 @@ impl NativeService {
             dangerous_permission_bypass: resolved.dangerous_permission_bypass,
             resumable: true,
             cell: request.cell,
-            agent: agent_pin,
+            agent: None,
             idle_ttl_ms,
             initial_needs_input: match startup_screen {
                 TerminalScreenState::NeedsInput(needs_input) => Some(needs_input),
@@ -1750,96 +1494,18 @@ impl NativeService {
 
     pub async fn run_turn(
         self: &Arc<Self>,
-        request: RunTurnRequest,
+        _request: RunTurnRequest,
     ) -> Result<TurnAccepted, ErrorBody> {
-        validate_native_request(&request)?;
-        validate_turn_lease(&request.turn)?;
-        validate_prompt(&request.turn.prompt).map_err(DriverFailureExt::protocol)?;
-        self.registry.run_turn(request).await
+        let _ = self;
+        Err(crate::pool::refusal::session_surface_removed())
     }
 
     pub async fn run_once(
         self: &Arc<Self>,
-        request: RunOnceRequest,
+        _request: RunOnceRequest,
     ) -> Result<TurnResult, ErrorBody> {
-        validate_native_request(&request)?;
-        validate_turn_lease(&request.turn)?;
-        // Reject caller-controlled input before constructing a PTY. Besides
-        // avoiding needless work, this prevents an invalid one-shot request
-        // from becoming an unattended startup modal.
-        validate_prompt(&request.turn.prompt).map_err(DriverFailureExt::protocol)?;
-        // The retention travels as a DECISION rather than as a value written
-        // into the request, because a value written here is one an agent's
-        // stored policy then replaced: see
-        // `start_session_owned_with_retention`.
-        let handle = self
-            .start_session_owned_with_retention(
-                request.session,
-                SessionOwner::Caller,
-                Retention::ForcedOneShot,
-            )
-            .await?;
-        let turn_id = request.turn.turn_id;
-        let deadline = request.turn.deadline_unix_ms;
-        if let Err(error) = self
-            .registry
-            .run_turn(RunTurnRequest {
-                session_id: handle.session_id,
-                generation_id: handle.generation_id,
-                turn: request.turn,
-            })
-            .await
-        {
-            let cleanup = self
-                .close_session(CloseSessionRequest {
-                    session_id: handle.session_id,
-                    generation_id: handle.generation_id,
-                    policy: pseudomux_protocol::v1::ClosePolicy::Force,
-                })
-                .await
-                .and_then(require_process_reaped);
-            return Err(match cleanup {
-                Ok(_) => error,
-                Err(cleanup_error) => combine_turn_and_cleanup_errors(error, cleanup_error),
-            });
-        }
-        // Resolved once, here, under the caller resolver: `run_once` is a wire
-        // method, so its session is a caller's.
-        let result = match self
-            .registry
-            .actor(handle.session_id, handle.generation_id)
-            .await
-        {
-            Ok(actor) => {
-                self.wait_for_turn(
-                    &actor,
-                    turn_id,
-                    deadline,
-                    handle.compatibility.transcript_drain_ms,
-                )
-                .await
-            }
-            Err(error) => Err(error),
-        };
-        let cleanup = self
-            .close_session(CloseSessionRequest {
-                session_id: handle.session_id,
-                generation_id: handle.generation_id,
-                policy: if result.is_ok() {
-                    pseudomux_protocol::v1::ClosePolicy::Graceful
-                } else {
-                    pseudomux_protocol::v1::ClosePolicy::Force
-                },
-            })
-            .await
-            .and_then(require_process_reaped);
-        match (result, cleanup) {
-            (Ok(result), Ok(_)) => Ok(result),
-            (Err(error), Ok(_)) | (Ok(_), Err(error)) => Err(error),
-            (Err(turn_error), Err(cleanup_error)) => {
-                Err(combine_turn_and_cleanup_errors(turn_error, cleanup_error))
-            }
-        }
+        let _ = self;
+        Err(crate::pool::refusal::session_surface_removed())
     }
 
     /// Polls one already-resolved actor until it publishes a terminal outcome.
@@ -1915,33 +1581,18 @@ impl NativeService {
         }
     }
 
-    /// Submit one Path A turn and wait for its transcript-proven result.
-    ///
-    /// The Messages lease book uses this instead of `RunStateless` so a pinned
-    /// cell can take a delta without `/clear`.
-    pub async fn run_turn_to_completion(
-        self: &Arc<Self>,
-        request: RunTurnRequest,
-        transcript_drain_ms: u64,
-    ) -> Result<TurnResult, ErrorBody> {
-        let turn_id = request.turn.turn_id;
-        let deadline = request.turn.deadline_unix_ms;
-        let session_id = request.session_id;
-        let generation_id = request.generation_id;
-        self.run_turn(request).await?;
-        let actor = self.registry.actor(session_id, generation_id).await?;
-        self.wait_for_turn(&actor, turn_id, deadline, transcript_drain_ms)
-            .await
+    pub async fn clear_session(
+        &self,
+        _request: ClearSessionRequest,
+    ) -> Result<ClearSessionResult, ErrorBody> {
+        let _ = self;
+        Err(crate::pool::refusal::session_surface_removed())
     }
 
-    /// Clears a minified-cell session's context between turns and returns the
-    /// session id Claude rotated to.
-    ///
-    /// `/clear` costs ~30ms where relaunching the TUI costs ~4.4s, which is the
-    /// entire reason a stateless cell is affordable. The caller's session id and
-    /// generation are unchanged by it: what rotates is Claude's own id, and the
-    /// only thing that follows the rotation is the transcript tail.
-    pub async fn clear_session(
+    /// In-crate clear used by seam tests. Production recycle is the pool
+    /// `clear_pool_instance` path.
+    #[cfg(test)]
+    pub(crate) async fn clear_session_internal(
         &self,
         request: ClearSessionRequest,
     ) -> Result<ClearSessionResult, ErrorBody> {
@@ -2015,10 +1666,10 @@ impl NativeService {
 
     pub async fn close_session(
         &self,
-        request: CloseSessionRequest,
+        _request: CloseSessionRequest,
     ) -> Result<CloseSessionResult, ErrorBody> {
-        self.close_session_owned(SessionOwner::Caller, request)
-            .await
+        let _ = self;
+        Err(crate::pool::refusal::session_surface_removed())
     }
 
     pub(crate) async fn close_session_owned(
@@ -2038,118 +1689,8 @@ impl NativeService {
         .await
     }
 
-    async fn attach(&self, request: AttachSessionRequest) -> Result<ResponseResult, ErrorBody> {
-        // Fence even unsupported attach variants before inspecting backend
-        // metadata so a delayed request cannot be mistaken for the current
-        // process incarnation.
-        self.registry
-            .actor(request.session_id, request.generation_id)
-            .await?;
-        if request.read_only {
-            return Err(ErrorBody::new(
-                ErrorCode::UnsupportedFeature,
-                "read-only attach is not implemented by the pinned rmux stream protocol",
-            ));
-        }
-        let (terminal, private_session_name) = self
-            .sessions
-            .read()
-            .await
-            .get(&request.session_id)
-            .filter(|metadata| metadata.generation_id == request.generation_id)
-            .map(|metadata| {
-                (
-                    Arc::clone(&metadata.terminal),
-                    metadata.private_session_name.clone(),
-                )
-            })
-            .ok_or_else(|| {
-                ErrorBody::new(
-                    ErrorCode::StaleSessionGeneration,
-                    "session backend no longer matches the requested process generation",
-                )
-            })?;
-        #[cfg(unix)]
-        {
-            let attach_id = uuid::Uuid::new_v4();
-            self.registry
-                .reserve_writable_attach(request.session_id, request.generation_id, attach_id)
-                .await?;
-            if let Some(size) = request.size
-                && let Err(error) = terminal.resize(size.rows, size.cols).await
-            {
-                let _ = self
-                    .registry
-                    .release_writable_attach(
-                        request.session_id,
-                        request.generation_id,
-                        attach_id,
-                        WritableAttachCompletion::Unused,
-                    )
-                    .await;
-                return Err(error.into_protocol());
-            }
-            let (grant, completion) = match crate::attach::grant_attach(
-                self.runtime.runtime_dir(),
-                self.runtime.rmux_socket(),
-                private_session_name,
-                self.config.attach_ttl,
-            )
-            .await
-            {
-                Ok(grant) => grant,
-                Err(error) => {
-                    let _ = self
-                        .registry
-                        .release_writable_attach(
-                            request.session_id,
-                            request.generation_id,
-                            attach_id,
-                            WritableAttachCompletion::Unused,
-                        )
-                        .await;
-                    return Err(map_attach_grant_error(error));
-                }
-            };
-            let registry = Arc::clone(&self.registry);
-            let session_id = request.session_id;
-            let generation_id = request.generation_id;
-            tokio::spawn(async move {
-                let completion = match completion.wait().await {
-                    crate::attach::AttachCompletionOutcome::Unused => {
-                        WritableAttachCompletion::Unused
-                    }
-                    crate::attach::AttachCompletionOutcome::PotentiallyMutated => {
-                        WritableAttachCompletion::PotentiallyMutated
-                    }
-                };
-                let _ = registry
-                    .release_writable_attach(session_id, generation_id, attach_id, completion)
-                    .await;
-            });
-            Ok(ResponseResult::AttachCapability(
-                pseudomux_protocol::v1::AttachCapability {
-                    session_id: request.session_id,
-                    generation_id: request.generation_id,
-                    token: grant.token,
-                    endpoint: grant.endpoint.to_string_lossy().into_owned(),
-                    expires_at_ms: grant.expires_at_ms,
-                    read_only: false,
-                },
-            ))
-        }
-        #[cfg(not(unix))]
-        {
-            let _ = (terminal, private_session_name);
-            Err(ErrorBody::new(
-                ErrorCode::UnsupportedFeature,
-                "attach capabilities are not implemented on this platform",
-            ))
-        }
-    }
-
-    #[must_use]
-    pub fn registry(&self) -> &Arc<SessionRegistry> {
+    /// Pool/internal only; embedders use `dispatch` and the public refuse verbs.
+    pub(crate) fn registry(&self) -> &Arc<SessionRegistry> {
         &self.registry
     }
 
@@ -2390,9 +1931,9 @@ impl NativeService {
     /// constants [`crate::stateless::launch_request_for`] writes into a real
     /// mint request, and the refusal comes from the same
     /// [`CompatibilityProfileRegistry::resolve`] plus
-    /// `require_tested_for_minified_cell` pair `start_session` runs. A second
-    /// copy of the admission rule here is a health report free to keep
-    /// answering `exercised` after the mint's copy has changed.
+    /// `require_tested_for_minified_cell` pair `start_session_owned_with_retention`
+    /// runs. A second copy of the admission rule here is a health report free
+    /// to keep answering `exercised` after the mint's copy has changed.
     ///
     /// `None` on a daemon with no pool: nothing it runs needs a tested cell,
     /// and nothing is spawned to find out.
@@ -2560,16 +2101,19 @@ impl NativeService {
             .read()
             .await
             .iter()
-            .map(|(session_id, metadata)| (*session_id, metadata.generation_id))
+            .map(|(session_id, metadata)| (*session_id, metadata.generation_id, metadata.owner))
             .collect();
         let mut first_error = None;
-        for (session_id, generation_id) in sessions {
+        for (session_id, generation_id, owner) in sessions {
             if let Err(error) = self
-                .close_session(CloseSessionRequest {
-                    session_id,
-                    generation_id,
-                    policy: pseudomux_protocol::v1::ClosePolicy::Force,
-                })
+                .close_session_owned(
+                    owner,
+                    CloseSessionRequest {
+                        session_id,
+                        generation_id,
+                        policy: pseudomux_protocol::v1::ClosePolicy::Force,
+                    },
+                )
                 .await
                 .and_then(require_process_reaped)
                 && first_error.is_none()
@@ -2709,26 +2253,6 @@ async fn drain_after_runtime_shutdown(
     lifecycle_tasks.wait_idle().await;
 }
 
-async fn dispatch_close_session(
-    registry: &SessionRegistry,
-    sessions: &RwLock<HashMap<SessionId, SessionMetadata>>,
-    closed_sessions: &RwLock<ClosedSessionTombstones>,
-    start_guard: &Mutex<()>,
-    request: CloseSessionRequest,
-) -> Result<ResponseResult, ErrorBody> {
-    close_session_with_state(
-        registry,
-        sessions,
-        closed_sessions,
-        start_guard,
-        SessionOwner::Caller,
-        request,
-    )
-    .await
-    .and_then(require_process_reaped)
-    .map(ResponseResult::SessionClosed)
-}
-
 async fn close_session_with_state(
     registry: &SessionRegistry,
     sessions: &RwLock<HashMap<SessionId, SessionMetadata>>,
@@ -2787,6 +2311,7 @@ async fn close_session_with_state(
     Ok(result)
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn validate_turn_lease(turn: &pseudomux_protocol::v1::TurnRequest) -> Result<(), ErrorBody> {
     if turn.lease.on_disconnect != DisconnectAction::Continue
         || turn.lease.heartbeat_timeout_ms.is_some()
@@ -3200,8 +2725,8 @@ enum PoolClaudeAdmission {
 /// [`crate::stateless::POOL_COMPATIBILITY`], [`crate::stateless::POOL_TERMINAL`]
 /// and [`crate::stateless::POOL_CELL`] are the constants
 /// `crate::stateless::launch_request_for` writes into a mint request, and the
-/// two calls below are the pair `NativeService::start_session` runs on that
-/// request. Naming `RequireTested`, `Transparent` or `Sdk` here instead would
+/// two calls below are the pair `start_session_owned_with_retention` runs
+/// on that request. Naming `RequireTested`, `Transparent` or `Sdk` here instead would
 /// be a second copy of the admission rule, free to keep reporting `exercised`
 /// after the mint's copy has moved.
 fn admit_claude_version(
@@ -3282,15 +2807,15 @@ fn pool_layer(
     }) = subject
     else {
         // `NothingToExercise`, not `NotEstablished`: a daemon booted without
-        // `--path-b-parent` has no pool and never will have one, so there is
+        // `--pool-parent` has no pool and never will have one, so there is
         // nothing here whose health could be in question. Reporting it as
-        // unproven made every Path A daemon fail `pmux doctor` forever, for
-        // having declined a feature.
+        // unproven made every session-only daemon fail `pmux doctor` forever,
+        // for having declined a feature.
         return HealthLayer::new(
             HealthLayerName::Pool,
             LayerFinding::NothingToExercise,
             "no stateless pool is configured on this daemon, so there was nothing to exercise; \
-             --path-b-parent is what enables one and this daemon was not given it",
+             --pool-parent is what enables one and this daemon was not given it",
             json!({ "configured": false }),
         );
     };
@@ -3575,19 +3100,10 @@ where
     })
 }
 
-/// Protocol timestamps for the agent store, from the same clock every other
-/// published instant uses.
-fn now_ms() -> pseudomux_protocol::v1::TimestampMs {
-    use crate::v1::Clock;
-
-    crate::v1::SystemClock.now_ms()
-}
-
-/// The launch configuration of a request that has already been resolved.
+/// The launch configuration of a request that already carries inline `claude`.
 ///
-/// A start whose `claude` is absent has not been through
-/// `resolve_agent_reference`, which is the first line of the one start path.
-/// It is a refusal rather than an `expect` because `NativeService` is `pub` and
+/// A start whose `claude` is absent has no launch configuration. It is a
+/// refusal rather than an `expect` because `NativeService` is `pub` and
 /// an embedder can construct any DTO the type system admits.
 ///
 /// # Errors
@@ -3608,64 +3124,8 @@ fn require_resolved_launch_mut(
 fn unresolved_launch() -> ErrorBody {
     ErrorBody::new(
         ErrorCode::InvalidConfig,
-        "start request carries neither an inline `claude` launch configuration nor a resolvable \
-         `agent` reference",
+        "start request carries no inline `claude` launch configuration",
     )
-}
-
-/// A structurally valid start used only as the value `std::mem::replace` leaves
-/// behind for the one statement between taking the caller's request and writing
-/// the resolved one back.
-///
-/// It is never launched, never validated and never observed: the very next
-/// statement overwrites it. It exists because resolution consumes the request
-/// by value -- which is what makes it a pure function of its inputs rather than
-/// a mutation with an implicit order.
-fn placeholder_start_request() -> StartSessionRequest {
-    StartSessionRequest {
-        identity: SessionIdentity::New { session_id: None },
-        cwd: String::new(),
-        claude: None,
-        agent: None,
-        environment: pseudomux_protocol::v1::EnvironmentSpec::default(),
-        auth_policy: pseudomux_protocol::v1::AuthPolicy::default(),
-        config_isolation: None,
-        terminal: pseudomux_protocol::v1::TerminalSpec::default(),
-        lifecycle: pseudomux_protocol::v1::LifecycleMode::default(),
-        retention: RetentionPolicy::default(),
-        compatibility: pseudomux_protocol::v1::CompatibilityPolicy::default(),
-        cell: SessionCell::default(),
-    }
-}
-
-pub fn validate_public_start_retention(retention: &RetentionPolicy) -> Result<(), ErrorBody> {
-    if matches!(retention, RetentionPolicy::OneShot) {
-        return Err(ErrorBody::new(
-            ErrorCode::UnsupportedFeature,
-            "one_shot retention is reserved for run_once; start_session requires persistent retention",
-        ));
-    }
-    Ok(())
-}
-
-fn validate_subscribe_events(
-    request: &pseudomux_protocol::v1::SubscribeEventsRequest,
-) -> Result<(), ErrorBody> {
-    use pseudomux_protocol::v1::{MAX_SUBSCRIBE_EVENTS, MAX_SUBSCRIBE_WAIT_MS};
-
-    if request.wait_ms > MAX_SUBSCRIBE_WAIT_MS || request.max_events > MAX_SUBSCRIBE_EVENTS {
-        return Err(ErrorBody::new(
-            ErrorCode::InvalidConfig,
-            "event subscription exceeds the public wait or batch bound",
-        )
-        .with_details(json!({
-            "wait_ms": diagnostic_u64(request.wait_ms),
-            "max_events": request.max_events,
-            "maximum_wait_ms": MAX_SUBSCRIBE_WAIT_MS,
-            "maximum_events": MAX_SUBSCRIBE_EVENTS,
-        })));
-    }
-    Ok(())
 }
 
 fn require_process_reaped(result: CloseSessionResult) -> Result<CloseSessionResult, ErrorBody> {
@@ -3713,6 +3173,7 @@ fn combine_startup_and_cleanup_errors(startup: ErrorBody, cleanup: ErrorBody) ->
     }))
 }
 
+#[cfg(test)]
 fn combine_turn_and_cleanup_errors(turn: ErrorBody, cleanup: ErrorBody) -> ErrorBody {
     ErrorBody::new(
         ErrorCode::RecoveryFailed,
@@ -3965,13 +3426,13 @@ fn startup_screen_diagnostics(snapshot: &TerminalSnapshot) -> serde_json::Value 
 /// The backend half deliberately routes through [`map_startup_terminal_error`]
 /// rather than hand-rolling its own arms. This call and the startup readiness
 /// snapshot two calls later (`wait_until_ready_with_timings`, which already
-/// uses that mapper) sit on the same `start_session` path and can fail for the
+/// uses that mapper) sit on the same `start_session_owned_with_retention` path and can fail for the
 /// identical reason; reporting one control-plane loss as `RmuxUnavailable` or
 /// as `DaemonLost` depending on which of the two calls happened to hit it is
 /// not a distinction any caller can act on, and it is not one anybody chose --
 /// it was an artifact of two independently written match arms.
 ///
-/// Converging on the existing mapper adds no `ErrorCode` that `start_session`
+/// Converging on the existing mapper adds no `ErrorCode` that `start_session_owned_with_retention`
 /// could not already return. It is recorded as a deliberate deviation from the
 /// staging note in `.context/review/transport-fix-design.md`; see the
 /// "Deviation: startup error codes converge on `map_startup_terminal_error`"
@@ -4687,13 +4148,6 @@ fn map_location_error(error: TranscriptLocationError) -> ErrorBody {
             ErrorCode::SchemaDrift
         }
     };
-    ErrorBody::new(code, error.to_string())
-}
-
-fn map_attach_grant_error(error: anyhow::Error) -> ErrorBody {
-    let code = error
-        .downcast_ref::<crate::attach::AttachTimeError>()
-        .map_or(ErrorCode::RmuxUnavailable, |error| error.protocol_code());
     ErrorBody::new(code, error.to_string())
 }
 
@@ -5500,18 +4954,6 @@ mod tests {
     }
 
     #[test]
-    fn public_start_reserves_one_shot_retention_for_run_once() {
-        let error = validate_public_start_retention(&RetentionPolicy::OneShot).unwrap_err();
-        assert_eq!(error.code, ErrorCode::UnsupportedFeature);
-        assert!(
-            validate_public_start_retention(&RetentionPolicy::Persistent {
-                idle_ttl_ms: 30_000,
-            })
-            .is_ok()
-        );
-    }
-
-    #[test]
     fn successful_compositions_require_confirmed_process_reaping() {
         let session_id = SessionId::new_v4();
         let generation_id = SessionGenerationId::new();
@@ -5645,7 +5087,7 @@ mod tests {
 
     /// Startup cleanup must never abandon a close it has already started.
     ///
-    /// `finish_failed_start` runs inside `start_session`, whose future is
+    /// `finish_failed_start` runs inside `start_session_owned_with_retention`, whose future is
     /// dropped whenever the requesting client goes away, and it used to `await`
     /// `TerminalSession::close()` in place. `RmuxTerminal::close` is a compound
     /// state machine over a live rmux connection, so dropping it midway leaves a
@@ -5864,7 +5306,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dispatch_close_retries_unconfirmed_reap_then_tombstones_without_retargeting() {
+    async fn close_retries_unconfirmed_reap_then_tombstones_without_retargeting() {
         let registry = SessionRegistry::new(SessionActorConfig::default());
         let sessions = RwLock::new(HashMap::new());
         let closed_sessions = RwLock::new(ClosedSessionTombstones::new(8));
@@ -5881,11 +5323,12 @@ mod tests {
             .await
             .unwrap();
 
-        let first_error = dispatch_close_session(
+        let first_error = close_session_with_state(
             &registry,
             &sessions,
             &closed_sessions,
             &start_guard,
+            SessionOwner::Caller,
             CloseSessionRequest {
                 session_id,
                 generation_id: first_generation,
@@ -5893,6 +5336,7 @@ mod tests {
             },
         )
         .await
+        .and_then(require_process_reaped)
         .unwrap_err();
         assert_eq!(first_error.code, ErrorCode::RecoveryFailed);
         assert!(first_error.retryable);
@@ -5911,11 +5355,12 @@ mod tests {
         );
 
         first_terminal.set_reaped(true);
-        let second = dispatch_close_session(
+        let second = close_session_with_state(
             &registry,
             &sessions,
             &closed_sessions,
             &start_guard,
+            SessionOwner::Caller,
             CloseSessionRequest {
                 session_id,
                 generation_id: first_generation,
@@ -5923,10 +5368,8 @@ mod tests {
             },
         )
         .await
+        .and_then(require_process_reaped)
         .unwrap();
-        let ResponseResult::SessionClosed(second) = second else {
-            panic!("close dispatch returned the wrong result variant")
-        };
         assert!(second.process_reaped);
         assert!(!second.already_closed);
         assert_eq!(first_terminal.closes.load(Ordering::SeqCst), 2);
@@ -5942,11 +5385,12 @@ mod tests {
             .await
             .unwrap();
 
-        let duplicate = dispatch_close_session(
+        let duplicate = close_session_with_state(
             &registry,
             &sessions,
             &closed_sessions,
             &start_guard,
+            SessionOwner::Caller,
             CloseSessionRequest {
                 session_id,
                 generation_id: first_generation,
@@ -5954,10 +5398,8 @@ mod tests {
             },
         )
         .await
+        .and_then(require_process_reaped)
         .unwrap();
-        let ResponseResult::SessionClosed(duplicate) = duplicate else {
-            panic!("duplicate close dispatch returned the wrong result variant")
-        };
         assert!(duplicate.process_reaped);
         assert!(duplicate.already_closed);
         assert_eq!(replacement_terminal.closes.load(Ordering::SeqCst), 0);
@@ -6026,33 +5468,6 @@ mod tests {
         assert!(checked_default_deadline_ms(MAX_SAFE_JSON_INTEGER, 1).is_err());
     }
 
-    #[test]
-    fn attach_time_failures_keep_their_protocol_error_class() {
-        for (failure, expected) in [
-            (
-                crate::attach::AttachTimeError::CurrentTimeUnavailable,
-                ErrorCode::RecoveryFailed,
-            ),
-            (
-                crate::attach::AttachTimeError::TtlOutOfRange,
-                ErrorCode::InvalidConfig,
-            ),
-            (
-                crate::attach::AttachTimeError::ExpiryOutOfRange,
-                ErrorCode::InvalidConfig,
-            ),
-        ] {
-            assert_eq!(
-                map_attach_grant_error(anyhow::Error::new(failure)).code,
-                expected
-            );
-        }
-        assert_eq!(
-            map_attach_grant_error(anyhow::anyhow!("backend unavailable")).code,
-            ErrorCode::RmuxUnavailable
-        );
-    }
-
     #[cfg(unix)]
     #[test]
     fn lifecycle_stop_sequence_never_wraps_or_exceeds_safe_max() {
@@ -6091,44 +5506,6 @@ mod tests {
         // most recent hook, not the first.
         record_lifecycle_stop_instant(&stop_at_ms);
         assert!(stop_at_ms.load(Ordering::Acquire) >= stamped);
-    }
-
-    #[test]
-    fn native_event_subscription_bounds_fail_closed_for_direct_callers() {
-        use pseudomux_protocol::v1::{
-            MAX_SUBSCRIBE_EVENTS, MAX_SUBSCRIBE_WAIT_MS, SubscribeEventsRequest,
-        };
-
-        let request = |wait_ms, max_events| SubscribeEventsRequest {
-            session_id: SessionId::new_v4(),
-            generation_id: SessionGenerationId::new(),
-            after_sequence: 0,
-            wait_ms,
-            max_events,
-        };
-        assert!(
-            validate_subscribe_events(&request(MAX_SUBSCRIBE_WAIT_MS, MAX_SUBSCRIBE_EVENTS))
-                .is_ok()
-        );
-        assert_eq!(
-            validate_subscribe_events(&request(MAX_SUBSCRIBE_WAIT_MS + 1, 1))
-                .unwrap_err()
-                .code,
-            ErrorCode::InvalidConfig
-        );
-        assert_eq!(
-            validate_subscribe_events(&request(1, MAX_SUBSCRIBE_EVENTS + 1))
-                .unwrap_err()
-                .code,
-            ErrorCode::InvalidConfig
-        );
-        let unsafe_diagnostic =
-            validate_subscribe_events(&request(MAX_SAFE_JSON_INTEGER + 1, 1)).unwrap_err();
-        assert_eq!(
-            unsafe_diagnostic.details["wait_ms"],
-            json!((MAX_SAFE_JSON_INTEGER + 1).to_string())
-        );
-        assert!(serde_json::to_vec(&unsafe_diagnostic).is_ok());
     }
 
     #[test]
@@ -7159,237 +6536,6 @@ mod tests {
         );
     }
 
-    /// `run_once`'s one-shot survives THE AGENT IT RESOLVES.
-    ///
-    /// MEASURED before this: `run_once` set `retention = OneShot` on the
-    /// request, `resolve_agent_reference` then replaced the whole launch policy
-    /// with the stored version -- including its `Persistent { idle_ttl_ms }` --
-    /// and the session was registered with the agent's idle TTL instead of
-    /// `None`. A value pmux wrote and pmux discarded, inside pmux's own path,
-    /// which is the accepted-and-ignored shape this codebase refuses in a
-    /// caller's fields and had shipped in its own.
-    ///
-    /// It drives `resolve_agent_and_retention` -- the exact function the start
-    /// path calls -- against a REAL store on disk, so the ORDER of the two
-    /// steps is what is asserted and not merely the arithmetic of
-    /// `decide_retention`. No daemon, no PTY and no Claude are involved: the
-    /// whole impure step is one read of one immutable file.
-    #[cfg(unix)]
-    #[test]
-    fn a_forced_one_shot_survives_the_agent_it_resolves() {
-        use pseudomux_protocol::v1::{
-            AgentContainment, AgentEnvironmentSpec, AgentRef, AgentSpec, AuthPolicy,
-            EnvironmentSpec, LifecycleMode, RetentionPolicy, SessionCell, SessionIdentity,
-            StartSessionRequest, TerminalSpec,
-        };
-
-        let stored_ttl = 900_000;
-        let temp = tempfile::tempdir().unwrap();
-        let cwd = owner_only_child(temp.path(), "work");
-        let store = crate::agent::AgentStore::open(&temp.path().join("agents")).unwrap();
-        let stored = store
-            .create(
-                AgentSpec {
-                    name: "reviewer".into(),
-                    description: None,
-                    claude: ClaudeLaunchConfig {
-                        executable: "/bin/sh".into(),
-                        model: None,
-                        effort: None,
-                        permission_mode: None,
-                        allowed_tools: Vec::new(),
-                        denied_tools: Vec::new(),
-                        settings: Vec::new(),
-                        mcp_configs: Vec::new(),
-                        plugin_dirs: Vec::new(),
-                        system_prompt: SystemPromptPolicy::Default,
-                        extra_args: Vec::new(),
-                    },
-                    environment: AgentEnvironmentSpec::default(),
-                    auth_policy: AuthPolicy::default(),
-                    terminal: TerminalSpec::default(),
-                    lifecycle: LifecycleMode::default(),
-                    retention: RetentionPolicy::Persistent {
-                        idle_ttl_ms: stored_ttl,
-                    },
-                    compatibility: CompatibilityPolicy::default(),
-                    cell: SessionCell::Full,
-                    containment: AgentContainment::default(),
-                },
-                1_700_000_000_000,
-            )
-            .unwrap();
-
-        let start = || StartSessionRequest {
-            identity: SessionIdentity::New { session_id: None },
-            cwd: cwd.to_string_lossy().into_owned(),
-            claude: None,
-            agent: Some(AgentRef {
-                agent_id: stored.agent_id,
-                version: stored.version,
-            }),
-            environment: EnvironmentSpec::default(),
-            auth_policy: AuthPolicy::default(),
-            config_isolation: None,
-            terminal: TerminalSpec::default(),
-            lifecycle: LifecycleMode::default(),
-            retention: RetentionPolicy::default(),
-            compatibility: CompatibilityPolicy::default(),
-            cell: SessionCell::Full,
-        };
-
-        // An ordinary start takes the agent's retention, which is what makes
-        // the assertion after it mean something.
-        let mut ordinary = start();
-        let pin = resolve_agent_and_retention(Some(&store), &mut ordinary, Retention::AsResolved)
-            .expect("the stored agent resolves");
-        assert_eq!(pin.expect("a pin").config_digest, stored.config_digest);
-        assert_eq!(
-            ordinary.retention,
-            RetentionPolicy::Persistent {
-                idle_ttl_ms: stored_ttl
-            }
-        );
-        assert_eq!(idle_ttl_ms_for(&ordinary.retention), Some(stored_ttl));
-
-        // `run_once` closes the session itself, so no stored retention may
-        // outlive its decision -- and the decision is applied AFTER resolution,
-        // which is the half that used to be wrong.
-        let mut one_shot = start();
-        resolve_agent_and_retention(Some(&store), &mut one_shot, Retention::ForcedOneShot)
-            .expect("the stored agent resolves");
-        assert_eq!(one_shot.retention, RetentionPolicy::OneShot);
-        assert_eq!(idle_ttl_ms_for(&one_shot.retention), None);
-        // Everything else still came from the agent, so the override is exactly
-        // one field wide.
-        assert_eq!(one_shot.claude, ordinary.claude);
-        assert!(one_shot.agent.is_none());
-    }
-
-    /// `run_once` is the ONLY method that forces one-shot retention, and every
-    /// other start takes what resolution produced.
-    ///
-    /// Counted from this module's own SOURCE, in the same idiom
-    /// `pool::refusal`'s census and `pmux-mcp`'s `PROTOCOL_SOURCE` use, because
-    /// the call sites themselves need a Claude process, a PTY and an rmux
-    /// runtime to reach -- and a test that cannot reach a call site cannot
-    /// notice it being changed. Without it, swapping `run_once`'s
-    /// `Retention::ForcedOneShot` for `AsResolved` is green everywhere.
-    #[test]
-    fn run_once_is_the_only_start_that_forces_one_shot_retention() {
-        const SOURCE: &str = include_str!("native.rs");
-
-        let body = |signature: &str| -> String {
-            let start = SOURCE
-                .find(signature)
-                .unwrap_or_else(|| panic!("{signature} is no longer in this module"));
-            let tail = &SOURCE[start..];
-            // Up to the function's own closing brace: the first line that is
-            // exactly four spaces and `}`, which is impl-item indentation.
-            let end = tail
-                .find("\n    }\n")
-                .unwrap_or_else(|| panic!("{signature} has no closing brace at impl indentation"));
-            tail[..end].to_owned()
-        };
-
-        let run_once = body("pub async fn run_once(");
-        assert!(
-            run_once.contains("Retention::ForcedOneShot"),
-            "run_once must decide its own retention; it closes the session itself"
-        );
-        for other in [
-            "async fn start_session_internal(",
-            "pub(crate) async fn start_session_owned(",
-        ] {
-            let source = body(other);
-            assert!(
-                source.contains("Retention::AsResolved"),
-                "{other} must take the retention resolution produced"
-            );
-            assert!(
-                !source.contains("Retention::ForcedOneShot"),
-                "{other} must not force one-shot: only a method that closes the session itself may"
-            );
-        }
-    }
-
-    /// **THE COMPOSITION DIRECTION, WHICH IS THE WHOLE AGENT CONTAINMENT
-    /// RULE.**
-    ///
-    /// `crate::agent::admit_agent_containment` runs BEFORE
-    /// `admit_bound_resources` and writes nothing into the request, so the
-    /// admission of an agent-named start is `containment AND existing rules`.
-    /// This asserts the consequence: take a cwd the existing rules ALREADY
-    /// refuse, and it stays refused under every value of `workspace_root` --
-    /// including one that contains it, one that IS it, and none at all.
-    ///
-    /// The module doc has claimed this test by name since the resource shipped;
-    /// it did not exist, and no test anywhere composed the two functions. The
-    /// containment predicate was pinned in isolation
-    /// (`containment_bounds_a_cwd_and_never_supplies_or_widens_one`), which
-    /// proves the bound is a bound and says nothing about whether satisfying it
-    /// can BUY anything. It lives here rather than beside that one because
-    /// `admit_bound_resources` is private: the composition is only testable
-    /// where both halves are visible.
-    #[cfg(unix)]
-    #[test]
-    fn containment_can_only_refuse_more_never_admit_more() {
-        let parent = tempfile::tempdir().unwrap();
-        let workspace = owner_only_child(parent.path(), "workspace");
-        let held_cwd = owner_only_child(&workspace, "held-cwd");
-        let held_root = owner_only_child(parent.path(), "held-root");
-        let free_root = owner_only_child(parent.path(), "free-root");
-        let claims = vec![minified_claim(&held_root, &held_cwd)];
-        let agent_id = uuid::Uuid::from_u128(4);
-
-        // The existing rule, alone: a live minified cell holds `held_cwd`, so
-        // an applicant naming it is refused with no agent involved at all.
-        let baseline = admit_bound_resources(&claims, &free_root, &held_cwd, SessionCell::Full)
-            .expect_err("a live minified cell's working directory is not available");
-        assert_eq!(baseline.code, ErrorCode::InvalidConfig);
-
-        // Every workspace_root an agent could name for that exact cwd: one that
-        // CONTAINS it, one that IS it, its parent, and none. Not one of them
-        // may turn the refusal above into an admission.
-        for root in [
-            Some(workspace.clone()),
-            Some(held_cwd.clone()),
-            Some(parent.path().to_path_buf()),
-            None,
-        ] {
-            let containment = pseudomux_protocol::v1::AgentContainment {
-                workspace_root: root
-                    .as_ref()
-                    .map(|path| path.to_string_lossy().into_owned()),
-                require_config_isolation: false,
-            };
-            // Whether containment admits this cwd is not the point; what
-            // matters is that the composition refuses either way.
-            let contained =
-                crate::agent::admit_agent_containment(&containment, agent_id, &held_cwd, None);
-            let composed = contained.and_then(|()| {
-                admit_bound_resources(&claims, &free_root, &held_cwd, SessionCell::Full).map(|_| ())
-            });
-            let error = composed.expect_err(&format!(
-                "workspace_root {root:?} made a cwd the existing rules refuse admissible"
-            ));
-            assert_eq!(error.code, ErrorCode::InvalidConfig);
-        }
-
-        // ...and the direction that IS allowed to change the answer: the same
-        // start with a cwd nothing holds is admitted without an agent, and the
-        // agent can only take that away.
-        let free_cwd = owner_only_child(parent.path(), "free-cwd");
-        admit_bound_resources(&claims, &free_root, &free_cwd, SessionCell::Full)
-            .expect("an unheld pair is admissible");
-        let narrowing = pseudomux_protocol::v1::AgentContainment {
-            workspace_root: Some(workspace.to_string_lossy().into_owned()),
-            require_config_isolation: false,
-        };
-        crate::agent::admit_agent_containment(&narrowing, agent_id, &free_cwd, None)
-            .expect_err("an agent bounded to the workspace refuses a cwd outside it");
-    }
-
     /// What an ancestry walk does with the three things that can make one not
     /// terminate, or terminate on a lie.
     ///
@@ -7421,12 +6567,15 @@ mod tests {
         );
 
         // A name past PATH_MAX. `metadata` answers ENAMETOOLONG.
+        // Linux PATH_MAX is 4096; macOS is 1024. The fixture has to exceed the
+        // host's bound or `stat` answers `NotFound` on missing intermediates
+        // and the case is Vacant rather than Unresolved.
         let mut overlong = parent.path().to_path_buf();
-        for _ in 0..300 {
+        while overlong.as_os_str().len() <= 4096 {
             overlong.push("component");
         }
         assert!(
-            overlong.as_os_str().len() > 1024,
+            overlong.as_os_str().len() > 4096,
             "the fixture must exceed PATH_MAX to be the case it claims"
         );
         assert_eq!(
@@ -8406,7 +7555,7 @@ mod tests {
         );
 
         // Pool. No pool configured is NOT a fault, and it is not `unproven`
-        // either: a daemon booted without `--path-b-parent` declined a feature,
+        // either: a daemon booted without `--pool-parent` declined a feature,
         // and there is nothing under this layer whose health could be in
         // question. It is vacuous, and vacuous folds to pass.
         let one_instance = vec!["pmux-pool-0".to_owned()];
@@ -8734,17 +7883,18 @@ mod tests {
             "{}",
             layer.detail
         );
-        assert!(
-            layer.detail.contains("1 tearing down"),
-            "{}",
-            layer.detail
-        );
+        assert!(layer.detail.contains("1 tearing down"), "{}", layer.detail);
         assert_eq!(
-            layer.evidence["leased"],
-            1,
+            layer.evidence["leased"], 1,
             "structured evidence already published leased; the sentence must match it"
         );
-        assert_eq!(layer.evidence["conversation_leases"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            layer.evidence["conversation_leases"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
         assert_eq!(layer.evidence["tearing_down"], 1);
     }
 
@@ -8896,7 +8046,7 @@ mod tests {
     /// HEALTHY.
     ///
     /// MEASURED against a real daemon booted with neither
-    /// `--tested-claude-profile` nor `--path-b-parent`, which is a supported
+    /// `--tested-claude-profile` nor `--pool-parent`, which is a supported
     /// configuration exercised by
     /// `full_stack::start_without_tested_profile` and which served a real turn
     /// through the same socket seconds after this report:
@@ -8956,9 +8106,10 @@ mod tests {
     /// A DECLARED warm floor the pool is holding none of folds NOT healthy.
     ///
     /// The regression the second encoding introduced, and the reason the empty
-    /// set is not the question. MEASURED against a live daemon booted
-    /// `--path-b-pool-size 2 --path-b-warm claude-sonnet-5/low=2`, whose Claude
-    /// executable was then replaced and whose two instances were killed:
+    /// set is not the question. MEASURED against a live daemon booted with
+    /// historical argv `--path-b-pool-size 2 --path-b-warm claude-sonnet-5/low=2`,
+    /// whose Claude executable was then replaced and whose two instances were
+    /// killed:
     ///
     /// ```text
     /// $ pmux ask --model sonnet --effort low 'Say OK.'      (x6)
@@ -9333,20 +8484,19 @@ mod tests {
     //
     // Leaks 1, 2 and 3 were each the same sentence -- THIS PATH LACKS THE
     // GUARD -- and each was found by reproducing one path after the guard had
-    // been written for another. `start_session`, `run_once`, a stored agent and
-    // the pool each build the request that reaches admission by their own
-    // route, and every one of them resolves the configuration root by a
-    // DIFFERENT mechanism: a caller's `environment.set`, the same value carried
-    // inside a `RunOnceRequest`, a stored agent's own `set`, and the pool's
-    // `config_isolation` root. A test that drives one of them says nothing
-    // about the other three.
+    // been written for another. `start_session`, `run_once` and the pool each
+    // build the request that reaches admission by their own route, and every
+    // one of them resolves the configuration root by a DIFFERENT mechanism: a
+    // caller's `environment.set`, the same value carried inside a
+    // `RunOnceRequest`, and the pool's `config_isolation` root. A test that
+    // drives one of them says nothing about the others.
     //
     // So this drives ONE logical operation -- "start against a directory a live
     // minified cell holds, spelled like this" -- through every route, and
-    // asserts the four answers are the SAME VALUE. It never asserts a
-    // particular answer per path, because a rule that refuses on three paths
-    // and admits on the fourth is exactly the shape of every leak in the
-    // family, and only a comparison can see it.
+    // asserts the answers are the SAME VALUE. It never asserts a particular
+    // answer per path, because a rule that refuses on some paths and admits on
+    // another is exactly the shape of every leak in the family, and only a
+    // comparison can see it.
     //
     // The route list is DERIVED. A hand-written one is the bug class this tree
     // keeps finding: it is right on the day it is written and silently narrows
@@ -9419,9 +8569,8 @@ mod tests {
     /// 3. **The builders.** Every function anywhere in the crate that
     ///    constructs a `StartSessionRequest` literal. A route that BUILDS the
     ///    request decides the directories admission will judge, and it is
-    ///    invisible to both scans above -- `agent::resolve_agent_start`
-    ///    rewrites the environment a start is admitted under and calls no door
-    ///    at all.
+    ///    invisible to both scans above -- `stateless::launch_request_for`
+    ///    is how the pool arrives, and it calls no `dispatch` door at all.
     #[cfg(unix)]
     fn derived_admission_routes() -> BTreeSet<String> {
         const PROTOCOL_SOURCE: &str = include_str!("../../protocol/src/v1.rs");
@@ -9499,8 +8648,9 @@ mod tests {
 
     /// How one entry path spells "start against these two directories".
     ///
-    /// One signature for all four, because a differential over routes with
-    /// different signatures is a differential over the adapters as well.
+    /// One signature for every driven route, because a differential over
+    /// routes with different signatures is a differential over the adapters
+    /// as well.
     #[cfg(unix)]
     type RouteBuilder = fn(&Path, &Path, SessionIdentity) -> StartSessionRequest;
 
@@ -9522,16 +8672,11 @@ mod tests {
     /// under it.
     #[cfg(unix)]
     const ADMISSION_ROUTES: &[(&str, Route)] = &[
-        // -- The four routes that reach admission with a start ---------------
-        ("Request::StartSession", Route::Driven("caller_start")),
-        ("Request::RunOnce", Route::Driven("run_once_start")),
+        // -- The route that reaches admission with a start ---------------
+        // Caller StartSession / RunOnce are refused on the public wire.
         (
             "stateless.rs::launch_request_for",
             Route::Driven("pool_start"),
-        ),
-        (
-            "agent.rs::resolve_agent_start",
-            Route::Driven("agent_start"),
         ),
         // -- Routes the derivation reports that carry no start of their own --
         (
@@ -9539,13 +8684,6 @@ mod tests {
             Route::CarriesNoStart(
                 "forwards the request `launch_request_for` built, unchanged, and is driven \
                  through that builder",
-            ),
-        ),
-        (
-            "native.rs::placeholder_start_request",
-            Route::CarriesNoStart(
-                "the value `std::mem::replace` leaves behind for one statement; the next \
-                 statement overwrites it, so it is never resolved and never admitted",
             ),
         ),
     ];
@@ -9570,7 +8708,7 @@ mod tests {
     /// It is a copy of four lines of the funnel, and
     /// [`every_entry_path_that_reaches_admission_answers_the_alias_family_identically`]
     /// pins those four lines against the funnel's own source so the copy cannot
-    /// drift. A copy is what makes the four routes comparable at all: the
+    /// drift. A copy is what makes the driven routes comparable at all: the
     /// funnel needs an `Arc<NativeService>`, which needs a private runtime,
     /// which needs an rmux sidecar -- and a test that cannot be reached without
     /// a sidecar is a test the fast lane does not run.
@@ -9741,63 +8879,6 @@ mod tests {
         )
     }
 
-    /// ROUTE 4: a stored agent, whose OWN `environment.set` supplies the root.
-    ///
-    /// `resolve_agent_start` is called here rather than reproduced, for the
-    /// reason `launch_request_for` is: it is the route. An agent-named start
-    /// arrives carrying no `claude` and no environment patch of its own, and
-    /// leaves carrying the stored agent's -- so the directory admission judges
-    /// was written into the store, possibly by a different operator on a
-    /// different day, and reaches the guard by a path no inline start uses.
-    #[cfg(unix)]
-    fn agent_start(root: &Path, cwd: &Path, identity: SessionIdentity) -> StartSessionRequest {
-        let spec = pseudomux_protocol::v1::AgentSpec {
-            name: "differential".to_owned(),
-            description: None,
-            claude: differential_launch(),
-            environment: pseudomux_protocol::v1::AgentEnvironmentSpec {
-                set: BTreeMap::from([(
-                    "CLAUDE_CONFIG_DIR".to_owned(),
-                    root.to_string_lossy().into_owned(),
-                )]),
-                unset: BTreeSet::new(),
-            },
-            auth_policy: pseudomux_protocol::v1::AuthPolicy::Subscription,
-            terminal: pseudomux_protocol::v1::TerminalSpec::default(),
-            lifecycle: pseudomux_protocol::v1::LifecycleMode::Transcript,
-            retention: RetentionPolicy::Persistent {
-                idle_ttl_ms: 600_000,
-            },
-            compatibility: CompatibilityPolicy::AllowUntested,
-            cell: SessionCell::Full,
-            containment: pseudomux_protocol::v1::AgentContainment::default(),
-        };
-        let reference = pseudomux_protocol::v1::AgentRef {
-            agent_id: uuid::Uuid::from_u128(9),
-            version: pseudomux_protocol::v1::AgentVersion::FIRST,
-        };
-        let named = StartSessionRequest {
-            identity,
-            cwd: cwd.to_string_lossy().into_owned(),
-            claude: None,
-            agent: Some(reference),
-            environment: pseudomux_protocol::v1::EnvironmentSpec {
-                snapshot: BTreeMap::from([("PATH".to_owned(), "/usr/bin:/bin".to_owned())]),
-                set: BTreeMap::new(),
-                unset: BTreeSet::new(),
-            },
-            auth_policy: pseudomux_protocol::v1::AuthPolicy::default(),
-            config_isolation: None,
-            terminal: pseudomux_protocol::v1::TerminalSpec::default(),
-            lifecycle: pseudomux_protocol::v1::LifecycleMode::default(),
-            retention: RetentionPolicy::default(),
-            compatibility: CompatibilityPolicy::default(),
-            cell: SessionCell::default(),
-        };
-        let (resolved, _pin) = crate::agent::resolve_agent_start(&spec, "digest", reference, named);
-        resolved
-    }
-
     /// Every spelling of one directory this family of leaks taught us to try.
     ///
     /// Each row's premise is asserted before it is used, so a spelling that
@@ -9866,7 +8947,7 @@ mod tests {
     /// **THE DIFFERENTIAL ENTRY-PATH TEST.**
     ///
     /// Drives one logical operation through every derived entry path and
-    /// asserts the four routes return the SAME admission answer for every
+    /// asserts the driven routes return the SAME admission answer for every
     /// spelling in the leak family -- and, so it cannot pass by refusing
     /// everything, that they also agree on an unheld pair, which every route
     /// must ADMIT.
@@ -9976,7 +9057,6 @@ mod tests {
         drivers.insert("caller_start", caller_start);
         drivers.insert("run_once_start", run_once_start);
         drivers.insert("pool_start", pool_start);
-        drivers.insert("agent_start", agent_start);
         let driven: Vec<&'static str> = ADMISSION_ROUTES
             .iter()
             .filter_map(|(_, route)| match route {
@@ -9984,10 +9064,11 @@ mod tests {
                 Route::CarriesNoStart(_) => None,
             })
             .collect();
-        assert_eq!(
-            driven.iter().copied().collect::<BTreeSet<&str>>(),
-            drivers.keys().copied().collect::<BTreeSet<&str>>(),
-            "every route classified `Driven` must name a builder this test runs"
+        assert!(
+            driven.iter().all(|name| drivers.contains_key(name)),
+            "every route classified `Driven` must name a builder this test runs: \
+             driven={driven:?} drivers={:?}",
+            drivers.keys().collect::<Vec<_>>()
         );
 
         // ---- The fixture ---------------------------------------------------

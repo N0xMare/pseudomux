@@ -1,8 +1,5 @@
 //! Native Claude-aware pmux service and private terminal runtime.
 
-pub mod agent;
-#[cfg(unix)]
-pub mod attach;
 pub mod claude_launch;
 pub mod compatibility;
 mod config_isolation;

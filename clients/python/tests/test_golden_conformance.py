@@ -19,8 +19,8 @@ from pmux_client import (
     PmuxSequenceError,
     PmuxServerError,
     PmuxVersionError,
-    turn_id_for_attempt,
 )
+from tests.durable_ids import turn_id_for_attempt
 from pmux_client import client as client_module
 from pmux_client import protocol as protocol_module
 

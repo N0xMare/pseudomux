@@ -1,7 +1,7 @@
 {
   "name": "pmux-client",
   "version": "0.1.0",
-  "description": "Native Node.js client for the versioned pmux UDS API",
+  "description": "TypeScript client for the pmux token engine (Messages + runStateless)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./goldens": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
     }
   },
   "engines": {
@@ -23,7 +27,7 @@
     "prepublishOnly": "npm run typecheck && npm test"
   },
   "files": ["dist", "README.md"],
-  "keywords": ["pmux", "pseudomux", "claude-code", "uds", "smithers", "agent"],
+  "keywords": ["pmux", "pseudomux", "claude-code", "uds"],
   "license": "MIT OR Apache-2.0",
   "devDependencies": {
     "typescript": "^5.4.0",

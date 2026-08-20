@@ -42,7 +42,7 @@ const MAX_DAEMON_LOG_BYTES: u64 = 16 * 1024 * 1024;
 
 #[derive(Parser, Debug)]
 #[command(name = "pmuxd", version)]
-#[command(about = "native pseudomux protocol daemon", long_about = None)]
+#[command(about = "pmux token-engine daemon (pool + optional Messages listener)", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -53,8 +53,8 @@ enum Command {
     /// Bind the socket and serve protocol v1 until SIGINT or SIGTERM.
     ///
     /// The stateless token engine that `pmux run` reaches is OFF unless
-    /// --path-b-parent is given; every other --path-b-* flag is refused
-    /// without it. Interactive sessions remain served either way.
+    /// --pool-parent is given; every other pool / Messages flag is refused
+    /// without it. Interactive sessions are refused on the public wire.
     ///
     /// Every refusal below happens before the socket is bound, so a rejected
     /// configuration leaves no socket, no runtime directory and no rmux
@@ -99,46 +99,31 @@ enum Command {
         #[arg(long, default_value_t = DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS)]
         untested_transcript_drain_ms: u64,
 
-        /// Where stored agents live. Defaults to `agents/` beside the socket,
-        /// which is how the daemon log directory is derived too.
-        ///
-        /// Held to the SAME bar as the socket directory and the pool
-        /// parent: every level pmuxd creates is 0700 from birth and every file
-        /// is 0600, and a directory that already exists and is not owner-only
-        /// and owned by this user is REFUSED at boot, naming what is wrong and
-        /// what would be right. pmuxd never re-permissions a tree it did not
-        /// create.
-        ///
-        /// An operator who moves --socket keeps their agents by naming this
-        /// explicitly.
-        #[arg(long = "agent-store", value_name = "DIR")]
-        agent_store: Option<PathBuf>,
-
         /// ENABLES THE STATELESS TOKEN ENGINE. Absolute parent directory for
         /// the pool's per-slot trees; pmux creates `<parent>/<slot>/<epoch>/`
         /// itself, 0700 and empty, and erases each one when its instance is
         /// destroyed. No caller can name any path under it.
         ///
-        /// The pool is off unless this is given. Every other `--path-b-*` flag
-        /// is refused without it, because a knob that silently does nothing is
-        /// worse than an error.
-        #[arg(long = "path-b-parent", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
+        /// The pool is off unless this is given. Every other pool / Messages
+        /// flag is refused without it, because a knob that silently does
+        /// nothing is worse than an error.
+        #[arg(long = "pool-parent", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
         path_b_parent: Option<PathBuf>,
 
-        /// Required with --path-b-parent, and must be ABSOLUTE. There is
+        /// Required with --pool-parent, and must be ABSOLUTE. There is
         /// deliberately no default and no PATH lookup: the pool launches
         /// unattended, and resolving a bare name through the daemon's PATH is
         /// how it launches the wrong binary.
-        #[arg(long = "path-b-claude", value_name = "PATH", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-claude", value_name = "PATH", help_heading = PATH_B_HELP_HEADING)]
         path_b_claude: Option<PathBuf>,
 
         /// Live instances the pool may hold. Refused above the owner-set cap of
         /// 15, at boot.
-        #[arg(long = "path-b-pool-size", default_value_t = DEFAULT_POOL_SIZE, help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-size", default_value_t = DEFAULT_POOL_SIZE, help_heading = PATH_B_HELP_HEADING)]
         path_b_pool_size: u32,
 
         /// Turns one instance serves before it is recycled at lease end.
-        #[arg(long = "path-b-recycle-turns", default_value_t = DEFAULT_RECYCLE_TURNS, help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-recycle-turns", default_value_t = DEFAULT_RECYCLE_TURNS, help_heading = PATH_B_HELP_HEADING)]
         path_b_recycle_turns: u32,
 
         /// One warm class to hold, as `MODEL[/EFFORT]=COUNT`, e.g.
@@ -147,7 +132,7 @@ enum Command {
         /// each class is resolved through the SAME call a live request uses --
         /// a class the pool could never serve is refused at boot rather than
         /// discovered by an operator reading a mint failure.
-        #[arg(long = "path-b-warm", value_name = "MODEL[/EFFORT]=COUNT", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-warm", value_name = "MODEL[/EFFORT]=COUNT", help_heading = PATH_B_HELP_HEADING)]
         path_b_warm: Vec<String>,
 
         /// The system prompt every pool instance is launched with, delivered in
@@ -157,7 +142,7 @@ enum Command {
         /// counter rejects a correct prompt containing "e.g.", which is a rule
         /// pretending to be a proof. 512 bytes is what the daemon enforces.
         #[arg(
-            long = "path-b-system-prompt",
+            long = "pool-system-prompt",
             value_name = "TEXT",
             default_value = DEFAULT_SYSTEM_PROMPT,
             conflicts_with = "path_b_system_prompt_file",
@@ -167,7 +152,7 @@ enum Command {
 
         /// Read the system prompt from this UTF-8 file instead of argv.
         #[arg(
-            long = "path-b-system-prompt-file",
+            long = "pool-system-prompt-file",
             value_name = "FILE",
             help_heading = PATH_B_HELP_HEADING
         )]
@@ -175,28 +160,28 @@ enum Command {
 
         /// How long an idle instance is held before the pool's own sweep
         /// destroys it, down to each class's declared warm floor.
-        #[arg(long = "path-b-instance-idle-ttl-ms", default_value_t = DEFAULT_INSTANCE_IDLE_TTL_MS, help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-idle-ttl-ms", default_value_t = DEFAULT_INSTANCE_IDLE_TTL_MS, help_heading = PATH_B_HELP_HEADING)]
         path_b_instance_idle_ttl_ms: u64,
 
         /// Deadline a stateless turn gets when its caller supplies none.
-        #[arg(long = "path-b-turn-timeout-ms", default_value_t = DEFAULT_POOL_TURN_TIMEOUT_MS, help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-turn-timeout-ms", default_value_t = DEFAULT_POOL_TURN_TIMEOUT_MS, help_heading = PATH_B_HELP_HEADING)]
         path_b_turn_timeout_ms: u64,
 
         /// Absolute directory, OUTSIDE the pool parent, where a quarantined
         /// instance's tree is retained as evidence. Omit to erase instead.
-        #[arg(long = "path-b-retain-dir", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-retain-dir", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
         path_b_retain_dir: Option<PathBuf>,
 
         /// Resident-memory budget the pool is sized against, in MB. Checked
         /// once at boot against `pool_size * 1024 MB`; there is no runtime
         /// sampler, because the turn cap already makes the per-instance ceiling
         /// arithmetically unreachable.
-        #[arg(long = "path-b-rss-budget-mb", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-rss-budget-mb", help_heading = PATH_B_HELP_HEADING)]
         path_b_rss_budget_mb: Option<u64>,
 
         /// Absolute directory, OUTSIDE the pool parent, holding the redacted
-        /// pool evidence corpus. Defaults to `path-b-evidence/` beside the
-        /// socket, alongside `logs/` and `agents/`.
+        /// pool evidence corpus. Defaults to `pool-evidence/` beside the
+        /// socket, alongside `logs/`.
         ///
         /// Each destroyed instance's transcripts are mirrored there pruned to
         /// the eight fields `tools/promotion/measure_transcript_drain.py`
@@ -205,13 +190,13 @@ enum Command {
         /// a new Claude Code version at zero cost, which is otherwise
         /// impossible: a new version has no `cli` turns to re-analyse until
         /// something has run some.
-        #[arg(long = "path-b-evidence-dir", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-evidence-dir", value_name = "DIR", help_heading = PATH_B_HELP_HEADING)]
         path_b_evidence_dir: Option<PathBuf>,
 
         /// Retain no pool evidence at all. The pool then erases every
         /// transcript at teardown, as it did before the corpus existed, and a
         /// future promotion has nothing free to read.
-        #[arg(long = "path-b-no-evidence", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-no-evidence", help_heading = PATH_B_HELP_HEADING)]
         path_b_no_evidence: bool,
 
         /// Loopback Anthropic Messages listener (`HOST:PORT`) in front of
@@ -219,25 +204,25 @@ enum Command {
         /// delta is typed; `/clear` runs on release. Loopback only. Off unless
         /// given. A harness sends `x-pmux-conversation` and releases on
         /// session end.
-        #[arg(long = "path-b-messages-bind", value_name = "HOST:PORT", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "messages-bind", value_name = "HOST:PORT", help_heading = PATH_B_HELP_HEADING)]
         path_b_messages_bind: Option<String>,
 
         /// Allow POST /v1/messages without a conversation pin. The listener
         /// then hashes the first user message, system, tools, and model into
         /// an implicit id. You did not choose that id; release using the
-        /// `x-pmux-conversation` the response echoed (or the hash `doctor`
-        /// prints). Two sessions that start the same way share a cell.
-        /// Harnesses should send `x-pmux-conversation` instead.
-        /// Requires --path-b-messages-bind.
-        #[arg(long = "path-b-allow-implicit-conversation", help_heading = PATH_B_HELP_HEADING)]
+        /// `x-pmux-conversation` the response echoed. Two sessions that start
+        /// the same way share a cell. Harnesses should send
+        /// `x-pmux-conversation` instead.
+        /// Requires --messages-bind.
+        #[arg(long = "messages-allow-implicit", help_heading = PATH_B_HELP_HEADING)]
         path_b_allow_implicit_conversation: bool,
     },
 }
 
 /// Groups every stateless-engine flag in `--help`, so the one thing an operator
-/// must know -- that `--path-b-parent` is the enable switch -- is not buried
-/// among the session flags.
-const PATH_B_HELP_HEADING: &str = "Stateless token engine (off unless --path-b-parent)";
+/// must know -- that `--pool-parent` is the enable switch -- is not buried
+/// among the leftover session flags.
+const PATH_B_HELP_HEADING: &str = "Stateless token engine (off unless --pool-parent)";
 
 /// CHOSEN: ten minutes, the same ceiling a Path A turn gets. A stateless turn
 /// is one model call with no tool surface, so it is far under this; the bound
@@ -253,7 +238,6 @@ struct ServeOptions {
     runtime_parent: Option<PathBuf>,
     tested_claude_profiles: Vec<String>,
     untested_transcript_drain_ms: u64,
-    agent_store: Option<PathBuf>,
     path_b: PathBOptions,
     path_b_messages_bind: Option<String>,
     path_b_allow_implicit_conversation: bool,
@@ -280,20 +264,20 @@ struct PathBOptions {
 ///
 /// # The absent-parent rule
 ///
-/// `--path-b-parent` is the enable switch, and every other `--path-b-*` flag is
+/// `--pool-parent` is the enable switch, and every other pool / Messages flag is
 /// an ERROR without it rather than being ignored. A flag that silently does
-/// nothing is the failure mode where an operator sets `--path-b-pool-size 15`,
+/// nothing is the failure mode where an operator sets `--pool-size 15`,
 /// reads no error, and believes they have a pool.
 ///
 /// The check is against what the operator TYPED, not against a value differing
-/// from a default: `--path-b-pool-size 15` is indistinguishable from the
+/// from a default: `--pool-size 15` is indistinguishable from the
 /// default by value, and an operator who typed it is exactly the operator who
 /// needs to be told.
 ///
 /// The set of flags it checks is DERIVED from the `serve` command's own
 /// arguments, not listed here. A hand-kept list of ten names beside eleven
 /// declarations is the recurring defect in this tree: the day an eleventh
-/// `--path-b-*` flag is added, a list would go on reporting success while the
+/// pool flag is added, a list would go on reporting success while the
 /// new flag silently did nothing, which is the exact failure this guard exists
 /// to prevent.
 fn resolve_path_b(
@@ -314,14 +298,14 @@ fn resolve_path_b(
         let stray: Vec<String> = path_b_dependent_flag_ids()
             .into_iter()
             .filter(|name| typed(name))
-            .map(|name| format!("--{}", name.replace('_', "-")))
+            .map(|name| serve_flag_long(&name))
             .collect();
         if stray.is_empty() {
             return Ok(None);
         }
         bail!(
-            "the stateless token engine is off because --path-b-parent was not given, but {} was: \
-give --path-b-parent DIR (an absolute, owner-only directory pmuxd may create per-slot trees \
+            "the stateless token engine is off because --pool-parent was not given, but {} was: \
+give --pool-parent DIR (an absolute, owner-only directory pmuxd may create per-slot trees \
 under) to enable it, or drop the flag",
             stray.join(", ")
         );
@@ -329,9 +313,9 @@ under) to enable it, or drop the flag",
 
     let claude = options.claude.ok_or_else(|| {
         anyhow!(
-            "--path-b-parent enables the stateless token engine, which launches Claude unattended, \
-             so it also requires --path-b-claude PATH: an ABSOLUTE path to the Claude executable, \
-             e.g. --path-b-claude /usr/local/bin/claude. There is no default and no PATH lookup, \
+            "--pool-parent enables the stateless token engine, which launches Claude unattended, \
+             so it also requires --pool-claude PATH: an ABSOLUTE path to the Claude executable, \
+             e.g. --pool-claude /usr/local/bin/claude. There is no default and no PATH lookup, \
              because resolving a bare name through the daemon's own PATH is how a daemon launches \
              the wrong binary"
         )
@@ -363,14 +347,14 @@ under) to enable it, or drop the flag",
     settings.turn_timeout_ms = options.turn_timeout_ms;
     settings.retain_dir = options.retain_dir;
     // ON unless the operator says otherwise, and DERIVED from `--socket` by the
-    // same function `logs/` and `agents/` go through, so an operator who moved
-    // the socket finds all three in one place. `--path-b-no-evidence` is the
+    // same function `logs/` goes through, so an operator who moved the socket
+    // finds both in one place. `--pool-no-evidence` is the
     // whole of the off switch, and it wins over an explicit directory rather
     // than being quietly ignored beside one.
     settings.evidence_dir = match (options.no_evidence, options.evidence_dir) {
         (true, _) => None,
         (false, Some(explicit)) => Some(explicit),
-        (false, None) => Some(daemon_sibling_dir(socket, "path-b-evidence")?),
+        (false, None) => Some(daemon_sibling_dir(socket, "pool-evidence")?),
     };
     settings.warm_set = options
         .warm
@@ -390,7 +374,7 @@ under) to enable it, or drop the flag",
         .map_err(|refusal| anyhow!("the stateless token engine refused to boot: {refusal}"))
 }
 
-/// Every `--path-b-*` flag that is meaningless without `--path-b-parent`.
+/// Every pool / Messages flag that is meaningless without `--pool-parent`.
 ///
 /// Derived from the `serve` command clap actually built, so the guard's set and
 /// the flag set are the same set by construction rather than by anyone
@@ -404,6 +388,18 @@ fn path_b_dependent_flag_ids() -> Vec<String> {
         .map(|argument| argument.get_id().to_string())
         .filter(|id| id.starts_with("path_b_") && id != "path_b_parent")
         .collect()
+}
+
+/// The clap long an operator types, not the rust field id.
+fn serve_flag_long(id: &str) -> String {
+    <Cli as clap::CommandFactory>::command()
+        .find_subcommand("serve")
+        .expect("pmuxd declares a serve subcommand")
+        .get_arguments()
+        .find(|argument| argument.get_id() == id)
+        .and_then(|argument| argument.get_long().map(str::to_owned))
+        .map(|long| format!("--{long}"))
+        .unwrap_or_else(|| format!("--{}", id.replace('_', "-")))
 }
 
 /// The effort tiers, in the one spelling every surface accepts.
@@ -437,15 +433,15 @@ fn effort_tier_list() -> String {
 fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
     let (class, count) = declaration.rsplit_once('=').ok_or_else(|| {
         anyhow!(
-            "--path-b-warm {declaration:?} has no `=`; write MODEL[/EFFORT]=COUNT, \
-             e.g. --path-b-warm claude-sonnet-5/medium=2 or --path-b-warm haiku=1"
+            "--pool-warm {declaration:?} has no `=`; write MODEL[/EFFORT]=COUNT, \
+             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku=1"
         )
     })?;
     let count: u32 = count.parse().with_context(|| {
         format!(
-            "--path-b-warm {declaration:?} has a non-numeric count; the text after the last `=` \
+            "--pool-warm {declaration:?} has a non-numeric count; the text after the last `=` \
              must be how many instances of this class to hold warm, e.g. \
-             --path-b-warm {class}=2"
+             --pool-warm {class}=2"
         )
     })?;
     let (model, effort) = match class.split_once('/') {
@@ -455,7 +451,7 @@ fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
             ))
             .map_err(|_| {
                 anyhow!(
-                    "--path-b-warm {declaration:?} names effort {effort:?}, which is not a tier: \
+                    "--pool-warm {declaration:?} names effort {effort:?}, which is not a tier: \
                      use one of {}, or drop the `/{effort}` to let the model pick its own default",
                     effort_tier_list()
                 )
@@ -466,8 +462,8 @@ fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
     };
     if model.is_empty() {
         bail!(
-            "--path-b-warm {declaration:?} names an empty model; write MODEL[/EFFORT]=COUNT, \
-             e.g. --path-b-warm claude-sonnet-5/medium=2 or --path-b-warm haiku=1"
+            "--pool-warm {declaration:?} names an empty model; write MODEL[/EFFORT]=COUNT, \
+             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku=1"
         );
     }
     Ok(WarmClassSetting {
@@ -502,7 +498,6 @@ async fn main() -> Result<()> {
             runtime_parent,
             tested_claude_profiles,
             untested_transcript_drain_ms,
-            agent_store,
             path_b_parent,
             path_b_claude,
             path_b_pool_size,
@@ -529,7 +524,6 @@ async fn main() -> Result<()> {
                     runtime_parent,
                     tested_claude_profiles,
                     untested_transcript_drain_ms,
-                    agent_store,
                     path_b: PathBOptions {
                         parent: path_b_parent,
                         claude: path_b_claude,
@@ -588,10 +582,10 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         // The clap id starts with path_b_, so the absent-parent guard already
         // refuses this when the operator typed the flag. This is the belt for
         // a constructed ServeOptions in tests.
-        bail!("--path-b-messages-bind requires --path-b-parent");
+        bail!("--messages-bind requires --pool-parent");
     }
     if options.path_b_allow_implicit_conversation && messages_bind.is_none() {
-        bail!("--path-b-allow-implicit-conversation requires --path-b-messages-bind");
+        bail!("--messages-allow-implicit requires --messages-bind");
     }
     let messages_listener = match messages_bind {
         Some(addr) => Some(messages_http::bind_messages(addr).await?),
@@ -600,13 +594,6 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
     let socket_path = resolve_socket_path(options.socket)?;
     let (listener, mut socket_guard) = bind_socket(&socket_path).await?;
     let log_dir = daemon_log_dir(&socket_path)?;
-    // Beside `logs/`, and derived from the same parent, so an operator who
-    // moved --socket finds both in one place. `NativeService::start` opens it
-    // and refuses a tree it did not create and may not trust.
-    let agent_store = match options.agent_store {
-        Some(explicit) => explicit,
-        None => daemon_sibling_dir(&socket_path, "agents")?,
-    };
     let _log_guard = init_logging(&log_dir)?;
 
     let mut runtime_config = PrivateRuntimeConfig::from_current_exe()
@@ -622,7 +609,6 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         hybrid_hook_client: Some(hybrid_hook_client),
         tested_claude_profiles,
         untested_transcript_drain_ms: options.untested_transcript_drain_ms,
-        agent_store: Some(agent_store),
         pool,
         ..NativeServiceConfig::default()
     };
@@ -630,6 +616,16 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
     // See [`ShutdownSignals`]: the mint of the warm set runs inside `start`,
     // and until this call SIGTERM carries its default disposition.
     let mut shutdown = ShutdownSignals::install();
+    // One signal, two servers. watch (not a second requested()) so a SIGTERM
+    // buffered during NativeService::start still reaches both waiters.
+    let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+    {
+        let shutdown_tx = shutdown_tx.clone();
+        tokio::spawn(async move {
+            shutdown.requested().await;
+            let _ = shutdown_tx.send(true);
+        });
+    }
     let service = NativeService::start(runtime_config, service_config)
         .await
         .map_err(|error| {
@@ -655,11 +651,22 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
             let pool = service
                 .pool()
                 .cloned()
-                .ok_or_else(|| anyhow!("--path-b-messages-bind requires a started pool"))?;
+                .ok_or_else(|| anyhow!("--messages-bind requires a started pool"))?;
             let book = Arc::new(conversation::ConversationBook::new(config, pool));
+            let max_connections = options.max_connections.get();
+            let shutdown_grace = options.shutdown_grace;
+            let shutdown = wait_for_shutdown_flag(shutdown_rx.clone());
             Some(tokio::spawn(async move {
-                if let Err(error) = messages_http::serve_messages(listener, book).await {
-                    warn!(error = %error, "Path B Messages listener stopped");
+                if let Err(error) = messages_http::serve_messages(
+                    listener,
+                    book,
+                    max_connections,
+                    shutdown_grace,
+                    shutdown,
+                )
+                .await
+                {
+                    warn!(error = %error, "Messages listener stopped");
                 }
             }))
         }
@@ -673,11 +680,12 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
             shutdown_grace: options.shutdown_grace,
             ..ServerLimits::default()
         },
-        shutdown.requested(),
+        wait_for_shutdown_flag(shutdown_rx),
     )
     .await;
+    let _ = shutdown_tx.send(true);
     if let Some(task) = messages_task {
-        task.abort();
+        let _ = task.await;
     }
 
     let shutdown_result = service.shutdown().await;
@@ -742,6 +750,10 @@ fn parse_tested_profiles(values: Vec<String>) -> Result<CompatibilityProfileRegi
         .context("invalid --tested-claude-profile")
 }
 
+async fn wait_for_shutdown_flag(mut rx: tokio::sync::watch::Receiver<bool>) {
+    let _ = rx.wait_for(|armed| *armed).await;
+}
+
 /// The daemon's shutdown signals, held from before the first Path B instance is
 /// minted until `serve_until` returns.
 ///
@@ -755,7 +767,7 @@ fn parse_tested_profiles(values: Vec<String>) -> Result<CompatibilityProfileRegi
 /// declared warm set, so for the width of that mint SIGTERM and SIGINT carried
 /// their DEFAULT disposition.
 ///
-/// MEASURED at that shape, macos/aarch64, `--path-b-warm claude-sonnet-5/low=3`
+/// MEASURED at that shape, macos/aarch64, historical argv `--path-b-warm claude-sonnet-5/low=3`
 /// against real Claude 2.1.226, SIGTERM 2.6 s in:
 ///
 /// ```text
@@ -1082,9 +1094,10 @@ fn daemon_log_dir(socket_path: &Path) -> Result<PathBuf> {
 
 /// One owner-only directory beside the socket.
 ///
-/// `logs/` and `agents/` are both derived here rather than each spelling out
-/// the same `parent().join(..)`, so the two cannot drift apart the day one of
-/// them learns something about the socket path the other does not.
+/// Sibling directories beside the socket (`logs/`, `pool-evidence/`) are
+/// derived here rather than each spelling out the same `parent().join(..)`,
+/// so they cannot drift apart the day one of them learns something about the
+/// socket path the other does not.
 fn daemon_sibling_dir(socket_path: &Path, name: &str) -> Result<PathBuf> {
     Ok(socket_parent(socket_path)?.join(name))
 }
@@ -1258,7 +1271,7 @@ mod tests {
         );
     }
 
-    /// The absent-parent guard covers EVERY `--path-b-*` flag, one boot at a
+    /// The absent-parent guard covers EVERY pool / Messages flag, one boot at a
     /// time, with the flag set derived from clap on both sides.
     ///
     /// The guard used to hold a hand-written list of ten names next to eleven
@@ -1273,7 +1286,24 @@ mod tests {
         // the full set of flags that must appear here, which is the half that
         // rots.
         let value_for = |id: &str| -> Vec<String> {
-            let flag = format!("--{}", id.replace('_', "-"));
+            let flag = match id {
+                "path_b_parent" => "--pool-parent".to_owned(),
+                "path_b_claude" => "--pool-claude".to_owned(),
+                "path_b_pool_size" => "--pool-size".to_owned(),
+                "path_b_recycle_turns" => "--pool-recycle-turns".to_owned(),
+                "path_b_warm" => "--pool-warm".to_owned(),
+                "path_b_system_prompt" => "--pool-system-prompt".to_owned(),
+                "path_b_system_prompt_file" => "--pool-system-prompt-file".to_owned(),
+                "path_b_instance_idle_ttl_ms" => "--pool-idle-ttl-ms".to_owned(),
+                "path_b_turn_timeout_ms" => "--pool-turn-timeout-ms".to_owned(),
+                "path_b_retain_dir" => "--pool-retain-dir".to_owned(),
+                "path_b_evidence_dir" => "--pool-evidence-dir".to_owned(),
+                "path_b_rss_budget_mb" => "--pool-rss-budget-mb".to_owned(),
+                "path_b_no_evidence" => "--pool-no-evidence".to_owned(),
+                "path_b_messages_bind" => "--messages-bind".to_owned(),
+                "path_b_allow_implicit_conversation" => "--messages-allow-implicit".to_owned(),
+                other => format!("--{}", other.replace('_', "-")),
+            };
             match id {
                 "path_b_claude" => vec![flag, "/bin/sh".to_owned()],
                 "path_b_pool_size" | "path_b_recycle_turns" => vec![flag, "2".to_owned()],
@@ -1289,9 +1319,9 @@ mod tests {
                 "path_b_messages_bind" => vec![flag, "127.0.0.1:0".to_owned()],
                 "path_b_allow_implicit_conversation" => vec![flag],
                 other => panic!(
-                    "`--{}` is a --path-b-* flag with no value in this test; add one so the \
+                    "`{}` is a pool / Messages flag with no value in this test; add one so the \
                      absent-parent guard is proven for it",
-                    other.replace('_', "-")
+                    serve_flag_long(other)
                 ),
             }
         };
@@ -1345,7 +1375,7 @@ mod tests {
                 &matches,
                 Path::new("/tmp/pmux.sock"),
             );
-            let flag = format!("--{}", id.replace('_', "-"));
+            let flag = serve_flag_long(&id);
             let error = match result {
                 Err(error) => error.to_string(),
                 Ok(_) => panic!(
@@ -1356,10 +1386,10 @@ mod tests {
             };
             assert!(
                 error.contains(&flag),
-                "`pmuxd serve {flag} ...` without --path-b-parent was not refused by name: {error}"
+                "`pmuxd serve {flag} ...` without --pool-parent was not refused by name: {error}"
             );
             assert!(
-                error.contains("--path-b-parent DIR"),
+                error.contains("--pool-parent DIR"),
                 "the refusal for {flag} does not say what would be right: {error}"
             );
         }
@@ -1401,7 +1431,7 @@ mod tests {
         );
     }
 
-    /// `--path-b-parent` without `--path-b-claude` must name the flag AND what
+    /// `--pool-parent` without `--pool-claude` must name the flag AND what
     /// a right value looks like.
     #[test]
     fn the_missing_claude_refusal_names_the_flag_and_a_usable_value() {
@@ -1410,7 +1440,7 @@ mod tests {
             "serve",
             "--socket",
             "/tmp/pmux.sock",
-            "--path-b-parent",
+            "--pool-parent",
             "/tmp/pool",
         ];
         let matches = <Cli as clap::CommandFactory>::command().get_matches_from(argv);
@@ -1444,7 +1474,7 @@ mod tests {
         )
         .unwrap_err()
         .to_string();
-        assert!(error.contains("--path-b-claude PATH"), "{error}");
+        assert!(error.contains("--pool-claude PATH"), "{error}");
         assert!(error.contains("ABSOLUTE"), "{error}");
         assert!(error.contains("/usr/local/bin/claude"), "{error}");
     }
@@ -1473,7 +1503,7 @@ mod tests {
             declared,
             EFFORT_TIERS.len(),
             "protocol-v1 EffortLevel has {declared} variants and this daemon names \
-             {} of them in --path-b-warm's refusal",
+             {} of them in --pool-warm's refusal",
             EFFORT_TIERS.len()
         );
 

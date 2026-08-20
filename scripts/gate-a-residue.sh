@@ -179,7 +179,7 @@ candidate_dir=$(cd "$candidate_input" && pwd -P)
 # has eight entries", and it would have printed 8 against a directory of twenty
 # while scanning none of the other twelve for a surviving process.
 #
-# `FLOOR_BINARIES` is those eight, kept only as a LOWER bound, the same shape as
+# `FLOOR_BINARIES` is those names, kept only as a LOWER bound, the same shape as
 # the `FLOOR` of /tmp prefixes above: a directory that no longer holds a known
 # candidate binary REFUSES rather than reporting a pass over a directory this
 # audit no longer understands. It can only make the scan stricter, never looser.
@@ -187,7 +187,6 @@ FLOOR_BINARIES=(
   pmux
   pmuxd
   pmux-mcp
-  claude-p
   pmux-rmuxd
   pmux-launcher
   pmux-hook

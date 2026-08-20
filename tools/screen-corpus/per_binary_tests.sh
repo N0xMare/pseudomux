@@ -13,7 +13,7 @@
 # -- but it enumerated a HAND-WRITTEN array of six packages, and this workspace
 # has thirteen. Every `bin/` package was silently absent, so "every one of the N
 # test targets passed" was a true sentence about a set that did not include
-# `pmux`, `pmuxd`, `pmux-mcp`, `claude-p`, `pmux-hook`, `pmux-launcher` or
+# `pmux`, `pmuxd`, `pmux-mcp`, `pmux-hook`, `pmux-launcher` or
 # `pmux-rmuxd`. That is the same defect this script's own header warns about, one
 # level up: a report whose scope is narrower than its sentence.
 #

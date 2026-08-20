@@ -109,9 +109,14 @@ export type CompatibilityPolicy = (typeof COMPATIBILITY_POLICIES)[number];
 /**
  * Which cell a session is driven as, chosen once at start.
  *
- * `minified` is Path B: no tool surface, cleared between turns via
- * `clear_session`, and admitted only on a tested compatibility profile. Omitting
- * the field means `full`, which is what every caller that predates it gets.
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`.
+ *
+ * `minified` is the pool cell: no tool surface, admitted only on a tested
+ * compatibility profile. Omitting the field means `full`. Living recovery of a
+ * Messages pin is `x-pmux-cell` / `pmux doctor` conversation leases. Do not
+ * teach inspect → fence → clear as a caller loop.
  */
 export const SESSION_CELLS = ["full", "minified"] as const;
 export type SessionCell = (typeof SESSION_CELLS)[number];
@@ -129,6 +134,12 @@ export interface CompatibilityReport {
 
 /**
  * One interactive session start.
+ *
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`. Living recovery is `x-pmux-cell` /
+ * `pmux doctor` conversation leases. Do not teach inspect → fence → clear as a
+ * caller loop.
  *
  * Supply EITHER `claude` (the inline launch configuration) OR `agent` (a stored
  * id and an EXACT version), never both and never neither. A request carrying
@@ -157,9 +168,12 @@ export interface StartSessionRequest {
 /**
  * The exact stored agent version one session runs.
  *
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`.
+ *
  * `version` is REQUIRED and there is deliberately no "omit for latest": that
- * would make the launch a function of WHEN the request arrived. Call
- * `getAgent` once and log the version you got.
+ * would make the launch a function of WHEN the request arrived.
  */
 export interface AgentRef {
   agent_id: string;
@@ -200,11 +214,15 @@ export interface AgentContainment {
 }
 
 /**
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`.
+ *
  * Everything an agent stores: launch policy, and no resource.
  *
  * There is no `cwd`, no `config_isolation`, no session identity, no prompt and
- * no environment snapshot, because each of those is per-session and is named on
- * every `startSession`.
+ * no environment snapshot: those were per-session fields on startSession, which
+ * current daemons also refuse.
  */
 export interface AgentSpec {
   name: string;
@@ -249,10 +267,12 @@ export interface AgentSummary {
 /**
  * One stored record `list_agents` could not read.
  *
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`. Do not recommend `pmux agent list`.
+ *
  * The daemon reports these rather than dropping them, and rather than
- * answering the whole listing with the first one's refusal -- which used to
- * make the "list the stored agents with `pmux agent list`" recommendation
- * unreachable in precisely the state it was offered.
+ * answering the whole listing with the first one's refusal.
  */
 export interface AgentListFailure {
   agent_id: string;
@@ -480,9 +500,11 @@ export interface SessionSnapshot {
   session_id: SessionId;
   generation_id: SessionGenerationId;
   /**
-   * The transcript this session's turns are currently proven from, and the value
-   * `clear_session` must be fenced on. Equal to `session_id` until a clear
-   * rotates it; read it rather than re-deriving it from bookkeeping.
+   * Protocol type kept for goldens. Current daemons refuse start_session /
+   * clear_session / inspect_session / agent Requests with
+   * `session_surface_removed`. Living recovery is `x-pmux-cell` /
+   * `pmux doctor` conversation leases. Do not teach inspect → fence → clear as
+   * a caller loop.
    */
   transcript_session_id: SessionId;
   /** Which cell this session is driven as. Fixed at start. */
@@ -536,14 +558,15 @@ export interface CloseSessionResult {
 /**
  * Clears one minified-cell session's context between turns.
  *
- * `expected_transcript_session_id` is a compare-and-swap fence, not a routing
- * key: at start it equals `session_id`, and afterwards it is whatever the
- * previous `ClearSessionResult` returned -- or whatever `SessionSnapshot`
- * currently reports as `transcript_session_id`. Every stale value is
- * `id_conflict`, including one that is stale by exactly one rotation: the
- * one-behind value is exactly what a session's FIRST fence looks like, so
- * answering it as "already cleared" would tell a second caller that a
- * transcript it never cleared is empty.
+ * Protocol type kept for goldens. Current daemons refuse start_session /
+ * clear_session / inspect_session / agent Requests with
+ * `session_surface_removed`. Living recovery of a Messages pin is
+ * `x-pmux-cell` / `pmux doctor` conversation leases. Do not teach inspect →
+ * fence → clear as a caller loop.
+ *
+ * `expected_transcript_session_id` is a compare-and-swap fence on the wire
+ * (every stale value is `id_conflict`, including one stale by exactly one
+ * rotation). It is not a public recovery API.
  */
 export interface ClearSessionRequest {
   session_id: SessionId;
@@ -781,7 +804,7 @@ export interface Pong {
 }
 
 /**
- * The whole Path B request surface.
+ * The stateless request surface.
  *
  * Every field a session start carries and this does not -- `cwd`,
  * `config_isolation`, `claude`, `environment`, `system_prompt`, `identity` --
@@ -921,7 +944,7 @@ export type LayerFinding = (typeof LAYER_FINDINGS)[number];
  * An empty set the daemon's own configuration DECLARED should be occupied is
  * `faulted`, not this. The question is not "is the set empty?" but "is the set
  * empty when something declared it should not be?": a pool holding none of an
- * operator-declared `--path-b-warm` floor reports `faulted`, and the same
+ * operator-declared `--pool-warm` floor reports `faulted`, and the same
  * census with no floor declared reports `nothing_to_exercise`. A client that
  * treats `nothing_to_exercise` as "idle, therefore fine" is reading the finding
  * correctly; one that treats every empty count as fine is not.

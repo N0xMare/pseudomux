@@ -7,9 +7,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, ensure};
 use pseudomux_rmux::{EnvironmentSnapshot, LaunchSpec};
-use pseudomux_service::attach::{AttachCompletionOutcome, grant_attach};
 use pseudomux_service::runtime::{PrivateRuntime, PrivateRuntimeConfig, SessionRuntime};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use uuid::Uuid;
 
@@ -26,9 +24,9 @@ const MAX_SIDECAR_DESCRIPTOR_GROWTH: usize = 8;
 const MAX_TEST_DESCRIPTOR_GROWTH: usize = 8;
 
 /// Repeatedly exercises the real private rmux daemon, launcher broker, PTY
-/// process boundary, Ctrl-C transport, and authenticated attach proxy. The
-/// actor-only ownership soak remains in `resource_bounds`; this target is the
-/// process/resource counterpart and does not emulate rmux state.
+/// process boundary, and Ctrl-C transport. The actor-only ownership soak
+/// remains in `resource_bounds`; this target is the process/resource
+/// counterpart and does not emulate rmux state.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue() {
     let candidates = CandidateFiles::discover(&["pmux-rmuxd", "pmux-launcher"]).unwrap();
@@ -88,7 +86,7 @@ async fn repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue(
         assert_eq!(
             runtime_entries(&runtime_dir).unwrap(),
             baseline_entries,
-            "cycle {index} retained a session, attach socket, or launch artifact"
+            "cycle {index} retained a session or launch artifact"
         );
         sidecar.assert_running().unwrap();
         if index + 1 == WARMUP_ITERATIONS {
@@ -184,7 +182,7 @@ async fn exercise_one_cycle(
     );
     let mut pane_guard = ExactProcessGuard::new(pane_identity);
 
-    match index % 3 {
+    match index % 2 {
         0 => {
             let snapshot = terminal
                 .wait_quiet(Duration::from_millis(75), Duration::from_secs(3))
@@ -197,9 +195,6 @@ async fn exercise_one_cycle(
                 .wait_visible_text("PMUX_SOAK_INTERRUPTED", Duration::from_secs(5))
                 .await?;
         }
-        2 => {
-            exercise_real_attach(runtime, terminal.backend_ref().rmux_session_name.clone()).await?
-        }
         _ => unreachable!(),
     }
 
@@ -211,40 +206,6 @@ async fn exercise_one_cycle(
     pane_guard.disarm();
     std::fs::remove_file(&pid_file)
         .with_context(|| format!("failed to remove exact pid artifact {}", pid_file.display()))?;
-    Ok(())
-}
-
-async fn exercise_real_attach(
-    runtime: &PrivateRuntime,
-    private_session_name: String,
-) -> Result<()> {
-    let (grant, completion) = grant_attach(
-        runtime.runtime_dir(),
-        runtime.rmux_socket(),
-        private_session_name,
-        Duration::from_secs(3),
-    )
-    .await?;
-    let endpoint = grant.endpoint.clone();
-    let endpoint_identity = SocketIdentity::capture(&endpoint)?;
-    let mut stream = UnixStream::connect(&endpoint).await?;
-    stream.write_u32(grant.token.len() as u32).await?;
-    stream.write_all(grant.token.as_bytes()).await?;
-    stream.flush().await?;
-    let mut initial = [0_u8; 16];
-    let read = tokio::time::timeout(Duration::from_secs(3), stream.read(&mut initial))
-        .await
-        .context("real attach proxy did not return terminal bytes")??;
-    ensure!(
-        read > 0,
-        "real attach proxy returned EOF without terminal bytes"
-    );
-    stream.shutdown().await?;
-    let outcome = tokio::time::timeout(Duration::from_secs(3), completion.wait())
-        .await
-        .context("real attach proxy did not finish after client disconnect")?;
-    ensure!(outcome == AttachCompletionOutcome::PotentiallyMutated);
-    ensure!(!endpoint_identity.remains_at(&endpoint)?);
     Ok(())
 }
 

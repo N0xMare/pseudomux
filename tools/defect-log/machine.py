@@ -5,7 +5,7 @@ its messages names the defect found rather than the change made. It was
 produced by applying one declared substitution map to every message and to
 nothing else. This module is the map's first half -- what to look for -- and it
 is what the generator that applies it (`tools/defect-log/generate.py`) and the
-check that a run of it left nothing behind (`tools/gate-a/tests/
+check that a run of it left nothing behind (`tools/dev/redaction/
 test_redaction.py`) both read.
 
 THE DERIVATION ITSELF NOW LIVES IN `tools/evidence_common/portable_paths.py`,
@@ -31,7 +31,7 @@ taken as ONE needle rather than as one needle each, which is the difference.
 `macos`, `aarch64` and `macOS-15.7.7` are not looked for. They are not
 machine-specific: the compatibility profile is keyed on them and the Linux
 handoff is entirely about that boundary. Neither is `smithers`, which is a
-shipped product module.
+path component of this checkout's tooling and not a machine identifier.
 """
 
 from __future__ import annotations

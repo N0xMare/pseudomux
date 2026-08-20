@@ -8,6 +8,7 @@
 # Python client build artifacts
 **/__pycache__/
 **/*.pyc
+**/.ruff_cache/
 
 # TypeScript client build + deps
 clients/typescript/dist/

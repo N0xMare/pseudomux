@@ -21,8 +21,8 @@ Rust 1.88+, a Unix host, and an installed Claude Code binary:
 cargo build --workspace --release
 ```
 
-Start a daemon with explicit owner-only paths. **Give it `--path-b-parent`
-and `--path-b-claude`.** Without them every `pmux run` is refused with
+Start a daemon with explicit owner-only paths. **Give it `--pool-parent`
+and `--pool-claude`.** Without them every `pmux run` is refused with
 `unsupported_feature`:
 
 ```bash
@@ -34,16 +34,16 @@ SOCKET="$RUNTIME_DIR/pmux.sock"
 target/release/pmuxd serve \
   --socket "$SOCKET" \
   --runtime-parent "$RUNTIME_DIR" \
-  --path-b-parent "$RUNTIME_DIR/pool" \
-  --path-b-claude "$(command -v claude)"
+  --pool-parent "$RUNTIME_DIR/pool" \
+  --pool-claude "$(command -v claude)"
 ```
 
-`--path-b-claude` must be absolute. On Linux, add an operator profile until a
+`--pool-claude` must be absolute. On Linux, add an operator profile until a
 linux cell is promoted, for example:
 
 ```bash
 --tested-claude-profile \
-  '{"claude_version":"2.1.233","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
+  '{"claude_version":"2.1.236","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
 ```
 
 Check the daemon (starts nothing, spends no tokens):
@@ -51,11 +51,15 @@ Check the daemon (starts nothing, spends no tokens):
 ```bash
 export PMUX_SOCKET="$PWD/.context/pmux-dev/pmux.sock"
 target/release/pmux ping
-target/release/pmux doctor --claude "$(command -v claude)" --cwd "$PWD"
+target/release/pmux doctor --claude "$(command -v claude)"
 ```
 
 `doctor`'s pool layer tells you whether the pool is configured. When Messages
 leases are live it also reports `leased` and `conversation_leases`.
+
+## Development
+
+Living verification is [`tools/dev`](tools/dev/README.md): `check.sh` (fmt/clippy/tests; `--push` adds e2e and process blackbox), `operator_eval.py` (this OS, grades + Messages sticky; no pooled drain; does not edit `PROMOTED_PROFILES`), `promote.py` (drop `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists). `tools/promotion/` is the drop-flag engine. Gate A, Phase 0, linux-docker, and package-smoke have been removed.
 
 ## Use it from a harness
 
@@ -70,7 +74,7 @@ owns the cells. The Messages listener is three verbs:
    in `output_config.effort`. Compact, rewind, or a class change is a prefix
    break; the same pin reprimes.
 
-Without a pin the request is refused. `--path-b-allow-implicit-conversation`
+Without a pin the request is refused. `--messages-allow-implicit`
 is the single-session curl hatch: you did not choose the id. Release using
 the `x-pmux-conversation` the response echoed, or the hash `doctor` prints
 on `conversation_leases`. Two sessions that start the same way share a cell.
@@ -84,20 +88,23 @@ Add Messages to an already-enabled pool (do not make this the first serve
 example):
 
 ```bash
---path-b-messages-bind 127.0.0.1:8765 \
---path-b-pool-size 15 \
---path-b-warm claude-opus-5/medium=12 \
---path-b-warm claude-opus-5/xhigh=2 \
---path-b-warm claude-fable-5/xhigh=1
+--messages-bind 127.0.0.1:8765 \
+--pool-size 15 \
+--pool-warm claude-opus-5/medium=12 \
+--pool-warm claude-opus-5/xhigh=2 \
+--pool-warm claude-fable-5/xhigh=1
 ```
 
 Pi is the reference adapter ([examples/pi](examples/pi/README.md)). It has
-been measured. A harness that can set a per-request header and run on
-session teardown can copy that file. jcode can point at the listener
+been measured. TypeScript apps import `pmux-client` (`PmuxMessages` +
+`runStateless`). Rust apps use `pseudomux-client`. jcode can point at the listener
 ([examples/jcode](examples/jcode/README.md)) but cannot pin or release per
 session; read that page before using it.
 
 ```bash
+# The extension imports `pmux-client` (Messages pin/release).
+(cd clients/typescript && npm install && npm run build)
+npm install --prefix ~/.pi/agent "$PWD/clients/typescript"
 mkdir -p ~/.pi/agent/extensions
 cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 # merge examples/pi/settings.json into ~/.pi/agent/settings.json
@@ -150,30 +157,30 @@ re-exec, so instances are fungible within a class and never across one.
 
 ## Sizing the pool
 
-`--path-b-parent` is the enable switch. Every other `--path-b-*` flag is
+`--pool-parent` is the enable switch. Every other pool / Messages flag is
 refused without it.
 
 | flag | default | what it bounds |
 | --- | --- | --- |
-| `--path-b-parent DIR` | — | **Enables the pool.** Absolute parent for the per-slot trees. |
-| `--path-b-claude PATH` | — | Required with `--path-b-parent`, and absolute. |
-| `--path-b-pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15, at boot. |
-| `--path-b-recycle-turns N` | `50` | Turns one instance serves before it is replaced at lease end (sticky resume is not refused). |
-| `--path-b-warm MODEL[/EFFORT]=COUNT` | none | Warm floor for one class, repeatable. |
-| `--path-b-system-prompt TEXT` | see below | REPLACE-mode prompt every instance launches with. 512 bytes. |
-| `--path-b-system-prompt-file FILE` | — | Same prompt, from a file. |
-| `--path-b-instance-idle-ttl-ms MS` | `300000` | Idle hold time, down to the class warm floor. |
-| `--path-b-turn-timeout-ms MS` | `600000` | Default deadline for a stateless turn. |
-| `--path-b-retain-dir DIR` | erase | Where a quarantined tree is kept. |
-| `--path-b-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
-| `--path-b-messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
-| `--path-b-allow-implicit-conversation` | off | Permit headerless Messages turns. You did not choose the id; two same-start sessions share a cell. |
-| `--path-b-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
-| `--path-b-no-evidence` | off | Retain no pool evidence. |
+| `--pool-parent DIR` | — | **Enables the pool.** Absolute parent for the per-slot trees. |
+| `--pool-claude PATH` | — | Required with `--pool-parent`, and absolute. |
+| `--pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15, at boot. |
+| `--pool-recycle-turns N` | `50` | Turns one instance serves before it is replaced at lease end (sticky resume is not refused). |
+| `--pool-warm MODEL[/EFFORT]=COUNT` | none | Warm floor for one class, repeatable. |
+| `--pool-system-prompt TEXT` | see below | REPLACE-mode prompt every instance launches with. 512 bytes. |
+| `--pool-system-prompt-file FILE` | — | Same prompt, from a file. |
+| `--pool-idle-ttl-ms MS` | `300000` | Idle hold time, down to the class warm floor. |
+| `--pool-turn-timeout-ms MS` | `600000` | Default deadline for a stateless turn. |
+| `--pool-retain-dir DIR` | erase | Where a quarantined tree is kept. |
+| `--pool-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
+| `--messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
+| `--messages-allow-implicit` | off | Permit headerless Messages turns. You did not choose the id; two same-start sessions share a cell. |
+| `--pool-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
+| `--pool-no-evidence` | off | Retain no pool evidence. |
 
 Default system prompt: `Answer directly and completely. If you cannot answer, say so in one line.`
 
-**Fifteen is an owner-set cap, not a default you may raise.** `--path-b-pool-size
+**Fifteen is an owner-set cap, not a default you may raise.** `--pool-size
 16` is refused at boot. Bounds are checked before the socket is bound.
 
 A pool cell launches with `--disallowedTools "*"` and `dont-ask`. The harness
@@ -190,20 +197,18 @@ quickstart). Receipts live under `evidence/`.
 
 ## The command surface
 
-The `surface` column is the label `pmux --help` prints. Gate A
-(`tools/gate-a/tests/test_documented_surface.py`) fails if this table names a
-different set of subcommands or gives any one a different label.
+The `surface` column is the label `pmux --help` prints. `tools/dev/check.sh`
+runs `tools/dev/tests/test_documented_surface.py`, which fails if this
+table names a different set of subcommands or gives any one a different label.
 
 | subcommand | surface | what it does |
 | --- | --- | --- |
 | `run` | API | One stateless `(model, effort, prompt)` call against the pool. Alias: `ask`. |
 | `ping` | Ops | Ask the daemon for its version and protocol number. |
-| `doctor` | Ops | Validate the socket, health tree, working directory and Claude executable. |
+| `doctor` | Ops | Validate the socket, health tree, and Claude executable. |
 
-`pmux <command> --help` is the flag reference. Session commands (`start`,
-`turn`, `oneshot`, and the rest) stay compiled and invokable; they are hidden
-from default `--help`. See
-[docs/experimental-path-a.md](docs/experimental-path-a.md).
+`pmux <command> --help` is the flag reference. The published surface is
+only `run`, `ping`, and `doctor`. The contract is [docs/spec.md](docs/spec.md).
 
 ### MCP
 

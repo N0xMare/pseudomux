@@ -1,14 +1,14 @@
 """The renderer every receipt emitter writes its paths through.
 
-Run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/evidence_common/tests -v
+Run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/evidence_common/tests -p 'test_portable_paths.py' -v
 
 The property under test is not "the placeholder is pretty". It is that a
 receipt rendered through this module still answers the questions its readers
-ask of it: `_validate_campaign_contract` in `tools/phase0/phase0_lib.py` reads a
-recorded binary path back and checks the file NAME and the shared parent
-directory, and a renderer that returned a digest, an elision or a bare basename
-would pass a redaction check and break that one. Structure-preservation is
-therefore tested as a contract and not described as a style.
+ask of it: a recorded release binary must keep its file NAME and share one
+parent with its siblings. A renderer that returned a digest, an elision or a
+bare basename would pass a redaction check and break that one.
+Structure-preservation is therefore tested as a contract and not described as
+a style.
 
 Every needle is asked of the running machine, so these tests plant the machine's
 own identifiers into strings they build rather than spelling any. A test that
@@ -29,10 +29,8 @@ from unittest import mock
 COMMON = pathlib.Path(__file__).resolve().parents[1]
 WORKSPACE = COMMON.parents[1]
 sys.path.insert(0, str(COMMON))
-sys.path.insert(0, str(WORKSPACE / "tools" / "phase0"))
 
 import portable_paths  # noqa: E402
-import reseal_ledger  # noqa: E402 -- the one writer allowed to change a sealed file
 
 
 class DerivationTests(unittest.TestCase):
@@ -83,39 +81,6 @@ class DerivationTests(unittest.TestCase):
         rendered = portable_paths.render(str(portable_paths.WORKSPACE))
         self.assertEqual(rendered, "<REPO>")
 
-    def test_the_rooted_form_renders_an_absolute_needle_as_an_absolute_path(self):
-        """The property, over every needle the map derived, in both directions.
-
-        `Path("<HOME>/x").is_absolute()` is False, and three validators read a
-        recorded path back through exactly that call. So the claim is not "the
-        rooted map adds a slash" -- it is that rendering preserves
-        `is_absolute()`, which means the rootless needles must NOT acquire one:
-        `<USER>` is a login name and `<WORKSPACES>` is a relative distance, and
-        rooting either would invent a directory.
-        """
-        rooted = portable_paths.machine_identifiers(absolute_placeholders=True)
-        self.assertEqual(sorted(rooted), sorted(portable_paths.machine_identifiers()))
-        absolute = 0
-        for description, (needle, placeholder) in rooted.items():
-            expected = pathlib.Path(needle).is_absolute()
-            absolute += expected
-            self.assertEqual(
-                pathlib.Path(placeholder).is_absolute(),
-                expected,
-                f"{description} renders {needle!r} as {placeholder!r}",
-            )
-            self.assertEqual(
-                pathlib.Path(
-                    portable_paths.render(
-                        f"{needle}/x", against=[(needle, placeholder)]
-                    )
-                ).is_absolute(),
-                expected,
-            )
-        self.assertGreaterEqual(
-            absolute, 2, "no absolute needle was derived, so nothing was tested"
-        )
-
     def test_the_temporary_directory_is_taken_only_where_it_differs(self):
         """`/private/tmp` names a platform; the hashed per-user path names a host."""
         default = portable_paths._platform_default_temporary_directory()
@@ -131,11 +96,10 @@ class RenderingTests(unittest.TestCase):
         self.repo = str(portable_paths.WORKSPACE)
 
     def test_a_recorded_binary_keeps_the_shape_its_reader_checks(self):
-        """`tools/phase0/phase0_lib.py` reads the name and the shared parent.
+        """A rendered release binary keeps its name and a shared parent.
 
-        A rendered release binary must still be named after the binary and must
-        still share one parent with its siblings, because that is what
-        `_validate_campaign_contract` asks of it.
+        Living receipts still need `.name` / one parent
+        (`<REPO>/target/release/{pmux,pmuxd,pmux-rmuxd}`), not a digest.
         """
         names = ("pmux", "pmuxd", "pmux-rmuxd")
         recorded = [f"{self.repo}/target/release/{name}" for name in names]
@@ -251,14 +215,9 @@ class TwoSpellingsTests(unittest.TestCase):
 
 
 class TrackedTreeTests(unittest.TestCase):
-    """The file set, and the one property that decides where the map stops.
-
-    Both are DERIVED. The set is `git ls-files`, so the file somebody adds next
-    week is in scope without anybody remembering; the exemption is a seal the
-    predicate verifies against the file, so a file cannot buy it by name. The
-    tests below build a throwaway repository and plant this machine's own
-    identifiers into it, because a test that spelled one would be green on the
-    host that had nothing left to find.
+    """The file set is `git ls-files`. The tests plant this machine's own
+    identifiers into a throwaway repository, because a test that spelled one
+    would be green on the host that had nothing left to find.
     """
 
     def setUp(self) -> None:
@@ -330,129 +289,6 @@ class TrackedTreeTests(unittest.TestCase):
             self.assertEqual(
                 portable_paths.nested_placeholders(body.decode("utf-8")), []
             )
-
-    def test_a_sealed_file_is_reported_by_the_scan_and_refused_by_the_rewrite(self):
-        """The refusal is the WRITER's, and the scan reads the file anyway.
-
-        The committed ledger is copied in rather than imitated: a synthetic
-        stand-in would prove that the predicate accepts what this test built.
-        An identifier is planted in a copied record's `artifact_directory` --
-        the committed file carries none any more -- because a sealed file with
-        nothing to find cannot demonstrate that the scan looks inside one, which
-        is the half that used to be missing: `tree_offences` excused the sealed
-        file, so a checker that never opened the largest concentration of
-        identifiers in the tree reported zero over it.
-        """
-        sealed = (WORKSPACE / "evidence" / "model-attempt-ledger.ndjson").read_bytes()
-        self.assertNotEqual(portable_paths.sealed_records(sealed.decode("utf-8")), [])
-        # Planted THROUGH the re-sealer, because a hand-planted identifier would
-        # break the seal it is meant to be hiding behind and the file would stop
-        # being the thing under test. The substitution runs backwards here --
-        # the committed ledger spells `/<HOME>` and this puts a real home back.
-        planted = reseal_ledger.reseal(sealed, against=[("/<HOME>", str(self.home))])
-        self.assertNotEqual(planted, sealed)
-        self.assertNotEqual(portable_paths.sealed_records(planted.decode("utf-8")), [])
-        self._track("ledger.ndjson", planted)
-        self.assertEqual(
-            list(portable_paths.tree_offences(self.root)), ["ledger.ndjson"]
-        )
-        done = self._run(
-            "--rewrite", "--tracked", "--workspace", str(self.root), cwd=self.root
-        )
-        self.assertIn("sealed, left alone", done.stdout)
-        self.assertIn("reseal_ledger.py", done.stdout)
-        self.assertEqual((self.root / "ledger.ndjson").read_bytes(), planted)
-        self._run(
-            "--check",
-            "--tracked",
-            "--workspace",
-            str(self.root),
-            cwd=self.root,
-            expect=1,
-        )
-
-    def test_a_file_cannot_buy_the_exemption_by_writing_the_field_name(self):
-        record = {
-            portable_paths.SEAL_FIELD: "0" * 64,
-            portable_paths.CHAIN_FIELD: "0" * 64,
-            "artifact_directory": f"{self.home}/campaign",
-        }
-        self.assertFalse(portable_paths.keeps_its_paths(json.dumps(record) + "\n"))
-        self.assertFalse(portable_paths.keeps_its_paths("not json at all\n"))
-        self.assertFalse(portable_paths.keeps_its_paths(""))
-
-    def test_the_seal_has_to_reach_the_last_record_in_the_file(self):
-        """Otherwise the coverage runs out at the end and nobody notices.
-
-        A prefix of the committed ledger that ENDS on a sealed record is itself
-        sealed -- the chain digest covers the bytes in front of each record, and
-        nothing behind it. Appending one unsealed line makes it not.
-        """
-        ledger = (WORKSPACE / "evidence" / "model-attempt-ledger.ndjson").read_text(
-            encoding="utf-8"
-        )
-        lines = ledger.splitlines(keepends=True)
-        prefix = "".join(
-            lines[
-                : next(
-                    index + 1
-                    for index in reversed(range(len(lines)))
-                    if portable_paths.SEAL_FIELD in lines[index]
-                )
-            ]
-        )
-        self.assertTrue(portable_paths.keeps_its_paths(prefix))
-        self.assertFalse(portable_paths.keeps_its_paths(prefix + '{"a": 1}\n'))
-
-    def test_substituting_into_the_sealed_file_forges_it_rather_than_redacts_it(self):
-        """The whole argument for the writer's refusal, run rather than asserted.
-
-        The needle is taken from the file and from `PLACEHOLDERS` rather than
-        from this machine. It used to be `render(ledger)` with the real map,
-        which stopped demonstrating anything the moment the ledger was redacted
-        and re-sealed -- the map became a no-op over it and the test would have
-        gone green over a substitution that never happened. What is actually
-        being claimed is a property of the seal: ANY substitution breaks it.
-        """
-        ledger = (WORKSPACE / "evidence" / "model-attempt-ledger.ndjson").read_text(
-            encoding="utf-8"
-        )
-        against = [
-            (token, token.lower())
-            for token in portable_paths.PLACEHOLDERS
-            if token in ledger
-        ]
-        self.assertNotEqual(
-            against, [], "the ledger carries no placeholder to substitute for"
-        )
-        forged = portable_paths.render(ledger, against=against)
-        self.assertNotEqual(forged, ledger)
-        self.assertNotEqual(portable_paths.sealed_records(ledger), [])
-        self.assertEqual(portable_paths.sealed_records(forged), [])
-
-    def test_the_committed_ledger_records_absolute_paths_after_the_reseal(self):
-        """The constraint that defeats the obvious substitution, held.
-
-        `<HOME>/x` is not an absolute path, and `_validate_reservation_record`
-        reads `artifact_directory` back through `Path(...).is_absolute()`. A
-        redaction that used the default placeholder would leave 51 records the
-        validator refuses, so the property is asserted over the artefact itself
-        rather than over the map that produced it.
-        """
-        ledger = (WORKSPACE / "evidence" / "model-attempt-ledger.ndjson").read_text(
-            encoding="utf-8"
-        )
-        records = portable_paths.sealed_records(ledger)
-        self.assertNotEqual(records, [])
-        directories = [record["artifact_directory"] for record in records]
-        self.assertEqual(
-            [name for name in directories if not pathlib.Path(name).is_absolute()], []
-        )
-        self.assertNotEqual(
-            [name for name in directories if "<" in name],
-            [],
-            "no artifact directory was rendered, so nothing here is being tested",
-        )
 
     def test_tracked_refuses_to_be_given_a_file_set_as_well(self):
         done = self._run(

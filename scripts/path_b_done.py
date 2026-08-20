@@ -888,9 +888,10 @@ def deliberate_red_cells(
     exception names it AND an open debt row does. Either side alone
     over-derives, and this is measured rather than argued: criterion 4's own
     section also names `gate_f/phase0_self_tests` (in the sentence saying it
-    passed), and section 9.4's rows also name `release_full_stack_e2e` --
-    inside row **C6**, in the sentence about the ordering `test_runner.py:821`
-    forbids, and not inside C10 as this comment claimed until the sets were
+    passed), and section 9.4's archive rows named `release_full_stack_e2e`
+    (the living Gate A cell is `living_product_e2e`) -- inside row **C6**,
+    in the sentence about the ordering `test_runner.py:821` forbids, and not
+    inside C10 as this comment claimed until the sets were
     printed and read back. Requiring both leaves exactly the Linux cell, and
     widening it takes an edit to two documents that agree.
 
@@ -1146,6 +1147,18 @@ def pinned_receipt_remedy(context: Context, missing: list[str]) -> list[str]:
 
 def criterion_gate_a_green(context: Context) -> Verdict:
     verdict = Verdict()
+    living = context.repo / "tools" / "dev" / "check.sh"
+    driver = context.repo / GATE_DRIVER
+    if not driver.is_file():
+        if not living.is_file():
+            verdict.refuse(
+                "Gate A is gone and tools/dev/check.sh is also gone; living "
+                "verification has no replacement"
+            )
+            return verdict
+        verdict.note("gate_a_retired", "living verification is tools/dev/check.sh")
+        verdict.note("living_check", str(living.relative_to(context.repo)))
+        return verdict
     manifest, manifest_digest = manifest_at(context)
     required = {
         f"{phase}/{cell['id']}"

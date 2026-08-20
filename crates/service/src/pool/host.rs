@@ -192,7 +192,8 @@ pub struct Destroyed {
 ///   `permission_mode: DontAsk`, `denied_tools: ["*"]`, `system_prompt:
 ///   Replace`, `retention: Persistent { idle_ttl_ms }`, `compatibility:
 ///   RequireTested`, `cell: Minified` -- then call
-///   `NativeService::start_session_internal`. `SessionRegistry::register` runs
+///   `NativeService::start_session_owned_with_retention` (the pool also
+///   uses `start_session_owned`). `SessionRegistry::register` runs
 ///   `require_tested_for_minified_cell` and `assert_empty_at_launch` before an
 ///   actor exists, so a mint that returns `Ok` has already carried the launch
 ///   proof.

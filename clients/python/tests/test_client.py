@@ -23,8 +23,8 @@ from pmux_client import (
     PmuxServerError,
     PmuxVersionError,
     ReplayGapItem,
-    turn_id_for_attempt,
 )
+from tests.durable_ids import turn_id_for_attempt
 from pmux_client.client import KNOWN_ERROR_CODES, _timeout_for
 
 SESSION_ID = "00000000-0000-4000-8000-000000000022"
@@ -1088,6 +1088,66 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(
             _timeout_for("run_once", {"turn": {}}, 1, now=100),
             DEFAULT_RUN_ONCE_TIMEOUT,
+        )
+
+    def test_stateless_result_resource_fields_refuse_as_protocol_error(self) -> None:
+        usage = {
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+        }
+        base = {
+            "model": "claude-sonnet-5",
+            "text": "done",
+            "usage": {
+                "main": usage,
+                "sidechain": {**usage, "input_tokens": 0, "output_tokens": 0},
+                "combined": usage,
+            },
+            "claude_version": "2.1.207",
+        }
+        for named in ("session_id", "generation_id", "cwd", "config_root", "system_prompt"):
+
+            def handler(stream: socket.socket, field: str = named) -> None:
+                request = read_request(stream)
+                write_json(
+                    stream,
+                    success(request, "stateless_result", {**base, field: "named-pool-resource"}),
+                )
+
+            with FakeServer([handler]) as server, self.assertRaises(PmuxProtocolError) as raised:
+                PmuxClient(server.path).run_stateless(
+                    {"model": "claude-sonnet-5", "prompt": "hello"}
+                )
+            self.assertIn(f"carries {named}", str(raised.exception))
+            self.assertIsInstance(raised.exception, PmuxProtocolError)
+            self.assertNotIsInstance(raised.exception, ValueError)
+
+    def test_run_stateless_timeout_budget_matches_run_once(self) -> None:
+        self.assertEqual(
+            _timeout_for(
+                "run_stateless",
+                {"deadline_unix_ms": 101_000},
+                1,
+                now=100,
+            ),
+            121,
+        )
+        self.assertEqual(
+            _timeout_for("run_stateless", {}, 1, now=100),
+            DEFAULT_RUN_ONCE_TIMEOUT,
+        )
+        # A deadline shorter than the configured timeout never SHORTENS
+        # the client's patience below it.
+        self.assertEqual(
+            _timeout_for(
+                "run_stateless",
+                {"deadline_unix_ms": 100_001},
+                300,
+                now=100,
+            ),
+            300,
         )
 
     def test_version_is_validated_before_result(self) -> None:

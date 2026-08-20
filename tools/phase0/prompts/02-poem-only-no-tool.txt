@@ -1,3 +1,0 @@
-Write an original 6-10 line poem about a quiet library, one stanza, no title.
-Output ONLY the poem's lines: nothing before or after them, no commentary, no
-code fences, no quotation marks. Do not use any tool.

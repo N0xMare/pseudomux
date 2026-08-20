@@ -1,7 +1,7 @@
 [project]
 name = "pmux-client"
 version = "0.1.0"
-description = "Native Python client for the versioned pmux Unix-socket API"
+description = "Python client for the pmux token engine (Messages + run_stateless)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []

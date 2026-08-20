@@ -39,14 +39,14 @@
 //!
 //! # Where it writes, and how it is bounded
 //!
-//! `<socket parent>/path-b-evidence/`, beside `logs/` and `agents/`, derived
+//! `<socket parent>/pool-evidence/`, beside `logs/`, derived
 //! through the same `daemon_sibling_dir` those two are, and owner-only at every
 //! level pmux creates. It is deliberately NOT under the pool parent: that tree
 //! is erased per instance and its containment rules exist to make that safe.
 //!
 //! Bounded by [`MAX_EVIDENCE_BYTES`], enforced after each write by deleting the
-//! oldest files until the directory is under budget. `--path-b-no-evidence`
-//! turns it off entirely and `--path-b-evidence-dir` moves it.
+//! oldest files until the directory is under budget. `--pool-no-evidence`
+//! turns it off entirely and `--pool-evidence-dir` moves it.
 
 use std::io;
 use std::path::{Path, PathBuf};

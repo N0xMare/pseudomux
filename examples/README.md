@@ -18,7 +18,7 @@ Every successful `POST /v1/messages` echoes lease headers:
 `x-pmux-conversation`, `x-pmux-cell` (`s{slot}e{epoch}`), `x-pmux-lease`
 (`primed` / `continued` / `reprimed` / `replayed`), `x-pmux-idle-ttl-ms`.
 
-Headerless `POST /v1/messages` needs `--path-b-allow-implicit-conversation`.
+Headerless `POST /v1/messages` needs `--messages-allow-implicit`.
 You did not choose the id; release using the echoed
 `x-pmux-conversation`. Two sessions that start the same way share a cell.
 

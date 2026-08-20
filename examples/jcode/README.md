@@ -32,8 +32,8 @@ That pins every jcode session and swarm worker to one cell.
 ## Install
 
 `pmuxd` must already be serving the pool with
-`--path-b-messages-bind 127.0.0.1:8765`. Because jcode cannot send a pin,
-the listener also needs `--path-b-allow-implicit-conversation`. That flag
+`--messages-bind 127.0.0.1:8765`. Because jcode cannot send a pin,
+the listener also needs `--messages-allow-implicit`. That flag
 is the sequential-experiment escape hatch, not a multi-session contract.
 
 Merge `config.toml` into `~/.jcode/config.toml`. Then:

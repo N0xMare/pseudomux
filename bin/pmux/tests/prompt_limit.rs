@@ -1,21 +1,20 @@
-//! The one-megabyte prompt limit, which this tree states six times.
+//! The one-megabyte prompt limit, which this tree states in more than one place.
 //!
 //! MEASURED, live, at 2.1.227 on 2026-08-11: a `pmux ask` carrying
 //! `MAX_PROMPT_BYTES + 1` bytes is refused by **this crate** with *"prompt
 //! exceeds the 1048576-byte CLI limit"*, and never reaches
 //! `pseudomux_service::driver_io::validate_prompt`, whose own refusal says
 //! *"service limit"*. The two numbers are equal today and are tied by nothing:
-//! `bin/pmux/src/cli.rs`, `bin/claude-p/src/main.rs` and
-//! `crates/service/src/driver_io.rs` each declare `1024 * 1024` of their own,
-//! and three test files declare a fourth, fifth and sixth copy to compare
-//! against. Raise one and the client-side pre-check silently becomes the real
-//! limit for every `pmux` caller while the daemon's message goes on describing
-//! a bound nobody can reach.
+//! `bin/pmux/src/cli.rs` and `crates/service/src/driver_io.rs` each declare
+//! `1024 * 1024` of their own, and remaining first-party test files declare
+//! further copies to compare against. Raise one and the client-side pre-check
+//! silently becomes the real limit for every `pmux` caller while the daemon's
+//! message goes on describing a bound nobody can reach.
 //!
 //! So the check here is not "the limit is 1 MiB" -- that is the literal, and a
 //! test that restates a literal moves with it. It is that **every declaration
 //! of this name in the tree states the same number**, with the set of
-//! declarations read out of the tree rather than listed here. A seventh copy
+//! declarations read out of the tree rather than listed here. A new copy
 //! added tomorrow is graded without this file being edited; a copy that
 //! disagrees is named, with its path and line.
 //!

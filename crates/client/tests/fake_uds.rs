@@ -12,9 +12,9 @@ use pseudomux_protocol::v1::{
     CompatibilityReport, EffortLevel, EnvironmentSpec, ErrorBody, ErrorCode, EventBatch,
     EventEnvelope, EventPayload, Heartbeat, InputTransport, LifecycleMode, PROTOCOL_VERSION,
     Request, RequestEnvelope, ResponseEnvelope, ResponseResult, RetentionPolicy, RunOnceRequest,
-    SessionCell, SessionGenerationId, SessionHandle, SessionIdentity, SessionSnapshot,
-    SessionState, StartSessionRequest, SystemPromptPolicy, TerminalProfile, TerminalSpec,
-    TurnLeasePolicy, TurnOutcome, TurnRequest, TurnSummary,
+    RunStatelessRequest, SessionCell, SessionGenerationId, SessionHandle, SessionIdentity,
+    SessionSnapshot, SessionState, StartSessionRequest, StatelessResult, SystemPromptPolicy,
+    TerminalProfile, TerminalSpec, TurnLeasePolicy, TurnOutcome, TurnRequest, TurnSummary,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -179,6 +179,30 @@ fn heartbeat(sequence: u64) -> EventEnvelope {
             session_state: SessionState::Ready,
         }),
     )
+}
+
+fn stateless_result() -> Value {
+    let tokens = json!({
+        "input_tokens": 10,
+        "output_tokens": 2,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+    });
+    json!({
+        "model": "claude-sonnet-5",
+        "text": "done",
+        "usage": {
+            "main": tokens,
+            "sidechain": {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0
+            },
+            "combined": tokens
+        },
+        "claude_version": "2.1.207"
+    })
 }
 
 fn turn_result_wire(turn_id: Uuid) -> Value {
@@ -1045,6 +1069,60 @@ async fn run_once_uses_the_turn_window_instead_of_the_short_rpc_timeout() {
         .await
         .unwrap_err();
     assert!(matches!(error, ClientError::Server(_)));
+    server.await.unwrap();
+}
+
+#[tokio::test]
+async fn run_stateless_resource_fields_refuse_as_protocol_error() {
+    const NAMES: [&str; 5] = [
+        "session_id",
+        "generation_id",
+        "cwd",
+        "config_root",
+        "system_prompt",
+    ];
+    let (_directory, path, listener) = socket_listener();
+    let server = tokio::spawn(async move {
+        for named in NAMES {
+            let mut stream = accept_one(&listener).await;
+            let request = read_request(&mut stream).await;
+            assert!(matches!(request.request, Request::RunStateless(_)));
+            let mut response = serde_json::to_value(ResponseEnvelope::success(
+                request.request_id,
+                ResponseResult::StatelessResult(Box::new(
+                    serde_json::from_value::<StatelessResult>(stateless_result()).unwrap(),
+                )),
+            ))
+            .unwrap();
+            response["result"]["data"][named] = json!("named-pool-resource");
+            write_json_frame(&mut stream, &response).await;
+        }
+    });
+
+    let client = PmuxClient::new(&path).unwrap();
+    for named in NAMES {
+        let error = client
+            .run_stateless(RunStatelessRequest {
+                model: "claude-sonnet-5".into(),
+                effort: None,
+                prompt: "hello".into(),
+                deadline_unix_ms: None,
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            !matches!(error, ClientError::InvalidOptions(_)),
+            "{named} must not be InvalidOptions: {error:?}"
+        );
+        assert!(
+            matches!(
+                error,
+                ClientError::UnexpectedResult { actual, .. } if actual == named
+            ),
+            "{named} must be UnexpectedResult: {error:?}"
+        );
+        assert!(error.to_string().contains(named), "{error}");
+    }
     server.await.unwrap();
 }
 

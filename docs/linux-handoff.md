@@ -1,6 +1,8 @@
 # linux-handoff.md
 
-**Audience:** an engineer who was never here, taking the Linux lane to a finish. Nothing below
+**This file was written against an older tree; Gate A, Phase 0, and linux-docker have been removed.** Living verification is `tools/dev/`. Do not treat counts below of Gate A cells as a present-tense fact.
+
+**Audience:** historical (2026-08-13). For a living Linux pin, `tools/dev/`. Do not treat the body as the current finish. Nothing below
 assumes you saw the macOS work happen.
 
 **Written:** 2026-08-13, on `macOS-15.7.7-arm64` (Darwin 24.6.0, aarch64, 10 cores), branch
@@ -27,11 +29,12 @@ one of them**, so nothing in the build will tell you when a number below goes st
 | The caller surface — `pmux run`, models, effort, pool sizing | root `README.md` |
 | Path B as designed and as shipped | `docs/path-b.md` — its §0.0 is the reading order |
 | What a hostile caller can do to a pooled instance | `docs/path-b-adversarial.md` |
-| Architecture, protocol, normative product behaviour | `docs/spec.md` (2,224 lines) |
-| Gate state, the debt table, the bug-class ledger | `docs/current-state.md` (3,618 lines), §7 and §9 |
+| Architecture, protocol, normative product behaviour | Living `docs/spec.md` (product contract). The 2,224-line figure was this file's 2026-08-13 snapshot of the old spec. |
+| Gate state, the debt table, the bug-class ledger | Living `docs/current-state.md`. The 3,618-line essay is `docs/archive/current-state-2026-08.md`. |
 | The test-ownership matrix and the gate rules | `docs/testing.md` |
 | How big this repository is and where the lines are | `docs/code-census.md` |
-| Building and running the Gate C container, and a six-step starting sequence | `docs/gate-c-linux-handoff.md` §4 — but read §7.3 below first, its §3.2 has rotted |
+| Checking the tree / pinning Claude / dropping the operator flag | `tools/dev/README.md` |
+| Leftover Gate C freeze notes (not the starting sequence) | `docs/gate-c-linux-handoff.md` — read §7.3 below first, its §3.2 has rotted |
 
 ---
 
@@ -45,8 +48,8 @@ fact generates most of §4 and all of §6.
 **Path B is the product.** It is a stateless engine: `(model, effort, prompt) -> output tokens`.
 Instances are pooled to 15, and an instance is recycled between callers with `/clear` rather than
 being restarted. A Path B cell is `SessionCell::Minified` — no tools, no MCP, no writable attach,
-no caller-nameable resources. Path A (batteries-included, tool-capable) works, is not the product,
-and is deliberately not held to Path B's standard. **Read Path A's gaps as out of scope, not as
+no caller-nameable resources. Path A (batteries-included, tool-capable) is
+refused on the public wire. **Read Path A's gaps as out of scope, not as
 debt you inherited.**
 
 Three facts about the shape of the tree, all MEASURED
@@ -67,8 +70,10 @@ tree's own span scanner (`scripts/register_currency.py:232` `cfg_test_regions`):
 `crates/service/src/driver_io.rs` is **11,410 lines of which 7,150 are one top-level `#[cfg(test)]`
 module**, and `crates/service/src/native.rs` is **10,068 of which 5,341 are** — neither file's size
 tells you anything about its complexity. And `crates/e2e/src/bin/pmux-test-claude.rs` is a **test
-double** that nonetheless builds as a real binary and sits in the residue floor beside the seven
-product binaries, so a newcomer counting binaries gets eight.
+double** that nonetheless builds as a real binary. At `0d83b7a` it sat beside seven product
+binaries (`claude-p` still counted), so a newcomer counting binaries got eight. Living
+`FLOOR_BINARIES` is seven names (`pmux`, `pmuxd`, `pmux-mcp`, `pmux-rmuxd`, `pmux-launcher`,
+`pmux-hook`, `pmux-test-claude`).
 
 ---
 
@@ -76,10 +81,13 @@ product binaries, so a newcomer counting binaries gets eight.
 
 ### 2.1 The certification is a command, not a paragraph
 
-```bash
-PYTHONDONTWRITEBYTECODE=1 bash scripts/path-b-done.sh \
-  --gate-a-receipt .context/gate-a/pinned-receipt-gate-a-<commit>.json \
-  --gate-a-receipt .context/gate-a/pinned-receipt-gate-b-<commit>.json
+HISTORICAL. Living tree check is tools/dev/check.sh. Criterion 4 is MET iff run_gate.py is gone. Do not invent a linux drain.
+
+```text
+# DELETED as a living command. Do not run.
+# PYTHONDONTWRITEBYTECODE=1 bash scripts/path-b-done.sh \
+#   --gate-a-receipt .context/gate-a/pinned-receipt-gate-a-<commit>.json \
+#   --gate-a-receipt .context/gate-a/pinned-receipt-gate-b-<commit>.json
 ```
 
 `scripts/path-b-done.sh` (93 lines) plus `scripts/path_b_done.py` (1,410 lines) read the ordinal and
@@ -147,17 +155,15 @@ The certification covers **one OS, one arch, one Claude Code range, one host sha
 (`:694`), so on Linux the promoted set matches nothing, and
 `require_tested_for_minified_cell` (`crates/service/src/v1/actor.rs:155`) returns
 `UnsupportedClaudeVersion` — *"the minified cell requires a tested compatibility profile"* (`:163`) —
-for every `pmux ask` until an operator overrides it. There are two overrides and they are different
-things: a caller can send `--compatibility allow-untested` (`bin/pmux/src/cli.rs:702`), which takes
-the conservative fallback drain, and an operator can start the daemon with
-`--tested-claude-profile '<JSON>'` (`bin/pmuxd/src/main.rs:92`), which admits a profile as tested.
-Use them to get moving; neither is a promotion. This refusal is not a bug to route around. It is the
-definition of the finish line, and §9 is how you reach it.
+for every `pmux run` until an operator overrides it. The living override is
+starting the daemon with `--tested-claude-profile '<JSON>'`, which admits a
+profile as tested. That is not a promotion. This refusal is not a bug to route
+around. It is the definition of the finish line, and §9 is how you reach it.
 
 ### 2.3 What "Gate A is 69/70" means
 
-MEASURED from `tools/gate-a-candidate/phase-manifest.json`: **70 cells in 7 phases** — `gate_a` 28,
-`gate_b` 8, `gate_c` 4, `gate_d` 10, `gate_e` 10, `gate_f` 9, `residue` 1. Phase timeouts are
+**HISTORICAL / STALE.** At `0d83b7a` this was MEASURED from `tools/gate-a-candidate/phase-manifest.json`: **70 cells in 7 phases** — `gate_a` 28,
+`gate_b` 8, `gate_c` 4, `gate_d` 10, `gate_e` 10, `gate_f` 9, `residue` 1. The census file is gone; those 70-cell counts are `0d83b7a` history. Phase timeouts are
 `{gate_a: 3600, gate_b: 14400, gate_c: 3600, gate_d: 7200, gate_e: 14400, gate_f: 3600,
 residue: 600}` seconds and `max_command_output_bytes` is 16,777,216.
 
@@ -292,10 +298,11 @@ inherit:
   (`crates/service/src/native.rs:9824`'s differential entry-path test, and the rendering register at
   `crates/service/src/driver_io.rs:4553` and `:4679`). Its header says why it is one and not two:
   *"A scanner stated twice is the same bug one level up."*
-* `scripts/gate-a-residue.sh:186` `FLOOR_BINARIES` — eight names kept as a **lower bound** only; the
-  scanned set is `find`-derived. The comment records the defect it replaced: the receipt printed
-  `candidate_executables=8` meaning *"our literal has eight entries"* and would have printed 8
-  against a directory of twenty.
+* `scripts/gate-a-residue.sh:186` `FLOOR_BINARIES` — **seven** names kept as a **lower bound** only
+  (verified against the array in that file; at `0d83b7a` this was eight, when `claude-p` still
+  counted); the scanned set is `find`-derived. The comment records the defect it replaced: the
+  receipt printed `candidate_executables=8` meaning *"our literal has eight entries"* and would
+  have printed 8 against a directory of twenty.
 * `scripts/gate-a-mutants.sh:175` derives the gate scope by subtracting `GATE_EXCLUDES` from
   `FULL_GLOBS` in a loop, and `:186` refuses if the arithmetic does not close. Not `:194` — that is
   the *full* scope's `SCOPE_GLOBS=("${FULL_GLOBS[@]}")`, which subtracts nothing; this document
@@ -902,8 +909,9 @@ C policy decisions rather than drive-by fixes — which is exactly why C6 is sti
 
 Decide both, in writing, before touching the manifest.
 
-**`docs/gate-c-linux-handoff.md` §4 is the starting sequence and is still the right first read — its
-§3.2 is not.** That section describes the candidate as **75 cells** and asserts *"all 75 candidate
+**`docs/gate-c-linux-handoff.md` is leftover C6 freeze notes, not the living first read.**
+Living first read is `tools/dev/README.md`. The Gate C file's §4 starting sequence is historical — its
+§3.2 is not current. That section describes the candidate as **75 cells** and asserts *"all 75 candidate
 cells are present in the Linux manifest"*. MEASURED at `0d83b7a`: the candidate is **70**, and
 **seven of its cells are absent** from the Linux manifest — `candidate_envelope_self_tests`,
 `cargo_mutants_version`, `evidence_common_self_tests`, `gate_driver_self_tests`,
@@ -993,16 +1001,22 @@ rather than 70/70". §7.2 and §7.3 are what it takes to close it.
 
 ## 9. The finish line
 
-**Path B is done on Linux when `scripts/path-b-done.sh` exits 0 on a Linux host against receipts that
-name the commit being judged.** That is a command, not a judgement, and here is what each of its five
-criteria costs you.
+**This §9 is the 2026-08 Path B certification finish, not the living Linux session.**
+Living finish: `tools/dev/check.sh` + `tools/dev/operator_eval.py` on 2.1.236.
+`tools/dev/promote.py` only if `evidence/pooled-transcript-drain-linux-<arch>.json`
+already exists (it does not). Do not run Gate A. Phase 0 and linux-docker are
+deleted. Do not invent a linux drain.
+
+**HISTORICAL.** Path B certification treated `scripts/path-b-done.sh` exit 0 as the Linux finish
+against receipts that named the commit. The table's **70 cells** are `0d83b7a` history, not a
+command to run. Living finish: `tools/dev/check.sh` + `tools/dev/operator_eval.py` on 2.1.236.
 
 | # | criterion | mechanised today? | what a Linux pass needs |
 |---|---|---|---|
 | 1 | No known unfixed defect in the Path B path | **Yes, for what it reads.** Reads `evidence/path-b-defect-register.json` (schema `pmux.path-b-defect-register.v1`, statuses `OPEN`/`CLOSED`/`ACCEPTED`), reconciles its lettered rows against `docs/path-b-verdict.md` §1 in both directions, checks every row's own `where`/`anchor` citation resolves, then runs `scripts/register_currency.py` over the survivor register | One full-scope `cargo mutants` campaign on Linux (§3.2) with every survivor dispositioned — **plus a judgement the gate does not make: see the note below** |
 | 2 | The adversarial suite passes | **Yes, fully.** Derives 8 commands rather than reading a list | The suite to be re-run on Linux. Its live half needs credentials (§5) |
 | 3 | A promoted profile for the installed version, from machinery that exercises minified cells | **Yes, and it already refuses correctly** (`scripts/path_b_done.py:749`) | Two things and no more: a `PROMOTED_PROFILES` entry (`crates/service/src/compatibility.rs:484`) with `os: "linux"` and the right arch, and `evidence/promotion-<version>-linux-<arch>.json` produced by one run of `tools/promotion/promote_claude_version.py` |
-| 4 | Gate A green except the deliberate Linux cell | **Yes**, via `scripts/gate-in-worktree.sh` receipts | The 70 cells to run on Linux. Note the deliberate red cell is *the Linux one* — on a Linux host, C6 (§7.2) is no longer somebody else's debt and the honest target is 70/70 |
+| 4 | Gate A green except the deliberate Linux cell | **HISTORICAL** (`0d83b7a` 70-cell receipts; runner gone) | Do not run the 70 cells. Living criterion 4 is MET iff `run_gate.py` is gone and `tools/dev/check.sh` exists. Do not invent a linux drain. |
 | 5 | Path B doc claims reconciled to measurement | **Yes, fully** — 4 citation rules over the workspace | Nothing platform-specific. It will grade whatever you write |
 
 **Criterion 3 is the whole platform gate, and it is smaller than it looks.**
@@ -1077,7 +1091,7 @@ Short, and each of these paid for itself more than once in this tree.
 7. **Run the experiment before sealing it.** Any first-ever execution happens outside a sealed
    candidate, where a surprise costs a rerun instead of a checkpoint.
 
-**Before every commit**, and these are cheap:
+**Before every commit** (historical 0d83b7a ritual; living is `tools/dev/check.sh`), and these are cheap:
 
 ```bash
 cargo clippy --workspace --all-targets -- -D warnings   # exit 0 at 0d83b7a; 4 warnings, all vendor/rmux-server

@@ -5,7 +5,7 @@ version.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "MCP server exposing pseudomux sessions as tools"
+description = "stdio MCP adapter that exposes pmux run_stateless"
 
 [lints]
 workspace = true

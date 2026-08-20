@@ -209,7 +209,7 @@ impl BucketCounts {
 /// overstates, forever, what the pool can ever hold.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PoolPressure {
-    /// `--path-b-pool-size`.
+    /// `--pool-size`.
     pub configured_instances: u32,
     /// `configured_instances - leaked`: what this pool can still hold.
     pub usable_instances: u32,
@@ -357,7 +357,7 @@ pub fn pool_exhausted(
     // how much.
     .advising(format!(
         "retry this turn: nothing is queued, so a slot is only reached by asking for it again. If \
-         every turn is refused here, restart pmuxd with --path-b-pool-size above the {} this pool \
+         every turn is refused here, restart pmuxd with --pool-size above the {} this pool \
          was given (refused above 15)",
         pressure.configured_instances
     ))
@@ -407,24 +407,40 @@ pub fn reclaimed_slot_leaked(
     )
 }
 
+/// Interactive sessions are not a product surface. The pool still mints
+/// through `start_session_owned`; this refusal is only the public wire.
+#[must_use]
+pub fn session_surface_removed() -> ErrorBody {
+    ErrorBody::new(
+        ErrorCode::UnsupportedFeature,
+        "interactive sessions are not part of this product: send POST /v1/messages with \
+         x-pmux-conversation, or call pmux run / run_stateless",
+    )
+    .with_details(json!({"violation": "session_surface_removed"}))
+    .advising(
+        "start pmuxd with --pool-parent, --pool-claude, and --messages-bind for harnesses, \
+         or use pmux run / run_stateless",
+    )
+}
+
 /// No pool is configured. A Path B caller is the only caller of its method and
 /// has no fallback path, so this refusal must be unambiguous.
 ///
 /// It names the flag, because the person who reads it is often not the person
 /// who started the daemon and has no other way to learn what is missing. The
 /// health tree's own answer for this condition already said so
-/// (`native.rs`: "--path-b-parent is what enables one and this daemon was not
+/// (`native.rs`: "--pool-parent is what enables one and this daemon was not
 /// given it"); this is the same fact on the path a caller actually hits.
 #[must_use]
 pub fn path_b_not_enabled() -> ErrorBody {
     ErrorBody::new(
         ErrorCode::UnsupportedFeature,
         "the stateless token engine is not enabled on this daemon: it is off unless pmuxd was \
-         started with --path-b-parent, and restarting pmuxd with --path-b-parent DIR and \
-         --path-b-claude PATH is what enables it",
+         started with --pool-parent, and restarting pmuxd with --pool-parent DIR and \
+         --pool-claude PATH is what enables it",
     )
     .with_details(json!({"violation": "path_b_not_enabled"}))
-    .advising("restart pmuxd with --path-b-parent DIR --path-b-claude /absolute/path/to/claude")
+    .advising("restart pmuxd with --pool-parent DIR --pool-claude /absolute/path/to/claude")
 }
 
 /// The pool has halted. Reached when the transcript `/clear` opened is not the
@@ -470,7 +486,7 @@ pub fn sidechain_on_toolless_cell(rows: usize) -> ErrorBody {
     }))
     .advising(
         "do not retry this prompt: the next instance is launched the same way and answers the same \
-         way. Restart pmuxd with --path-b-retain-dir DIR, reproduce, and read the retained \
+         way. Restart pmuxd with --pool-retain-dir DIR, reproduce, and read the retained \
          transcript -- a sidechain row on a cell launched with --disallowedTools \"*\" means the \
          tool surface pmux denied is reachable, which is a finding and not a bad turn",
     )
@@ -971,6 +987,7 @@ mod tests {
         "daemon_shutting_down",
         "path_b_not_enabled",
         "pool_exhausted",
+        "session_surface_removed",
         "pool_halted",
         "reclaimed_slot_leaked",
         "sidechain_on_toolless_cell",
@@ -1022,6 +1039,7 @@ mod tests {
                 reclaimed_slot_leaked(all_in(1, InstanceState::CheckedOut), class(), 0),
             ),
             ("path_b_not_enabled", path_b_not_enabled()),
+            ("session_surface_removed", session_surface_removed()),
             ("pool_halted", pool_halted("wrong_local_command")),
             ("sidechain_on_toolless_cell", sidechain_on_toolless_cell(1)),
             ("sidechain_rows_not_counted", sidechain_rows_not_counted()),
@@ -1113,6 +1131,34 @@ mod tests {
                 "{name} lost its violation when it gained advice"
             );
         }
+    }
+
+    #[test]
+    fn interactive_sessions_are_unsupported_on_the_public_wire() {
+        let body = session_surface_removed();
+        assert_eq!(body.code, ErrorCode::UnsupportedFeature);
+        assert!(
+            !body.retryable,
+            "a removed product surface does not appear on retry"
+        );
+        assert_eq!(
+            body.details
+                .get("violation")
+                .and_then(|value| value.as_str()),
+            Some("session_surface_removed")
+        );
+        assert!(
+            body.message.contains("not part of this product"),
+            "{}",
+            body.message
+        );
+        let advice = body
+            .recommendation()
+            .expect("session_surface_removed must name the remaining surfaces");
+        assert!(
+            advice.contains("--messages-bind") && advice.contains("pmux run"),
+            "{advice}"
+        );
     }
 
     #[test]

@@ -13,7 +13,6 @@ const {
   PMUX_ERROR_CODES,
   PROTOCOL_VERSION,
   PmuxAbortError,
-  PmuxClaudeAgentTransport,
   PmuxClient,
   PmuxFrameTooLargeError,
   PmuxProtocolError,
@@ -22,7 +21,7 @@ const {
   PmuxServerError,
   PmuxVersionError,
   RUN_ONCE_RESPONSE_MARGIN_MS,
-  turnIdForAttempt,
+  requestTimeoutFor,
 } = await import((await clientModuleUrl(import.meta.url)).href);
 
 const SESSION_ID = "00000000-0000-4000-8000-000000000022";
@@ -33,9 +32,6 @@ const CONFORMANCE_MANIFEST = JSON.parse(
 );
 const CONFORMANCE_CASES = JSON.parse(
   await readFile(new URL("../../../tests/conformance/v1/cases.json", import.meta.url), "utf8"),
-);
-const CONFORMANCE_GOLDEN = JSON.parse(
-  await readFile(new URL("../../../tests/conformance/v1/golden.json", import.meta.url), "utf8"),
 );
 
 async function readFrame(socket) {
@@ -307,10 +303,6 @@ test("shared v1 manifest and durable-id vectors match the TypeScript surface", (
     "tool_completed", "rate_limit", "needs_input", "terminal_candidate", "turn_completed",
     "turn_cancelled", "turn_failed", "warning", "replay_gap", "heartbeat",
   ]);
-  for (const vector of CONFORMANCE_GOLDEN.durable_ids.cases) {
-    assert.equal(turnIdForAttempt(vector.attempt), vector.turn_id, vector.attempt);
-  }
-  assert.throws(() => turnIdForAttempt(""), /must not be empty/);
 });
 
 test("shared strict error-body vectors are enforced at the top-level response", async () => {
@@ -1057,6 +1049,90 @@ test("runOnce timeout constants contain the maximum recovery and drain path", ()
   assert.equal(RUN_ONCE_RESPONSE_MARGIN_MS, 120_000);
 });
 
+function statelessResult() {
+  const usage = {
+    input_tokens: 10,
+    output_tokens: 2,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+  };
+  return {
+    model: "claude-sonnet-5",
+    text: "done",
+    usage: { main: usage, sidechain: { ...usage, input_tokens: 0, output_tokens: 0 }, combined: usage },
+    claude_version: "2.1.207",
+  };
+}
+
+test("runStateless derives its transport timeout from the answer window", async () => {
+  await withFakeServer(
+    async (socket) => {
+      const request = await readRequest(socket);
+      assert.equal(request.method, "run_stateless");
+      await new Promise((resolve) => setTimeout(resolve, 75));
+      writeJson(socket, success(request, "stateless_result", statelessResult()));
+    },
+    async (socketPath) => {
+      const result = await new PmuxClient(socketPath, { requestTimeoutMs: 20 }).runStateless({
+        model: "claude-sonnet-5",
+        prompt: "wait past the RPC timeout",
+      });
+      assert.equal(result.text, "done");
+    },
+  );
+});
+
+test("stateless_result resource fields refuse as a protocol error", async () => {
+  for (const named of ["session_id", "generation_id", "cwd", "config_root", "system_prompt"]) {
+    await withFakeServer(
+      async (socket) => {
+        const request = await readRequest(socket);
+        writeJson(socket, success(request, "stateless_result", {
+          ...statelessResult(),
+          [named]: "named-pool-resource",
+        }));
+      },
+      async (socketPath) => {
+        await assert.rejects(
+          new PmuxClient(socketPath).runStateless({
+            model: "claude-sonnet-5",
+            prompt: "hello",
+          }),
+          (error) => {
+            assert.ok(
+              error instanceof PmuxProtocolError,
+              `${named} must be a protocol error, got ${error?.name}: ${error}`,
+            );
+            assert.equal(error.name, "PmuxProtocolError");
+            assert.match(error.message, new RegExp(`carries ${named}`));
+            return true;
+          },
+        );
+      },
+    );
+  }
+});
+
+test("a stateless call gets the full lifecycle budget and not the default", () => {
+  const none = { method: "run_stateless", params: { model: "claude-sonnet-5", prompt: "hello" } };
+  assert.equal(requestTimeoutFor(none, 45_000, 10_000), DEFAULT_RUN_ONCE_TIMEOUT_MS);
+  assert.notEqual(
+    requestTimeoutFor(none, 45_000, 10_000),
+    45_000,
+    "the wildcard arm handed a mint-and-turn call the default request timeout",
+  );
+  const withDeadline = {
+    method: "run_stateless",
+    params: { model: "claude-sonnet-5", prompt: "hello", deadline_unix_ms: 11_000 },
+  };
+  assert.equal(requestTimeoutFor(withDeadline, 1_000, 10_000), 1_000 + RUN_ONCE_RESPONSE_MARGIN_MS);
+  const shortDeadline = {
+    method: "run_stateless",
+    params: { model: "claude-sonnet-5", prompt: "hello", deadline_unix_ms: 10_001 },
+  };
+  assert.equal(requestTimeoutFor(shortDeadline, 300_000, 10_000), 300_000);
+});
+
 test("event subscription reconnects at its cursor and surfaces ReplayGap", async () => {
   await withFakeServer(
     async (socket, connection) => {
@@ -1144,116 +1220,6 @@ test("safe-max event cursor fails closed instead of rounding or saturating", asy
         }),
         PmuxProtocolError,
       );
-    },
-  );
-});
-
-test("Smithers transport derives durable TurnId and returns native TurnResult", async () => {
-  const attempt = "workflow-7/task-review/attempt-2";
-  const expectedTurnId = turnIdForAttempt(attempt);
-  const returnedTurnId = expectedTurnId.toUpperCase();
-  assert.equal(turnIdForAttempt(attempt), expectedTurnId);
-  assert.equal(expectedTurnId, "6e77d57e-7ee5-51e8-8476-4ed12c876154");
-
-  await withFakeServer(
-    async (socket, connection) => {
-      const request = await readRequest(socket);
-      if (connection === 0) {
-        assert.equal(request.method, "run_turn");
-        assert.equal(request.params.turn.turn_id, expectedTurnId);
-        writeJson(socket, success(request, "turn_accepted", {
-          session_id: SESSION_ID,
-          generation_id: GENERATION_ID,
-          turn_id: expectedTurnId,
-          replayed: false,
-          state: "running",
-          next_sequence: 1,
-        }));
-        return;
-      }
-      assert.equal(request.method, "subscribe_events");
-      const result = turnResult(returnedTurnId);
-      writeJson(socket, success(request, "events", {
-        events: [{
-          schema_version: 1,
-          session_id: SESSION_ID,
-          generation_id: GENERATION_ID,
-          turn_id: returnedTurnId,
-          sequence: 1,
-          timestamp_ms: 2,
-          event: { type: "turn_completed", data: result },
-        }],
-        next_sequence: 2,
-      }));
-    },
-    async (socketPath) => {
-      const seen = [];
-      const transport = new PmuxClaudeAgentTransport(new PmuxClient(socketPath));
-      const result = await transport.runTurn({
-        sessionId: SESSION_ID,
-        generationId: GENERATION_ID,
-        durableTaskAttemptId: attempt,
-        prompt: "review",
-        onEvent: (event) => seen.push(event.event.type),
-      });
-      assert.equal(result.text, "done");
-      assert.equal(result.turn_id, returnedTurnId);
-      assert.deepEqual(seen, ["turn_completed"]);
-    },
-  );
-});
-
-test("Smithers AbortSignal requests native turn cancellation", async () => {
-  const attempt = "workflow-8/task-review/attempt-1";
-  const turnId = turnIdForAttempt(attempt);
-  let subscriptionStarted;
-  const started = new Promise((resolve) => {
-    subscriptionStarted = resolve;
-  });
-
-  await withFakeServer(
-    async (socket, connection) => {
-      const request = await readRequest(socket);
-      if (connection === 0) {
-        writeJson(socket, success(request, "turn_accepted", {
-          session_id: SESSION_ID,
-          generation_id: GENERATION_ID,
-          turn_id: turnId,
-          replayed: false,
-          state: "running",
-          next_sequence: 1,
-        }));
-        return;
-      }
-      if (connection === 1) {
-        assert.equal(request.method, "subscribe_events");
-        subscriptionStarted();
-        await new Promise((resolve) => socket.once("close", resolve));
-        return;
-      }
-      assert.equal(request.method, "cancel_turn");
-      assert.equal(request.params.turn_id, turnId);
-      writeJson(socket, success(request, "turn_cancelled", {
-        session_id: SESSION_ID,
-        generation_id: GENERATION_ID,
-        turn_id: turnId,
-        outcome: "cancelled",
-        session_state: "ready",
-      }));
-    },
-    async (socketPath) => {
-      const controller = new AbortController();
-      const transport = new PmuxClaudeAgentTransport(new PmuxClient(socketPath));
-      const pending = transport.runTurn({
-        sessionId: SESSION_ID,
-        generationId: GENERATION_ID,
-        durableTaskAttemptId: attempt,
-        prompt: "review",
-        signal: controller.signal,
-      });
-      await started;
-      controller.abort("Smithers cancelled the attempt");
-      await assert.rejects(pending, PmuxAbortError);
     },
   );
 });

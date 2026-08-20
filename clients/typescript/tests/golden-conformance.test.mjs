@@ -16,7 +16,6 @@ const {
   PmuxSequenceError,
   PmuxServerError,
   PmuxVersionError,
-  turnIdForAttempt,
 } = await import((await clientModuleUrl(import.meta.url)).href);
 
 const GOLDEN = JSON.parse(
@@ -544,8 +543,14 @@ test("reserved turn leases are sent then surface stable unsupported_feature erro
 
 test("durable UUIDv5 goldens are sourced from the same complete frame corpus", () => {
   assert.equal(GOLDEN.durable_ids.namespace, "7ec46f2d-5f29-5ebc-9ac1-925b0a76f76d");
+  assert.ok(Array.isArray(GOLDEN.durable_ids.cases));
+  assert.ok(GOLDEN.durable_ids.cases.length > 0);
   for (const vector of GOLDEN.durable_ids.cases) {
-    assert.equal(turnIdForAttempt(vector.attempt), vector.turn_id, vector.attempt);
+    assert.equal(typeof vector.attempt, "string");
+    assert.match(
+      vector.turn_id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
   }
 });
 

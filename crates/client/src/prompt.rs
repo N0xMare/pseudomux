@@ -6,11 +6,10 @@
 //! `starts_with('/')` copy each of them used to carry is how the `!` bash-mode
 //! prefix reached a composer for as long as it did.
 //!
-//! It lives here, in the crate both `pmux` and `claude-p` already link, because
-//! it was written twice and the two copies drifted: `pmux` measured the
-//! trailing-terminator death and fixed it, `claude-p` kept the half of the rule
-//! it started with, and the facade's canonical `echo q | claude-p` invocation
-//! armed a turn that could not be acknowledged for as long as the two disagreed.
+//! It lives here, in the crate `pmux` and `pmux-mcp` already link, because it
+//! was written twice and the two copies drifted: `pmux` measured the
+//! trailing-terminator death and fixed it, and the deleted `claude-p` facade
+//! kept the half of the rule it started with.
 
 /// Normalizes one prompt into the exact bytes a Claude composer can hold.
 ///
@@ -49,7 +48,7 @@
 ///
 /// So the rule moved to `normalize_prompt`, where the other two transformations
 /// already live and where BOTH ends of the equality apply it, and this function
-/// is what is left: the one name `pmux`, `pmux-mcp` and `claude-p` call, kept so
+/// is what is left: the one name `pmux` and `pmux-mcp` call, kept so
 /// that a caller reading it is told which rule applies rather than having to
 /// know that two of them agree today. Nothing else is trimmed, added,
 /// re-wrapped or re-encoded; a caller that needs a bound, an emptiness check or

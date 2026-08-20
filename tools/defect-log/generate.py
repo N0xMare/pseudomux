@@ -30,9 +30,9 @@ pre-squash tip is preserved for: `python3 tools/defect-log/generate.py
 origin/main..pre-squash-<sha>` reproduces this document byte for byte. A reader
 who does not have that tip cannot re-run it and is not being asked to take the
 result on trust either: every rule below is stated in the document itself, and
-`tools/gate-a/tests/test_redaction.py` checks the artefact rather than the run.
+`tools/dev/redaction/test_redaction.py` checks the artefact rather than the run.
 
-`tools/gate-a/tests/test_redaction.py` is the check that a run of it left
+`tools/dev/redaction/test_redaction.py` is the check that a run of it left
 nothing of this machine behind.
 """
 
@@ -454,7 +454,7 @@ placeholders.** The map:
 Not one of those is written down anywhere. `tools/defect-log/machine.py` asks
 the running machine for all six and returns them longest first, so a shorter
 needle cannot half-substitute a longer one, and both the generator that applies
-the map and `tools/gate-a/tests/test_redaction.py`, which fails if any needle
+the map and `tools/dev/redaction/test_redaction.py`, which fails if any needle
 survives in this file, read that one derivation. A scrubber whose
 set-of-things-to-scrub is a literal is the class this log's section A is about:
 the list gets written on the host that has nothing left to find, so it passes,
@@ -474,8 +474,8 @@ being a symlink to it.
 
 `macos`, `aarch64` and `macOS-15.7.7` are **not** machine-specific and are
 untouched: the compatibility profile is keyed on them, and the whole Linux
-handoff is about that boundary. `smithers` is a shipped product module and is
-untouched.
+handoff is about that boundary. `smithers` is a path component of this
+checkout's tooling and not a machine identifier.
 
 {ordinals_rule}
 

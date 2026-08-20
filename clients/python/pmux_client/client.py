@@ -121,6 +121,18 @@ def _timeout_for(
             + RUN_ONCE_RESPONSE_MARGIN
         )
         return max(configured, turn_window)
+    # Same shape as run_once, and for a stronger reason: a stateless call may
+    # have to mint a cold class (TUI launch) before the model is asked. The
+    # default 45s request timeout gave up first.
+    if method == "run_stateless" and params is not None:
+        deadline = params.get("deadline_unix_ms")
+        answer_window = (
+            DEFAULT_RUN_ONCE_TIMEOUT
+            if deadline is None
+            else max(0.0, float(deadline) / 1000 - (time.time() if now is None else now))
+            + RUN_ONCE_RESPONSE_MARGIN
+        )
+        return max(configured, answer_window)
     # A caller-supplied submission deadline widens the client's patience the
     # same way ``run_once`` does, so asking for a longer input window cannot
     # make the client give up while the daemon is still typing.
@@ -216,6 +228,9 @@ EventStreamItem = EventItem | ReplayGapItem
 
 class PmuxClient:
     """Client bound to one caller-supplied Unix-domain socket path.
+
+    The product one-shot on this socket is ``run_stateless``. Interactive
+    session methods remain compiled and are refused by current daemons.
 
     Every operation creates a fresh connection. There is no daemon discovery,
     auto-start, HTTP fallback, subprocess invocation, or claude-p integration.
@@ -313,12 +328,10 @@ class PmuxClient:
         return cast(DaemonDiagnosis, self._expect(self.request("diagnose"), "diagnosis"))
 
     def create_agent(self, spec: AgentSpec) -> AgentDescriptor:
-        """Stores one reusable launch configuration and returns it at version 1.
+        """Protocol method kept for goldens.
 
-        The daemon mints the id. An agent carries LAUNCH POLICY and never a
-        resource: no cwd, no configuration root, no session identity, no prompt
-        and no environment snapshot, because each is per-session and is named on
-        every ``start_session``.
+        Current daemons refuse every agent Request with
+        ``session_surface_removed``. Do not build new callers on this.
         """
         return cast(
             AgentDescriptor,
@@ -329,7 +342,12 @@ class PmuxClient:
         )
 
     def get_agent(self, agent_id: str, version: int | None = None) -> AgentDescriptor:
-        """Reads one stored agent version, or the current head.
+        """Protocol method kept for goldens.
+
+        Current daemons refuse every agent Request with
+        ``session_surface_removed``. Do not build new callers on this.
+
+        Reads one stored agent version, or the current head.
 
         Environment values and inline settings/MCP document bodies come back as
         ``sha256:`` digests and never in the clear; ``config_digest`` still
@@ -344,7 +362,12 @@ class PmuxClient:
         )
 
     def list_agents(self) -> AgentList:
-        """Lists every stored agent's id, current version, digest, name and
+        """Protocol method kept for goldens.
+
+        Current daemons refuse every agent Request with
+        ``session_surface_removed``. Do not build new callers on this.
+
+        Lists every stored agent's id, current version, digest, name and
         cell. Deliberately not full specs."""
         return cast(
             AgentList,
@@ -354,7 +377,12 @@ class PmuxClient:
     def update_agent(
         self, agent_id: str, expected_version: int, spec: AgentSpec
     ) -> AgentDescriptor:
-        """Stores a new immutable version of one agent and returns it.
+        """Protocol method kept for goldens.
+
+        Current daemons refuse every agent Request with
+        ``session_surface_removed``. Do not build new callers on this.
+
+        Stores a new immutable version of one agent and returns it.
 
         ``expected_version`` is a fence: any value that is not the current head
         is refused with ``id_conflict``, including one stale by exactly one
@@ -381,7 +409,7 @@ class PmuxClient:
         )
 
     def run_stateless(self, request: RunStatelessRequest) -> StatelessResult:
-        """One stateless call: ``(model, effort, prompt)`` in, text and usage out.
+        """Unix-socket one-shot: ``(model, effort, prompt)`` in, text and usage out.
 
         THE CALLER NAMES NO RESOURCE. ``RunStatelessRequest`` carries a model, an
         optional effort, a prompt and an optional deadline, and nothing else: no
@@ -400,6 +428,11 @@ class PmuxClient:
         )
 
     def start_session(self, request: StartSessionRequest) -> SessionHandle:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``start_session`` with
+        ``session_surface_removed``.
+        """
         return cast(
             SessionHandle,
             self._expect(
@@ -411,6 +444,11 @@ class PmuxClient:
     def inspect_session(
         self, session_id: SessionId, generation_id: SessionGenerationId
     ) -> SessionSnapshot:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``inspect_session`` with
+        ``session_surface_removed``.
+        """
         return cast(
             SessionSnapshot,
             self._expect(
@@ -428,6 +466,10 @@ class PmuxClient:
         generation_id: SessionGenerationId,
         turn: TurnRequest,
     ) -> TurnAccepted:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``run_turn`` with ``session_surface_removed``.
+        """
         return cast(
             TurnAccepted,
             self._expect(
@@ -449,6 +491,10 @@ class PmuxClient:
         generation_id: SessionGenerationId,
         turn_id: TurnId,
     ) -> CancelTurnResult:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``cancel_turn`` with ``session_surface_removed``.
+        """
         return cast(
             CancelTurnResult,
             self._expect(
@@ -465,6 +511,11 @@ class PmuxClient:
         )
 
     def attach_session(self, request: AttachSessionRequest) -> AttachCapability:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``attach_session`` with
+        ``session_surface_removed``.
+        """
         return cast(
             AttachCapability,
             self._expect(
@@ -479,6 +530,11 @@ class PmuxClient:
         generation_id: SessionGenerationId,
         policy: ClosePolicy = "graceful",
     ) -> CloseSessionResult:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``close_session`` with
+        ``session_surface_removed``.
+        """
         return cast(
             CloseSessionResult,
             self._expect(
@@ -501,18 +557,13 @@ class PmuxClient:
         expected_transcript_session_id: SessionId,
         deadline_unix_ms: int | None = None,
     ) -> ClearSessionResult:
-        """Clears one minified-cell session's context between turns.
+        """Protocol method kept for goldens.
 
-        ``expected_transcript_session_id`` is the transcript the caller believes
-        is bound: at start it is the session id, and afterwards it is whatever
-        the previous result returned, or whatever ``inspect_session`` reports as
-        ``transcript_session_id``. It is a compare-and-swap fence and every stale
-        value is refused, including one that is stale by exactly one rotation:
-        there is no "your clear already landed" answer, because the one-behind
-        value is indistinguishable from the fence a session starts with, which is
-        what a second caller holds. To recover a lost response, re-read
-        ``transcript_session_id`` and clear again on it if certainty is wanted;
-        clearing an already-empty cell is semantically idempotent.
+        Current daemons refuse ``clear_session`` with
+        ``session_surface_removed``.
+
+        Living recovery for a Messages lease is ``x-pmux-cell`` /
+        ``pmux doctor`` conversation leases.
         """
         params: dict[str, Any] = {
             "session_id": session_id,
@@ -527,6 +578,10 @@ class PmuxClient:
         )
 
     def run_once(self, request: RunOnceRequest) -> TurnResult:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``run_once`` with ``session_surface_removed``.
+        """
         return cast(
             TurnResult,
             self._expect(self.request("run_once", cast(dict[str, Any], request)), "turn_result"),
@@ -541,6 +596,11 @@ class PmuxClient:
         wait_ms: int = 0,
         max_events: int = 0,
     ) -> EventBatch:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``subscribe_events`` with
+        ``session_surface_removed``.
+        """
         result = cast(
             EventBatch,
             self._expect(
@@ -573,6 +633,11 @@ class PmuxClient:
         stop_event: threading.Event | None = None,
         on_reconnect: Callable[[PmuxTransportError, int, int], None] | None = None,
     ) -> EventSubscription:
+        """Protocol method kept for goldens.
+
+        Current daemons refuse ``subscribe_events`` with
+        ``session_surface_removed``.
+        """
         return EventSubscription(
             self,
             session_id,

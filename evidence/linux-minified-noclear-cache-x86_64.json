@@ -1,4 +1,6 @@
 {
+  "schema": "pmux.linux-operator-eval.v1",
+  "real_claude_turns": {"count": 3},
   "title": "minified 2.1.233 no-/clear prompt-cache measurement",
   "host": {"os": "linux", "arch": "x86_64"},
   "claude_version": "2.1.233",

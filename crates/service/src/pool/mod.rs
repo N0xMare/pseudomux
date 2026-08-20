@@ -2345,7 +2345,7 @@ mod tests {
             .expect_err("a world-readable pool parent must refuse to boot");
         assert_eq!(error.code, ErrorCode::InvalidConfig);
         assert!(
-            error.message.contains("--path-b-parent") && error.message.contains("755"),
+            error.message.contains("--pool-parent") && error.message.contains("755"),
             "{}",
             error.message
         );
@@ -2454,7 +2454,7 @@ mod tests {
             (
                 "ConfigField",
                 ConfigField::ClaudeExecutable.to_string(),
-                "--path-b-claude",
+                "--pool-claude",
             ),
             (
                 "ConfigRefusal",
@@ -2600,7 +2600,7 @@ mod tests {
     /// exactly what this test means to take away. A fixture reaching for `0o300`
     /// here would create no condition at all and pass with the guard deleted,
     /// which is instance twenty-nine of this repository's bug class, found by
-    /// this same tool in `crates/service/tests/agent_resource.rs`. So the
+    /// this same tool in `crates/protocol/src/v1.rs`. So the
     /// premise is asserted before anything depends on it, and this test FAILS AS
     /// A BROKEN FIXTURE rather than passing vacuously if the process running it
     /// can walk a closed directory anyway -- which is what running as root does.

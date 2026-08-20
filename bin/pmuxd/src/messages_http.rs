@@ -6,7 +6,8 @@
 //! Anthropic's prompt cache can hit. Token streaming is reconstructed after
 //! the turn commits.
 
-use std::net::SocketAddr;
+use std::future::Future;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -15,27 +16,40 @@ use pseudomux_protocol::v1::{EffortLevel, ErrorBody, ErrorCode, StatelessResult}
 use serde_json::{Value, json};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
+use tokio::time::{Instant, timeout, timeout_at};
 use tracing::{info, warn};
 
 use crate::conversation::{ConversationBook, LeaseTurn};
 
 const MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
+/// Same 10s bound as the UDS frame read timeout in `handler.rs`.
+const HTTP_READ_TIMEOUT: Duration = Duration::from_secs(10);
+/// Same 10s bound as the UDS frame write timeout in `handler.rs`.
+const HTTP_WRITE_TIMEOUT: Duration = Duration::from_secs(10);
+const ACCEPT_BACKOFF_INITIAL: Duration = Duration::from_millis(10);
+const ACCEPT_BACKOFF_MAX: Duration = Duration::from_secs(1);
 const TOOL_CALL_OPEN: &str = "<tool_call>";
 const TOOL_CALL_CLOSE: &str = "</tool_call>";
 
-/// Parse `--path-b-messages-bind`. Loopback only: this is a local provider
+/// Parse `--messages-bind`. Loopback only: this is a local provider
 /// surface, not something that should be reachable off-box.
 pub fn parse_messages_bind(value: &str) -> Result<SocketAddr> {
     let addr: SocketAddr = value
         .parse()
-        .with_context(|| format!("--path-b-messages-bind {value:?} is not HOST:PORT"))?;
-    if !addr.ip().is_loopback() {
+        .with_context(|| format!("--messages-bind {value:?} is not HOST:PORT"))?;
+    if !is_allowed_messages_bind_ip(addr.ip()) {
         bail!(
-            "--path-b-messages-bind must be loopback (127.0.0.1 or [::1]), not {}",
+            "--messages-bind must be loopback (127.0.0.1 or [::1]), not {}",
             addr.ip()
         );
     }
     Ok(addr)
+}
+
+fn is_allowed_messages_bind_ip(ip: IpAddr) -> bool {
+    ip == IpAddr::V4(Ipv4Addr::LOCALHOST) || ip == IpAddr::V6(Ipv6Addr::LOCALHOST)
 }
 
 /// Bind the loopback listener before the daemon advertises readiness.
@@ -44,12 +58,21 @@ pub async fn bind_messages(bind: SocketAddr) -> Result<TcpListener> {
         .await
         .with_context(|| format!("failed to bind Messages listener on {bind}"))?;
     let actual = listener.local_addr().unwrap_or(bind);
-    info!(addr = %actual, "pmuxd Path B Messages listening");
+    info!(addr = %actual, "pmuxd Messages listening");
     Ok(listener)
 }
 
-/// Accept Path B Messages requests until the task is aborted.
-pub async fn serve_messages(listener: TcpListener, book: Arc<ConversationBook>) -> Result<()> {
+/// Accept Messages requests until `shutdown` fires.
+///
+/// `max_connections` is the same UDS `--max-connections` cap. In-flight
+/// requests receive `shutdown_grace`; remaining tasks are then aborted.
+pub async fn serve_messages(
+    listener: TcpListener,
+    book: Arc<ConversationBook>,
+    max_connections: usize,
+    shutdown_grace: Duration,
+    shutdown: impl Future<Output = ()>,
+) -> Result<()> {
     let sweeper = {
         let book = Arc::clone(&book);
         tokio::spawn(async move {
@@ -60,32 +83,94 @@ pub async fn serve_messages(listener: TcpListener, book: Arc<ConversationBook>) 
             }
         })
     };
-    let result = accept_loop(listener, book).await;
+    let result = accept_loop(listener, book, max_connections, shutdown_grace, shutdown).await;
     sweeper.abort();
     result
 }
 
-async fn accept_loop(listener: TcpListener, book: Arc<ConversationBook>) -> Result<()> {
+async fn accept_loop(
+    listener: TcpListener,
+    book: Arc<ConversationBook>,
+    max_connections: usize,
+    shutdown_grace: Duration,
+    shutdown: impl Future<Output = ()>,
+) -> Result<()> {
+    let semaphore = Arc::new(Semaphore::new(max_connections.max(1)));
+    let mut tasks = JoinSet::new();
+    let mut backoff = ACCEPT_BACKOFF_INITIAL;
+    tokio::pin!(shutdown);
+
     loop {
-        match listener.accept().await {
-            Ok((stream, peer)) => {
-                let book = Arc::clone(&book);
-                tokio::spawn(async move {
-                    if let Err(error) = handle_connection(stream, book.as_ref()).await {
-                        warn!(peer = %peer, error = %error, "Path B Messages connection failed");
-                    }
-                });
+        while let Some(result) = tasks.try_join_next() {
+            if let Err(error) = result {
+                warn!(
+                    cancelled = error.is_cancelled(),
+                    "Messages connection task ended unexpectedly"
+                );
+            }
+        }
+        let accepted = tokio::select! {
+            biased;
+            () = &mut shutdown => break,
+            result = listener.accept() => result,
+        };
+        let (stream, peer) = match accepted {
+            Ok(accepted) => {
+                backoff = ACCEPT_BACKOFF_INITIAL;
+                accepted
             }
             Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
             Err(error) => {
-                warn!(error = %error, "Path B Messages accept failed");
+                warn!(error = %error, "Messages accept failed");
+                tokio::select! {
+                    biased;
+                    () = &mut shutdown => break,
+                    () = tokio::time::sleep(backoff) => {}
+                }
+                backoff = backoff.saturating_mul(2).min(ACCEPT_BACKOFF_MAX);
+                continue;
+            }
+        };
+        let permit = tokio::select! {
+            biased;
+            () = &mut shutdown => break,
+            result = Arc::clone(&semaphore).acquire_owned() => {
+                match result {
+                    Ok(permit) => permit,
+                    Err(_) => break,
+                }
+            }
+        };
+        let book = Arc::clone(&book);
+        tasks.spawn(async move {
+            let _permit = permit;
+            if let Err(error) = handle_connection(stream, book.as_ref()).await {
+                warn!(peer = %peer, error = %error, "Messages connection failed");
+            }
+        });
+    }
+
+    drop(listener);
+    let drain = async {
+        while let Some(result) = tasks.join_next().await {
+            if let Err(error) = result {
+                warn!(
+                    cancelled = error.is_cancelled(),
+                    "Messages connection task ended unexpectedly"
+                );
             }
         }
+    };
+    if timeout(shutdown_grace, drain).await.is_err() {
+        tasks.abort_all();
+        while tasks.join_next().await.is_some() {}
     }
+    Ok(())
 }
 
 async fn handle_connection(mut stream: TcpStream, book: &ConversationBook) -> Result<()> {
-    let (header_bytes, rest) = read_headers(&mut stream).await?;
+    let deadline = Instant::now() + HTTP_READ_TIMEOUT;
+    let (header_bytes, rest) = read_headers(&mut stream, deadline).await?;
     let header_text = String::from_utf8_lossy(&header_bytes);
     let (method, path, headers) = parse_request_line_and_headers(&header_text)?;
     if !has_any_auth(&headers) && method != "OPTIONS" {
@@ -161,7 +246,7 @@ async fn handle_connection(mut stream: TcpStream, book: &ConversationBook) -> Re
     let mut body = rest;
     while body.len() < content_length {
         let mut buf = vec![0; (content_length - body.len()).min(8192)];
-        let n = stream.read(&mut buf).await?;
+        let n = timed_read(&mut stream, &mut buf, deadline).await?;
         if n == 0 {
             bail!("client closed before Content-Length");
         }
@@ -235,7 +320,7 @@ fn release_conversation_id(method: &str, path: &str) -> Option<String> {
     for prefix in prefixes {
         if let Some(rest) = path.strip_prefix(prefix) {
             if let Some(id) = rest.strip_suffix("/release") {
-                if !id.is_empty() && !id.contains('/') {
+                if crate::conversation::require_path_safe_conversation_id(id).is_ok() {
                     return Some(id.to_owned());
                 }
             }
@@ -374,10 +459,8 @@ pub(crate) fn system_text(value: Option<&Value>) -> String {
             .filter_map(|block| {
                 if block.get("type").and_then(Value::as_str) == Some("text") {
                     block.get("text").and_then(Value::as_str).map(str::to_owned)
-                } else if let Some(text) = block.as_str() {
-                    Some(text.to_owned())
                 } else {
-                    None
+                    block.as_str().map(str::to_owned)
                 }
             })
             .collect::<Vec<_>>()
@@ -757,11 +840,19 @@ fn has_any_auth(headers: &[(String, String)]) -> bool {
     })
 }
 
-async fn read_headers(stream: &mut TcpStream) -> Result<(Vec<u8>, Vec<u8>)> {
+async fn timed_read(stream: &mut TcpStream, buf: &mut [u8], deadline: Instant) -> Result<usize> {
+    match timeout_at(deadline, stream.read(buf)).await {
+        Ok(Ok(n)) => Ok(n),
+        Ok(Err(error)) => Err(error.into()),
+        Err(_) => bail!("Messages HTTP read timed out"),
+    }
+}
+
+async fn read_headers(stream: &mut TcpStream, deadline: Instant) -> Result<(Vec<u8>, Vec<u8>)> {
     let mut buf = Vec::new();
     let mut tmp = [0u8; 1024];
     loop {
-        let n = stream.read(&mut tmp).await?;
+        let n = timed_read(stream, &mut tmp, deadline).await?;
         if n == 0 {
             bail!("client closed during headers");
         }
@@ -780,7 +871,9 @@ fn find_double_crlf(buf: &[u8]) -> Option<usize> {
     buf.windows(4).position(|window| window == b"\r\n\r\n")
 }
 
-fn parse_request_line_and_headers(text: &str) -> Result<(String, String, Vec<(String, String)>)> {
+type RequestLineAndHeaders = (String, String, Vec<(String, String)>);
+
+fn parse_request_line_and_headers(text: &str) -> Result<RequestLineAndHeaders> {
     let mut lines = text.split("\r\n");
     let request_line = lines.next().unwrap_or("");
     let mut parts = request_line.split_whitespace();
@@ -836,10 +929,17 @@ async fn write_http_extra(
         header.push_str(&format!("\r\n{name}: {value}"));
     }
     header.push_str("\r\n\r\n");
-    stream.write_all(header.as_bytes()).await?;
-    stream.write_all(body.as_bytes()).await?;
-    stream.flush().await?;
-    Ok(())
+    match timeout(HTTP_WRITE_TIMEOUT, async {
+        stream.write_all(header.as_bytes()).await?;
+        stream.write_all(body.as_bytes()).await?;
+        stream.flush().await?;
+        anyhow::Ok(())
+    })
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => bail!("Messages HTTP write timed out"),
+    }
 }
 
 async fn write_dispatch_error(
@@ -888,8 +988,29 @@ mod tests {
     fn loopback_only() {
         assert!(parse_messages_bind("127.0.0.1:0").is_ok());
         assert!(parse_messages_bind("[::1]:9").is_ok());
+        assert!(parse_messages_bind("127.0.0.2:8080").is_err());
         assert!(parse_messages_bind("0.0.0.0:8080").is_err());
         assert!(parse_messages_bind("192.168.1.4:8080").is_err());
+    }
+
+    #[test]
+    fn release_ids_must_be_path_safe() {
+        assert_eq!(
+            release_conversation_id("POST", "/v1/conversations/sess-1/release"),
+            Some("sess-1".into())
+        );
+        assert_eq!(
+            release_conversation_id("POST", "/v1/conversations/a/b/release"),
+            None
+        );
+        assert_eq!(
+            release_conversation_id("POST", "/v1/conversations/a b/release"),
+            None
+        );
+        assert_eq!(
+            release_conversation_id("POST", "/v1/conversations/a#b/release"),
+            None
+        );
     }
 
     #[test]
@@ -1040,6 +1161,43 @@ mod tests {
                 .is_some_and(|text| { text.contains("thinking.type") && text.contains("high") })),
             "capabilities must name thinking.type → high: {caps}"
         );
+    }
+
+    #[tokio::test]
+    async fn header_read_times_out_when_the_client_sends_nothing() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let deadline = Instant::now() + Duration::from_millis(50);
+            read_headers(&mut stream, deadline).await
+        });
+        let _client = TcpStream::connect(addr).await.unwrap();
+        let error = server.await.unwrap().unwrap_err();
+        assert!(
+            error.to_string().contains("timed out"),
+            "expected read timeout, got {error}"
+        );
+    }
+
+    #[tokio::test]
+    async fn header_read_completes_inside_the_deadline() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let deadline = Instant::now() + Duration::from_secs(2);
+            read_headers(&mut stream, deadline).await
+        });
+        let mut client = TcpStream::connect(addr).await.unwrap();
+        client
+            .write_all(b"GET /v1/models HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            .await
+            .unwrap();
+        let (headers, rest) = server.await.unwrap().unwrap();
+        let text = String::from_utf8_lossy(&headers);
+        assert!(text.starts_with("GET /v1/models HTTP/1.1"), "{text}");
+        assert!(rest.is_empty(), "{rest:?}");
     }
 
     #[test]

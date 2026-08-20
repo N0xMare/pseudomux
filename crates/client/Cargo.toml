@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Native Rust client for the versioned pmux API"
+description = "Rust client for the pmux token engine (Messages + run_stateless)"
 
 [lints]
 workspace = true

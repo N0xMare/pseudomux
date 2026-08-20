@@ -129,9 +129,16 @@ class PersistentRetention(TypedDict):
 
 RetentionPolicy: TypeAlias = OneShotRetention | PersistentRetention
 CompatibilityPolicy: TypeAlias = Literal["require_tested", "allow_untested"]
-#: Which cell a session is driven as, chosen once at start. ``minified`` is
-#: Path B: no tool surface, cleared between turns via ``clear_session``, and
-#: admitted only on a tested compatibility profile. Omitting it means ``full``.
+#: Which cell a session is driven as, chosen once at start.
+#:
+#: Protocol type kept for goldens. Current daemons refuse start_session /
+#: clear_session / inspect_session / agent Requests with
+#: ``session_surface_removed``.
+#:
+#: ``minified`` is the pool cell: no tool surface, admitted only on a tested
+#: compatibility profile. Omitting it means ``full``. Living recovery of a
+#: Messages pin is ``x-pmux-cell`` / ``pmux doctor`` conversation leases. Do
+#: not teach inspect → fence → clear as a caller loop.
 SessionCell: TypeAlias = Literal["full", "minified"]
 
 
@@ -162,9 +169,12 @@ class ConfigIsolation(TypedDict):
 class AgentRef(TypedDict):
     """The exact stored agent version one session runs.
 
+    Protocol type kept for goldens. Current daemons refuse start_session /
+    clear_session / inspect_session / agent Requests with
+    ``session_surface_removed``.
+
     ``version`` is REQUIRED and there is deliberately no "omit for latest":
-    that would make the launch a function of WHEN the request arrived. Call
-    ``get_agent`` once and log the version you got.
+    that would make the launch a function of WHEN the request arrived.
     """
 
     agent_id: str
@@ -208,9 +218,13 @@ class AgentContainment(TypedDict):
 class AgentSpec(TypedDict):
     """Everything an agent stores: launch policy, and no resource.
 
+    Protocol type kept for goldens. Current daemons refuse start_session /
+    clear_session / inspect_session / agent Requests with
+    ``session_surface_removed``.
+
     There is no ``cwd``, no ``config_isolation``, no session identity, no prompt
-    and no environment snapshot, because each of those is per-session and is
-    named on every ``start_session``.
+    and no environment snapshot: those were per-session fields on
+    ``start_session``, which current daemons also refuse.
     """
 
     name: str
@@ -259,10 +273,12 @@ class AgentSummary(TypedDict):
 class AgentListFailure(TypedDict):
     """One stored record ``list_agents`` could not read.
 
+    Protocol type kept for goldens. Current daemons refuse start_session /
+    clear_session / inspect_session / agent Requests with
+    ``session_surface_removed``. Do not recommend ``pmux agent list``.
+
     The daemon reports these rather than dropping them, and rather than
-    answering the whole listing with the first one's refusal -- which used to
-    make the "list the stored agents with ``pmux agent list``" recommendation
-    unreachable in precisely the state it was offered.
+    answering the whole listing with the first one's refusal.
     """
 
     agent_id: str
@@ -298,6 +314,12 @@ class UpdateAgentRequest(TypedDict):
 
 class StartSessionRequest(TypedDict):
     """One interactive session start.
+
+    Protocol type kept for goldens. Current daemons refuse start_session /
+    clear_session / inspect_session / agent Requests with
+    ``session_surface_removed``. Living recovery is ``x-pmux-cell`` /
+    ``pmux doctor`` conversation leases. Do not teach inspect → fence →
+    clear as a caller loop.
 
     Supply EITHER ``claude`` (the inline launch configuration) OR ``agent`` (a
     stored id and an EXACT version), never both and never neither. A request
@@ -570,9 +592,11 @@ class TurnSummary(TypedDict):
 class SessionSnapshot(TypedDict):
     session_id: SessionId
     generation_id: SessionGenerationId
-    #: The transcript this session's turns are currently proven from, and the
-    #: value ``clear_session`` must be fenced on. Equal to ``session_id`` until a
-    #: clear rotates it; read it rather than re-deriving it from bookkeeping.
+    #: Protocol type kept for goldens. Current daemons refuse start_session /
+    #: clear_session / inspect_session / agent Requests with
+    #: ``session_surface_removed``. Living recovery is ``x-pmux-cell`` /
+    #: ``pmux doctor`` conversation leases. Do not teach inspect → fence →
+    #: clear as a caller loop.
     transcript_session_id: SessionId
     #: Which cell this session is driven as. Fixed at start.
     cell: SessionCell
@@ -619,14 +643,15 @@ class CloseSessionResult(TypedDict):
 class ClearSessionRequest(TypedDict):
     """Clears one minified-cell session's context between turns.
 
-    ``expected_transcript_session_id`` is a compare-and-swap fence, not a
-    routing key: at start it equals ``session_id``, and afterwards it is
-    whatever the previous :class:`ClearSessionResult` returned -- or whatever
-    :class:`SessionSnapshot` currently reports as ``transcript_session_id``.
-    Every stale value is ``id_conflict``, including one that is stale by
-    exactly one rotation: the one-behind value is exactly what a session's
-    FIRST fence looks like, so answering it as "already cleared" would tell a
-    second caller that a transcript it never cleared is empty.
+    Protocol type kept for goldens. Current daemons refuse start_session /
+    clear_session / inspect_session / agent Requests with
+    ``session_surface_removed``. Living recovery of a Messages pin is
+    ``x-pmux-cell`` / ``pmux doctor`` conversation leases. Do not teach
+    inspect → fence → clear as a caller loop.
+
+    ``expected_transcript_session_id`` is a compare-and-swap fence on the
+    wire (every stale value is ``id_conflict``, including one stale by
+    exactly one rotation). It is not a public recovery API.
     """
 
     session_id: SessionId

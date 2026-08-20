@@ -97,7 +97,7 @@ pub struct NativeInstanceHost {
     /// This is the one thing a mint takes that is not in [`MintSpec`], and it is
     /// still not a caller input: it is the environment the operator started
     /// `pmuxd` under, which is daemon configuration in the same sense
-    /// `--path-b-claude` is. Nothing on the wire can put a byte in it.
+    /// `--pool-claude` is. Nothing on the wire can put a byte in it.
     ///
     /// It is captured ONCE, at pool construction, rather than read per mint.
     /// `std::env::set_var` is process-global and unsafe, and a pool whose
@@ -747,9 +747,9 @@ mod tests {
     // THE LAUNCH BUNDLE, AND THE THREE DOCUMENTS THAT EACH DESCRIBED A
     // DIFFERENT ONE.
     //
-    // `crates/service/src/v1/minified.rs`, `tools/promotion/
-    // measure_transcript_drain.py` and `tools/phase0/README.md` each stated the
-    // flags a Path B cell launches with. All three named the same two flags
+    // `crates/service/src/v1/minified.rs` and `tools/promotion/
+    // measure_transcript_drain.py` each stated the
+    // flags a Path B cell launches with. Both named the same two flags
     // that no launch path emitted -- one of them the MCP suppression
     // `claude_launch::MINIFIED_CELL_FLAGS` now carries, the other `--safe-mode`,
     // which pmux still does not pass. A doc comment and an argv builder in
@@ -874,8 +874,8 @@ mod tests {
     ///
     /// The emitted side is not a fixture. It is
     /// [`launch_request_for`] -- the function a live mint calls -- driven
-    /// through the same three steps `NativeService::start_session` drives it
-    /// through, on a real 0700 slot tree. So this fails if `build_args`
+    /// through the same three steps `NativeService::start_session_owned_with_retention`
+    /// drives it through, on a real 0700 slot tree. So this fails if `build_args`
     /// changes, if `launch_request_for` changes, if `SensitiveLaunchFiles`
     /// stops appending the system-prompt file, or if any of the three
     /// documents is edited without the launch.

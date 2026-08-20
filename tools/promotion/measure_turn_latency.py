@@ -21,7 +21,7 @@ values:
   daemon's own view of one turn, from the instant it accepted the prompt to the
   instant it committed the result. This is the quantity pmux's machinery owns
   and the one the §9 row means.
-* `client_wall_ms` -- wall clock around one `pmux turn` / `pmux run` process,
+* `client_wall_ms` -- wall clock around one `pmux run` process,
   measured with `time.monotonic()` in this process. It includes process spawn,
   socket connect, the request and the response, so it is always the larger of
   the two and it is what an operator's shell actually waits.
@@ -315,21 +315,21 @@ class Daemon:
             str(sandbox.root / "private"),
             "--tested-claude-profile",
             json.dumps(profile, sort_keys=True),
-            "--path-b-parent",
+            "--pool-parent",
             str(sandbox.root / "pool"),
-            "--path-b-claude",
+            "--pool-claude",
             str(claude),
-            "--path-b-pool-size",
+            "--pool-size",
             "1",
-            "--path-b-recycle-turns",
+            "--pool-recycle-turns",
             "250",
-            "--path-b-instance-idle-ttl-ms",
+            "--pool-idle-ttl-ms",
             "600000",
-            "--path-b-turn-timeout-ms",
+            "--pool-turn-timeout-ms",
             "120000",
         ]
         if warm:
-            argv += ["--path-b-warm", warm]
+            argv += ["--pool-warm", warm]
         self.argv = argv
         self.process = subprocess.Popen(
             argv,
@@ -423,88 +423,6 @@ def legs_of(timings: dict[str, Any]) -> dict[str, float]:
     for previous, current in zip(ordered, ordered[1:]):
         legs[current] = float(timings[current] - timings[previous])
     return legs
-
-
-def measure_path_a(
-    binaries: dict[str, pathlib.Path],
-    sandbox: Sandbox,
-    claude: pathlib.Path,
-    model: str,
-    turns: int,
-    warmup: int,
-) -> dict[str, Any]:
-    started, _ = run_client(
-        binaries,
-        sandbox,
-        [
-            "start",
-            "--claude",
-            str(claude),
-            "--cwd",
-            str(sandbox.root / "cwd"),
-            "--model",
-            model,
-            "--input-transport",
-            "sdk",
-            # Path A gets a pmux-owned configuration root for the same reason
-            # Path B always has one: the scratch cwd is not in the operator's
-            # trust record, and real Claude answers an untrusted cwd with a
-            # trust dialog, which pmux reports as `NeedsTrust`/`NeedsInput`
-            # rather than as a turn. pmux seeds the trust key itself
-            # (`crates/service/src/config_isolation.rs`). Passed on both lanes
-            # so the two differ only in the driver.
-            "--config-isolation-root",
-            str(sandbox.root / "isolation"),
-        ],
-        timeout=300.0,
-    )
-    session, generation = started["session_id"], started["generation_id"]
-    samples: list[dict[str, Any]] = []
-    try:
-        for index in range(turns + warmup):
-            result, wall_ms = run_client(
-                binaries,
-                sandbox,
-                [
-                    "turn",
-                    session,
-                    "--generation",
-                    generation,
-                    "--timeout-secs",
-                    "120",
-                    f"latency probe {uuid.uuid4()}",
-                ],
-                timeout=180.0,
-            )
-            if result["outcome"] != "completed":
-                raise MeasurementError(f"turn did not complete: {result['outcome']}")
-            timings = result["timings"]
-            samples.append(
-                {
-                    "warmup": index < warmup,
-                    "client_wall_ms": round(wall_ms, 1),
-                    "server_total_ms": float(
-                        timings["completed_at_ms"] - timings["submitted_at_ms"]
-                    ),
-                    "legs": legs_of(timings),
-                    "drain_ms": timings.get("drain_ms"),
-                    "marker_observed_at_ms": timings.get(
-                        "turn_duration_observed_at_ms"
-                    ),
-                    "post_marker_row_at_ms": timings.get(
-                        "post_turn_duration_row_observed_at_ms"
-                    ),
-                    "completed_at_ms": timings["completed_at_ms"],
-                }
-            )
-    finally:
-        run_client(
-            binaries,
-            sandbox,
-            ["close", session, "--generation", generation],
-            timeout=120.0,
-        )
-    return {"session_id": session, "samples": samples}
 
 
 def measure_path_b(
@@ -664,24 +582,18 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         if args.effort is not None:
             warm = f"{args.model}/{args.effort}=1"
         daemon = Daemon(binaries, sandbox, profile, claude, warm)
-        path_a = measure_path_a(
-            binaries, sandbox, claude, args.model, args.turns, args.warmup
-        )
         path_b = measure_path_b(
             binaries, sandbox, args.model, args.effort, args.turns, args.warmup
         )
         run = {
             "claude_version": version,
-            "writes_turn_duration_marker": any(
-                sample["drain_ms"] is not None for sample in path_a["samples"]
-            )
-            and version != "9.9.9",
+            "writes_turn_duration_marker": False,
             "profile": profile,
             "pmuxd_argv": daemon.argv,
             "path_a": {
-                "session_id": path_a["session_id"],
-                "summary": distributions(path_a["samples"]),
-                "samples": path_a["samples"],
+                "removed": True,
+                "reason": "session CLI is not a product; this tool times only pmux run",
+                "samples": [],
             },
             "path_b": {
                 "summary": distributions(path_b["samples"]),

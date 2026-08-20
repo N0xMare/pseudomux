@@ -1,6 +1,0 @@
-Write an original 6-10 line poem about a lighthouse, one stanza, no title.
-Then run exactly one shell command, `shasum -a 256`, feeding the poem's exact
-text on stdin, to compute its SHA-256. Use no other tool and no network.
-Reply with exactly this and nothing else: the poem's lines unchanged, then one
-blank line, then a final line reading exactly `SHA256: <hex>`, where <hex> is
-the 64-character lowercase hex digest the tool reported.

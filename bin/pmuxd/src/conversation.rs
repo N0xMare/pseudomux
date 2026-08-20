@@ -20,10 +20,9 @@
 //!   backstop. `/clear` happens here, not after every HTTP request.
 //!
 //! An implicit hash of the first user message is off unless the operator
-//! starts the listener with `--path-b-allow-implicit-conversation`. You did
+//! starts the listener with `--messages-allow-implicit`. You did
 //! not choose that id; release using the `x-pmux-conversation` the response
-//! echoed (or the hash `doctor` prints). Two sessions that start the same
-//! way share a cell.
+//! echoed. Two sessions that start the same way share a cell.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -148,7 +147,7 @@ pub fn fingerprint_body(
     hasher.update(system.as_bytes());
     hasher.update([0]);
     hasher.update(tools.as_bytes());
-    let system_tools = hex(&hasher.finalize());
+    let system_tools = hex(hasher.finalize());
     let messages = body
         .get("messages")
         .and_then(Value::as_array)
@@ -187,6 +186,26 @@ pub fn explicit_conversation_id(headers: &[(String, String)]) -> Option<String> 
     None
 }
 
+/// Pins are path segments on `POST /v1/conversations/{id}/release`.
+/// `/`, whitespace, `?`, and `#` cannot be named there; the daemon does
+/// not percent-decode, so those characters are refused at the pin too.
+pub fn require_path_safe_conversation_id(id: &str) -> Result<String, ErrorBody> {
+    let id = id.trim();
+    if id.is_empty() {
+        return Err(ErrorBody::new(
+            ErrorCode::InvalidConfig,
+            "conversation id must not be empty",
+        ));
+    }
+    if id.contains(['/', '?', '#']) || id.chars().any(char::is_whitespace) {
+        return Err(ErrorBody::new(
+            ErrorCode::InvalidConfig,
+            "conversation id is not path-safe",
+        ));
+    }
+    Ok(id.to_owned())
+}
+
 /// Conversation id from the header, or an implicit hash of the first turn.
 ///
 /// The implicit arm is the operator opt-in. Production harnesses send a pin.
@@ -198,7 +217,7 @@ pub fn conversation_id_from(
     allow_implicit: bool,
 ) -> Result<String, ErrorBody> {
     if let Some(explicit) = explicit_conversation_id(headers) {
-        return Ok(explicit);
+        return require_path_safe_conversation_id(&explicit);
     }
     if allow_implicit {
         return Ok(implicit_conversation_id(body, model, effort));
@@ -212,7 +231,7 @@ pub fn missing_conversation_header() -> ErrorBody {
         "a conversation pin is required: send x-pmux-conversation (or x-session-id / x-session-affinity) on every POST /v1/messages",
     )
     .advising(
-        "set x-pmux-conversation to the harness session id, or start pmuxd with --path-b-allow-implicit-conversation for a single-session implicit hash",
+        "set x-pmux-conversation to the harness session id, or start pmuxd with --messages-allow-implicit for a single-session implicit hash",
     )
 }
 
@@ -495,18 +514,10 @@ impl ConversationBook {
     /// A refused suffix must not `/clear` a still-leased cell. A failed prime
     /// or a pool teardown drops the book row; `release_conversation` is
     /// success if the cell is already gone.
-    async fn recover_failed_turn(
-        &self,
-        conversation_id: &str,
-        kind: PlannedKind,
-        code: ErrorCode,
-    ) {
+    async fn recover_failed_turn(&self, conversation_id: &str, kind: PlannedKind, code: ErrorCode) {
         let keep_leased_continue = matches!(kind, PlannedKind::Continue { .. })
             && code == ErrorCode::InvalidConfig
-            && self
-                .pool_conversation_ids()
-                .await
-                .contains(conversation_id);
+            && self.pool_conversation_ids().await.contains(conversation_id);
         let mut guard = self.leases.lock().await;
         if keep_leased_continue {
             if let Some(lease) = guard.live.get_mut(conversation_id) {
@@ -636,7 +647,7 @@ fn session_busy_cap(max_leases: u32) -> ErrorBody {
     ErrorBody::new(
         ErrorCode::SessionBusy,
         format!(
-            "conversation lease cap is {max_leases}; release an idle conversation or raise --path-b-pool-size"
+            "conversation lease cap is {max_leases}; release an idle conversation or raise --pool-size"
         ),
     )
     .retryable(true)
@@ -679,7 +690,7 @@ fn header<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
 fn sha_hex(text: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(text.as_bytes());
-    hex(&hasher.finalize())
+    hex(hasher.finalize())
 }
 
 fn hex(bytes: impl AsRef<[u8]>) -> String {
@@ -818,6 +829,24 @@ mod tests {
         )
         .unwrap();
         assert_eq!(id, "sess-1");
+    }
+
+    #[test]
+    fn an_explicit_pin_must_be_path_safe() {
+        let body = body(vec![json!({"role":"user","content":"hello"})]);
+        let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
+        for bad in ["a/b", "a b", "a?b", "a#b", "a\tb"] {
+            let err = conversation_id_from(
+                &[("x-pmux-conversation".to_owned(), bad.to_owned())],
+                &body,
+                &model,
+                effort,
+                false,
+            )
+            .unwrap_err();
+            assert_eq!(err.code, ErrorCode::InvalidConfig, "{bad}");
+            assert!(err.message.contains("path-safe"), "{bad}");
+        }
     }
 
     #[test]

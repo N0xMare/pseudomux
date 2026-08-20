@@ -1,11 +1,16 @@
 # path-b.md
 
+**This is not the product.** The product contract is [spec.md](spec.md) and the
+root README. This file is the pool engineering essay (minified cells, recycle,
+isolation). Operators integrating a harness should not start here.
+
+
 **The Path B pool: a stateless, tool-less Claude Code cell, and the operational policy that runs a
 pool of them.** This file was a design specification. **It is now mostly a description of a shipped
 thing**, and where it still describes a design the tense says so explicitly.
 
-**Implementation status (2026-08-06).** The cell AND the pool are shipped and reachable without a
-flag.
+**Implementation status (2026-08-06).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.227
+reachable without a flag; Linux operator `--tested-claude-profile`.
 
 | Shipped | Where |
 |---|---|
@@ -14,7 +19,7 @@ flag.
 | The pool machine — classes, idle sets, checkout, recycle, warm floor, TTL sweep, teardown, quarantine retention (§3.1, §6, §7) | `crates/service/src/pool/` |
 | The half that touches a child, a TUI, a transcript and the registry (§2.1) | `crates/service/src/stateless.rs` |
 | `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
-| Sticky `Leased` instances and the opt-in loopback Messages facade (`--path-b-messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
+| Sticky `Leased` instances and the opt-in loopback Messages facade (`--messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
 | One promoted compatibility RANGE — 2.1.220 through 2.1.227 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/promotion-2.1.227-macos-aarch64.json` |
 
@@ -55,14 +60,14 @@ normative documents that contain Path B material and a great deal that is not Pa
 | 5 | `docs/2.1.226-compatibility.md` | DATED RECEIPT | 2026-08-09. The structural compatibility probe of 2.1.226 at 0 ordinals. Its §6 is a defect list and **§6.1 and §6.2 are the only two closed** — §6.3, §6.4 and §6.5 are still live and each carries a STILL OPEN banner saying so. |
 | 6 | `docs/2.1.226-acceptance.md` | DATED RECEIPT | 2026-08-09. Ten real turns at 2.1.226. §6 (the SIGTERM window) and §9.1 (the launch bundle) are closed and say so; §9's remaining content is a list of what the session did NOT establish, which is not a defect list and does not close. |
 | 7 | `docs/2.1.227-compatibility.md` | DATED RECEIPT | 2026-08-11. The A/B that promoted 2.1.227: every version-keyed instrument run at 2.1.226 and 2.1.227 within one hour, and **not one of them disagreed**. Read §2 for the derived list of version-keyed sites — 44 today, against the 16 the row above derived — and §9 for what one patch step does and does not establish. |
-| 8 | `docs/spec.md` | PARTIAL | Normative for product behaviour. §4-6 cover the launch, the turn and the completion gate for BOTH paths; the rest is Path A and transport. |
+| 8 | `docs/spec.md` | PARTIAL | Normative for product behaviour. §4 operator daemon and allowlist, §5 compatibility, §6 transport. |
 | 9 | `docs/current-state.md` | PARTIAL | Normative for position — Path B as a harness engine, Linux operator cell, gate stubs. The 2026-08 essay is `docs/archive/current-state-2026-08.md` and is not a Path B document. |
 
 **The status vocabulary is exactly `CURRENT`, `DATED RECEIPT` and `PARTIAL`**, and this table is not
 decoration: `crates/service/tests/path_b_doc_citations.rs` reads it to learn which documents are
 Path B documents, and refuses if a row names a file that does not exist or a status outside the
 three. A `CURRENT` or `DATED RECEIPT` row is a document whose every `path:line` citation that names
-an identifier is checked against that identifier's real line, every run of Gate A. A `PARTIAL` row
+an identifier is checked against that identifier's real line, every `path_b_doc_citations` / `tools/dev/check.sh` run. A `PARTIAL` row
 is not, and the reason is scope, not confidence — see §0.4.
 
 ---
@@ -193,8 +198,8 @@ Line numbers are correct exactly once. The repair is not to renumber them:
 4. **No rule can be satisfied by editing a number.** All are derived: the document set comes from
    §0.0's table, the anchor comes from the sentence, and the line comes from the file.
 
-This is `tools/phase0/verify_calibration.py`'s rule — *"a citation nobody re-measures has already
-rotted"* — applied to the documents instead of to a banner. That tool computes its numbers from
+This is the same rule a since-deleted Phase 0 verifier printed — *"a citation nobody re-measures has already
+rotted"* — applied to the documents instead of to a banner. That tool computed its numbers from
 anchors at import; a markdown file cannot, so the check is external and the anchor is the identifier
 the prose was already naming.
 
@@ -320,7 +325,7 @@ measurement.
 |---|---|---|
 | `--bare` | **STILL TRUE, re-grounded** | Breaks subscription auth. The original probe was the confounded one of §0.1 and proved nothing; the conclusion survives on **bundle evidence**, which is stronger: `rf()` is checked at the top of every OAuth accessor and bare mode deliberately ignores `claudeAiOauth`. Right answer, wrong probe — do not cite the old probe. |
 | `CLAUDE_CONFIG_DIR` override **alone** | **RETRACTED — the row was FALSE** | It read "Same auth break", a MEASURED claim from the confounded probe of §0.1. A private root works, and §5 is built on it. What is true is narrower: a config root **without** the securestorage pin gets a login screen, because the keychain service name is namespaced by `sha256(config_dir)[0:8]`. pmux computes the pin itself, so a caller never has to. |
-| `--max-turns` | ~~STILL TRUE~~ **FALSE, and not because of 2.1.226 — MEASURED 2026-08-09.** The row read *"Does not exist in 2.1.220."* | **The flag exists and is parsed**, at 2.1.226 AND at 2.1.223. Non-executing sentinel probe (§0.3 rule 5's instrument, from `docs/2.1.226-compatibility.md` §1.1): `claude --max-turns 5 --pmux-probe-sentinel doctor` reports `unknown option '--pmux-probe-sentinel'` at both versions, i.e. `--max-turns` was accepted; the control `--definitely-not-a-flag` and the three near-misses `--max-turn`, `--max-turnss`, `--maxturns` each name themselves. It is a HIDDEN option — absent from `--help` at 2.1.226, exactly like `--system-prompt-file`. **Corroborated without a probe at all:** the Claude Code process that hosted the session which found this was itself launched with `--max-turns 1000` on the same 2.1.226 binary, so the flag is not merely parsed, it is in use on this host. **Why nobody caught it:** the 36-flag sweep's set is DERIVED from what pmux emits or forbids (`MINIFIED_LAUNCH_FLAGS`, `SAFE_EXTRA_FLAGS`, `FORBIDDEN_DRIVER_FLAGS`), and a flag this document merely *rejected in prose* is in none of them, so the one instrument that re-checks flag existence every version is structurally blind to every row in this table. **Blast radius is zero and that was checked, not assumed:** pmux does not pass it, and `validate_extra_args` (`crates/service/src/claude_launch.rs:768`) allowlists caller `extra_args` to `SAFE_EXTRA_FLAGS` — two spellings — so a caller cannot reach it either. It is absent from `FORBIDDEN_DRIVER_FLAGS` and does not need to be there. but the RECORDED REASON is false, and a reader deciding whether to propose it would be told it cannot be had. |
+| `--max-turns` | ~~STILL TRUE~~ **FALSE, and not because of 2.1.226 — MEASURED 2026-08-09.** The row read *"Does not exist in 2.1.220."* | **The flag exists and is parsed**, at 2.1.226 AND at 2.1.223. Non-executing sentinel probe (§0.3 rule 5's instrument, from `docs/2.1.226-compatibility.md` §1.1): `claude --max-turns 5 --pmux-probe-sentinel doctor` reports `unknown option '--pmux-probe-sentinel'` at both versions, i.e. `--max-turns` was accepted; the control `--definitely-not-a-flag` and the three near-misses `--max-turn`, `--max-turnss`, `--maxturns` each name themselves. It is a HIDDEN option — absent from `--help` at 2.1.226, exactly like `--system-prompt-file`. **Corroborated without a probe at all:** the Claude Code process that hosted the session which found this was itself launched with `--max-turns 1000` on the same 2.1.226 binary, so the flag is not merely parsed, it is in use on this host. **Why nobody caught it:** the 36-flag sweep's set is DERIVED from what pmux emits or forbids (`MINIFIED_LAUNCH_FLAGS`, `SAFE_EXTRA_FLAGS`, `FORBIDDEN_DRIVER_FLAGS`), and a flag this document merely *rejected in prose* is in none of them, so the one instrument that re-checks flag existence every version is structurally blind to every row in this table. **Blast radius is zero and that was checked, not assumed:** pmux does not pass it, and `validate_extra_args` (`crates/service/src/claude_launch.rs:179`) allowlists caller `extra_args` to `SAFE_EXTRA_FLAGS` — two spellings — so a caller cannot reach it either. It is absent from `FORBIDDEN_DRIVER_FLAGS` and does not need to be there. but the RECORDED REASON is false, and a reader deciding whether to propose it would be told it cannot be had. |
 | `--tools ""` | STILL TRUE, one clause weakened | Cannot travel `push_value`, which bails on empty values by design. The clause "leaves 85 MCP tools" is a claim about a build with MCP servers configured; under the private root of §5 there are none (§0.2), so it is the `push_value` half that is load-bearing. |
 | `--disable-slash-commands` | STILL TRUE | Would remove `/clear`, the entire statelessness mechanism. The caller-facing `/` escape is already closed in `driver_io.rs::validate_prompt` (mirrored in `bin/pmux/src/cli.rs`), so this flag buys nothing and costs the design. |
 | `--no-session-persistence` | STILL TRUE, **and now enforced** | Inert in the TUI today, but would DELETE the transcript if ever honoured. It **is** in `FORBIDDEN_DRIVER_FLAGS` (`FORBIDDEN_DRIVER_FLAGS`, `crates/service/src/claude_launch.rs:32-50`, whose sole entry is that flag) — the §11 row that tracked this is closed. |
@@ -1048,7 +1053,7 @@ required state is absent, rather than racing. Writes are temp file + `create_new
 in a root pmux claims to own is a refusal, not a follow. An unparseable existing file is a refusal,
 never a silent replacement.
 
-No per-root mutex is introduced. `NativeService::start_session_internal` holds `start_guard` across
+No per-root mutex is introduced. `NativeService::start_session_owned_with_retention` holds `start_guard` across
 its whole body, so every seed in one daemon is already serialized against every other; a second lock
 could only disagree with the first.
 

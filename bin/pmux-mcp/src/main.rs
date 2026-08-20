@@ -26,7 +26,7 @@ const MAX_MCP_FRAME_BYTES: usize = 8 * 1024 * 1024;
 const SAFE_JSON_INTEGER_EXCLUSIVE_LIMIT: f64 = 9_007_199_254_740_992.0;
 
 #[derive(Debug, Parser)]
-#[command(version, about = "Native protocol-v1 pmux MCP adapter")]
+#[command(version, about = "stdio MCP adapter for pmux run_stateless")]
 struct Cli {
     /// Exact pmuxd Unix socket. No discovery or daemon startup is performed.
     #[arg(long, env = "PMUX_SOCKET")]
@@ -557,19 +557,30 @@ mod tests {
     #[tokio::test]
     async fn unknown_tools_are_protocol_errors_without_name_echo() {
         let client = PmuxClient::new("/definitely/missing/pmux.sock").unwrap();
-        let response = process_value(
-            &client,
-            json!({
-                "jsonrpc": "2.0",
-                "id": "call",
-                "method": "tools/call",
-                "params": {"name": "secret-legacy-tool", "arguments": {}}
-            }),
-        )
-        .await
-        .unwrap();
-        assert_eq!(response["error"]["code"], -32602);
-        assert!(!response.to_string().contains("secret-legacy-tool"));
+        // Unpublished session tools must take this path too. Mapping any of
+        // them would contact the missing socket and become
+        // transport_unavailable rather than -32602.
+        for name in [
+            "secret-legacy-tool",
+            "start_session",
+            "run_turn",
+            "inspect_session",
+            "create_agent",
+        ] {
+            let response = process_value(
+                &client,
+                json!({
+                    "jsonrpc": "2.0",
+                    "id": "call",
+                    "method": "tools/call",
+                    "params": {"name": name, "arguments": {}}
+                }),
+            )
+            .await
+            .unwrap();
+            assert_eq!(response["error"]["code"], -32602, "{name}");
+            assert!(!response.to_string().contains(name), "{response}");
+        }
     }
 
     #[tokio::test]
