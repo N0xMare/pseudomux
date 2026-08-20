@@ -1,16 +1,28 @@
-# Test ownership
+# Gate A freeze census (archived)
 
-**Living verification is `tools/dev/`** ([`tools/dev`](../tools/dev/README.md):
-`check.sh`, `operator_eval.py`, `promote.py`). This file is the test-ownership
-map and the public-surface coverage matrix.
+**Not living verification.** Do not run the commands below. Living test
+ownership is [`docs/testing.md`](../testing.md). Living commands are
+[`tools/dev`](../../tools/dev/README.md).
 
-The Gate A / Gate C freeze census (command manifests, campaign preconditions,
-and the historical Gate A walk) is
-[`archive/testing-gate-a-census.md`](archive/testing-gate-a-census.md).
-Do not run those commands. `OPEN-*` rows in the matrix below are census
-status, not a second living pin.
+This file is a dated freeze-census snapshot (Gate A / Gate C command
+manifest, campaign preconditions, and the coverage matrix as it stood
+when archived). `OPEN-*` rows here are census status, not release blockers.
 
-`spec.md` is normative for product behavior.
+---
+
+# pmux v1 validation specification
+
+**Status:** Historical freeze census. Not living test ownership.
+Living verification is `tools/dev/`. `OPEN-*` rows below are freeze-census
+status from that census; they are not living release blockers. No external
+compatibility or portability claim is made by this file.
+
+`spec.md` is normative for product behavior. Living test ownership is
+[`docs/testing.md`](../testing.md). This file is the dated Gate A / Gate C
+command freeze. The local `.context/final-pmux-plan.md` is not an
+executable correctness authority.
+
+**Living verification is `tools/dev/`** (`check.sh`, `operator_eval.py`, `promote.py`). Gate A below is a historical freeze census, not the required development workflow.
 
 ## 1. Correctness authority
 
@@ -27,12 +39,35 @@ must not have a second semantic implementation in Python, TypeScript, shell, or
   behavior needed to exercise shipped boundaries. Pass/fail semantics remain
   in Rust assertions and production pmux.
 - Phase 0, linux-docker, and package-smoke have been removed. Historical freeze
-  census commands in the archive are not a living pin. Their transcript or process
+  census commands below are not a living pin. Their transcript or process
   interpretations cannot close a product matrix row.
 - Every production defect found during validation receives a minimized tracked
   regression before or with the fix.
-- Test counts are supporting metadata. The coverage matrix below is test
-  ownership. It does not close a living pin. Living verification is `tools/dev/`.
+- Test counts are supporting metadata. This map is the historical freeze
+  census. It does not close a living pin. Living verification is `tools/dev/`.
+
+### Evidence threat-model boundary
+
+The candidate/evidence envelope fails closed on stale, partial, or internally
+self-consistent substitution; concurrent pathname replacement; a tracked
+command that hangs or floods its bounded output; an observed descendant that
+escapes the owned process boundary; and mutation-then-restoration of a declared
+source, dependency, tool, configuration, or binary input. This is release
+evidence under an ordinary non-hostile same-UID host. It does not claim to
+withstand a malicious same-UID actor using `ptrace` or killing the supervisor,
+or compromise of the kernel, hardware, or trust roots below the recorded tool
+and platform identities.
+
+The inherited vnode marker attributes ordinary non-hostile child trees; this
+evidence boundary does not claim resistance to a child that intentionally
+closes the reserved marker descriptor before escaping every observed parent,
+process-group, and session relationship. The exact leader must carry the marker
+before release. Marker loss while that leader remains live beyond the fixed
+250 ms exit-only grace fails closed. On Darwin, descriptor-table teardown can
+precede `waitpid` reaping; observed marker disappearance is accepted only when
+that exact leader becomes reapable and is reaped inside the grace, and the
+receipt records the event with a strict Boolean. An observed process escape
+always fails closed.
 
 ### Status vocabulary
 
@@ -64,7 +99,7 @@ contract, and have been observed passing at source level, but have **not** been
 executed against a frozen release candidate and recorded in a receipt.
 `AUTHORED` is a statement about attestation, not about coverage.
 
-The coverage-matrix status column fuses those two things, so read its location column
+The Section 4 status column fuses those two things, so read its location column
 carefully. Where a row says "exact release Gate D/E rerun pending," that means
 **receipt** pending, not **coverage** pending: the owning tests exist and assert
 the contract. Path A `full_stack.rs` process-boundary tests were deleted
@@ -85,10 +120,816 @@ Path A suite should be re-run.
 | L5 | Deterministic concurrency, backpressure, capacity, fault loops, resource ceilings, soak, and size-scaling/performance evidence. |
 | L6 | Frozen-candidate real-Claude macOS promotion and same-source Docker Linux portability evidence. |
 
-L6 was the freeze-census real-Claude / Docker-linux layer. It is not a living
-pin. See [`archive/testing-gate-a-census.md`](archive/testing-gate-a-census.md).
+### Environment preconditions for every gate below
 
-## 3. Public-surface coverage matrix
+The gates in Sections 3 and beyond assume three things about the host that no
+command in them checks: that nothing else writes to the candidate workspace,
+that the machine is otherwise idle, and that a live campaign's directory,
+permission mode, ledger path, and effort were settled before the first ordinal
+was spent. Each has cost a real run. Establish all of them before running
+anything, because most of them fail after the evidence envelope has already
+committed something irreversible.
+
+### The candidate must be a standalone clone, not a polled workspace
+
+**HISTORICAL freeze census.** Phase 0 and linux-docker have been deleted. Do
+not grep or run the paths below; they are not in the tree. Living verification
+is `tools/dev/`.
+
+A live campaign re-observed the frozen candidate at six sites — every call to
+`_verify_candidate_unchanged` in the since-deleted `tools/phase0/phase0_lib.py`,
+and a `grep -c` of that file used to print `6`. Each of those calls `observe_source_identity`, which is not a
+file-content comparison. It takes a Git revision capture before the manifest walk
+and another after it, and rejects any inequality between the two with `workspace
+revision changed across source capture`. The identity embeds `repository_control`
+(`tools/linux-docker/source_digest.py:1335`), a set of `lstat` records that each
+carry `ctime_ns` (`:906`) for the workspace root, the worktree control entry,
+the Git directory and its parent, the common directory and its parent, `HEAD`,
+the index, `packed-refs`, `config`, and the `objects` and `refs` directories
+(`_repository_control_snapshot`, `:1008`). Any process that runs `git status`,
+refreshes the index, or fetches moves one of those `ctime_ns` values, and the
+identity changes without a single tracked file changing. A second, narrower
+fence sits inside one capture: the digest program independently rejects a
+`repository_control` change observed during its own revision query
+(`tools/linux-docker/source_digest.py:1309-1312`), which surfaces from phase0 as
+`canonical source/revision capture failed: Git repository control identity
+changed during capture`.
+
+This extends to the Git control plane the same principle Section 3 states for
+included source directories: changing an included source directory's ctime is
+never treated as legitimate validation churn (`docs/testing.md:387-388`).
+
+The campaign-length window is no longer part of this. As of 2026-07-28
+`_verify_candidate_unchanged` (`tools/phase0/phase0_lib.py`) gates on a
+projection of the identity onto the fields the frozen-candidate claim is
+actually made of (`SOURCE_IDENTITY_CLAIM_FIELDS` and
+`REVISION_IDENTITY_CLAIM_FIELDS`, applied through `source_identity_claim`), and
+records everything outside that projection as an observation instead of failing
+on it. What that fix removed was a whole-dict comparison between bind time and
+verify time. It did not touch either of the two fences above, because both
+compare a capture against itself over a window of roughly a second, and both
+still compare the whole revision identity.
+
+Measured on 2026-07-28 in a workspace whose manager polls git roughly every 10 s:
+the ~1.3 s before/after capture pair failed about 30% of the time, and the ~11 s
+window spanning one live attempt failed essentially always. Only the second of
+those two numbers was retired by the projection fix. The first is intact, a
+campaign runs that capture pair at least six times per attempt, and at ~30% each
+that is not a risk to accept but the expected outcome. In a standalone clone
+with its own `.git` and nothing watching it, repeated sampling over 50 s showed
+zero drift and zero capture errors.
+
+The expense is that these failures land after the ledger reservation. A
+reservation consumes its global ordinal whether or not Claude produced a result
+(`evidence/README.md`, *Four detached reservations*), and the ceiling is a total
+across all campaigns (`MAX_GLOBAL_ATTEMPT_CEILING = 100` in
+`tools/phase0/phase0_lib.py`), never reset by a restart or a failure. So each
+drift failure spends an irreplaceable attempt and returns nothing.
+
+The remedy is to clone the frozen candidate to a path nothing watches — no IDE
+indexer, no backup agent, no workspace manager, no editor with a Git decoration
+provider — and then prove two separate things before spending anything. First,
+that the path is quiet:
+
+```bash
+# HISTORICAL. source_digest.py is gone. Do not run.
+# Zero drift required. One unique line, or the path is not quiet enough.
+# for _ in $(seq 30); do
+#   PYTHONDONTWRITEBYTECODE=1 python3 \
+#     "$CANDIDATE_ROOT/tools/linux-docker/source_digest.py" \
+#     "$CANDIDATE_ROOT" --revision | shasum -a 256
+#   sleep 2
+# done | sort -u
+```
+
+`--revision` (`tools/linux-docker/source_digest.py:1983`) prints
+`workspace_revision_identity` (`:1352`), which is the value the fences compare,
+so digesting its output samples the real fence rather than a proxy. Sixty
+seconds covers a 10 s poller six times. More than one unique line means the
+campaign will fail, and the only question is whether it fails before or after a
+reservation.
+
+Second, that the clone still is the frozen candidate. A quiet path cloned at the
+wrong ref, or with a dirty tree, passes the drift check and is then rejected by
+the campaign:
+
+```bash
+# HISTORICAL. source_digest.py is gone. Do not run.
+# Fails closed on any mismatch against the frozen workspace source digest.
+# PYTHONDONTWRITEBYTECODE=1 python3 \
+#   "$CANDIDATE_ROOT/tools/linux-docker/source_digest.py" \
+#   "$CANDIDATE_ROOT" --expected "$FROZEN_WORKSPACE_SOURCE_SHA256"
+```
+
+`--expected` (`:1980`) compares `workspace_source_sha256` and raises on
+difference (`:2006-2012`). It is mutually exclusive with the revision modes
+(`:1990-1994`), so these are two invocations, not one.
+
+If the polling cannot be moved away from — the workspace manager is not yours to
+configure, or the poller cannot be disabled for the duration of the run — then
+the campaign is not runnable on that path. There is no third option: a live
+attempt started there will consume ordinals to produce capture errors. Disable
+the poller for the window, or clone elsewhere. This subsection is freeze
+history; living confirmation does not run source_digest.
+
+This precondition is falsified by a full campaign window completing inside a
+polled workspace with zero `workspace revision changed across source capture`
+and zero `Git repository control identity changed during capture` failures. That
+would show the poller stopped touching control-file ctimes, not that the fences
+are wrong.
+
+### A red process-boundary timing failure is a claim about the machine first
+
+On 2026-07-28 the host carried 16 orphaned `bun` processes from an unrelated
+project, reparented to init after their parent died, hot-spinning in a
+JavaScriptCore allocate/GC/decommit loop for two days: 415% aggregate CPU
+(4.1 cores), RSS sawtoothing by roughly 500 MB on a ~6 s period, and 9.8 GB of
+swap in use. Three different tests are commonly confused when this happens, and
+they are not the same claim:
+
+- `bin/pmux-launcher/tests/process_blackbox.rs:414`
+  (`socket_and_token_validation_fail_before_broker_use_and_are_bounded`) is where
+  the contention was measured, and until 2026-08-08 most of what it measured was
+  the harness. `assert!(started.elapsed() < Duration::from_secs(2));` spanned
+  `launcher_binary()` and `assert_candidate_unchanged()`, which sha256 the whole
+  candidate: **350 ms** per iteration on this host against the 2 s bound — 5.7x
+  headroom, not the 600x this section used to claim — of which the launcher's own
+  refusal was **4 ms**. Under 60 bounded spinners (load average ~60) it failed
+  3/3; with the hashing hoisted out of the timed region
+  (`timed_refusal`, `:406`) the same test passes 3/3 under the same load and the
+  region reads 4 ms. The ordering rule below still stands, but a quiet host was
+  never the whole story here. This test is not carried as debt anywhere, and it
+  is neither C8 nor C9.
+- C9 (debt row `C9` in `docs/current-state.md`) is
+  `bin/pmux-hook/tests/process_blackbox.rs::stalled_relay_is_bounded_and_does_not_echo_private_input`,
+  whose failing assertion was a wall-clock upper bound, and host contention is
+  its confirmed mechanism. It took the first of the three admissible
+  dispositions: the upper bound is replaced by a lower bound plus a recorded
+  observation, so the test now gates on what the product does and records what
+  the host did (`bin/pmux-hook/tests/process_blackbox.rs:259-278`). Load can
+  delay an exit but cannot hurry one, which is why the lower direction is sound
+  and the upper one never was.
+- C8 (debt row `C8` in `docs/current-state.md`) is
+  `bin/pmux-rmuxd/tests/process_blackbox.rs:431`
+  (`owner_eof_reaps_a_hup_term_ignoring_pane_tree_and_surfaces_lease_loss`), and
+  it is not a timing bound at all. Host load explains nothing about it, and no
+  wall-clock measurement bears on it.
+
+C8's recorded failure was `private process boundary observation failed / could
+not run /bin/ps: No child processes (os error 10)`
+(`crates/rmux/src/process_boundary.rs:374`, surfaced with its context at
+`bin/pmux-rmuxd/src/main.rs:268`). That `ECHILD` is the signature of an inherited
+`SIGCHLD` disposition which auto-reaps children before the observation can ask
+about them. C8 took the third admissible disposition on 2026-07-28, and this is
+the register the nonclaim belongs in, alongside the boundary in Section 1: pmux
+is claimed to be observable by this test on a host whose test process has an
+ordinary `SIGCHLD` disposition, with no `SIG_IGN` and no `SA_NOCLDWAIT`
+inherited from an ancestor, and nothing whatever is claimed about a test process
+that inherits an auto-reaping one. A red cell there is a documented nonclaim
+rather than a product signal. It is not a claim that the product's boundary
+proof is weaker in that environment: `OwnedProcessBoundary` never claims to
+observe a process the kernel has already reaped. The reasoning and the exact
+scope are in `docs/current-state.md` under *The disposition taken for C8*.
+
+The headroom is the point, and the bounds must not be relaxed to compensate. The
+launcher's 2 s bound exists to prove that argument validation returns without
+waiting out the shipped ten-second broker deadline, which is what the next test
+pins (`bin/pmux-launcher/tests/process_blackbox.rs:456`,
+`stalled_broker_read_uses_the_shipped_ten_second_deadline_and_redacts_token`,
+asserting `assert!(elapsed >= Duration::from_secs(9));` at `:471`). Widening 2 s
+toward 10 s does not make the test more robust; it makes it assert nothing. The
+rule in Section 3 stands unchanged — a flaky command fails the gate
+(`docs/testing.md:379-381`) — and the disposition for a load-sensitive assertion
+is a quiet host plus a bound that gates only the claim, never a wider bound.
+
+Check the host before starting, and check it again before believing a red timing
+test:
+
+```bash
+uptime                     # 1-minute load average; compare against core count
+sysctl -n vm.swapusage     # sustained non-zero "used" is a red flag
+ps -Ao pid,ppid,pcpu,rss,comm | awk '$2 == 1 && $3 > 10'   # reparented CPU burners
+```
+
+The ppid-1 filter has legitimate hits such as `WindowServer` and terminal
+emulators. The signature to look for is a worker — a language runtime, bundler,
+test runner, or package manager — whose parent is gone and which is still
+burning CPU. Those never exit on their own.
+
+The ordering rule is therefore that a failing process-boundary timing assertion
+is a claim about the machine until the machine is ruled out. Read load, swap,
+and the ppid-1 list; fix the host; rerun. Only a failure that survives a quiet
+host is evidence about the code. Under D9 this matters because an argument about
+whether the timing should be fine is not an observation. The load average is.
+
+### The pool mints a trusted empty cwd
+
+`pmux run` names no working directory. The daemon mints a private pre-trusted
+empty cwd per pool instance. A folder-trust screen (`NeedsInputKind::Trust`)
+on a minted cell is a remint, not an operator `pmux attach` or a campaign
+`--cwd` ritual. Historical session campaigns that died on untrusted
+directories are in `evidence/README.md` (*Four detached reservations*).
+
+### The permission mode must not stall a grade that runs a tool
+
+A permission modal raised after submission is detected, and then deliberately
+not treated as a failure. `completion_evidence`
+(`crates/service/src/driver_io.rs:835`) classifies the snapshot at `:780` and
+the stabilized snapshot at `:807`, and both `NeedsInput` branches return a
+default `TerminalEvidence` (`:785-790`, `:809-814`) rather than an error — that
+is negative liveness evidence, `ready_prompt: false`, `quiet: false`. The turn
+therefore never satisfies the drain predicate
+(`crates/service/src/v1/actor.rs:2597-2602`), the actor keeps polling, and the
+attempt runs out its whole `--turn-timeout-seconds` before failing, having
+burned its ordinal. The default is 300 s (`tools/phase0/phase0.py:217`) and the
+ceiling is `MAX_TURN_TIMEOUT_SECONDS = 600` (`tools/phase0/phase0_lib.py`);
+the 2026-07-28 campaign ran at that ceiling, so the observed loss was ten
+minutes, not five, and the ledger records it as ordinal 36. The cost is whatever
+value the (now-deleted) Phase 0 driver passed.
+
+A permission prompt is terminal for an unattended run in the only sense that
+matters: nobody will ever answer it. Living one-shot does not forward
+`--permission-mode`; the pool mint owns the minified cell (tools denied).
+Historical campaigns that set the flag are archive-only.
+`--scenario claude-p-one-shot` remains removed
+(historical `phase0_lib.py::validate_config`). The
+observable signature of getting this wrong is a turn that consumes its full
+deadline and returns nothing while the transcript shows a tool call and no
+result.
+
+The remedy is not a campaign launch flag. `docs/spec.md` §2 refuses a public
+session; on `NeedsInputKind::Trust` the pool remints a pre-trusted empty cwd
+rather than answering the modal. An automatic answer to a trust prompt would
+be a security change, not a robustness fix. Phase 0 is deleted; those launch
+flags are not a living surface.
+`dangerously-skip-permissions` is not a living campaign option.
+
+### The driver must reserve against the tracked ledger
+
+**HISTORICAL.** Phase 0 is deleted. The ledger is frozen.
+
+`tools/phase0` located the ledger only by explicit `--ledger` path
+(`tools/phase0/phase0.py:115`) and enforces the ceiling at reservation time
+against the prefix the driver supplies (`--ledger-prefix-records` and
+`--ledger-prefix-sha256`, `:98-99`). A stale prefix is internally consistent, so
+a driver that copies `evidence/model-attempt-ledger.ndjson` to a private path,
+reserves there, and discards the copy resets the global budget silently and
+passes every check. On 2026-07-28 four campaigns each re-reserved the same
+ordinal into a discarded copy while the retry loop compared record counts
+against the same reset base and concluded nothing had been spent
+(`evidence/README.md`, *Four detached reservations*, which also records that all
+four are counted anyway). Before a live run, confirm `--ledger` resolves to the
+tracked file; after it, confirm that file grew. When counting the budget by hand,
+count both spellings of the ordinal field (`evidence/README.md`, ledger section):
+records from ordinal 30 onward spell it `global_attempt_ordinal`, not
+`global_attempt`, or the budget reads fourteen attempts cheaper than it is.
+
+### Effort is bounded by authorization, not by taste
+
+**HISTORICAL.** Phase 0 is deleted. Living `pmux run` effort is the product
+table, not this campaign envelope.
+
+`APPROVED_EFFORTS = ("low", "medium")` (since-deleted `tools/phase0/phase0_lib.py`)
+was enforced in `validate_config` and mirrored in the CLI's `--effort` choices.
+A campaign at `high` was outside the approved envelope and cannot produce
+promotable evidence, whatever it observes.
+
+## 3. Deterministic Gate A command manifest (historical freeze census, not executable)
+
+Gate A was one ordered freeze census, not a living executable. A command that was unavailable, skipped without
+an applicable documented platform exclusion, flaky, or dependent on an
+untracked oracle failed the freeze. Do not run this; living commands are `tools/dev/`.
+
+The candidate envelope supplies one pre-created, canonical, owner-private
+`PMUX_GATE_A_VALIDATION_ROOT` outside the canonical workspace. Its
+`typescript-dist`, `fuzz`, and `fuzz-evidence` children exist before the
+persistent source witness is captured. All generated TypeScript and fuzz output
+below stays in those children: changing an included source directory's ctime is
+never treated as legitimate validation churn, and replacing any validation
+child changes the separately retained validation-root identity and fails
+closed.
+
+The envelope also supplies `PMUX_GATE_A_RELEASE_DIR`, the exact fresh release
+directory frozen by the prelude, and runs every command below with `umask 077`
+and `CARGO_TARGET_DIR=$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/workspace` in
+its sanitized base environment. A command may select only one named child of
+that same external `cargo-target` directory. No validation command writes to
+the canonical workspace `target/` tree or rebuilds a binary in
+`PMUX_GATE_A_RELEASE_DIR`. Before Section A, the envelope performs one exact
+fresh release build, captures all seven required executable receipts (`pmux`, `pmuxd`, `pmux-mcp`, `pmux-rmuxd`, `pmux-launcher`, `pmux-hook`, plus `pmux-test-claude`) and
+identities, and freezes that directory; Sections A through F and residue then
+revalidate the same source, tool context, validation root, TypeScript stage,
+and release binaries around every command.
+
+### A. Static, build, documentation, and ordinary tests
+
+```bash
+# freeze census; living is tools/dev/
+cargo +1.88 fmt --all -- --check
+cargo +1.88 check --locked --workspace --all-targets --all-features
+cargo +1.88 clippy --locked --workspace --all-targets --all-features -- -D warnings
+RUSTDOCFLAGS='-D warnings' cargo +1.88 doc --locked --workspace --all-features --no-deps
+cargo +1.88 test --locked --workspace --all-targets --all-features
+
+# `vendor/rmux-client` is intentionally excluded from the workspace, so it
+# receives its own locked, offline static and test lane. Its target directory
+# remains under the external validation target tree.
+cargo +1.88 fmt --manifest-path vendor/rmux-client/Cargo.toml --all -- --check
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-client" \
+  cargo +1.88 check --offline --locked \
+  --manifest-path vendor/rmux-client/Cargo.toml --all-targets --all-features
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-client" \
+  cargo +1.88 clippy --offline --locked \
+  --manifest-path vendor/rmux-client/Cargo.toml --all-targets --all-features -- -D warnings
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-client" RUSTDOCFLAGS='-D warnings' \
+  cargo +1.88 doc --offline --locked \
+  --manifest-path vendor/rmux-client/Cargo.toml --all-features --no-deps
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-client" \
+  cargo +1.88 test --offline --locked \
+  --manifest-path vendor/rmux-client/Cargo.toml --all-targets --all-features \
+  -- --test-threads=1
+
+cargo +1.88 test --locked -p pseudomux-rmux --test vendor_patch -- --test-threads=1
+cargo +1.88 test --locked -p pseudomux-rmux --test attach_fragmentation -- --test-threads=1
+
+# `vendor/rmux-server` is also excluded and pmux uses it with default features
+# disabled. Compile every target and filter the library tests to the whole
+# `pane_io::tests` module, which is how this lane comes to
+# run all fourteen patch-owned EOF regressions without writing one name down,
+# in that exact product feature set; use all features for strict Clippy/rustdoc.
+# A MODULE and not a name list because `--exact` against a name nobody wrote
+# runs zero tests and exits zero: fourteen such cells per lane meant a
+# fifteenth regression compiled in every lane and executed in none.
+# `crates/rmux/tests/vendor_server_patch.rs` derives the set from the patched
+# source, and refuses every file outside that source and
+# `vendor/rmux-server/PMUX-PATCH.md` the right to name one.
+# Clippy denies every warning except two named style lints already present
+# across immutable upstream files, and provenance prevents those allowances
+# from masking a broader source change. The published package is not a closed
+# integration-test artifact: Windows targets and source-ledger tests refer to
+# repository-only files that crates.io omits. Direct rustfmt therefore covers
+# the production module tree and internal regressions, all targets are still
+# compiled, and actual pmux sidecar/process tests own the shipped boundary.
+rustfmt +1.88 --edition 2021 --check \
+  vendor/rmux-server/src/lib.rs vendor/rmux-server/build.rs
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-server" \
+  cargo +1.88 check --offline --locked \
+  --manifest-path vendor/rmux-server/Cargo.toml --all-targets --no-default-features
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-server" \
+  cargo +1.88 clippy --offline --locked \
+  --manifest-path vendor/rmux-server/Cargo.toml --all-targets --all-features \
+  -- -D warnings \
+  -A clippy::collapsible-else-if -A clippy::uninlined-format-args
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-server" RUSTDOCFLAGS='-D warnings' \
+  cargo +1.88 doc --offline --locked \
+  --manifest-path vendor/rmux-server/Cargo.toml --all-features --no-deps
+CARGO_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/cargo-target/vendor-rmux-server" \
+  cargo +1.88 test --offline --locked \
+  --manifest-path vendor/rmux-server/Cargo.toml --lib --no-default-features \
+  pane_io::tests:: \
+  -- --test-threads=1
+cargo +1.88 test --locked -p pseudomux-rmux \
+  --test vendor_server_patch -- --test-threads=1
+
+node clients/typescript/node_modules/typescript/bin/tsc \
+  -p clients/typescript/tsconfig.json --noEmit
+node clients/typescript/tests/dist-stage.mjs prepare \
+  "$PMUX_GATE_A_VALIDATION_ROOT/typescript-dist" --outside-root "$PWD"
+node clients/typescript/node_modules/typescript/bin/tsc \
+  -p clients/typescript/tsconfig.json \
+  --outDir "$PMUX_GATE_A_VALIDATION_ROOT/typescript-dist"
+node clients/typescript/tests/dist-stage.mjs verify \
+  "$PMUX_GATE_A_VALIDATION_ROOT/typescript-dist" --outside-root "$PWD"
+PMUX_TYPESCRIPT_DIST_DIR="$PMUX_GATE_A_VALIDATION_ROOT/typescript-dist" \
+  node --test \
+    clients/typescript/tests/client.test.mjs \
+    clients/typescript/tests/dist-stage.test.mjs \
+    clients/typescript/tests/golden-conformance.test.mjs
+(cd clients/python && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v)
+python3 -m ruff check --no-cache clients/python tools/evidence_common tools/dev
+python3 -m ruff format --check --no-cache clients/python tools/evidence_common tools/dev
+```
+
+The macOS envelope seals the exact TypeScript verifier digest and private tree
+at `typescript_stage_verify`, then revalidates it around every later command.
+The Linux runner records the equivalent platform-only
+`typescript_stage_identity_capture` gate, requires
+`typescript_stage_preconsume_unchanged` immediately before Gate D can consume
+the stage, and requires `typescript_stage_postconsume_unchanged` after all
+consumers and before scoped validation cleanup. A mismatch skips the dependent
+shipped-boundary commands and fails the ordered manifest.
+
+The complete 2,751-test upstream server library sweep remains useful
+diagnostically, but it is not a release gate. During validation,
+`handler::attach_tests::attached_prefix_lifecycle::attached_exit_notifies_after_command_prompt_rename_session`
+hit its hard-coded five-second notification timeout once under concurrent
+diagnostic load, then passed both in isolation and in a subsequent 2,751/2,751
+serialized sweep. That direct-handler test does not call the patched
+`forward_attach` EOF branch. Because a rerun cannot turn a flake into Gate A
+evidence, deterministic patch regressions, provenance, compilation, and the
+actual `pmux-rmuxd` process boundary own this dependency repair.
+
+Package-smoke was the freeze census packaging gate. It has been deleted. Do
+not restore it. Living client checks are TypeScript `npm test` and Python
+client unittests in `tools/dev/check.sh`. The historical commands were:
+
+```bash
+# freeze census; living is tools/dev/
+# DELETED. package-smoke is gone. Do not run.
+# PYTHONDONTWRITEBYTECODE=1 python3 tools/package-smoke/package_smoke.py typescript
+# PYTHONDONTWRITEBYTECODE=1 python3 tools/package-smoke/package_smoke.py python
+```
+
+### B. L1 property, model, mutation, and fuzz gates
+
+The following exact invocations were the freeze census. The tracked targets exist.
+Do not treat this as a living Gate A remaining-open list; living commands are `tools/dev/`.
+
+```bash
+# freeze census; living is tools/dev/
+PROPTEST_CASES=4096 PROPTEST_MAX_SHRINK_ITERS=10000 \
+  cargo +1.88 test --locked -p pseudomux-claude --test transcript_properties
+PROPTEST_CASES=2048 PROPTEST_MAX_SHRINK_ITERS=10000 \
+  cargo +1.88 test --locked -p pseudomux-service --test actor_model
+PROPTEST_CASES=2048 PROPTEST_MAX_SHRINK_ITERS=10000 \
+  cargo +1.88 test --locked -p pseudomux-client --lib protocol_properties
+PROPTEST_CASES=2048 PROPTEST_MAX_SHRINK_ITERS=10000 \
+  cargo +1.88 test --locked -p pmuxd --bin pmuxd \
+  handler::tests::arbitrary_admitted_payloads_have_bounded_decode_recovery_and_responses \
+  -- --exact --test-threads=1
+
+# The two pinned tools, installed BESIDE the workspace and never onto PATH.
+# `--root .context/tools/<binary>` is what puts them at the one path every
+# reader derives (`.context/tools/<binary>/bin/<binary>`); `--version` is what
+# `gate_b/cargo_fuzz_version` and `gate_b/cargo_mutants_version` assert, and both
+# scripts refuse anything else. Neither script installs: on a host without them
+# `gate_b` refuses by name rather than reaching for whatever `cargo install`
+# would resolve today. Run these once per host.
+# freeze census; living is tools/dev/
+cargo install --root .context/tools/cargo-fuzz    --version 0.13.2 --locked cargo-fuzz
+cargo install --root .context/tools/cargo-mutants --version 27.1.0 --locked cargo-mutants
+
+test "$(.context/tools/cargo-mutants/bin/cargo-mutants mutants --version)" = "cargo-mutants 27.1.0"
+PMUX_MUTANTS_CARGO="$(rustup which --toolchain 1.88.0 cargo)" \
+PMUX_CARGO_MUTANTS_BIN="$PWD/.context/tools/cargo-mutants/bin/cargo-mutants" \
+PMUX_MUTANTS_SCOPE=gate \
+PMUX_MUTANTS_MINIMUM_SCORE=94 \
+PMUX_MUTANTS_JOBS=4 \
+PMUX_MUTANTS_WORK_DIR="$PMUX_GATE_A_VALIDATION_ROOT/mutants" \
+PMUX_MUTANTS_EVIDENCE_ROOT="$PMUX_GATE_A_VALIDATION_ROOT/mutants-evidence" \
+  bash scripts/gate-a-mutants.sh
+
+test "$(.context/tools/cargo-fuzz/bin/cargo-fuzz --version)" = "cargo-fuzz 0.13.2"
+nightly_cargo="$(rustup which --toolchain nightly-2026-03-26 cargo)"
+nightly_rustc="$(rustup which --toolchain nightly-2026-03-26 rustc)"
+nightly_bin="$(dirname "$nightly_cargo")"
+PMUX_FUZZ_RUNS=50000 \
+PMUX_CARGO_FUZZ_BIN="$PWD/.context/tools/cargo-fuzz/bin/cargo-fuzz" \
+PMUX_FUZZ_TARGET_DIR="$PMUX_GATE_A_VALIDATION_ROOT/fuzz" \
+PMUX_FUZZ_EVIDENCE_ROOT="$PMUX_GATE_A_VALIDATION_ROOT/fuzz-evidence" \
+PMUX_NIGHTLY_BIN_DIR="$nightly_bin" \
+PMUX_NIGHTLY_CARGO="$nightly_cargo" \
+PMUX_NIGHTLY_RUSTC="$nightly_rustc" \
+  bash scripts/gate-a-fuzz.sh
+```
+
+#### What the mutation score covers, and what it does not
+
+`gate_b/mutation_score_agent_launch_pool_protocol` is named for the FILES it
+mutates, and the name is the whole point: the number it prints is a statement
+about `crates/service/src/{agent.rs,claude_launch.rs,pool/**}` and
+`crates/protocol/src/**` and about nothing else. The script prints the globs
+beside the score on every run, and prints whatever the scope leaves out as a
+DERIVED set difference against the full list — so a `full` run correctly prints
+no exclusions, and the number cannot be quoted without its scope.
+
+**It does not measure admission.** The cell was called
+`mutation_score_service_admission_and_protocol` and its scope value `admission`
+until the name was read back against the globs: `crates/service/src/native.rs`
+is not in them, and `native.rs` is where `admit_bound_resources`,
+`admit_config_root`, `admit_cwd`, `claim_reaches` and `effective_config_root`
+are all declared. A number labelled "admission" that mutates no admission guard
+is exactly the defect the tool was installed to enumerate — so the label went.
+
+`native.rs` and `driver_io.rs` are OUT of the cell — together they are **886 of
+the 1,588 mutants** the full first-party scope enumerates, so `full` is 2.26x
+the mutants of `gate` and, since each mutant is one build-and-test cycle,
+ESTIMATED at about that multiple of the wall time. (An estimate, and labelled
+one: no complete `full` run has been timed. The largest that exists was stopped
+at 623 of 1,588.) They are measured out of band by `PMUX_MUTANTS_SCOPE=full`,
+which no cell runs.
+
+**MEASURED 2026-08-11, and the estimate above was low in wall time and high in
+its multiple.** Two complete `full` runs exist: 1,654 mutants at `1882dee` in
+11,854 s and 1,653 at `0b1cff6` in **10,443 s** — 2.9 hours, against `gate`'s
+1.45, so 1.98x the wall time for 2.35x the mutants. The enumeration is 1,653 and
+not 1,588; that figure and the 886 beside it are from an older head and are not
+re-derived here. `full` still runs no cell, and the reason is now wall time
+alone rather than wall time and an unknown number: it fits inside
+`phase_timeouts_seconds.gate_b` = 14400 s with 1.4x headroom, which is thin
+enough that a busy host would blow it.
+
+What holds the admission guards instead is the differential entry-path test,
+`native::tests::every_entry_path_that_reaches_admission_answers_the_alias_family_identically`:
+it drives every DERIVED entry path through one admission decision, asserts the
+answers are identical across all of them, and is proven to discriminate by
+removing a guard from one path at a time and watching it redden naming that
+path.
+
+Four properties of the number, stated so it is never read as more than it is:
+
+* **It is a LOWER bound.** Only the test targets of `pseudomux-protocol`,
+  `pseudomux-client` and `pseudomux-service` are run against each mutant. A
+  mutant they miss may still be caught by `bin/pmuxd`'s or `bin/pmux`'s blackbox
+  suites, by `crates/e2e`, by the libFuzzer targets in `fuzz/`, or by the Python
+  and TypeScript conformance lanes — none of which is consulted.
+* **`unviable` is excluded from both sides.** A mutant the compiler rejects was
+  never a test of the tests. `timeout` counts as CAUGHT: a mutant that makes the
+  suite hang has been detected, just expensively.
+* **THE SCORE DRIFTS UPWARD, AND THREE NAMED TESTS ARE WHY.** Any test that
+  fails for its own reasons — not only one that times out — is recorded as the
+  mutant being caught, so the error is one-directional: it can only make the
+  gate PASS. Two runs of THE SAME TREE, one with a Python suite beside it and
+  one quiet, disagreed on three mutants, all that way. Three MORE flipped
+  between runs that were all quiet, and opening the log of the run that said
+  CAUGHT names the cause each time:
+  `bounded_soak.rs::repeated_real_rmux_cycles_remain_resource_bounded_and_leave_no_residue`
+  (`rmux.sock` retained at cycle 13),
+  `driver_io.rs::tests::a_preamble_that_lands_after_the_anchor_still_rebinds`
+  (`preamble_not_settled` after 802 ms) and
+  `private_runtime.rs::a_terminal_resize_after_creation_is_delivered_and_not_silently_clamped`
+  (`private rmux sidecar exited unsuccessfully`). All three spawn real processes
+  or hold a wall-clock budget, and the mutation loop runs four full suites in
+  parallel — so an idle machine is necessary and not sufficient, and the
+  measured score is an over-estimate by up to a few mutants. `current-state.md`
+  §9.23 has the table. Take the measurement on an idle machine, keep the floor
+  below it, and re-run any individual closure claim rather than reading it.
+* **`vendor/` is excluded and the exclusion is asserted**, not inherited. It is
+  **643 of the 762 tracked `.rs` files (84.4%) and 311,685 of the 440,778
+  tracked Rust lines (70.7%)**, and it is not ours. (Both figures from
+  `git ls-files '*.rs'`; this bullet said "75% of the Rust" until the two were
+  computed, and 75% is neither of them.) The script refuses if the enumerated
+  mutant list ever reaches `vendor/`, because "the workspace excludes it" is a
+  fact about a `members` line that a future edit can change silently.
+
+**THE FLOOR IS PER SCOPE, and neither tier is aspirational.** `gate` is **94%**,
+defended from what has actually been measured and never from aspiration. It was
+85% while `pool/**` had never been measured to completion; the whole scope has
+since been measured to completion twice, each time in a single run.
+
+`full` is **93%**, and the script does not hold that number: it reads it from
+`evidence/mutation-survivor-register.json`'s `recorded_at.floor_percent`, beside
+the disposition of every survivor that explains it, so the tree states the floor
+once instead of twice. `PMUX_MUTANTS_MINIMUM_SCORE` may raise either floor and is
+refused below it — a caller re-pointing this gate at a number the tree has
+already beaten is how a green cell comes to mean nothing.
+
+93 and not the 94 that was measured, for the reason the drift bullet above
+gives, now measured at this scope rather than inherited: `floor_percent` is the
+same run with every mutant whose only failing test was a MEASURED drifter counted
+as missed, which is 17 of 1,086 and lands on 93. From the other direction, five
+mutants the `1882dee` run counted as caught are missed at `0b1cff6` with no edit
+between them touching any, and that run's own logs name a real-PTY or real-rmux
+test as the sole catcher of all five — against exactly five mutants of headroom
+at a floor of 94. **One of those five is the fourth drifting test**,
+`a_terminal_is_created_at_the_requested_geometry_and_not_the_rmux_default`; the
+bullet above names three and the list is four.
+
+**What actually ratchets `full` is not the floor.** Every survivor of that run
+carries a written disposition in the register, and
+`scripts/mutation_register.py check` runs inside this script on every run at
+either scope and refuses one that produced a survivor the register does not
+hold, or where a mutant the register calls KILLED or REMOVED survived again. Any
+commit that lowers the score has produced a mutant that is missed and was not, so
+the register refuses it first and BY NAME — which is why the score floor can
+afford the point of drift margin. `evidence/README.md` documents the file, the
+key it uses instead of `file:line:column`, and why closing a survivor must not
+break the gate.
+
+A run is COMPLETE when `end_time` in `outcomes.json` is non-null AND
+`caught + timeout + missed + unviable` equals `total_mutants`, which equals the
+`enumerated_mutants` line the script writes into its own metadata. Both checks
+are needed: `outcomes.json` counts the mutants that got an OUTCOME, so a run
+stopped at 623 of 1,588 writes `total_mutants: 623` and sums perfectly against
+itself.
+
+**MEASURED 2026-08-07 at the cell's own settings** (`PMUX_MUTANTS_SCOPE=gate`,
+`PMUX_MUTANTS_JOBS=4`, pinned 1.88.0), on an idle machine, both runs complete:
+
+* **BEFORE, at `0d7f2ca` plus the phase-0 and package-smoke work — the gate
+  cell's own run, 5,285 s:** 702 enumerated, 102 unviable, 600 decided, 561
+  caught, **39 missed — 93.50%**. `pool/**` alone: 233 decided, **19 missed —
+  91.85%**, which retires the 84.5% this section used to quote.
+* **AFTER, at this commit — same script, same settings, 5,099 s:** 702
+  enumerated, 102 unviable, 600 decided, 573 caught, **27 missed —
+  95.50%**, exit 0 against the 94% floor. `pool/**` alone: 233 decided,
+  **4 missed — 98.28%**, and all four are equivalent mutants with the
+  premise each rests on written out as a test.
+
+Per file, AFTER:
+
+| file | decided | caught | missed | score |
+| --- | --- | --- | --- | --- |
+| `crates/protocol/src/v1.rs` | 190 | 172 | 18 | 90% |
+| `crates/protocol/src/v1/launch_environment.rs` | 14 | 14 | 0 | 100% |
+| `crates/service/src/agent.rs` | 80 | 77 | 3 | 96% |
+| `crates/service/src/claude_launch.rs` | 83 | 81 | 2 | 97% |
+| `crates/service/src/pool/class.rs` | 21 | 21 | 0 | 100% |
+| `crates/service/src/pool/config.rs` | 49 | 49 | 0 | 100% |
+| `crates/service/src/pool/host.rs` | 1 | 1 | 0 | 100% |
+| `crates/service/src/pool/instance.rs` | 13 | 13 | 0 | 100% |
+| `crates/service/src/pool/machine.rs` | 20 | 20 | 0 | 100% |
+| `crates/service/src/pool/mod.rs` | 107 | 103 | 4 | 96% |
+| `crates/service/src/pool/refusal.rs` | 22 | 22 | 0 | 100% |
+
+**Every one of the 27 survivors is named with a reason** in `current-state.md`
+§9.23 — 16 serde length hints, 4 equivalent pool mutants, 2 `#[cfg(not(unix))]`
+twins, and 5 individually argued. There is no unclassified gap in this scope, so
+the floor is not holding a place for known work.
+
+That census is from 2026-08-07 and this scope has not been re-measured since.
+It is stale in the safe direction: the thirteen `StartSessionRequest::serialize`
+length hints the `full` runs report are caught as of `0b1cff6`, because the count
+is now compared against the fields it counts rather than trusted. Anything said
+about the `gate` number below is a 2026-08-07 measurement; the `full` scope's is
+`evidence/mutation-survivor-register.json`.
+
+Why not tighter: the drift above is worth up to about three mutants (0.5%)
+and it runs one way, upward, so a floor within 0.5% of the measurement can
+redden on a clean tree for reasons that have nothing to do with the tree.
+94% sits 1.5 points under 95.50% — nine survivors of room, six of them
+beyond the measured drift. A floor AT the measurement reddens on the first
+ordinary commit and is then raised or ignored. Why not looser: with 600 decided
+mutants each survivor is 0.167%, so 85% would admit 90 survivors — more than
+three times today's — before the cell said anything, and 93% would admit the
+tree exactly as it stood before this change. **The survivor list, not the
+score, is the artifact a reader acts on** — `missed.txt` is copied into the evidence directory on every
+run, and every entry in it is named with its reason in `docs/archive/current-state-2026-08.md` §9.23.
+
+**Runtime, MEASURED end to end rather than extrapolated.** The scope is 702
+mutants and each one is a rebuild plus a run of three packages' test targets; at
+`--jobs 4` on a 10-core M1 Pro the two complete runs took **5,285 s and 5,099 s**
+— about 1.45 hours, against an earlier extrapolation from a partial run of 2.3
+hours. `run_gate.py` applies `phase_timeouts_seconds.gate_b` = 14400 s **per
+cell**, so it fits with **2.7x** headroom, and the first of those two runs is the
+gate cell itself doing exactly that. It is still by a wide margin the most
+expensive cell in the gate, and that is why `native.rs` and `driver_io.rs` are
+out of it: adding them back is 1,588 mutants instead of 702.
+
+**A run that will not fit is chunked or detached, never truncated.** This host
+kills background jobs at 3,599 s, which is under the cell's own wall time, and
+two earlier attempts died at exactly that. The AFTER run above was detached with
+`nohup` and polled. Do not compose a figure out of the pieces of a stopped run:
+`outcomes.json` from a partial run sums perfectly against itself, so the
+composition looks exact and is not.
+
+`[profile.mutants]` in the root `Cargo.toml` is `dev` with `debug = false` and
+nothing else, and `debug-assertions` and `overflow-checks` are on under it: a
+score measured with assertions off would count every `debug_assert!` in the tree
+as a test that does not exist. Those are two claims and the script makes them
+separately. `assert_profile_is_dev_without_debuginfo` refuses any key beyond the
+two in the table, and that is ALL it does — `Cargo.toml` declares no
+`[profile.dev]`, so a `[profile.dev] debug-assertions = false` added tomorrow
+would pass it. `assert_profile_properties_are_live` is the one that measures the
+properties, by building `crates/protocol/tests/mutation_profile.rs` under
+`--profile mutants` and firing a `debug_assert!` and an integer overflow at it;
+`PROFILE_PROPERTIES` is the set it asserts, the refusal text is interpolated
+from that array so it cannot name a property nobody probes, and
+`test_run_gate.py::test_the_mutation_gate_probes_every_profile_property_it_names`
+holds the array, the probe's constants and the probe's assertions to one set.
+
+The two candidate binaries `crates/service`'s process-level tests exec —
+`pmux-rmuxd` and `pmux-launcher` — are built once outside the mutation loop and
+handed to every mutant through `PMUX_TEST_BIN_DIR`. That is sound rather than a
+shortcut: neither package depends on a mutated crate, so no mutant can change
+either binary, and the script proves that from `cargo tree` before it starts.
+Without them the unmutated baseline fails in `bounded_soak` and no mutant is
+tested at all.
+
+The Rust-client property target fixes ChaCha and
+`RngSeed::Fixed(0x504d_5558_434c_4e54)` in tracked source. The environment
+selects the case and shrink counts only; it does not supply an ambient seed.
+
+The candidate envelope resolves and hashes those direct nightly executables and
+their common bin directory before this command; the fuzz driver rejects any
+other directory relationship and puts only that exact nightly plugin directory
+ahead of the isolated cargo-fuzz directory. Fuzz crashes/hangs are minimized
+into the tracked seed corpus and an ordinary regression. Gate evidence records
+exact toolchain, cargo-fuzz version, corpus hash, seed, runs, and elapsed time.
+Fuzz tooling is installed under `.context` rather than mutating global Cargo
+state.
+
+### C. Serialized real-rmux/PTY and lifecycle faults
+
+These tests are credential-free and never invoke real Claude:
+
+```bash
+# freeze census; living is tools/dev/
+cargo +1.88 build --locked -p pmuxd -p pmux-rmuxd -p pmux-launcher -p pmux-hook
+cargo +1.88 test --locked -p pseudomux-service --test native_service -- --ignored --test-threads=1
+cargo +1.88 test --locked -p pseudomux-service --test private_runtime -- --ignored --test-threads=1
+cargo +1.88 test --locked -p pseudomux-service --test lifecycle_faults -- --test-threads=1
+```
+
+The source-level lifecycle targets are present. Rows that additionally depend
+on the shipped companions remain open until Gate D reruns the applicable test
+against the explicitly hashed release binary directory.
+
+### D. Shipped-binary and cross-client gates
+
+```bash
+# freeze census; living is tools/dev/
+# The candidate prelude already built and froze the exact seven binaries (pmux, pmuxd, pmux-mcp, pmux-rmuxd, pmux-launcher, pmux-hook, plus pmux-test-claude).
+# Gate D compiles only test harnesses in the external validation target and
+# executes shipped boundaries from that unchanged release directory.
+PMUX_E2E_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+PMUX_E2E_TYPESCRIPT_DIST_DIR="$PMUX_GATE_A_VALIDATION_ROOT/typescript-dist" \
+  cargo +1.88 test --locked -p pseudomux-e2e --all-targets -- --include-ignored --test-threads=1
+# Living e2e is pool_concurrency. Path A full_stack / live cross-cell /
+# claude-p facade suites were deleted with the session product.
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmux --all-targets -- --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmux-mcp --test stdio_blackbox
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmux-launcher --test process_blackbox
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmux-hook --test process_blackbox
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmux-rmuxd --test process_blackbox
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pmuxd --test process_blackbox
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test native_service -- --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test private_runtime -- --ignored --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test lifecycle_faults -- --test-threads=1
+```
+
+Missing named packages/targets are current `OPEN-L3` rows, not optional
+commands. The E2E harness must fail if a required binary is absent, outside the
+exact directory, changes during the run, or differs from its recorded digest.
+
+### E. L5 gates
+
+```bash
+# freeze census; living is tools/dev/
+cargo +1.88 test --locked -p pseudomux-service --test concurrency_backpressure
+cargo +1.88 test --locked -p pseudomux-service --test resource_bounds -- --test-threads=1
+cargo +1.88 test --locked -p pseudomux-service --test bounded_soak -- --test-threads=1
+cargo +1.88 test --locked -p pseudomux-service --lib replay_scaling_tests -- --test-threads=1
+cargo +1.88 test --locked -p pmuxd --bin pmuxd native_framing_and_successful_decode_have_deterministic_linear_work -- --test-threads=1
+cargo +1.88 test --locked -p pseudomux-claude --test size_scaling --release -- --nocapture --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test concurrency_backpressure \
+  -- --include-ignored --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test resource_bounds \
+  -- --include-ignored --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked -p pseudomux-service --test bounded_soak -- --test-threads=1
+PMUX_TEST_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" \
+  cargo +1.88 test --locked --release -p pseudomux-service \
+  --test performance_diagnostics -- --nocapture --test-threads=1
+```
+
+Host-sensitive latency/throughput measurements are recorded as diagnostics,
+not brittle pass/fail thresholds. Algorithmic size scaling, protocol/resource
+ceilings, absence of leaks, and bounded completion are release invariants.
+
+### F. Tooling and evidence-envelope self-tests
+
+```bash
+# freeze census; living is tools/dev/
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/evidence_common/tests -p 'test_portable_paths.py' -v
+# DELETED. package-smoke, phase0, linux-docker are gone. Do not run.
+# PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/package-smoke/tests -v
+# PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/phase0/tests -v
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/dev/tests -v
+bash -n scripts/gate-a-fuzz.sh scripts/gate-a-mutants.sh scripts/gate-a-residue.sh scripts/path-b-done.sh scripts/pmuxd-run.sh tools/dev/check.sh tools/screen-corpus/per_binary_tests.sh
+shellcheck scripts/gate-a-fuzz.sh scripts/gate-a-mutants.sh scripts/gate-a-residue.sh scripts/path-b-done.sh scripts/pmuxd-run.sh tools/dev/check.sh tools/screen-corpus/per_binary_tests.sh
+# DELETED. linux-docker is gone. Do not run.
+# PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/linux-docker/tests -v
+bash scripts/gate-a-residue.sh --self-test-disappearing-temp-root
+PMUX_E2E_BIN_DIR="$PMUX_GATE_A_RELEASE_DIR" bash scripts/gate-a-residue.sh
+```
+
+Living `tools/evidence_common` is path redaction (`portable_paths.py`).
+Bounded-process, package-smoke, Phase 0, and linux-docker have been removed;
+their parser tests cannot close product rows. Living: `tools/dev/tests` owns the
+documented surface (`test_documented_surface.py` derives `README.md` from
+`pmux --help`, `pmuxd serve --help`, `pmux-mcp`'s `tools/list`, `MAX_POOL_SIZE`
+and `MODEL_TABLE`) and the three-command workflow. Tree-wide redaction is
+`tools/dev/redaction/test_redaction.py`.
+Gate A (`run_gate.py`, the phase manifest, driver tests) has been removed.
+
+### The SIGKILL crash harness (removed)
+
+`tools/crash-harness` measured crash-safety for the stored-agent product.
+That product is gone; the harness is deleted. Dated receipts stay.
+
+## 4. Public-surface coverage matrix
 
 This matrix separates structural coverage from candidate execution. A row is
 `COVERED` only when its cited tracked tests are complete at every named layer
@@ -267,7 +1108,7 @@ owned by the CLOSED rows below.
 | PLAT-09 | Transparent automatic daemon-restart recovery or prompt reinjection | OUT-OF-SCOPE |
 | PLAT-10 | Native incremental/streaming prompt-input protocol | OUT-OF-SCOPE |
 
-## 4. Intentionally unsupported v1 behavior
+## 5. Intentionally unsupported v1 behavior
 
 Unsupported boundaries do not all have a request discriminant. They are
 classified individually so Gate A cannot invent a typed rejection for a
@@ -288,7 +1129,7 @@ turn a future support non-goal into an implementation claim.
 | Windows | `OUT-OF-SCOPE` (`PLAT-06`) with explicit claim-language review; there is no Unix request that can reject a Windows implementation. |
 | Built-in broad Claude-version admission | A positive fail-closed compatibility invariant owned by `S-04`: the operator registry starts empty; launch is admitted only by a promoted cell (macos/aarch64 2.1.220..=2.1.227, linux/x86_64 2.1.227..=2.1.236) or an exact operator `--tested-claude-profile`. |
 
-## 5. Residue and isolation contract
+## 6. Residue and isolation contract
 
 Every process/PTY/Docker test records exact owned PIDs plus start identity,
 process group/session, socket inode, runtime path, builder, container, and image
@@ -302,15 +1143,52 @@ before mutation. Cleanup may target only those identities. A pass requires:
   `scripts/gate-a-residue.sh:119-131` fails on any `__pycache__`, `.ruff_cache`,
   `*.pyc`, or `*.pyo` outside `target/`, `.git/`, and
   `clients/typescript/node_modules`. Set `PYTHONDONTWRITEBYTECODE=1` and pass
-  `--no-cache` to ruff, as `tools/dev/check.sh` already does;
+  `--no-cache` to ruff, as the manifest commands above already do;
 - no changed or killed unrelated user process or Docker object.
 
 An acknowledgement from rmux/Docker is not cleanup proof. The exact observable
 boundary is rechecked. Unconfirmed cleanup fails the test and preserves private
 diagnostics for review.
 
-## 6. Freeze census (archived)
+## 7. Freeze and external promotion
 
-Gate A command manifests, campaign preconditions, and Gate C leftover entry
-points live in [`archive/testing-gate-a-census.md`](archive/testing-gate-a-census.md).
-They are not living verification.
+Not living verification and not a Linux Claude pin. Living close: `tools/dev/check.sh`.
+This block is leftover Gate C portability evidence.
+
+Gate A closed only when every deterministic row was `COVERED`, tested
+`REJECTED`, or explicitly reviewed `OUT-OF-SCOPE`, all freeze commands passed,
+residue was empty, and independent review found no missing/false-positive row.
+The canonical source and exact release binaries were then hashed together. Any
+canonical source change invalidated the freeze and all later evidence.
+
+Gate B uses the existing immutable live-attempt ledger and the previously
+approved 60–100 short real-Claude window. Reservations occur before launch and
+bind source, binaries, Claude/rmux versions, macOS/architecture,
+terminal/input/lifecycle, and prompt identity. Gate C runs both Docker
+architectures against the identical source digest and is portability evidence,
+not a credentialed Linux Claude promotion.
+
+After macOS evidence review, the leftover Gate C entry point (not a Linux Claude pin) was:
+
+```text
+# DELETED. linux-docker is gone. Do not run.
+# tools/linux-docker/run.sh \
+#   --source-sha256 "$FROZEN_SOURCE_SHA256" \
+#   --base-image docker.io/library/rust:1.88.0-bookworm@sha256:MULTIARCH_DIGEST \
+#   --acknowledge-docker \
+#   --platform all
+```
+
+The supplied digest is the already reviewed freeze; the runner may not choose
+or update it. `--base-image` is required and has no default: the runner exits
+`2` with `base image must be docker.io/library/rust:1.88.0-bookworm at one exact
+lowercase multiarch sha256 digest` when it is omitted. That multiarch digest is
+deliberately recorded in no tracked file — the runner is given it, it does not
+resolve one — so the operator supplies it; historical `tools/linux-docker/run.sh`
+(now deleted) is the exact accepted form. Docker authorization is limited to the unique builders,
+containers, and image tags reserved and identity-fenced by that invocation.
+
+The final `.context/final-pmux-validation-report.md` records this file's exact
+digest/revision, every command/result, source/binary/toolchain/environment
+identity, artifact hashes, attempts, performance/resource observations,
+limitations, residue audit, and independent final verdict.

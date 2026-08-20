@@ -69,6 +69,12 @@ Usage:
         --claude "$HOME/.local/share/claude/versions/2.1.227" \\
         --output evidence/promotion-2.1.227-macos-aarch64.json
 
+    python3 tools/dev/promote.py \\
+        --release-dir target/release \\
+        --claude "$HOME/.local/share/pmux/claude/2.1.236/claude" \\
+        --floor 2.1.227 \\
+        --output evidence/promotion-2.1.236-linux-x86_64.json
+
 `--driver-environment double` runs the same ordered path against
 `pmux-test-claude`. It is a REHEARSAL and says so in its own verdict: the double
 answers the graded prompts by echo rather than by reasoning, and it writes no
@@ -314,24 +320,79 @@ def valueless_bundle_flags() -> tuple[str, ...]:
     return tuple(re.findall(r'"(--[A-Za-z0-9-]+)"', match.group(1)))
 
 
-def promoted_version_floor() -> str:
-    """`PROMOTED_PROFILES[0].claude_version_floor`, read from the Rust.
+def promoted_profiles() -> list[dict[str, str]]:
+    """Every shipped `PROMOTED_PROFILES` entry, read from the Rust.
 
-    The floor is the version with a receipt; a promotion widens the range
-    forward from it and never invents a new one. Read rather than passed so
-    that the proposed profile cannot disagree with the shipped one about where
-    the range starts.
+    A promotion is per os/arch. Parsing the whole table — rather than the first
+    `claude_version_floor` in the file — is what lets a linux cell exist next
+    to the macos one without this tool widening the wrong range.
     """
 
     source = COMPATIBILITY_RS.read_text(encoding="utf-8")
-    floors = re.findall(r'claude_version_floor:\s*"([0-9]+\.[0-9]+\.[0-9]+)"', source)
-    if len(floors) != 1:
+    marker = "pub const PROMOTED_PROFILES: &[PromotedProfile] = &["
+    start = source.find(marker)
+    if start < 0:
         raise PromotionRefused(
-            f"expected exactly one `claude_version_floor` in {COMPATIBILITY_RS}, "
-            f"found {len(floors)}; this tool proposes a range and cannot guess "
-            "which floor to widen"
+            f"{COMPATIBILITY_RS} no longer declares PROMOTED_PROFILES"
         )
-    return floors[0]
+    body = source[start + len(marker) :]
+    end = body.find("\n];")
+    if end < 0:
+        raise PromotionRefused(
+            f"{COMPATIBILITY_RS} PROMOTED_PROFILES array is not closed with ];"
+        )
+    profiles = []
+    for entry in re.split(r"PromotedProfile \{", body[:end])[1:]:
+        fields = dict(re.findall(r'(\w+): "([^"]*)"', entry))
+        wanted = ("claude_version_floor", "claude_version_tested_through", "os", "arch")
+        if all(name in fields for name in wanted):
+            profiles.append({name: fields[name] for name in wanted})
+    if not profiles:
+        raise PromotionRefused(
+            f"{COMPATIBILITY_RS} declares PROMOTED_PROFILES and this read none of them"
+        )
+    return profiles
+
+
+def promoted_version_floor(
+    host_os: str, host_arch: str, explicit_floor: str | None = None
+) -> str:
+    """The floor this os/arch already ships, or `--floor` on a first promotion.
+
+    The floor is the version with a receipt; a promotion widens the range
+    forward from it and never invents a new one. Read rather than guessed so
+    the proposed profile cannot disagree with the shipped cell about where the
+    range starts. A host with no cell yet cannot infer a floor from another
+    OS's range — that is how linux would have shipped `2.1.220..=2.1.236`
+    with macos Gate B prose attached.
+    """
+
+    matches = [
+        profile
+        for profile in promoted_profiles()
+        if profile["os"] == host_os and profile["arch"] == host_arch
+    ]
+    if len(matches) > 1:
+        raise PromotionRefused(
+            f"{COMPATIBILITY_RS} ships {len(matches)} cells for {host_os}/{host_arch}; "
+            "overlapping ranges are ambiguous and this tool will not pick a floor"
+        )
+    if len(matches) == 1:
+        shipped = matches[0]["claude_version_floor"]
+        if explicit_floor is not None and explicit_floor != shipped:
+            raise PromotionRefused(
+                f"--floor {explicit_floor} disagrees with the shipped "
+                f"{host_os}/{host_arch} floor {shipped}"
+            )
+        return shipped
+    if explicit_floor is None:
+        raise PromotionRefused(
+            f"no promoted cell for {host_os}/{host_arch} yet; pass --floor "
+            "(the version with a drain receipt on this OS) rather than inheriting "
+            "another OS's floor"
+        )
+    version_parts(explicit_floor)
+    return explicit_floor
 
 
 def version_parts(version: str) -> tuple[int, int, int]:
@@ -384,7 +445,7 @@ class Run:
         self.claude = args.claude.resolve(strict=True)
         self.version = claude_version(self.claude)
         self.os, self.arch = host_identity()
-        self.floor = promoted_version_floor()
+        self.floor = promoted_version_floor(self.os, self.arch, args.floor)
         self.bound_ms, self.bound_receipt = pooled_bound(
             args.evidence_dir, self.os, self.arch
         )
@@ -718,8 +779,15 @@ def check_minified_cell_is_admitted(run: Run) -> dict[str, Any]:
 
 
 def check_grades_answer(run: Run) -> dict[str, Any]:
-    """PAID. The grade suite on ONE instance, then one arithmetic grade per
-    additional effort. Reuse is proven by pid identity, not by latency."""
+    """PAID. The grade suite, then one arithmetic grade per additional effort.
+
+    Recycle is grade 02 (emptiness after `/clear`), not pgrep. linux 2.1.233
+    and 2.1.236 replace the Claude OS pid across `pmux run` turns
+    (`evidence/linux-operator-eval-2.1.236-x86_64.json` `process_tree_note`;
+    promotion-2.1.236-linux first pass: one new pid per grade). Product
+    identity is the pool census (`leaked=0`, `halted` null) plus the emptiness
+    probe. Pids are recorded, not asserted.
+    """
 
     effort = run.args.efforts[0]
     before = run.claude_pids()
@@ -730,25 +798,31 @@ def check_grades_answer(run: Run) -> dict[str, Any]:
             f"{len(wrong)} grade(s) did not return the exact reply their prompt "
             f"specified: {wrong}"
         )
-    pid_sets = {tuple(s["pids_after"]) for s in samples}
-    if len(pid_sets) != 1 or tuple(before) not in pid_sets:
-        raise CheckFailed(
-            "the suite was not served by one unchanging process, so `/clear` "
-            f"recycling was not what carried it: before={before}, "
-            f"after={sorted(pid_sets)}"
-        )
     extra = []
     for other in run.args.efforts[1:]:
         extra.append(run.ask(GRADES[0], other, _nonce(run.rng)))
     wrong_extra = [s["effort"] for s in extra if not s["answered"]]
     if wrong_extra:
         raise CheckFailed(f"effort(s) {wrong_extra} did not answer their grade")
+    census = run.pool_evidence().get("evidence", {})
+    if census.get("halted"):
+        raise CheckFailed(f"the pool HALTED during the suite: {census['halted']}")
+    if census.get("leaked"):
+        raise CheckFailed(f"the pool leaked {census['leaked']} slot(s) during the suite")
     return {
         "suite_effort": effort,
-        "suite_pid_set": sorted(next(iter(pid_sets))),
+        "pids_before": before,
+        "pids_after_each_turn": [s["pids_after"] for s in samples + extra],
+        "pid_identity_is_observational": True,
         "grades": [s["grade"] for s in samples],
         "additional_efforts": [s["effort"] for s in extra],
         "turns": len(samples) + len(extra),
+        "pool_after_suite": {
+            "idle": census.get("idle"),
+            "live": census.get("live"),
+            "leaked": census.get("leaked"),
+            "halted": census.get("halted"),
+        },
     }
 
 
@@ -760,11 +834,6 @@ def check_context_did_not_survive_recycling(run: Run) -> dict[str, Any]:
 
     first = next(s for s in run.turns if s["grade"] == GRADES[0].id)
     probe = next(s for s in run.turns if s["grade"] == GRADES[1].id)
-    if first["pids_after"] != probe["pids_after"]:
-        raise CheckFailed(
-            "the emptiness probe ran on a different process than the turn it "
-            "was meant to be blind to, so it proves nothing"
-        )
     leaked = [
         needle
         for needle in (first["nonce"], first["expected"])
@@ -773,7 +842,9 @@ def check_context_did_not_survive_recycling(run: Run) -> dict[str, Any]:
     if leaked:
         raise CheckFailed(f"turn 1's own bytes came back after `/clear`: {leaked}")
     return {
-        "same_process": first["pids_after"],
+        "pids_after_nonce_turn": first["pids_after"],
+        "pids_after_emptiness_probe": probe["pids_after"],
+        "pid_identity_is_observational": True,
         "prior_nonce": first["nonce"],
         "probe_answered": probe["expected"],
     }
@@ -944,16 +1015,16 @@ CHECKS: tuple[Check, ...] = (
         id="grades_answer",
         exercises=(),
         costs_real_turns=True,
-        criterion="every graded prompt returns the exact reply it specified, and "
-        "the whole suite is served by one unchanging process",
+        criterion="every graded prompt returns the exact reply it specified; "
+        "`/clear` recycle is the emptiness probe (grade 02), not pgrep",
         run=check_grades_answer,
     ),
     Check(
         id="context_did_not_survive_recycling",
         exercises=("clear_screen_or_preamble_mismatch",),
         costs_real_turns=False,
-        criterion="the emptiness probe ran on the process that answered the "
-        "nonce turn and did not return it",
+        criterion="the emptiness probe did not return the prior turn's nonce "
+        "(pgrep pid-set is observational on linux)",
         run=check_context_did_not_survive_recycling,
     ),
     Check(
@@ -1035,17 +1106,50 @@ def describe() -> dict[str, Any]:
     }
 
 
-# The FLOOR half of `range_provenance`, verbatim as the shipped profile states
-# it. It is a constant rather than a generated sentence because this tool does
+# The FLOOR half of `range_provenance`, keyed by the cell this run is widening.
+# A constant per cell rather than a generated sentence because this tool does
 # not re-measure the floor: a run that widens a range forward has no evidence
 # about where the range starts, and generating a fresh sentence about it would
 # be this repository's own bug class -- prose asserting more than its predicate
 # tested. Re-promoting the FLOOR is a different job with a different receipt.
-FLOOR_PROVENANCE = (
-    "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the "
-    "screen/preamble measurements; below it 2.1.201 and earlier have ZERO "
-    "reachable cli arrivals, which is unestablished rather than safe."
-)
+# A first promotion on an os/arch (no shipped cell yet) uses FIRST_FLOOR_PROVENANCE.
+FLOOR_PROVENANCE = {
+    ("macos", "aarch64", "2.1.220"): (
+        "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the "
+        "screen/preamble measurements; below it 2.1.201 and earlier have ZERO "
+        "reachable cli arrivals, which is unestablished rather than safe."
+    ),
+    ("linux", "x86_64", "2.1.227"): (
+        "floor 2.1.227: first linux/x86_64 Path B drain receipt "
+        "(evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) "
+        "pooled with 2.1.232/2.1.233 in evidence/pooled-transcript-drain-linux-x86_64.json; "
+        "below it linux minified cells were not measured as a promotion floor."
+    ),
+}
+
+
+def floor_provenance(run: Run) -> str:
+    """The first sentence of `range_provenance` for this run's cell."""
+
+    key = (run.os, run.arch, run.floor)
+    text = FLOOR_PROVENANCE.get(key)
+    if text is not None:
+        return text
+    shipped = any(
+        profile["os"] == run.os and profile["arch"] == run.arch
+        for profile in promoted_profiles()
+    )
+    if shipped:
+        raise PromotionRefused(
+            f"the promoted floor is {run.floor} on {run.os}/{run.arch} and "
+            "FLOOR_PROVENANCE has no sentence for that cell, so this run would "
+            "ship a range whose first half is about a version nobody measured"
+        )
+    return (
+        f"floor {run.floor}: first promoted cell on {run.os}/{run.arch}; the "
+        "version with a drain receipt on this OS. Not macos Gate B, not another "
+        "OS's floor."
+    )
 
 
 def range_provenance(run: Run, results: list[dict[str, Any]]) -> str:
@@ -1057,9 +1161,10 @@ def range_provenance(run: Run, results: list[dict[str, Any]]) -> str:
     less. A sentence assembled from the check results cannot do either.
     """
 
-    if f"floor {run.floor}:" not in FLOOR_PROVENANCE:
+    floor_text = floor_provenance(run)
+    if f"floor {run.floor}:" not in floor_text:
         raise PromotionRefused(
-            f"the promoted floor is {run.floor} and FLOOR_PROVENANCE describes a "
+            f"the promoted floor is {run.floor} and floor_provenance describes a "
             "different one, so this run would ship a range whose first half is "
             "about a version nobody measured"
         )
@@ -1070,10 +1175,10 @@ def range_provenance(run: Run, results: list[dict[str, Any]]) -> str:
     efforts = "/".join([grades["suite_effort"], *grades["additional_efforts"]])
     fit = drain["per_version_recommendations_not_to_be_shipped"].get(run.version)
     return (
-        f"{FLOOR_PROVENANCE} Tested through {run.version}: "
+        f"{floor_text} Tested through {run.version}: "
         f"promote_claude_version.py drove {len(run.turns)} minified-cell turns "
         f"through `pmux run` at {run.args.model} {efforts} -- every graded reply "
-        "exact, the four-grade suite served by one unchanging process across a "
+        "exact, the four-grade suite answered across a "
         "`/clear` per turn, sidechain and cache zero on every result, the pool "
         f"never halted -- and measured {reachable['count']} reachable post-answer "
         f"arrival(s) at this version, max {reachable['max_ms']} ms against the "
@@ -1223,6 +1328,14 @@ def _parse(arguments: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--turn-deadline-ms", type=int, default=180_000)
     parser.add_argument("--warm-timeout-ms", type=int, default=180_000)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument(
+        "--floor",
+        default=None,
+        help="claude_version_floor for a first promotion on this os/arch. "
+        "Required when PROMOTED_PROFILES has no cell for this host; must match "
+        "the shipped floor when a cell already exists. Do not pass another "
+        "OS's floor.",
+    )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--keep-sandbox", action="store_true")

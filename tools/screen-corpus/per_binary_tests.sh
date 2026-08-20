@@ -220,7 +220,7 @@ if [[ -z "${PMUX_E2E_TYPESCRIPT_DIST_DIR:-}" ]]; then
   printf 'PRECONDITION ABSENT: PMUX_E2E_TYPESCRIPT_DIST_DIR is unset, so\n'
   printf '  pseudomux-e2e/full_stack will fail one cross-client case and this run\n'
   printf '  will NOT claim isolation coverage. Export a staged, 0700 TypeScript\n'
-  printf '  dist directory to close it (docs/testing.md, the validation root).\n\n'
+  printf '  dist directory to close it (tools/dev/check.sh stages TypeScript dist).\n\n'
 fi
 
 printf 'enumerated %d test targets across %s workspace packages\n' "${#TARGETS[@]}" "$FOUND_PACKAGES"

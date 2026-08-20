@@ -135,12 +135,11 @@ enum Command {
         #[arg(long = "pool-warm", value_name = "MODEL[/EFFORT]=COUNT", help_heading = PATH_B_HELP_HEADING)]
         path_b_warm: Vec<String>,
 
-        /// The system prompt every pool instance is launched with, delivered in
-        /// REPLACE mode so it survives `/clear`. Bounded at 512 bytes and
-        /// refused at boot. Keep it under three sentences: that is an editorial
-        /// instruction to you and is deliberately NOT enforced -- a sentence
-        /// counter rejects a correct prompt containing "e.g.", which is a rule
-        /// pretending to be a proof. 512 bytes is what the daemon enforces.
+        /// REPLACE-mode launch prompt. Displaces Claude Code's default agent
+        /// prompt so the same displacer survives `/clear`; it is not consumer
+        /// policy. The typed user message is the entire instruction (Messages
+        /// flatten, or the `pmux run` prompt). Bounded at 512 bytes and refused
+        /// if empty. A sentence counter is deliberately not enforced.
         #[arg(
             long = "pool-system-prompt",
             value_name = "TEXT",

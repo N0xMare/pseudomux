@@ -519,7 +519,7 @@ constant of 94, declared in the script, because this register is a record of a
 
 `floor_percent` is **not** `mutation_score_percent`, and
 `recorded_at.floor_derivation` says why in the file itself. This gate's error is
-one-directional — `docs/testing.md`'s "THE SCORE DRIFTS UPWARD" bullet — so the
+one-directional — `docs/archive/testing-gate-a-census.md`'s "THE SCORE DRIFTS UPWARD" bullet — so the
 raw score is an over-estimate, and the floor is that same measurement with every
 mutant whose only failing test was a MEASURED drifter counted as missed. The
 drift is measured here rather than inherited: five mutants the prior run counted
@@ -758,13 +758,18 @@ mutation run held four cores, not a latency measurement.
 
 ## Linux 2026-08 Path B receipts (`x86_64`)
 
-These are **not** promotion receipts. They do not admit a linux
-`PromotedProfile`. `linux-minified-post-answer-x86_64.json` is pinned in
-`compatibility.rs` as "NOT a promoted-profile drain receipt".
+`linux-minified-post-answer-x86_64.json` is still pinned in
+`compatibility.rs` as "NOT a promoted-profile drain receipt" (fast-path
+46 ms). The promotion drain is `pooled-transcript-drain-linux-x86_64.json`.
 
 | File | What it is |
 | --- | --- |
-| `linux-minified-post-answer-x86_64.json` | Drain ground truth on 2.1.227 and 2.1.232 minified cells. Max reachable 46 ms; estimator 250 ms. Both versions fit 250, so a "pooled" 250 would be vacuous. |
+| `pooled-transcript-drain-linux-x86_64.json` | Linux promotion drain. Path B campaign versions 2.1.227/2.1.232/2.1.233, 191 reachable arrivals, max 118 ms, bound 250 ms. Estimator saturated at the 250 ms quantum (118×2.0=236). |
+| `promoted-profile-2.1.227-linux-x86_64.json` | Floor receipt for the linux cell (2.1.227-only, max 46 ms, recommends 250). |
+| `promotion-2.1.236-linux-x86_64.json` | Paid ceiling: 2.1.236 `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 46 ms against the pooled 250 ms bound. |
+| `linux-minified-post-answer-x86_64.json` | Fast-path ground truth on 2.1.227 and 2.1.232 minified cells. Max reachable 46 ms. Not the promotion drain. |
+| `linux-minified-system-remainder-2.1.236-x86_64.json` | REPLACE displacer on a TUI minified cell (`pmux run`, not `--print`). Cold billed **199** input / 0 cache; after `/clear` billed **288** / 0 cache (that billed 288 is what the pool pays). Remainder is a chars/4 lower bound on leftover envelope after subtracting displacer+user estimates: 176 cold, 265 after `/clear`. `post_cold_census.clearing=1` so the second turn waited on recycle, not a remint. Public `--debug-file` does not dump API bodies (`api_request_detail_emitted: false`). Process-log `No CLAUDE.md` is not model-visible. |
+| `linux-minified-system-body-2.1.236-x86_64.json` | Live `/v1/messages` dump via mitmproxy (`HTTPS_PROXY` + `NODE_EXTRA_CA_CERTS`). Armed Sonnet turn still sends: billing header, `You are Claude Code, Anthropic's official CLI for Claude.`, REPLACE displacer, a user `<system-reminder>` (`userEmail`, `currentDate`), and a `messages[].role=system` `<total_tokens>` reminder. Tools/CLAUDE.md/git/cwd absent. Title gen is a separate Haiku call. Emails redacted to `<USER_EMAIL>`. Billed usage under MITM is **not** the unproxied remainder receipt (199/288). |
 | `linux-minified-noclear-cache-x86_64.json` | Path A `pmux start --cell minified`, three turns, never `/clear`. Cache continuity. |
 | `linux-pool-leased-sticky-x86_64.json` | Pool `Leased`: same `s{slot}e{epoch}`, T2 `cache_read` equals T1 write. |
 | `linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky eval. Cache hits only above the ~1024-token floor. |

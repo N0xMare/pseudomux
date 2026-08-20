@@ -1,0 +1,154 @@
+{
+ "after_clear": {
+  "billed_input_tokens": 288,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "combined": {
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "input_tokens": 288,
+   "output_tokens": 4
+  },
+  "displacer_tokens_est_chars_over_4": 11,
+  "input_tokens": 288,
+  "label": "after_clear",
+  "output_tokens": 4,
+  "remainder_method": "billed_input_tokens - round(len(displacer)/4) - round(len(user)/4)",
+  "remainder_tokens_est_chars_over_4": 265,
+  "sidechain": {
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "input_tokens": 0,
+   "output_tokens": 0
+  },
+  "stop_reason": {
+   "kind": "end_turn"
+  },
+  "text": "OK",
+  "user_prompt_tokens_est_chars_over_4": 12,
+  "wall_ms": 5363.7
+ },
+ "arch": "x86_64",
+ "claude_version": "2.1.236",
+ "cold": {
+  "billed_input_tokens": 199,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "combined": {
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "input_tokens": 199,
+   "output_tokens": 4
+  },
+  "displacer_tokens_est_chars_over_4": 11,
+  "input_tokens": 199,
+  "label": "cold",
+  "output_tokens": 4,
+  "remainder_method": "billed_input_tokens - round(len(displacer)/4) - round(len(user)/4)",
+  "remainder_tokens_est_chars_over_4": 176,
+  "sidechain": {
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "input_tokens": 0,
+   "output_tokens": 0
+  },
+  "stop_reason": {
+   "kind": "end_turn"
+  },
+  "text": "OK",
+  "user_prompt_tokens_est_chars_over_4": 12,
+  "wall_ms": 3055.3
+ },
+ "debug": {
+  "api_request_detail_emitted": false,
+  "api_sources": [
+   "quota_check",
+   "generate_session_title",
+   "repl_main_thread",
+   "quota_check",
+   "generate_session_title",
+   "repl_main_thread"
+  ],
+  "bodies_classified": [],
+  "bytes": 70815,
+  "json_bodies_found": 0,
+  "line_count": 653,
+  "notes": [
+   "Git remote URL: null",
+   "No git remote URL found",
+   "Git remote URL: null",
+   "No git remote URL found",
+   "No CLAUDE.md/rules files found",
+   "Git remote URL: null",
+   "No git remote URL found",
+   "Git remote URL: null",
+   "No git remote URL found",
+   "No CLAUDE.md/rules files found"
+  ],
+  "notes_are_process_log_not_model_visible": true,
+  "process_side_debug_tags": {
+   "3P telemetry": 2,
+   "API REQUEST": 6,
+   "API:timing": 8,
+   "Bootstrap": 6,
+   "Claude in Chrome": 4,
+   "FileIndex": 12,
+   "LSP MANAGER": 6,
+   "LSP SERVER MANAGER": 2,
+   "Perfetto": 2,
+   "REPL:mount": 2,
+   "REPL:unmount": 1,
+   "STARTUP": 16,
+   "ScheduledTasks": 2,
+   "ToolSearch:optimistic": 2,
+   "auto-mode": 2,
+   "engine": 10,
+   "event-loop-stall": 2,
+   "init": 8,
+   "jobStateNameSync": 2,
+   "keybindings": 4,
+   "uds-messaging": 5
+  },
+  "process_side_only": true
+ },
+ "debug_file_prepended_by_wrapper": true,
+ "displacer": "The user message is the entire instruction.",
+ "kind": "minified_system_remainder",
+ "minified_cell_flags_unchanged": true,
+ "note": "TUI minified cell through pmux run. Remainder is usage-inferred; public --debug-file does not dump API bodies. Process debug tags are not model-visible tokens.",
+ "os": "linux",
+ "post_cold_census": {
+  "clearing": 1,
+  "halted": null,
+  "idle": 0,
+  "in_flight": 0,
+  "leaked": 0,
+  "live": 1,
+  "registered_instances": 1,
+  "tearing_down": 0
+ },
+ "schema": "pmux.minified-system-remainder.v1",
+ "usage_interpretation": {
+  "api_body_dump": "[API REQUEST DETAIL] is not emitted on this public linux binary at --debug-file; remainder is usage-inferred, not dumped as text",
+  "generate_session_title_is_a_separate_api_call_tokens_unknown": true,
+  "hundreds_not_29k": "after_clear.remainder_tokens_est_chars_over_4 is a chars/4 lower bound on leftover Claude Code envelope after displacer+user prompt, not a tokenizer remainder and not the 29k tool surface",
+  "quota_check_is_startup_not_in_usage": true,
+  "repl_main_thread_is_the_armed_turn": true
+ },
+ "user_prompt": "Reply with exactly the word OK and nothing else.",
+ "warm_census": {
+  "clearing": 0,
+  "halted": null,
+  "idle": 1,
+  "in_flight": 0,
+  "leaked": 0,
+  "live": 1,
+  "registered_instances": 1,
+  "tearing_down": 0
+ },
+ "what_would_invalidate_it": [
+  "cache_creation_input_tokens != 0 (print-shaped surface, not TUI)",
+  "text != OK",
+  "dropping REPLACE, which restores Claude Code's default agent prompt"
+ ]
+}

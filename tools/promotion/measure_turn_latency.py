@@ -299,6 +299,7 @@ class Daemon:
         profile: dict[str, Any],
         claude: pathlib.Path,
         warm: str | None,
+        extra_args: list[str] | None = None,
     ) -> None:
         self.sandbox = sandbox
         self.log = (sandbox.root / "pmuxd.log").open("wb")
@@ -330,6 +331,8 @@ class Daemon:
         ]
         if warm:
             argv += ["--pool-warm", warm]
+        if extra_args:
+            argv += extra_args
         self.argv = argv
         self.process = subprocess.Popen(
             argv,

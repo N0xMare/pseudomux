@@ -169,7 +169,7 @@ case "$SCOPE" in
   gate)
     # A defended constant, and not from the register: that file records a `full`
     # run and says nothing about what this scope has been measured at. 94 is the
-    # number `docs/testing.md` defends against a measured 95.50%.
+    # number `docs/archive/testing-gate-a-census.md` defends against a measured 95.50%.
     SCOPE_FLOOR=94
     SCOPE_GLOBS=()
     for glob in "${FULL_GLOBS[@]}"; do

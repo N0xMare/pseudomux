@@ -129,7 +129,7 @@ absolute.
 | `--pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15. |
 | `--pool-recycle-turns N` | `50` | Turns one instance serves before remint at lease end. |
 | `--pool-warm MODEL[/EFFORT]=COUNT` | none | Warm floor, repeatable. |
-| `--pool-system-prompt TEXT` | see README | REPLACE-mode launch prompt. 512 bytes. |
+| `--pool-system-prompt TEXT` | `The user message is the entire instruction.` | REPLACE-mode displacer, 512 bytes. Not consumer policy. Empty MUST be refused. |
 | `--pool-system-prompt-file FILE` | — | Same prompt, from a file. |
 | `--pool-idle-ttl-ms MS` | `300000` | Idle hold, down to the warm floor. |
 | `--pool-turn-timeout-ms MS` | `600000` | Default stateless deadline. |
@@ -146,6 +146,19 @@ before the socket is bound.
 A pool cell MUST launch with `--disallowedTools "*"` and `dont-ask`. A
 sidechain row on that cell is `schema_drift`.
 
+REPLACE MUST displace Claude Code's default agent prompt. It MUST NOT be
+documented as the entire `system` array the model is sent. A minified TUI
+cell on Claude Code 2.1.236 still sends, besides REPLACE: an
+`x-anthropic-billing-header` `system` block (client attribution), the
+identity line `You are Claude Code, Anthropic's official CLI for Claude.`
+as its own `system` block, a first-user `<system-reminder>` with account
+email and date, and a `messages[].role=system` `<total_tokens>` reminder
+(`evidence/linux-minified-system-body-2.1.236-x86_64.json`). `--bare`
+MUST NOT be a pool mint flag. `--exclude-dynamic-system-prompt-sections`
+MUST NOT be treated as load-bearing under REPLACE (Claude ignores it with
+`--system-prompt`). Consumer policy MUST live in the typed prompt / Messages
+flatten, not in `--pool-system-prompt`.
+
 A pool mint MUST build the child's environment from the daemon snapshot
 through a closed allowlist. The order is
 `allowlist(snapshot) - unset + set - policy_removals + profile_changes`.
@@ -157,9 +170,10 @@ child.
 ## 5. Compatibility
 
 `require_tested` is the default for pool mint. The distribution ships one
-promoted range: Claude Code 2.1.220 through 2.1.227 on macos/aarch64,
-transparent/sdk. Linux is admitted with `--tested-claude-profile` until a
-linux cell is promoted. Receipts live under `evidence/`.
+promoted range per os/arch: Claude Code 2.1.220 through 2.1.227 on
+macos/aarch64, and 2.1.227 through 2.1.236 on linux/x86_64, both
+transparent/sdk. A version outside those ranges needs
+`--tested-claude-profile`. Receipts live under `evidence/`.
 
 `allow_untested` is for deliberate probes and MUST be reported as untested.
 It does not skip transcript validation.

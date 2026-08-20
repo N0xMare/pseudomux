@@ -210,12 +210,13 @@ pub fn launch_request_for(spec: &MintSpec, environment: &EnvironmentSpec) -> Sta
             settings: Vec::new(),
             mcp_configs: Vec::new(),
             plugin_dirs: Vec::new(),
-            // REPLACE, not append. The daemon prompt must be the entire system
-            // prompt: an append leaves whatever the resolved `CLAUDE.md` and
-            // settings chain contributes in front of it, and that content is
-            // not daemon configuration. Replace-mode also survives `/clear`,
-            // which is what makes one instance serve turn 2 under the same
-            // instruction it served turn 1 under.
+            // REPLACE, not append, for the agent-prompt *file*. An append would
+            // leave CLAUDE.md / settings in front of the daemon prompt; that
+            // content is not daemon configuration. Claude Code still prepends
+            // its own identity line ahead of REPLACE (see the 2.1.236 body
+            // dump). Replace-mode also survives `/clear`, which is what makes
+            // one instance serve turn 2 under the same displacer it served
+            // turn 1 under.
             system_prompt: SystemPromptPolicy::Replace {
                 prompt: spec.system_prompt.clone(),
             },

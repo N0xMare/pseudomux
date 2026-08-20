@@ -9,8 +9,8 @@ isolation). Operators integrating a harness should not start here.
 pool of them.** This file was a design specification. **It is now mostly a description of a shipped
 thing**, and where it still describes a design the tense says so explicitly.
 
-**Implementation status (2026-08-06).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.227
-reachable without a flag; Linux operator `--tested-claude-profile`.
+**Implementation status (2026-08-06; linux flagless 2026-08-20).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.227
+and linux/x86_64 2.1.227..=2.1.236 are reachable without a flag.
 
 | Shipped | Where |
 |---|---|
@@ -21,7 +21,7 @@ reachable without a flag; Linux operator `--tested-claude-profile`.
 | `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
 | Sticky `Leased` instances and the opt-in loopback Messages facade (`--messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
-| One promoted compatibility RANGE — 2.1.220 through 2.1.227 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/promotion-2.1.227-macos-aarch64.json` |
+| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.227 and linux/x86_64 2.1.227 through 2.1.236 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.227-macos-aarch64.json`, `evidence/promotion-2.1.236-linux-x86_64.json` |
 
 **Still design, and labelled as such in place:** admission by a measured memory budget (§7 — the
 budget is a boot assertion, not a runtime gate), the retention/pruning policy of §8 above the two
@@ -238,7 +238,7 @@ is the coverage.
 
 **Rule 1's scan is the whole repository at the same commit**, which found 47 line citations of a
 linted document living in documents the scan had never opened — 37 of them into this file, from
-`docs/sandbox-spike.md` and `docs/linux-handoff.md`, and most already pointing at unrelated
+`docs/archive/sandbox-spike.md` and `docs/archive/linux-handoff.md`, and most already pointing at unrelated
 paragraphs. That hole had a cost beyond the wrong lines: the §0.4 repair before this one was written
 to be *line-count neutral* so those 37 would not all move at once. **A rule that makes the document
 it protects un-editable is not protecting it**, and this paragraph could not have been written under
@@ -307,7 +307,7 @@ three source files each carried their own sentence about it.
 | `--permission-mode dontAsk` | No interactive permission surface to hang on. Nothing is attached to answer a modal. |
 | `--strict-mcp-config` | **ADDED 2026-08-09, and MEASURED.** Without it a pristine minified cell at 2.1.226 reaches the CALLER'S ACCOUNT connector list over HTTP — `[claudeai-mcp] Fetching from https://api.anthropic.com/v1/mcp_servers?limit=1000`, plus a 294-entry official registry load, 6 MCP lines in the child's `--debug-file`. With it: **2 lines, `MCP configs resolved in 0ms`**, no fetch, `state: ready` either way. pmux passes no `--mcp-config`, so "only servers from `--mcp-config`" means none. §2.2 records why the earlier retraction did not follow from its own measurement. |
 | `--model <class>` / `--effort <class>` | Launch-time argv, rendered from the **same** `ResolvedModelEffort` that produced the pool's class key, so the pool's model of a process cannot drift from the process (§9). |
-| Replace-mode system prompt (`SystemPromptPolicy::Replace`) | FULL replacement, and MEASURED to survive `/clear`. The **wording** is CHOSEN — see §2.3. |
+| Replace-mode system prompt (`SystemPromptPolicy::Replace`) | REPLACE versus append for the agent-prompt *file*, and MEASURED to survive `/clear`. It is not the entire API `system` array: Claude Code still prepends its identity line. The **wording** is CHOSEN — see §2.3. |
 | `SessionIdentity::New { session_id: None }` | **pmux picks the id.** An earlier revision said `--session-id <fresh uuid>`; that was the design. A caller-chosen id is one of the two ways a transcript that already served work gets admitted as a fresh cell, and the pool has no caller to take one from. |
 | `<per-instance pre-trusted empty cwd>` | §4. |
 | `config_isolation` (pmux-owned `CLAUDE_CONFIG_DIR` + service-computed securestorage pin) | §5. |
@@ -403,16 +403,29 @@ otherwise silently strip it and quietly restore the download. It is applied only
 **The system prompt is CHOSEN, and must never be dressed as measured.** `DEFAULT_SYSTEM_PROMPT`
 (`crates/service/src/pool/config.rs`) is verbatim:
 
-> Answer directly and completely. If you cannot answer, say so in one line.
+> The user message is the entire instruction.
 
-Nothing measured that wording, no experiment compares it against an alternative, and no receipt
-under `evidence/` mentions it. What *is* enforced is the bound: **512 bytes, CHOSEN**, refused at
-boot, deliberately a byte bound rather than a sentence counter, because a sentence counter rejects a
-correct prompt containing "e.g." — a rule pretending to be a proof. "Under three sentences" is an
-editorial instruction in `--help`; 512 bytes is what the daemon enforces. A future reviewer may
-change the wording freely and owes no measurement for it; they owe a re-measurement of nothing,
-because the fingerprint of the configured prompt is an instance invariant and a change simply
-invalidates every idle instance.
+It displaces Claude Code's default agent prompt. It is not consumer policy (that lives in the typed
+user message). Nothing measured that wording; `evidence/linux-minified-system-remainder-2.1.236-x86_64.json`
+measures leftover *tokens* after REPLACE (chars/4 lower bound; after `/clear` on linux 2.1.236 the
+bound is hundreds, not the 29k tool surface), not whether this sentence is a good sentence. What *is*
+enforced is the bound: **512 bytes, CHOSEN**, refused at boot if empty, deliberately a byte bound
+rather than a sentence counter, because a sentence counter rejects a correct prompt containing "e.g."
+A future reviewer may change the wording freely and owes no measurement for it; they owe a
+re-measurement of nothing, because the fingerprint of the configured prompt is an instance invariant
+and a change simply invalidates every idle instance.
+
+**What REPLACE does not own.** A live `/v1/messages` intercept of a minified TUI cell
+(`evidence/linux-minified-system-body-2.1.236-x86_64.json`) shows the armed Sonnet turn's `system`
+array is three text blocks: (1) `x-anthropic-billing-header:…` (Claude Code OAuth/client
+attribution; first-party Anthropic is reported to strip it before the model), (2) `You are Claude
+Code, Anthropic's official CLI for Claude.` (hardcoded for interactive sessions in 2.1.236; not the
+REPLACE file), (3) the displacer. The first user message is prefixed with a `<system-reminder>`
+carrying `# userEmail` and `# currentDate`. A further `messages[].role=system` part is the
+`<total_tokens>` reminder. Tools, `CLAUDE.md`, git, and cwd were absent. `--exclude-dynamic-system-prompt-sections`
+is ignored with `--system-prompt` (Claude's own `--help`). `--bare` is still refused: it sets
+`CLAUDE_CODE_SIMPLE=1` and ignores OAuth. Consumer policy stays in the typed message / Messages
+flatten. Do not lengthen the displacer to argue with block (2).
 
 ---
 
@@ -1127,14 +1140,15 @@ anything is `allow-untested` with its conservative 2000ms drain. That converts a
 into a permanent bypass.
 
 Not even a **mode**-keyed dimension yet. **CORRECTION (2026-08-06): this paragraph used to open
-"No tested cell exists for 2.1.220 on macOS/aarch64 today". That is now FALSE — one is promoted**
-(macos / aarch64 / transparent / sdk, `transcript_drain_ms: 1000`), which is what makes Path B
-reachable with no `--tested-claude-profile` on argv; MEASURED with the flag absent, a real turn
-`served in 4540ms by claude 2.1.220`. **UPDATED 2026-08-09: the cell is a RANGE, floor 2.1.220
-through tested-ceiling 2.1.227 (2.1.226 until 2026-08-11)** — see §12.4 for what was driven at the ceiling and what was not.
+"No tested cell exists for 2.1.220 on macOS/aarch64 today". That is now FALSE — two ranges are
+promoted** (macos / aarch64 / transparent / sdk, `transcript_drain_ms: 1000`, and linux / x86_64
+2.1.227 through 2.1.236, drain 250), which is what makes Path B reachable with no
+`--tested-claude-profile` on argv; MEASURED with the flag absent, a real turn
+`served in 4540ms by claude 2.1.220`. **UPDATED 2026-08-09 / 2026-08-20: each cell is a RANGE** —
+see §12.4 for what was driven at each ceiling and what was not.
 The argument the sentence was supporting is **unchanged and now stronger**: a
 mode dimension doubles the cells that must be promoted before either mode can run under
-`require_tested`, and there is still exactly one to double — a range is one cell, not two.
+`require_tested`, and a range is one cell per os/arch, not two versions.
 `CompatibilityReport`'s field set is pinned by `tests/conformance/v1/cases.json`,
 so adding a field is a protocol event that should be paid for by evidence rather than anticipation;
 and nothing in the config root sits on the ~300ms of screen-stability the drain measures *unless*
@@ -1986,9 +2000,12 @@ to drift.
 
 ### 12.4 The promoted profile
 
-**One cell, and it is a RANGE, not a version.** `PROMOTED_PROFILES`
-(`crates/service/src/compatibility.rs:484`) ships floor **2.1.220** through tested-ceiling
-**2.1.227**, macos / aarch64 / transparent / sdk, `transcript_drain_ms: 1000`. `resolve` searches the
+**Two cells, and each is a RANGE, not a version.** `PROMOTED_PROFILES`
+(`crates/service/src/compatibility.rs:484`) ships macos / aarch64 floor **2.1.220** through
+tested-ceiling **2.1.227**, `transcript_drain_ms: 1000`; and linux / x86_64
+`claude_version_floor` **2.1.227** (`crates/service/src/compatibility.rs:513`) through
+tested-ceiling **2.1.236**, `transcript_drain_ms: 250`
+(`crates/service/src/compatibility.rs:519`). `resolve` searches the
 OPERATOR's cells first, so an operator profile for the same identity **overrides** it rather than
 colliding.
 
@@ -2024,14 +2041,16 @@ The fit is the row to read. 250 ms is below `POST_MARKER_CATCH_WINDOW_FLOOR_MS`,
 fitted its own version rather than reading the pooled bound would have shipped a drain that
 truncates answers — the §P1 hazard, reproduced on a fourth version's numbers rather than argued.
 
-The receipts are `evidence/pooled-transcript-drain-macos-aarch64.json` (the bound),
-`evidence/promoted-profile-2.1.220-macos-aarch64.json` (the floor's original per-version receipt) and
-`evidence/promotion-2.1.227-macos-aarch64.json` (the ceiling; the previous ceiling's receipt,
+The receipts are `evidence/pooled-transcript-drain-macos-aarch64.json` (the macos bound),
+`evidence/promoted-profile-2.1.220-macos-aarch64.json` (the macos floor's original per-version receipt) and
+`evidence/promotion-2.1.227-macos-aarch64.json` (the macos ceiling; the previous ceiling's receipt,
 `evidence/promotion-2.1.226-macos-aarch64.json`, is retained and is what a range that stopped there
-rested on).
-`tools/promotion/measure_transcript_drain.py` regenerates the first and **fails on a row kind nobody
-classified rather than defaulting**; a unit test binds the shipped constant to the receipt's own
-recommendation so the two cannot drift. Each receipt names what would invalidate it, which is the
+rested on). Linux is `evidence/pooled-transcript-drain-linux-x86_64.json` (the bound),
+`evidence/promoted-profile-2.1.227-linux-x86_64.json` (the floor) and
+`evidence/promotion-2.1.236-linux-x86_64.json` (the ceiling).
+`tools/promotion/measure_transcript_drain.py` regenerates the pooled receipts and **fails on a row kind nobody
+classified rather than defaulting**; a unit test binds each shipped drain to that OS's receipt so the two
+cannot drift. Each receipt names what would invalidate it, which is the
 part to read before reusing the number.
 
 ### 12.5 The screen corpus

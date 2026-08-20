@@ -15,7 +15,9 @@ test ownership, and dated measurements. It is not a second product.
 | Calling the API or wiring a harness | Root README, then [spec.md](spec.md), then [examples](../examples/README.md) |
 | Checking the tree, pinning Claude, or dropping `--tested-claude-profile` | [tools/dev](../tools/dev/README.md) |
 | Promoting a Claude Code version (historical receipts) | [version-drift.md](version-drift.md) |
-| Reading the historical freeze census (Gate A is gone) | [testing.md](testing.md) |
+| Test ownership and the coverage matrix | [testing.md](testing.md) |
+| Reading the historical Gate A freeze census | [archive/testing-gate-a-census.md](archive/testing-gate-a-census.md) |
+| Dated one-shot dumps (handoffs, reviews) | [archive/](archive/) |
 | Looking up where the project stands | [current-state.md](current-state.md) |
 
 Dated receipts and `docs/archive/` are not updated to stay true.

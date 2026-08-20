@@ -116,7 +116,7 @@ the current regressions.
    a new frame header producing *"unknown attach-stream message tag 13"*. `13` is
    `RENDER_TAG` (`rmux-proto` 0.10.0 `src/attach.rs:18`) — a **valid** tag. The tag guard in item 2
    returns `Ok(None)`, the residue goes to the incremental decoder, and the stream desynchronises
-   **silently** rather than erroring. This was already noted at `docs/repo-review.md:473-475`; it is
+   **silently** rather than erroring. This was already noted at `docs/archive/repo-review.md:473-475`; it is
    confirmed here against 0.10.0's constants. Replace the row with the measured case above, where the
    payload contains `ESC` (`0x1B` = 27) and the failure is loud.
 4. **Offer the regression that exists.** `crates/rmux/tests/attach_fragmentation.rs` is 162 lines,
@@ -212,7 +212,7 @@ and this is the finding that changes the filing.** MEASURED against 0.10.0's
   `PaneSurfaceSnapshot::revision` and `PaneSnapshotResponse::revision` *"are documented as one shared
   monotonic counter"*.
 
-**This corrects a claim already in the tree.** `docs/repo-review.md:471-472` states that *"all three
+**This corrects a claim already in the tree.** `docs/archive/repo-review.md:471-472` states that *"all three
 defects survive into it byte-identically"* at 0.10.0. That is exact for drafts 01 and 02 — MEASURED,
 identical `md5` for both files — and **wrong for draft 03**, whose implementation quote is of a
 function that upstream has since rewritten and demoted to test-only. The doc sentences the draft is
@@ -279,7 +279,8 @@ at `main`.
 `apps/pmux-rmuxd/tests/process_blackbox.rs::real_attach_half_close_delivers_the_final_complete_frame_exactly_once`
 and `:117` cites `TESTING.md`. Neither path exists: MEASURED, there is no `apps/` directory and no
 root `TESTING.md`; the test really lives at `bin/pmux-rmuxd/tests/process_blackbox.rs:311` and the
-lane document is `docs/testing.md`. The repository restructure that moved them is recorded as DONE in
+lane document is `docs/testing.md` (ownership) plus
+`docs/archive/testing-gate-a-census.md` (freeze-census commands). The repository restructure that moved them is recorded as DONE in
 `docs/current-state.md` §13's first row. The gate at
 `crates/rmux/tests/vendor_server_patch.rs:825-833` requires the document to *contain* the test's
 **name** and the string `crates/rmux/tests/vendor_server_patch.rs`, so the stale **directory
@@ -305,8 +306,8 @@ Moving to 0.10.0 costs, MEASURED unless marked:
    VCS SHA-1, the published file count (596 → **768** at 0.10.0), the canonical tree hash, and the
    patched/upstream hashes of each changed file. Every one of those constants, in the tests and in
    both `PMUX-PATCH.md` files, has to be recomputed and re-checked.
-3. **A new, unbudgeted second patch.** `docs/testing.md:462` runs
-   `cargo check --all-targets --no-default-features` and `docs/testing.md:473-474` runs
+3. **A new, unbudgeted second patch.** `docs/archive/testing-gate-a-census.md:476-477` runs
+   `cargo check --all-targets --no-default-features` and `docs/archive/testing-gate-a-census.md:487-490` runs
    `cargo test --lib --no-default-features pane_io::tests::` against the vendored server. At 0.10.0
    the first of those **fails on upstream's own code** with two `E0425`s in
    `src/handler_attach_tests/set_titles.rs`. Adopting 0.10.0 therefore means either patching an

@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use pseudomux_protocol::v1::EffortLevel;
 
-use super::class::{InstanceClass, ModelEffortRefusal, resolve_pool_class};
+use super::class::{resolve_pool_class, InstanceClass, ModelEffortRefusal};
 
 /// Owner-set upper limit on live instances. `--pool-size` is refused
 /// above this at parse, so the runtime never has to consider a larger pool.
@@ -31,13 +31,12 @@ pub const MAX_RECYCLE_TURNS: u32 = 250;
 ///
 /// Deliberately a byte bound and not a sentence counter. A sentence counter
 /// rejects a correct prompt containing "e.g." -- it is a rule pretending to be
-/// a proof. "Under three sentences" is an editorial instruction to the operator,
-/// documented in `--help`; 512 bytes is what the daemon enforces.
+/// a proof. 512 bytes is what the daemon enforces.
 pub const MAX_SYSTEM_PROMPT_BYTES: usize = 512;
 
-/// The chosen default, verbatim.
-pub const DEFAULT_SYSTEM_PROMPT: &str =
-    "Answer directly and completely. If you cannot answer, say so in one line.";
+/// Displaces Claude Code's default agent prompt. Not consumer policy.
+/// Empty is refused; omitting REPLACE restores Claude Code's default.
+pub const DEFAULT_SYSTEM_PROMPT: &str = "The user message is the entire instruction.";
 
 /// CHOSEN: five minutes. Long enough that a bursty caller keeps its warm
 /// class, short enough that a cold class returns its slot within one coffee.
@@ -585,7 +584,7 @@ mod tests {
         assert_eq!(config.recycle_turns, 50);
         assert_eq!(
             config.system_prompt,
-            "Answer directly and completely. If you cannot answer, say so in one line."
+            "The user message is the entire instruction."
         );
         assert!(config.warm_set.is_empty());
     }

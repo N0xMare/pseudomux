@@ -1,0 +1,233 @@
+{
+ "arch": "x86_64",
+ "by_version": {
+  "2.1.227": {
+   "files_at_this_version": 31,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 27,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 27,
+     "max_ms": 46,
+     "median_ms": 39,
+     "min_ms": 12,
+     "p90_ms": 46,
+     "p95_ms": 46,
+     "p99_ms": 46
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 27,
+      "max_ms": 46,
+      "median_ms": 39,
+      "min_ms": 12,
+      "p90_ms": 46,
+      "p95_ms": 46,
+      "p99_ms": 46,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 27,
+     "max_ms": 46,
+     "median_ms": 39,
+     "min_ms": 12,
+     "p90_ms": 46,
+     "p95_ms": 46,
+     "p99_ms": 46
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 29
+  },
+  "2.1.232": {
+   "files_at_this_version": 126,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 117,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 117,
+     "max_ms": 41,
+     "median_ms": 26,
+     "min_ms": 18,
+     "p90_ms": 34,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 117,
+      "max_ms": 41,
+      "median_ms": 26,
+      "min_ms": 18,
+      "p90_ms": 34,
+      "p95_ms": 41,
+      "p99_ms": 41,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 117,
+     "max_ms": 41,
+     "median_ms": 26,
+     "min_ms": 18,
+     "p90_ms": 34,
+     "p95_ms": 41,
+     "p99_ms": 41
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 120
+  },
+  "2.1.233": {
+   "files_at_this_version": 52,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 47,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 47,
+     "max_ms": 118,
+     "median_ms": 35,
+     "min_ms": 16,
+     "p90_ms": 60,
+     "p95_ms": 101,
+     "p99_ms": 118
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 47,
+      "max_ms": 118,
+      "median_ms": 35,
+      "min_ms": 16,
+      "p90_ms": 60,
+      "p95_ms": 101,
+      "p99_ms": 118,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 47,
+     "max_ms": 118,
+     "median_ms": 35,
+     "min_ms": 16,
+     "p90_ms": 60,
+     "p95_ms": 101,
+     "p99_ms": 118
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 47
+  }
+ },
+ "claude_version": "2.1.227",
+ "claude_versions": [
+  "2.1.227",
+  "2.1.232",
+  "2.1.233"
+ ],
+ "corpus": {
+  "files_at_these_versions": 209,
+  "files_scanned": 1450,
+  "note": "Host-local operator transcripts. Not committed: they contain prompts. The receipt is the durable artifact; re-run the tool to regenerate it.",
+  "roots": [
+   "<HOME>/.claude/projects",
+   "<HOME>/.claude-1/projects",
+   "<HOME>/.local/state/pmux-linux-232",
+   "<HOME>/.local/state/pmux-linux-233",
+   "<HOME>/.local/state/pmux-linux-pooled-minified",
+   "<HOME>/.local/state/pmux-minified-227",
+   "<HOME>/.local/state/pmux-minified-drain"
+  ],
+  "tracked": false,
+  "turns": 196
+ },
+ "full_drain_binds_on": {
+  "cli_turns_with_a_terminal_candidate": 191,
+  "fraction": 0.0,
+  "without_a_turn_duration_marker": 0
+ },
+ "os": "linux",
+ "partition_balances": true,
+ "per_version_recommendations_not_to_be_shipped": {
+  "2.1.227": 250,
+  "2.1.232": 250,
+  "2.1.233": 250
+ },
+ "post_answer_arrivals": {
+  "all": {
+   "count": 191,
+   "max_ms": 118,
+   "median_ms": 26,
+   "min_ms": 12,
+   "p90_ms": 41,
+   "p95_ms": 46,
+   "p99_ms": 102
+  },
+  "by_kind": {
+   "system/turn_duration": {
+    "count": 191,
+    "max_ms": 118,
+    "median_ms": 26,
+    "min_ms": 12,
+    "p90_ms": 41,
+    "p95_ms": 46,
+    "p99_ms": 102,
+    "reachable_on_a_minified_cell": true,
+    "timestamp_is_retrospective": false,
+    "why": "the end-of-turn marker Claude Code writes for every turn"
+   }
+  },
+  "reachable_on_a_minified_cell": {
+   "count": 191,
+   "max_ms": 118,
+   "median_ms": 26,
+   "min_ms": 12,
+   "p90_ms": 41,
+   "p95_ms": 46,
+   "p99_ms": 102
+  },
+  "unreachable_on_a_minified_cell": null
+ },
+ "recommendation_basis": {
+  "margin": 2.0,
+  "pooled_over_versions": [
+   "2.1.227",
+   "2.1.232",
+   "2.1.233"
+  ],
+  "rounded_up_to_ms": 250,
+  "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"
+ },
+ "recommended_transcript_drain_ms": 250,
+ "repromotion_triggers_this_tool_detects": {
+  "reachable_arrival_above_the_bound": "exit 4 when --bound-ms is given and a reachable arrival exceeds it; exit 5 when there was nothing to check",
+  "unclassified_transcript_row_kind": "exit 2 on a post-answer row kind absent from ROW_KINDS, exit 3 on a `retrospective` kind stamped after the terminal candidate"
+ },
+ "what_would_invalidate_it": [
+  "an assistant row arriving after a turn's final assistant row -- see ROW_KINDS",
+  "any reachable arrival above the recommended value",
+  "a different os or arch, or a claude_version outside the promoted range",
+  "a minified cell acquiring a harness able to inject rows (a hook, a queue, an MCP server)"
+ ]
+}

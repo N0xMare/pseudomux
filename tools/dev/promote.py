@@ -4,6 +4,9 @@
 A missing `evidence/pooled-transcript-drain-<os>-<arch>.json` means this OS
 cannot drop the operator flag. Confirm the binary with `operator_eval.py`
 instead. Never invent a drain receipt. Never use another OS's bound.
+
+A first promotion on an OS with no shipped cell needs `--floor` (the version
+with a drain receipt on this OS). Do not pass another OS's floor.
 """
 
 from __future__ import annotations

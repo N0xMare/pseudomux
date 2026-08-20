@@ -18,7 +18,7 @@ tools/dev/check.sh
 tools/dev/check.sh --push
 ```
 
-Always: `cargo fmt --check`, clippy `-D warnings`, `cargo test --workspace`, TypeScript `npm test`, Python client tests, excluded vendor lanes (including `cargo check --all-targets --no-default-features` on `vendor/rmux-server`), `tools/evidence_common/tests/test_portable_paths.py`, `tools/dev/tests` (documented surface, workflow), and `ruff check --no-cache tools/dev tools/evidence_common clients/python`. Tree-wide redaction lives at `tools/dev/redaction/test_redaction.py` (not in the default check: it needs a clean git index).
+Always: `cargo fmt --check`, clippy `-D warnings`, `cargo test --workspace`, TypeScript `npm test`, Python client tests, excluded vendor lanes (including `cargo check --all-targets --no-default-features` on `vendor/rmux-server`), `tools/evidence_common/tests/test_portable_paths.py`, `tools/dev/tests` (documented surface, workflow), `tools/promotion/tests`, and `ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python`. Tree-wide redaction lives at `tools/dev/redaction/test_redaction.py` (not in the default check: it needs a clean git index).
 
 `--push` also runs `-p pseudomux-e2e --include-ignored`, ignored `private_runtime` sidecar tests (no real Claude), and re-runs the process-blackbox targets serially (`--test-threads=1`). Those blackbox tests already ran in the workspace invocation; the serial pass is the load-sensitive one. It unsets `PMUX_POOL_REAL_CLAUDE` so ignored real-turn lanes skip.
 
@@ -45,4 +45,4 @@ python3 tools/dev/promote.py \
 
 If `evidence/pooled-transcript-drain-<os>-<arch>.json` is missing, the tool exits 2 and says you cannot **drop the flag** on that OS. Use `operator_eval.py` to pin the binary instead.
 
-Linux currently has no pooled-drain receipt. macos does (`evidence/pooled-transcript-drain-macos-aarch64.json`).
+macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.220; linux floor is 2.1.227. A first promotion on an OS with no shipped cell needs `--floor`.

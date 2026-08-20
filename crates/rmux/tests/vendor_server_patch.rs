@@ -84,15 +84,16 @@ const SCAN_SKIPPED_DIRECTORIES: [&str; 8] = [
 /// Membership is not derived and cannot be: a lane that runs nothing looks
 /// exactly like a file that is not a lane. What IS derived is the filter
 /// each must carry. Living verification is `tools/dev/check.sh`; the other
-/// is the freeze-census copy in `docs/testing.md`.
+/// is the freeze-census copy in `docs/archive/testing-gate-a-census.md`.
 const REGRESSION_LANES: [&str; 2] = [
     "tools/dev/check.sh",
-    "docs/testing.md",
+    "docs/archive/testing-gate-a-census.md",
 ];
 
-/// English cardinals by value. The patch document and `docs/testing.md` spell
-/// the size of the regression set in prose; a spelled count is a claim, and a
-/// claim is compared against the derived cardinality below.
+/// English cardinals by value. The patch document, living `docs/testing.md`,
+/// and the freeze census spell the size of the regression set in prose; a
+/// spelled count is a claim, and a claim is compared against the derived
+/// cardinality below.
 const CARDINALS: [&str; 21] = [
     "zero",
     "one",
@@ -131,7 +132,7 @@ const REGRESSION_COUNT_CLAIMS: [(&str, &str, &str); 4] = [
         " regression tests",
     ),
     (
-        "docs/testing.md",
+        "docs/archive/testing-gate-a-census.md",
         "run all ",
         " patch-owned EOF regressions",
     ),
@@ -843,7 +844,8 @@ fn vendored_server_is_published_archive_plus_documented_attach_eof_patch() {
 ///
 /// `PMUX-PATCH.md` is the one file other than the source that may spell these
 /// names, and it exists because nothing else in the tree can parse Rust: the
-/// living check and the freeze-census copy in `docs/testing.md` read it. That makes its list a
+/// living check and the freeze-census copy in
+/// `docs/archive/testing-gate-a-census.md` read it. That makes its list a
 /// SECOND spelling of the patch, so it is compared here against the first --
 /// element for element, not merely for containment, which is all
 /// `vendored_server_is_published_archive_plus_documented_attach_eof_patch`

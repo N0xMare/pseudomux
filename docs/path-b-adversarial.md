@@ -933,8 +933,8 @@ this commit, which puts them under the existing grader — and the grader then r
 as rotted**, every one invisible until it carried its path:
 
 ```
-docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  :585 -> bin/pmuxd/src/main.rs:648
-docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  :981 -> bin/pmuxd/src/main.rs:1153
+docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  then-line 648
+docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  then-line 1153
 docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1353
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:842
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2220
@@ -1328,7 +1328,7 @@ hand-written list:
   them match; it did not check that the 24 are still the right 24 at 2.1.227.
 - **Citations in unlinted documents were not renumbered.** This change moves ~240 lines in
   `driver_io.rs`; the seven linted documents were remapped and are checked by
-  `crates/service/tests/path_b_doc_citations.rs`, but `docs/current-state.md`, `docs/repo-review.md`
+  `crates/service/tests/path_b_doc_citations.rs`, but `docs/current-state.md`, `docs/archive/repo-review.md`
   and the other `PARTIAL`/unlisted documents cite line numbers nothing verifies, and renumbering
   those would make never-verified citations look maintained.
 

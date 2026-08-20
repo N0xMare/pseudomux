@@ -481,22 +481,23 @@ impl PromotedProfile {
 /// the minified fast path further still (50 ms). This value is what an
 /// UNMARKED turn owes -- the turn whose marker had not landed yet, which is
 /// exactly the 438 ms case above.
-pub const PROMOTED_PROFILES: &[PromotedProfile] = &[PromotedProfile {
-    claude_version_floor: "2.1.220",
-    claude_version_tested_through: "2.1.227",
-    os: "macos",
-    arch: "aarch64",
-    terminal_profile: TerminalProfile::Transparent,
-    input_transport: InputTransport::Sdk,
-    transcript_drain_ms: 1_000,
-    drain_provenance: "POOLED conservative bound, not a per-version fit: max reachable \
+pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
+    PromotedProfile {
+        claude_version_floor: "2.1.220",
+        claude_version_tested_through: "2.1.227",
+        os: "macos",
+        arch: "aarch64",
+        terminal_profile: TerminalProfile::Transparent,
+        input_transport: InputTransport::Sdk,
+        transcript_drain_ms: 1_000,
+        drain_provenance: "POOLED conservative bound, not a per-version fit: max reachable \
                        post-answer transcript arrival 438 ms over 226 arrivals in 425 \
                        macos/aarch64 transcripts spanning Claude Code 2.1.207/2.1.215/2.1.220/\
                        2.1.223, x2.0 and rounded up to a 250 ms step = 1000 ms. Priced: the full \
                        drain binds only on the 166 of 385 cli turns carrying no turn_duration \
                        marker. evidence/pooled-transcript-drain-macos-aarch64.json, \
                        tools/promotion/measure_transcript_drain.py",
-    range_provenance: "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the \
+        range_provenance: "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the \
                        screen/preamble measurements; below it 2.1.201 and earlier have ZERO \
                        reachable cli arrivals, which is unestablished rather than safe. Tested \
                        through 2.1.227: promote_claude_version.py drove 5 minified-cell turns \
@@ -507,7 +508,38 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[PromotedProfile {
                        against the pooled 1000 ms bound. NOT measured at 2.1.227: anything outside \
                        a minified cell on macos/aarch64, and the per-version fit of 250 ms, which \
                        is published to be read and NOT shipped.",
-}];
+    },
+    PromotedProfile {
+        claude_version_floor: "2.1.227",
+        claude_version_tested_through: "2.1.236",
+        os: "linux",
+        arch: "x86_64",
+        terminal_profile: TerminalProfile::Transparent,
+        input_transport: InputTransport::Sdk,
+        transcript_drain_ms: 250,
+        drain_provenance: "POOLED conservative bound, not a per-version fit: max reachable \
+                       post-answer transcript arrival 118 ms over 191 arrivals in 209 \
+                       linux/x86_64 transcripts spanning Claude Code 2.1.227/2.1.232/2.1.233, \
+                       x2.0 and rounded up to a 250 ms step = 250 ms. Every named version's own \
+                       fit is also 250 ms because 118×2.0=236 sits inside the 250 ms rounding \
+                       quantum, not because the corpus is one version. Priced: the full drain \
+                       binds on 0 of 191 cli turns (every Path B turn carried a turn_duration \
+                       marker). evidence/pooled-transcript-drain-linux-x86_64.json, \
+                       tools/promotion/measure_transcript_drain.py",
+        range_provenance: "floor 2.1.227: first linux/x86_64 Path B drain receipt \
+                       (evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) \
+                       pooled with 2.1.232/2.1.233 in evidence/pooled-transcript-drain-linux-x86_64.json; \
+                       below it linux minified cells were not measured as a promotion floor. Tested \
+                       through 2.1.236: promote_claude_version.py drove 5 minified-cell turns \
+                       through `pmux run` at claude-sonnet-5 low/high -- every graded reply exact, \
+                       the four-grade suite answered across a `/clear` per turn, sidechain and \
+                       cache zero on every result, the pool never halted -- and measured 5 \
+                       reachable post-answer arrival(s) at this version, max 46 ms against the \
+                       pooled 250 ms bound. NOT measured at 2.1.236: anything outside a minified \
+                       cell on linux/x86_64, and the per-version fit of 250 ms, which is published \
+                       to be read and NOT shipped.",
+    },
+];
 
 /// One empirically promoted compatibility cell.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -1293,11 +1325,13 @@ mod tests {
     fn every_promoted_profile_passes_the_admission_an_operator_profile_must() {
         let mut registry = CompatibilityProfileRegistry::default();
         for promoted in PROMOTED_PROFILES {
-            registry.insert(promoted.to_profile()).unwrap_or_else(|error| {
-                panic!(
+            registry
+                .insert(promoted.to_profile())
+                .unwrap_or_else(|error| {
+                    panic!(
                     "promoted profile {promoted:?} is not admissible as a tested cell: {error:#}"
                 )
-            });
+                });
             assert!(
                 !promoted.drain_provenance.trim().is_empty(),
                 "promoted profile {promoted:?} states no provenance for its measured drain"
@@ -1407,11 +1441,16 @@ mod tests {
     ///   its own -- naming a version that contributed nothing is the same
     ///   vacuity the tool's own exit 5 exists to refuse; and
     /// * at least one per-version fit must be STRICTLY BELOW the pooled bound,
-    ///   which is what makes this test able to fail. Today three of the four
-    ///   are: 2.1.207 and 2.1.223 each fit 250 ms and 2.1.215 fits 750 ms,
-    ///   against the pooled 1000. If the corpus ever grew until every version
-    ///   fit the same number, this assertion would go red and say so rather
-    ///   than passing while proving nothing.
+    ///   which is what makes this test able to fail on macos: 2.1.207 and
+    ///   2.1.223 each fit 250 ms and 2.1.215 fits 750 ms, against the pooled
+    ///   1000. The exception is estimator saturation at the rounding quantum:
+    ///   when `2 × pooled_max` is already ≤ the 250 ms step, every version
+    ///   rounds to the same number the pool does. linux/x86_64 is that case
+    ///   (max 118 ms × 2.0 = 236 ms → 250 ms over 2.1.227/2.1.232/2.1.233).
+    ///   That is still a pooled bound — three versions, each with arrivals —
+    ///   not a one-version fit. If every fit equals the pooled bound AND the
+    ///   estimator is not saturated, this assertion goes red rather than
+    ///   passing while proving nothing.
     #[test]
     fn every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit() {
         for promoted in PROMOTED_PROFILES {
@@ -1482,14 +1521,23 @@ mod tests {
             let fits = receipt["per_version_recommendations_not_to_be_shipped"]
                 .as_object()
                 .expect("the receipt publishes what each version would have been fitted to");
-            assert!(
-                fits.values()
-                    .filter_map(serde_json::Value::as_u64)
-                    .any(|fit| fit < derived),
-                "every per-version fit at {} already equals the pooled bound, so this test can no \
-                 longer tell a pooled bound from a fit",
-                path.display()
-            );
+            let any_fit_below = fits
+                .values()
+                .filter_map(serde_json::Value::as_u64)
+                .any(|fit| fit < derived);
+            if !any_fit_below {
+                // Saturated at the rounding quantum: 2 × max already fits in
+                // one step, so every named version and the pool recommend the
+                // same number. Still pooled (versions.len() >= 2 above). Not
+                // a licence to ship a one-version 250 as "pooled".
+                assert!(
+                    derived == step && (pooled_max as f64 * margin) <= step as f64,
+                    "every per-version fit at {} already equals the pooled bound, and the \
+                     estimator is not saturated at the rounding quantum, so this test can no \
+                     longer tell a pooled bound from a fit",
+                    path.display()
+                );
+            }
 
             // The provenance QUOTES the receipt. A re-measurement that moves any
             // of these numbers has to move the sentence an operator reads out of
@@ -1607,9 +1655,9 @@ mod tests {
             "the unique-file corpus shrank below the written n={arrivals} at {}",
             path.display()
         );
-        // Named so this file cannot be mistaken for the promotion drain
-        // receipt. Shipping 250 into PROMOTED_PROFILES is a later step and
-        // needs `pooled-transcript-drain-linux-x86_64.json`.
+        // Named so this file cannot be mistaken for the promotion drain.
+        // The pooled bound lives at `pooled-transcript-drain-linux-x86_64.json`
+        // (max 118 ms → 250 ms). This file remains the fast-path 46 ms pin.
         assert!(
             receipt["role"]
                 .as_str()

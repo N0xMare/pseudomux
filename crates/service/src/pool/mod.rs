@@ -3302,7 +3302,7 @@ mod tests {
         /// would leave an instance that breaks its own invariant -- and nothing
         /// in this tree constructed one until this test. A test that goes flaky
         /// under load has its failure attributed to whatever mutant was in
-        /// flight, which is the drift `docs/testing.md` records; this is the
+        /// flight, which is the drift `docs/archive/testing-gate-a-census.md` records; this is the
         /// first instance of it measured inside `pool/**`.
         #[tokio::test]
         async fn an_instance_that_cannot_enter_the_idle_set_is_torn_down_rather_than_stranded() {

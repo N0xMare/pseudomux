@@ -45,9 +45,10 @@ class CheckScript(unittest.TestCase):
         self.assertIn("PMUX_POOL_REAL_CLAUDE", done.stdout)
         self.assertIn("tools/dev tests", done.stdout)
         self.assertIn(
-            "ruff check --no-cache tools/dev tools/evidence_common clients/python",
+            "ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python",
             done.stdout,
         )
+        self.assertIn("tools/promotion tests", done.stdout)
         self.assertIn("private_runtime", done.stdout)
 
     def test_unknown_argument_is_exit_2(self) -> None:
@@ -82,9 +83,10 @@ class CheckScript(unittest.TestCase):
         self.assertIn("--test private_runtime", text)
         self.assertIn("--ignored", text)
         self.assertIn(
-            "ruff check --no-cache tools/dev tools/evidence_common clients/python",
+            "ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python",
             text,
         )
+        self.assertIn("tools/promotion/tests", text)
         self.assertNotIn("tools/gate-a", text)
         self.assertNotIn("tools/phase0", text)
         self.assertNotIn("tools/linux-docker", text)
@@ -200,6 +202,38 @@ class PromoteWrapper(unittest.TestCase):
         self.assertNotIn("Traceback", message)
 
 
+class PromotionFloor(unittest.TestCase):
+    """A promotion floor is per os/arch. The first `claude_version_floor` in
+    compatibility.rs is the macos cell, not the linux one."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        sys_path = str(ROOT / "tools" / "promotion")
+        if sys_path not in __import__("sys").path:
+            __import__("sys").path.insert(0, sys_path)
+        import promote_claude_version as promotion
+
+        cls.promotion = promotion
+
+    def test_macos_floor_is_not_inherited_by_linux(self) -> None:
+        macos = self.promotion.promoted_version_floor("macos", "aarch64")
+        self.assertEqual(macos, "2.1.220")
+        try:
+            linux = self.promotion.promoted_version_floor("linux", "x86_64")
+        except self.promotion.PromotionRefused as error:
+            self.assertIn("--floor", str(error))
+            self.assertIn("linux/x86_64", str(error))
+            linux = self.promotion.promoted_version_floor(
+                "linux", "x86_64", "2.1.227"
+            )
+        self.assertEqual(linux, "2.1.227")
+
+    def test_explicit_floor_cannot_disagree_with_a_shipped_cell(self) -> None:
+        with self.assertRaises(self.promotion.PromotionRefused) as raised:
+            self.promotion.promoted_version_floor("macos", "aarch64", "2.1.227")
+        self.assertIn("disagrees", str(raised.exception))
+
+
 class OperatorEval(unittest.TestCase):
     def test_describe_spends_nothing_and_lists_checks(self) -> None:
         stdout = io.StringIO()
@@ -311,7 +345,7 @@ class LivingDocs(unittest.TestCase):
         self.assertIn("tools/dev/operator_eval.py", text)
         self.assertIn("tools/dev/promote.py", text)
         self.assertIn(
-            "ruff check --no-cache tools/dev tools/evidence_common clients/python",
+            "ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python",
             text,
         )
 
@@ -350,12 +384,24 @@ class LivingDocs(unittest.TestCase):
         self.assertNotIn("def sealed_records", portable)
         self.assertNotIn("absolute_placeholders", portable)
 
-    def test_linux_has_no_pooled_drain_receipt(self) -> None:
-        self.assertFalse(
-            (ROOT / "evidence" / "pooled-transcript-drain-linux-x86_64.json").is_file()
+    def test_linux_pooled_drain_receipt_is_this_os_not_a_macos_copy(self) -> None:
+        path = ROOT / "evidence" / "pooled-transcript-drain-linux-x86_64.json"
+        self.assertTrue(path.is_file())
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(receipt["os"], "linux")
+        self.assertEqual(receipt["arch"], "x86_64")
+        versions = receipt["claude_versions"]
+        self.assertGreaterEqual(len(versions), 2)
+        self.assertEqual(versions, ["2.1.227", "2.1.232", "2.1.233"])
+        self.assertEqual(receipt["recommended_transcript_drain_ms"], 250)
+        self.assertEqual(
+            receipt["post_answer_arrivals"]["reachable_on_a_minified_cell"]["max_ms"],
+            118,
         )
+        self.assertNotIn("/home/", path.read_text(encoding="utf-8"))
         readme = (DEV / "README.md").read_text(encoding="utf-8")
-        self.assertIn("no pooled-drain receipt", readme)
+        self.assertIn("pooled-transcript-drain-linux-x86_64.json", readme)
+        self.assertNotIn("Linux currently has no pooled-drain receipt", readme)
 
     def test_testing_md_is_not_a_living_phase0_spec(self) -> None:
         text = (ROOT / "docs" / "testing.md").read_text(encoding="utf-8")

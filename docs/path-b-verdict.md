@@ -287,7 +287,7 @@ left is one named list rather than a class of unknowns.
 2. **`docs/` outside the linted set is scanned.** The scan set is the whole workspace minus build
    output and `vendor`, derived by subtraction rather than named. It found **47 line citations of a
    linted document** in documents nothing had ever opened — 37 into `docs/path-b.md` from
-   `docs/sandbox-spike.md` and `docs/linux-handoff.md`, most already pointing at unrelated
+   `docs/archive/sandbox-spike.md` and `docs/archive/linux-handoff.md`, most already pointing at unrelated
    paragraphs — plus five that meant `tools/linux-docker/README.md` and one that meant
    microsandbox's. All are section citations or fully-qualified paths now. **This is what unblocks
    editing `docs/path-b.md` at all**: §0.4's previous repair was written line-count neutral purely
@@ -475,7 +475,7 @@ And the clippy error of §0.
    (now n = 2).
 7. **Linux**: `gate_f/linux_docker_self_tests` (debt row C6) and the 84-vs-70 manifest divergence
    behind it; `docs/gate-c-linux-handoff.md`'s stale census.
-8. **Non-Path-B docs**: `docs/sandbox-spike.md` and `docs/linux-handoff.md` hold 37 unchecked line
+8. **Non-Path-B docs**: `docs/archive/sandbox-spike.md` and `docs/archive/linux-handoff.md` hold 37 unchecked line
    citations into `docs/path-b.md` with at least six already rotted. Either scope them into the
    grader or give them a status that says they are frozen. **This document is deliberately not
    listed in `docs/path-b.md` §0.0**, and that is the same finding seen from the other side: adding
@@ -1403,7 +1403,7 @@ Unchanged from §4.1 in order and in substance; re-costed against what this sess
    Re-projecting `tools/linux-docker/gate-a-manifest.json` from `phase-manifest.json` is the first
    act of picking Gate C back up, and it is the only thing standing between this repository and a
    Gate A with no admissible red cell at all.
-2. **Non-Path-B docs.** Unchanged: `docs/sandbox-spike.md` and `docs/linux-handoff.md` carry
+2. **Non-Path-B docs.** Unchanged: `docs/archive/sandbox-spike.md` and `docs/archive/linux-handoff.md` carry
    unchecked line citations into `docs/path-b.md`; close that scanning gap first, then promote this
    file into `docs/path-b.md` §0.0 so its own citations start being graded. This session added a
    reason to want that: §10 and §14 are the two longest un-graded prose blocks either document has.

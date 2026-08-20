@@ -279,7 +279,7 @@ truncates answers.
 
 ### 3.6 Q3 — which fields are version-sensitive
 
-The profile has seven fields (`TestedCompatibilityProfile`, `compatibility.rs:515`):
+The profile has seven fields (`TestedCompatibilityProfile`, `compatibility.rs:547`):
 `claude_version`, `claude_version_tested_through`, `os`, `arch`, `terminal_profile`,
 `input_transport`, `transcript_drain_ms`. **It had six when this section was written**; the seventh
 is the range ceiling P2 below added, and the count is corrected here rather than left as the kind of

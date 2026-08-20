@@ -38,7 +38,9 @@ Windows and print-mode Claude are unsupported.
 ## 2. Path B as a harness engine
 
 A Path B cell is `SessionCell::Minified`: `--disallowedTools *`, private
-config root, empty cwd, REPLACE system prompt. The pool keys instances by
+config root, empty cwd, REPLACE system prompt (`The user message is the
+entire instruction.` — displaces Claude Code's default agent prompt; not
+consumer policy). The pool keys instances by
 `(canonical model, effort argv)`. Membership in the idle set **is** the
 emptiness proof. `/clear` is the recycle; remint happens only when
 `turns_started` hits the recycle cap, at lease end, not mid-conversation.
@@ -72,9 +74,10 @@ later turns type only the new suffix so Anthropic's prompt cache can hit.
 Claude's tool surface stays denied; the harness runs tools and sends
 `tool_result`. Token streaming is reconstructed after the turn commits.
 
-Measured on this Linux host. Operator cell is **2.1.236**
-(`evidence/linux-operator-eval-2.1.236-x86_64.json`). Earlier 2.1.233
-receipts remain historical:
+Measured on this Linux host. Promoted linux cell is **2.1.227 through
+2.1.236** (`evidence/promotion-2.1.236-linux-x86_64.json`). Operator-eval
+`evidence/linux-operator-eval-2.1.236-x86_64.json` remains the pin-confirmation
+receipt. Earlier 2.1.233 receipts remain historical:
 
 | Receipt | What it showed |
 | --- | --- |
@@ -82,26 +85,28 @@ receipts remain historical:
 | `evidence/linux-pool-leased-sticky-x86_64.json` | Pool `Leased`: T1 write 1733 / T2 read 1733, same `s{slot}e{epoch}` |
 | `evidence/linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky, cache hit above the ~1024-token floor |
 | `evidence/linux-pi-agentic-subagent-x86_64.json` | Pi agentic + sequential + parallel subagents, all GREEN |
+| `evidence/linux-minified-system-remainder-2.1.236-x86_64.json` | REPLACE displacer: TUI `pmux run` billed 199 cold / 288 after `/clear`, cache 0. Leftover envelope is hundreds (chars/4 bound 265 after `/clear`), not the 29k tool surface. Not a dump of the API body. |
+| `evidence/linux-minified-system-body-2.1.236-x86_64.json` | Live `/v1/messages` body. Armed Sonnet turn: billing header, `You are Claude Code…` identity (not REPLACE), displacer, user `<system-reminder>` (`userEmail`, `currentDate`), `<total_tokens>` reminder. Tools/CLAUDE.md/git/cwd absent. |
 
 ### Linux admission
 
-`PROMOTED_PROFILES` still ships **one** cell: Claude Code 2.1.220 through
-2.1.227 on macos/aarch64, transparent/sdk, pooled drain 1000 ms. Linux
-is an **operator cell**, not a product promotion. The measured Linux
-operator binary is `~/.local/share/pmux/claude/2.1.236/claude` with
-`--tested-claude-profile` drain 250 ms (the linux minified estimator,
-**not** a pooled promotion receipt). That is a pin update, not a
-widening of `PROMOTED_PROFILES`.
+`PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.220 through
+2.1.227 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
+2.1.236 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
+A PATH Claude newer than the linux ceiling (this host's `claude` is
+2.1.237) still needs `--tested-claude-profile`.
 
-Shipping Linux without a flag still needs a real pooled-drain receipt
-and `tools/dev/promote.py` (which refuses without that per-OS file). There is
-no `pooled-transcript-drain-linux-x86_64.json`. Do not invent one. Do not
-treat the macos 2.1.220..=2.1.227 range as covering Linux.
+The linux drain is `evidence/pooled-transcript-drain-linux-x86_64.json`:
+191 reachable Path B arrivals over 2.1.227/2.1.232/2.1.233, max 118 ms,
+estimator 250 ms. Every named version's own fit is also 250 ms because
+118×2.0=236 sits inside the 250 ms rounding quantum — that is saturation,
+not a one-version fit. The paid ceiling is
+`evidence/promotion-2.1.236-linux-x86_64.json` (`pmux run` grades,
+emptiness after `/clear`, 5 reachable arrivals at 2.1.236 max 46 ms).
 
-`evidence/linux-minified-post-answer-x86_64.json` is pinned as **not** a
-promotion drain receipt (max 46 ms, recommend 250, versions 2.1.227 and
-2.1.232). Shipping 250 as a "pooled" bound would be vacuous: both named
-versions fit 250.
+`evidence/linux-minified-post-answer-x86_64.json` remains the fast-path
+46 ms pin, **not** the promotion drain. Do not treat the macos
+2.1.220..=2.1.227 range as covering Linux.
 
 ### Recommended Pi warm set
 
@@ -132,13 +137,13 @@ mint.
 | --- | --- |
 | Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
 | Sticky `Leased` + Messages harness | Shipped, opt-in, measured on linux/x86_64 with Pi. |
-| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 only. |
-| Linux without a flag | **Not shipped.** Operator pin is 2.1.236. |
+| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 and linux/x86_64 2.1.227..=2.1.236. |
+| Linux without a flag | **Shipped** for 2.1.227..=2.1.236. PATH 2.1.237 is outside the ceiling. |
 | Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |
 | `tools/dev/check.sh` | Living commit/push check. `--push` adds e2e + process blackbox. |
 | `tools/dev/operator_eval.py` | Confirms a Claude binary on **this** OS (grades + Messages sticky). No pooled drain required. Does not edit `PROMOTED_PROFILES`. |
-| `tools/dev/promote.py` | Drops `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists. Missing linux drain ≠ this Claude does not work. |
+| `tools/dev/promote.py` | Drops `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists. linux/x86_64 and macos/aarch64 both have one. |
 | Gate A | **Removed.** Living verification is `tools/dev/`. |
 | Phase 0 / linux-docker / package-smoke | **Removed.** Historical freeze envelope, not a living pin. |
 

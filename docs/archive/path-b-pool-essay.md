@@ -233,7 +233,7 @@ is the coverage.
 
 **Rule 1's scan is the whole repository at the same commit**, which found 47 line citations of a
 linted document living in documents the scan had never opened — 37 of them into this file, from
-`docs/sandbox-spike.md` and `docs/linux-handoff.md`, and most already pointing at unrelated
+`docs/archive/sandbox-spike.md` and `docs/archive/linux-handoff.md`, and most already pointing at unrelated
 paragraphs. That hole had a cost beyond the wrong lines: the §0.4 repair before this one was written
 to be *line-count neutral* so those 37 would not all move at once. **A rule that makes the document
 it protects un-editable is not protecting it**, and this paragraph could not have been written under

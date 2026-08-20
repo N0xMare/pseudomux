@@ -38,12 +38,13 @@ target/release/pmuxd serve \
   --pool-claude "$(command -v claude)"
 ```
 
-`--pool-claude` must be absolute. On Linux, add an operator profile until a
-linux cell is promoted, for example:
+`--pool-claude` must be absolute. The binary's version must be in the
+promoted table below, or you pass `--tested-claude-profile`. A newer PATH
+Claude (this host's `claude` is 2.1.237) is still outside the linux ceiling:
 
 ```bash
 --tested-claude-profile \
-  '{"claude_version":"2.1.236","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
+  '{"claude_version":"2.1.237","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
 ```
 
 Check the daemon (starts nothing, spends no tokens):
@@ -178,7 +179,14 @@ refused without it.
 | `--pool-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
 | `--pool-no-evidence` | off | Retain no pool evidence. |
 
-Default system prompt: `Answer directly and completely. If you cannot answer, say so in one line.`
+Default system prompt: `The user message is the entire instruction.`
+That REPLACE text displaces Claude Code's default agent prompt. It is not
+consumer policy, and it is not the entire `system` array. A minified TUI
+cell still sends Claude Code's identity line and a small user reminder
+(account email, date); tools / MCP / `CLAUDE.md` are already absent. A
+harness such as Pi sends policy in the Messages body (`SYSTEM:` / `TOOLS:` /
+`HISTORY:`). `--pool-system-prompt` overrides the REPLACE *displacer* for
+every cell in that daemon; it is not where a harness puts consumer policy.
 
 **Fifteen is an owner-set cap, not a default you may raise.** `--pool-size
 16` is refused at boot. Bounds are checked before the socket is bound.
@@ -191,8 +199,9 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
 | 2.1.220 through 2.1.227 | macos / aarch64 | transparent / sdk | 1000 |
+| 2.1.227 through 2.1.236 | linux / x86_64 | transparent / sdk | 250 |
 
-Linux is not in that table. Admit it with `--tested-claude-profile` (see
+A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.
 
 ## The command surface

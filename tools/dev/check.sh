@@ -8,8 +8,8 @@ tools/dev/check.sh [--push]
 
   (default)  fmt, clippy -D warnings, cargo test --workspace,
              TypeScript tests, Python client tests, vendor lanes,
-             portable_paths tests, tools/dev tests,
-             ruff check --no-cache tools/dev tools/evidence_common clients/python
+             portable_paths tests, tools/dev tests, tools/promotion tests,
+             ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python
   --push     also pool e2e, ignored sidecar private_runtime, process blackbox
 
 --push unsets PMUX_POOL_REAL_CLAUDE so ignored real-turn lanes skip.
@@ -68,11 +68,14 @@ echo "== tools/dev tests"
 PMUX_DOCUMENTED_SURFACE_BIN_DIR="$root/target/debug" \
   python3 -m unittest discover -s tools/dev/tests -q
 
+echo "== tools/promotion tests"
+python3 -m unittest discover -s tools/promotion/tests -q
+
 echo "== ruff"
 if command -v ruff >/dev/null; then
-  ruff check --no-cache tools/dev tools/evidence_common clients/python
+  ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python
 else
-  python3 -m ruff check --no-cache tools/dev tools/evidence_common clients/python
+  python3 -m ruff check --no-cache tools/dev tools/evidence_common tools/promotion clients/python
 fi
 
 if [[ "$push" -eq 1 ]]; then

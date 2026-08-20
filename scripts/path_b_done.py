@@ -658,17 +658,20 @@ def criterion_adversarial_suite(context: Context) -> Verdict:
 def promoted_profiles(source: str) -> list[dict[str, str]]:
     """`PROMOTED_PROFILES` read out of the Rust that ships it."""
 
-    block = re.search(
-        r"pub const PROMOTED_PROFILES: &\[PromotedProfile\] = &\[(.*?)\n\}\];",
-        source,
-        re.DOTALL,
-    )
-    if block is None:
+    marker = "pub const PROMOTED_PROFILES: &[PromotedProfile] = &["
+    start = source.find(marker)
+    if start < 0:
         raise DoneGateError(
             f"{COMPATIBILITY_SOURCE} no longer declares PROMOTED_PROFILES"
         )
+    body = source[start + len(marker) :]
+    end = body.find("\n];")
+    if end < 0:
+        raise DoneGateError(
+            f"{COMPATIBILITY_SOURCE} PROMOTED_PROFILES array is not closed with ];"
+        )
     profiles = []
-    for entry in re.split(r"PromotedProfile \{", block.group(1))[1:]:
+    for entry in re.split(r"PromotedProfile \{", body[:end])[1:]:
         fields = dict(re.findall(r'(\w+): "([^"]*)"', entry))
         wanted = ("claude_version_floor", "claude_version_tested_through", "os", "arch")
         if all(name in fields for name in wanted):
