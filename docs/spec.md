@@ -170,7 +170,7 @@ child.
 ## 5. Compatibility
 
 `require_tested` is the default for pool mint. The distribution ships one
-promoted range per os/arch: Claude Code 2.1.220 through 2.1.227 on
+promoted range per os/arch: Claude Code 2.1.220 through 2.1.238 on
 macos/aarch64, and 2.1.227 through 2.1.236 on linux/x86_64, both
 transparent/sdk. A version outside those ranges needs
 `--tested-claude-profile`. Receipts live under `evidence/`.

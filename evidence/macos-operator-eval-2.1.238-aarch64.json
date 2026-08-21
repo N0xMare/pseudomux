@@ -1,0 +1,274 @@
+{
+  "schema": "pmux.operator-eval.v1",
+  "kind": "operator_compatibility",
+  "not_a_promotion": true,
+  "claude_version": "2.1.238",
+  "os": "macos",
+  "arch": "aarch64",
+  "pin": {
+    "path": "<HOME>/.local/share/claude/versions/2.1.238",
+    "sha256": "1c196c456373b57818ae87df84aecee96cb659448c0d6a6bbb401ac5758431b2",
+    "bytes": 321263536,
+    "version": "2.1.238"
+  },
+  "promotion_status": {
+    "may_replace_operator_pin": true,
+    "may_ship_without_flag": false,
+    "requires_for_flagless": "evidence/pooled-transcript-drain-macos-aarch64.json and tools/dev/promote.py"
+  },
+  "operator_profile": {
+    "claude_version": "2.1.238",
+    "os": "macos",
+    "arch": "aarch64",
+    "terminal_profile": "transparent",
+    "input_transport": "sdk",
+    "transcript_drain_ms": 1000
+  },
+  "launch_bundle_parses": {
+    "probed": {
+      "--session-id": "accepted",
+      "--model": "accepted",
+      "--effort": "accepted",
+      "--permission-mode": "accepted",
+      "--disallowedTools": "accepted",
+      "--strict-mcp-config": "accepted",
+      "--system-prompt-file": "accepted"
+    },
+    "rejected": {},
+    "negative_control_rejected": true,
+    "ok": true
+  },
+  "turns": [
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "low",
+      "nonce": "WD30",
+      "expected": "WD30-77",
+      "text": "WD30-77",
+      "answered": true,
+      "client_wall_ms": 2882.7,
+      "claude_version": "2.1.238",
+      "usage": {
+        "main": {
+          "input_tokens": 318,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 318,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "02-context-is-empty-after-clear",
+      "effort": "low",
+      "nonce": "I67N",
+      "expected": "NONE",
+      "text": "NONE",
+      "answered": true,
+      "client_wall_ms": 2615.3,
+      "claude_version": "2.1.238",
+      "usage": {
+        "main": {
+          "input_tokens": 335,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 335,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "03-unicode-echo",
+      "effort": "low",
+      "nonce": "VKEX",
+      "expected": "VKEX caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "text": "VKEX caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "answered": true,
+      "client_wall_ms": 2611.3,
+      "claude_version": "2.1.238",
+      "usage": {
+        "main": {
+          "input_tokens": 300,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 300,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "04-ordered-long-reply",
+      "effort": "low",
+      "nonce": "WNML",
+      "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 WNML",
+      "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 WNML",
+      "answered": true,
+      "client_wall_ms": 5562.9,
+      "claude_version": "2.1.238",
+      "usage": {
+        "main": {
+          "input_tokens": 322,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 322,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "high",
+      "nonce": "JML8",
+      "expected": "JML8-113",
+      "text": "JML8-113",
+      "answered": true,
+      "client_wall_ms": 3925.2,
+      "claude_version": "2.1.238",
+      "usage": {
+        "main": {
+          "input_tokens": 318,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 318,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    }
+  ],
+  "checks": {
+    "minified_cell_is_admitted": {
+      "ok": true,
+      "census": {
+        "capacity": 3,
+        "clearing": 0,
+        "configured": true,
+        "conversation_leases": [],
+        "declared_warm": 1,
+        "halted": null,
+        "idle": 1,
+        "in_flight": 0,
+        "instance_terminals_present": 1,
+        "leaked": 0,
+        "leased": 0,
+        "live": 1,
+        "pool_size": 3,
+        "registered_instances": 1,
+        "reserved": 0,
+        "tearing_down": 0
+      },
+      "doctor_status": "healthy"
+    },
+    "grades_answer": {
+      "ok": true,
+      "wrong": []
+    },
+    "context_did_not_survive_recycling": {
+      "ok": true,
+      "leaked": []
+    },
+    "no_tool_surface": {
+      "ok": true,
+      "offenders": []
+    },
+    "pool_never_halted": {
+      "ok": true,
+      "halted": null,
+      "leaked": 0
+    },
+    "messages_sticky": {
+      "ok": true,
+      "turn1": {
+        "status": 200,
+        "elapsed_s": 4.64,
+        "lease": "primed",
+        "cell": "s0e2",
+        "conversation": "operator-eval-1787278458",
+        "usage": {
+          "cache_creation_input_tokens": 1783,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 15
+        },
+        "text": "ACK Otter-Cache-8458",
+        "raw_head": "{\"content\":[{\"text\":\"ACK Otter-Cache-8458\",\"type\":\"text\"}],\"id\":\"msg_18cdb04ae9eebe28\",\"model\":\"claude-sonnet-5\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":1783,\""
+      },
+      "turn2": {
+        "status": 200,
+        "elapsed_s": 3.1,
+        "lease": "continued",
+        "cell": "s0e2",
+        "conversation": "operator-eval-1787278458",
+        "usage": {
+          "cache_creation_input_tokens": 144,
+          "cache_read_input_tokens": 1783,
+          "input_tokens": 2,
+          "output_tokens": 12
+        },
+        "text": "Otter-Cache-8458",
+        "raw_head": "{\"content\":[{\"text\":\"Otter-Cache-8458\",\"type\":\"text\"}],\"id\":\"msg_18cdb04ba2ef4af0\",\"model\":\"claude-sonnet-5\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":144,\"cache"
+      },
+      "release_status": 200,
+      "release_body": "{\"conversation\":\"operator-eval-1787278458\",\"released\":true}",
+      "same_cell": true,
+      "cache_write_t1": 1783,
+      "cache_read_t2": 1783,
+      "cache_hit": true
+    }
+  },
+  "verdict": "GREEN_OPERATOR"
+}

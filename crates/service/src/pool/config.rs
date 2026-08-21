@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use pseudomux_protocol::v1::EffortLevel;
 
-use super::class::{resolve_pool_class, InstanceClass, ModelEffortRefusal};
+use super::class::{InstanceClass, ModelEffortRefusal, resolve_pool_class};
 
 /// Owner-set upper limit on live instances. `--pool-size` is refused
 /// above this at parse, so the runtime never has to consider a larger pool.

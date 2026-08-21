@@ -416,7 +416,8 @@ lines later, and `2.1.99` above `2.1.207` is the one bug a range key is guarante
 ever is. `VersionRange { floor, tested_through }` is inclusive at both ends and
 `TestedCompatibilityProfile::matches` asks it for containment.
 
-**The shipped range is `2.1.220..=2.1.227`** (`2.1.220..=2.1.226` from 2026-08-09 to 2026-08-11).
+**The shipped range is `2.1.220..=2.1.238`** (`2.1.220..=2.1.226` from 2026-08-09 to 2026-08-11;
+`2.1.220..=2.1.227` from 2026-08-11; `2.1.220..=2.1.238` from 2026-08-21).
 The floor is where the evidence starts: 2.1.220 has
 the drain receipt, the Gate B campaign and the screen/preamble measurements, and §3.1 shows 2.1.201
 and earlier at *zero* reachable `cli` arrivals — unestablished, not safe. The ceiling is where the
@@ -424,12 +425,14 @@ evidence stops, and each ceiling was measured the same way: the launch bundle ac
 rejections, the post-`/clear` frame at 2 rendered rows below the cursor, the 5-row preamble
 identical in rows and order, the local-command menu's foreground-only selection, the `--effort`
 vocabulary byte-identical, and a pool mint reaching `state: ready` —
-`docs/2.1.226-compatibility.md` for 2.1.226 and `docs/2.1.227-compatibility.md` for 2.1.227. The
+`docs/2.1.226-compatibility.md` for 2.1.226, `docs/2.1.227-compatibility.md` for 2.1.227, and
+`evidence/promotion-2.1.238-macos-aarch64.json` for 2.1.238. The
 drain is **not** measurable from the free corpus at a fresh version — it held zero 2.1.226 rows on
 the day 2.1.226 was promoted and zero 2.1.227 rows on the day 2.1.227 was, and
 `measure_transcript_drain.py` exits 5 rather than passing — and that is precisely what the pooled
 bound of P1 is for. What answers it instead is the daemon's OWN evidence mirror, written by the
-promotion run: 5 reachable arrivals at 2.1.227, max **52 ms**. `range_provenance` on the profile says
+promotion run: 5 reachable arrivals at 2.1.238, max **54 ms** (2.1.227 was 5 arrivals, max
+52 ms). `range_provenance` on the profile says
 all of that, and the daemon publishes it.
 
 Four properties the range key has that the string key did not, each with a test that fails without

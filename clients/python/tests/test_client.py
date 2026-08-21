@@ -24,8 +24,8 @@ from pmux_client import (
     PmuxVersionError,
     ReplayGapItem,
 )
-from tests.durable_ids import turn_id_for_attempt
 from pmux_client.client import KNOWN_ERROR_CODES, _timeout_for
+from tests.durable_ids import turn_id_for_attempt
 
 SESSION_ID = "00000000-0000-4000-8000-000000000022"
 GENERATION_ID = "00000000-0000-4000-8000-000000000044"

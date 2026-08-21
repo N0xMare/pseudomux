@@ -1669,6 +1669,32 @@ impl Pool {
                 }
             }
             Err(failure) => {
+                // Classification only: code, the two fate bits, and the driver's
+                // `violation`/`reason`/`field` keys. Never `ErrorBody::message`
+                // and never the rest of `details` -- those can carry screen
+                // text, paths, and wait matchers.
+                let details = &failure.error.details;
+                tracing::warn!(
+                    operation = "path_b_clear",
+                    slot,
+                    code = ?failure.error.code,
+                    retryable = failure.error.retryable,
+                    clear_not_submitted = failure.clear_not_submitted,
+                    preamble_mismatch = failure.preamble_mismatch.unwrap_or(""),
+                    violation = details
+                        .get("violation")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or(""),
+                    reason = details
+                        .get("reason")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or(""),
+                    field = details
+                        .get("field")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or(""),
+                    "a pooled instance failed /clear"
+                );
                 if let Some(reason) = failure.preamble_mismatch {
                     // Not one bad instance: pmux's model of the post-`/clear`
                     // preamble no longer matches the installed Claude. Stop

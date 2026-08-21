@@ -20,9 +20,9 @@ from pmux_client import (
     PmuxServerError,
     PmuxVersionError,
 )
-from tests.durable_ids import turn_id_for_attempt
 from pmux_client import client as client_module
 from pmux_client import protocol as protocol_module
+from tests.durable_ids import turn_id_for_attempt
 
 CONFORMANCE_ROOT = Path(__file__).resolve().parents[3] / "tests" / "conformance" / "v1"
 GOLDEN = json.loads((CONFORMANCE_ROOT / "golden.json").read_text(encoding="utf-8"))

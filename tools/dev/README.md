@@ -40,7 +40,7 @@ Spends real model turns. Does **not** read or write a pooled-drain receipt. Does
 python3 tools/dev/promote.py \
   --release-dir target/release \
   --claude /path/to/claude \
-  --output evidence/promotion-2.1.227-macos-aarch64.json
+  --output evidence/promotion-2.1.238-macos-aarch64.json
 ```
 
 If `evidence/pooled-transcript-drain-<os>-<arch>.json` is missing, the tool exits 2 and says you cannot **drop the flag** on that OS. Use `operator_eval.py` to pin the binary instead.

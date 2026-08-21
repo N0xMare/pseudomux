@@ -1566,7 +1566,10 @@ fn request_method(request: &Request) -> &'static str {
 fn assert_session_surface_removed(label: &str, error: &ErrorBody) {
     assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{label}");
     assert_eq!(
-        error.details.get("violation").and_then(|value| value.as_str()),
+        error
+            .details
+            .get("violation")
+            .and_then(|value| value.as_str()),
         Some("session_surface_removed"),
         "{label}: {error:?}"
     );
@@ -1695,9 +1698,7 @@ async fn dispatch_refuses_every_non_living_request_and_keeps_the_living_allowlis
                     "{name} must dispatch as living: {error:?}"
                 );
             }
-            Err(error)
-                if !matches!(name, "ping" | "diagnose" | "run_stateless") =>
-            {
+            Err(error) if !matches!(name, "ping" | "diagnose" | "run_stateless") => {
                 assert_session_surface_removed(name, &error);
             }
             other => panic!("{name}: unexpected dispatch outcome: {other:?}"),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import socket
 import threading
@@ -221,10 +222,8 @@ class MessagesHelperTests(unittest.TestCase):
                 self.send_header("Content-Length", str(len(payload)))
                 self.send_header("Connection", "close")
                 self.end_headers()
-                try:
+                with contextlib.suppress(BrokenPipeError, ConnectionResetError):
                     self.wfile.write(payload)
-                except (BrokenPipeError, ConnectionResetError):
-                    pass
 
         server = ThreadingHTTPServer(("127.0.0.1", 0), _OversizeHandler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)

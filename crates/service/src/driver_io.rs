@@ -1418,9 +1418,10 @@ async fn enter_once(
 ///
 /// This is deliberately weaker than [`wait_for_stable_prompt_render`], which
 /// additionally requires the cursor-correlated editor geometry to be preserved.
-/// A slash command opens Claude's command menu, which moves the composer up the
-/// screen and paints candidate rows far below the cursor, so the editor
-/// signature a prompt is proven by does not exist on this screen at all.
+/// A slash command opens Claude's command menu. On 2.1.220/2.1.227 the composer
+/// jumps UP and candidates paint below it; on 2.1.238 in a 24-row pane the
+/// composer stays at the bottom and candidates paint ABOVE it. Either way the
+/// editor signature a prompt is proven by does not exist on this screen.
 ///
 /// What replaces it is not nothing. The frame this returns is handed to
 /// [`prove_control_command_selection`], which proves from that same frame that
@@ -1474,9 +1475,9 @@ async fn wait_for_stable_control_render(
     }
 }
 
-/// MEASURED: the menu's rule sits on the row directly below the composer, and
-/// the first candidate directly below the rule. Invariant across every capture
-/// taken, at every prefix.
+/// MEASURED 2.1.220/2.1.227: the menu's lower rule sits on the row directly
+/// below the composer. 2.1.238 still draws that lower rule (and an upper one);
+/// candidates may sit below the lower rule or above the upper one.
 const MENU_RULE_ROWS_BELOW_COMPOSER: u16 = 1;
 
 /// The glyph Claude Code rules the command menu off with (U+2500).
@@ -1488,11 +1489,16 @@ const MENU_RULE_GLYPH: char = '─';
 /// offset [`active_editor`] calls an empty cursor position.
 const COMPOSER_TEXT_OFFSET: u16 = 2;
 
+/// MEASURED: a candidate token starts within this many leading ASCII spaces.
+/// 2.1.220/2.1.227 start at column 0; 2.1.238 indents two spaces. Wrapped
+/// description lines start around column 30 and must not count as candidates
+/// even when they contain a solidus (` /resume)`).
+const MAX_MENU_TOKEN_INDENT: usize = 2;
+
 /// One rendered menu row that offers a command.
 struct MenuCandidate {
     row: u16,
-    /// The command token. MEASURED: it starts at column 0 and the description
-    /// starts at column 30.
+    /// The command token, without leading indent.
     token: String,
 }
 
@@ -1503,8 +1509,9 @@ struct MenuCandidate {
 ///
 /// Claude Code 2.1.220 in a 24x80 private rmux pane, `--cell minified`,
 /// `--disallowedTools '*'`, read through the same `PaneSnapshot` this crate's
-/// backend reads. Typing or pasting a slash command opens a menu directly under
-/// the composer, and the composer itself jumps UP the screen to make room:
+/// backend reads. Typing or pasting a slash command opens a menu. On
+/// 2.1.220/2.1.227 the composer jumps UP and candidates paint directly under
+/// it, tokens at column 0:
 ///
 /// ```text
 /// r09 ❯ /clear                                  <- composer, cursor at col 8
@@ -1513,6 +1520,13 @@ struct MenuCandidate {
 /// r13 /code-review  Review the current diff…     <- candidate 1
 /// r15 /simplify     Review the changed code…     <- candidate 2
 /// ```
+///
+/// On 2.1.238 in a 24x120 pane the composer stays at the bottom, the same
+/// U+2500 box still surrounds it, and candidates paint ABOVE the upper rule
+/// with a two-space indent. Unselected rows are also a uniform colour (they
+/// were mixed on 2.1.227), so "this row is uniform" is no longer the
+/// selection. The selected row is the unique candidate whose body colour
+/// equals the composer's typed-command colour — compared, never named.
 ///
 /// Enter selects the HIGHLIGHTED ENTRY, not the composer text. That is
 /// submitted evidence, not inference: with `/c` in the composer and `/cd`
@@ -1534,13 +1548,14 @@ struct MenuCandidate {
 ///
 /// The discriminator is NOT "this row contains the highlight colour": unselected
 /// rows contain it too, on the characters the filter matched (`/copy` at prefix
-/// `/c` renders its `c` in the same colour). MEASURED, it is that on the
-/// selected row ONE colour covers every cell from column 0 through the last
-/// rendered glyph — INCLUDING the blank cells between the command token and its
-/// description — while an unselected row leaves those blanks at the terminal
-/// default: a single `[0..75]` run against `[0..0] [1..5] [6..6]`. That shape is
-/// read here without naming a palette index, so a theme change or a release
-/// that retunes the palette degrades this to a refusal, never to a wrong answer.
+/// `/c` renders its `c` in the same colour). On 2.1.220/2.1.227 the selected
+/// row is one colour from column 0 through the last glyph, blanks between token
+/// and description included, while an unselected row leaves those blanks at the
+/// terminal default. On 2.1.238 unselected rows are also uniform (in a different
+/// colour) and tokens indent two unstyled spaces, so uniformity alone is not
+/// the selection: the selected candidate is the unique one whose body colour
+/// equals the composer's typed-command colour. Compared, never named. A theme
+/// change degrades this to a refusal, never to a wrong answer.
 ///
 /// # What this does NOT rule out
 ///
@@ -1571,22 +1586,22 @@ fn prove_control_command_selection(
 ) -> DriverResult<()> {
     let literal = command.literal();
     let composer_row = proven_composer_row(screen, literal)?;
-    let Some(rule_row) = composer_row.checked_add(MENU_RULE_ROWS_BELOW_COMPOSER) else {
-        return Err(control_selection_refusal("menu_not_rendered"));
-    };
-    if !is_menu_rule(&screen.row_text(rule_row)) {
-        return Err(control_selection_refusal("menu_not_rendered"));
-    }
-    let Some(first_candidate_row) = rule_row.checked_add(1) else {
-        return Err(control_selection_refusal("menu_not_rendered"));
-    };
-    let candidates = menu_candidates(screen, first_candidate_row);
+    let candidates = menu_candidates(screen, composer_row);
     if candidates.is_empty() {
         return Err(control_selection_refusal("menu_not_rendered"));
     }
+    let Some(command_colour) = composer_command_colour(screen, composer_row) else {
+        return Err(control_selection_refusal_with(
+            "menu_selection_not_unique",
+            "highlighted_rows",
+            0.into(),
+        ));
+    };
     let highlighted: Vec<&MenuCandidate> = candidates
         .iter()
-        .filter(|candidate| selected_row_colour(screen.row(candidate.row)).is_some())
+        .filter(|candidate| {
+            candidate_body_colour(screen.row(candidate.row)) == Some(command_colour)
+        })
         .collect();
     let [selected] = highlighted.as_slice() else {
         return Err(control_selection_refusal_with(
@@ -1645,44 +1660,82 @@ fn is_menu_rule(rendered: &str) -> bool {
     !rendered.is_empty() && rendered.chars().all(|glyph| glyph == MENU_RULE_GLYPH)
 }
 
-/// Every row below the rule that offers a command.
+/// Candidate rows on either side of the composer box.
 ///
-/// A candidate row starts its token at column 0; the wrapped continuation lines
-/// of a description are indented and are deliberately not candidates, so a
-/// highlighted entry whose description wraps still counts once. The scan runs to
-/// the bottom of the grid rather than stopping at the first gap: a row further
-/// down that begins with a solidus can only ADD to the highlight count, and an
-/// ambiguous count refuses.
-fn menu_candidates(screen: &StyledScreen, first_row: u16) -> Vec<MenuCandidate> {
-    (first_row..screen.rows)
-        .filter_map(|row| {
-            let rendered = screen.row_text(row);
-            if !rendered.starts_with('/') {
-                return None;
-            }
-            Some(MenuCandidate {
-                row,
-                token: rendered.split_whitespace().next()?.to_owned(),
-            })
-        })
+/// The idle composer is boxed by the same U+2500 rule, so a rule is necessary
+/// and not sufficient: candidates are the rows BELOW the lower rule (2.1.220/
+/// 2.1.227) and/or ABOVE the upper rule (2.1.238). Without an adjacent rule,
+/// leftover slash-prefixed text is not a menu. Wrapped description lines are
+/// indented past [`MAX_MENU_TOKEN_INDENT`] and are not candidates, so a
+/// highlighted wrap does not count as a second selected entry.
+fn menu_candidates(screen: &StyledScreen, composer_row: u16) -> Vec<MenuCandidate> {
+    let mut rows = Vec::new();
+    if let Some(below) = composer_row.checked_add(MENU_RULE_ROWS_BELOW_COMPOSER)
+        && below < screen.rows
+        && is_menu_rule(&screen.row_text(below))
+        && let Some(first) = below.checked_add(1)
+    {
+        rows.extend(first..screen.rows);
+    }
+    if let Some(above) = composer_row.checked_sub(1)
+        && is_menu_rule(&screen.row_text(above))
+    {
+        rows.extend(0..above);
+    }
+    rows.sort_unstable();
+    rows.dedup();
+    rows.into_iter()
+        .filter_map(|row| menu_candidate_at(screen, row))
         .collect()
 }
 
-/// The measured shape of the SELECTED menu row: one explicitly selected
-/// foreground colour on every cell from column 0 through the last rendered
-/// glyph, blanks between the token and the description included.
+fn menu_candidate_at(screen: &StyledScreen, row: u16) -> Option<MenuCandidate> {
+    let rendered = screen.row_text(row);
+    let indent = rendered.chars().take_while(|glyph| *glyph == ' ').count();
+    if indent > MAX_MENU_TOKEN_INDENT {
+        return None;
+    }
+    let stripped = rendered.trim_start_matches(' ');
+    if !stripped.starts_with('/') {
+        return None;
+    }
+    Some(MenuCandidate {
+        row,
+        token: stripped.split_whitespace().next()?.to_owned(),
+    })
+}
+
+/// The explicit colour of the first glyph of the typed command in the composer.
 ///
-/// Returns that colour, or `None` for any row that does not have the shape. The
-/// colour is returned rather than compared against a constant on purpose:
-/// nothing here may depend on which palette entry a theme happens to use, and a
-/// theme that stopped marking the selection this way makes every row fail —
-/// which is a refusal, the direction this is allowed to fail in.
-fn selected_row_colour(cells: &[StyledCell]) -> Option<CellColor> {
+/// Used as the identity of "selected" so a theme is never named. On 2.1.238
+/// unselected candidate rows are also a uniform colour, so uniformity alone
+/// cannot mark the selection; matching this colour can.
+fn composer_command_colour(screen: &StyledScreen, composer_row: u16) -> Option<CellColor> {
+    let rendered = screen.row_text(composer_row);
+    let prompt_col = prompt_glyph_col(&rendered)?;
+    let start = usize::from(prompt_col.checked_add(COMPOSER_TEXT_OFFSET)?);
+    let colour: CellColor = screen.row(composer_row).get(start)?.foreground;
+    colour.is_styled().then_some(colour)
+}
+
+/// Uniform explicit colour of a candidate row's body: leading unstyled indent
+/// skipped, then one colour from the token through the last glyph, blanks
+/// between token and description included.
+///
+/// 2.1.220/2.1.227 selected rows have no indent. 2.1.238 selected rows indent
+/// two unstyled spaces and then paint the rest as one run.
+fn candidate_body_colour(cells: &[StyledCell]) -> Option<CellColor> {
     let last_glyph = cells
         .iter()
         .rposition(|cell| !cell.is_padding() && !cell.text.trim().is_empty())?;
+    let start = cells.iter().take(last_glyph + 1).position(|cell| {
+        if cell.is_padding() {
+            return false;
+        }
+        cell.foreground.is_styled() || !cell.text.chars().all(char::is_whitespace)
+    })?;
     let mut colour: Option<CellColor> = None;
-    for cell in cells.iter().take(last_glyph + 1) {
+    for cell in cells.iter().take(last_glyph + 1).skip(start) {
         if cell.is_padding() {
             continue;
         }
@@ -4378,10 +4431,17 @@ mod tests {
             Unmatched::Refuses("whichever of the gates it drives ran out of budget first"),
         ),
         (
-            "driver_io.rs::selected_row_colour",
+            "driver_io.rs::composer_command_colour",
             Unmatched::ClosedByCaller(
-                "`prove_control_command_selection`, which refuses on `None` rather than \
-                 selecting a default row",
+                "`prove_control_command_selection`, which refuses when the composer carries \
+                 no explicit colour to compare candidates against",
+            ),
+        ),
+        (
+            "driver_io.rs::candidate_body_colour",
+            Unmatched::ClosedByCaller(
+                "`prove_control_command_selection`, which treats a non-uniform or colourless \
+                 body as unselected rather than as a default row",
             ),
         ),
         // -- Describers: they report a frame, they do not judge one -----------
@@ -5097,7 +5157,7 @@ mod tests {
     /// The MEASURED palette entries of Claude Code 2.1.220's command menu: the
     /// selected row is idx153 throughout, and every other row renders its own
     /// characters in idx246. Named here ONLY to rebuild the captures byte for
-    /// byte. [`selected_row_colour`] never names a palette index, which is why
+    /// byte. [`candidate_body_colour`] never names a palette index, which is why
     /// a retuned theme costs a refusal rather than a wrong answer.
     const CAPTURED_SELECTED: u8 = 153;
     const CAPTURED_UNSELECTED: u8 = 246;
@@ -5248,6 +5308,41 @@ mod tests {
 
     fn measured_clear_screen() -> StyledScreen {
         captured_screen(14, measured_clear_menu(), 9, 8)
+    }
+
+    /// MEASURED Claude Code 2.1.238, 24-row pane: composer boxed at the
+    /// bottom, candidates ABOVE the upper rule, tokens indented two spaces,
+    /// unselected rows a uniform colour (not the 2.1.227 mixed-blank shape).
+    fn measured_238_above_composer_menu() -> Vec<CapturedRow> {
+        vec![
+            captured(
+                16,
+                "  /clear                        Start a new session with empty context;",
+                CapturedStyle::Runs(vec![(2, 79, CAPTURED_SELECTED)]),
+            ),
+            captured(
+                17,
+                "                                /resume)",
+                CapturedStyle::Plain,
+            ),
+            captured(
+                18,
+                "  /code-review                  Review the current diff for correctness bugs",
+                CapturedStyle::Runs(vec![(2, 79, CAPTURED_UNSELECTED)]),
+            ),
+            menu_rule_row(20),
+            captured(
+                21,
+                "❯ /clear",
+                CapturedStyle::Runs(vec![(2, 7, CAPTURED_SELECTED)]),
+            ),
+            menu_rule_row(22),
+            captured(
+                23,
+                "  don't ask on (shift+tab to cycle)",
+                CapturedStyle::Plain,
+            ),
+        ]
     }
 
     /// The same captured rows with the highlight moved to the neighbour below.
@@ -10090,6 +10185,45 @@ mod tests {
         prove_control_command_selection(&measured_clear_screen(), ControlCommand::Clear).unwrap();
     }
 
+    /// 2.1.238: menu above the composer, indented tokens, unselected rows
+    /// themselves uniform. A proof that still required "below, column 0, any
+    /// uniform row is selected" refuses this screen (`menu_not_rendered`) and
+    /// every `/clear` on that version destroys the cell.
+    #[test]
+    fn the_measured_238_menu_above_the_composer_proves_its_own_selection() {
+        prove_control_command_selection(
+            &captured_screen(21, measured_238_above_composer_menu(), 21, 8),
+            ControlCommand::Clear,
+        )
+        .unwrap();
+    }
+
+    /// Same 2.1.238 geometry with the highlight on `/code-review`. The wrap
+    /// line ` /resume)` is indented past the candidate bound and must not
+    /// become a second selected entry.
+    #[test]
+    fn a_238_menu_that_would_select_a_different_command_is_refused() {
+        let rows = measured_238_above_composer_menu()
+            .into_iter()
+            .map(|captured| match captured.row {
+                16 => CapturedRow {
+                    style: CapturedStyle::Runs(vec![(2, 79, CAPTURED_UNSELECTED)]),
+                    ..captured
+                },
+                18 => CapturedRow {
+                    style: CapturedStyle::Runs(vec![(2, 79, CAPTURED_SELECTED)]),
+                    ..captured
+                },
+                _ => captured,
+            })
+            .collect();
+        let error = assert_selection_refused(
+            &captured_screen(21, rows, 21, 8),
+            "menu_selects_a_different_command",
+        );
+        assert_eq!(error.details["selected_command"], "/code-review");
+    }
+
     /// The negative the whole check exists for: the composer says `/clear`, the
     /// screen is a real capture, and the entry Enter would select is a different
     /// command. Nothing in this codebase could previously see this screen —
@@ -10446,7 +10580,7 @@ mod tests {
         // The wrapped continuation line of the selected entry carries the same
         // highlight, and must not be counted as a second selected entry: it is
         // indented, so it offers no command.
-        assert!(selected_row_colour(shadowed.row(12)).is_some());
+        assert!(candidate_body_colour(shadowed.row(12)).is_some());
     }
 
     /// The precondition is a precondition: a refusal must leave Enter unsent.

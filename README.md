@@ -39,8 +39,9 @@ target/release/pmuxd serve \
 ```
 
 `--pool-claude` must be absolute. The binary's version must be in the
-promoted table below, or you pass `--tested-claude-profile`. A newer PATH
-Claude (this host's `claude` is 2.1.237) is still outside the linux ceiling:
+promoted table below for this OS/arch, or you pass `--tested-claude-profile`.
+macos PATH 2.1.238 is inside the macos cell. A linux PATH Claude above 2.1.236
+(for example 2.1.237) is still outside the linux ceiling:
 
 ```bash
 --tested-claude-profile \
@@ -198,7 +199,7 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
-| 2.1.220 through 2.1.227 | macos / aarch64 | transparent / sdk | 1000 |
+| 2.1.220 through 2.1.238 | macos / aarch64 | transparent / sdk | 1000 |
 | 2.1.227 through 2.1.236 | linux / x86_64 | transparent / sdk | 250 |
 
 A version outside that table still needs `--tested-claude-profile` (see

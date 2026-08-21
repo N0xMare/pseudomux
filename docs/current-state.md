@@ -1,6 +1,6 @@
 # current-state.md
 
-**Position of pmux, 2026-08-19.** This file is normative for *where the project
+**Position of pmux, 2026-08-21.** This file is normative for *where the project
 stands*. `spec.md` is normative for product behaviour. `testing.md` is
 normative for test ownership. The product is the local API (Messages +
 `run_stateless`) over a warm pool of constrained Claude cells.
@@ -91,10 +91,12 @@ receipt. Earlier 2.1.233 receipts remain historical:
 ### Linux admission
 
 `PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.220 through
-2.1.227 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
+2.1.238 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
 2.1.236 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
-A PATH Claude newer than the linux ceiling (this host's `claude` is
-2.1.237) still needs `--tested-claude-profile`.
+macos ceiling receipt is `evidence/promotion-2.1.238-macos-aarch64.json`;
+pin-confirmation is `evidence/macos-operator-eval-2.1.238-aarch64.json`.
+A linux PATH Claude newer than 2.1.236 still needs `--tested-claude-profile`.
+macos PATH 2.1.238 does not.
 
 The linux drain is `evidence/pooled-transcript-drain-linux-x86_64.json`:
 191 reachable Path B arrivals over 2.1.227/2.1.232/2.1.233, max 118 ms,
@@ -106,7 +108,7 @@ emptiness after `/clear`, 5 reachable arrivals at 2.1.236 max 46 ms).
 
 `evidence/linux-minified-post-answer-x86_64.json` remains the fast-path
 46 ms pin, **not** the promotion drain. Do not treat the macos
-2.1.220..=2.1.227 range as covering Linux.
+2.1.220..=2.1.238 range as covering Linux.
 
 ### Recommended Pi warm set
 
@@ -136,8 +138,8 @@ mint.
 | Dimension | Status |
 | --- | --- |
 | Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
-| Sticky `Leased` + Messages harness | Shipped, opt-in, measured on linux/x86_64 with Pi. |
-| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.227 and linux/x86_64 2.1.227..=2.1.236. |
+| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.238-aarch64.json`; linux/x86_64 also measured with Pi. |
+| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.238 and linux/x86_64 2.1.227..=2.1.236. |
 | Linux without a flag | **Shipped** for 2.1.227..=2.1.236. PATH 2.1.237 is outside the ceiling. |
 | Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |

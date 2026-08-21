@@ -756,6 +756,13 @@ file adds nothing to the firing path `screen-veto-cost-…json` also could not
 reach. The wave's 51,123 ms wall time is an upper bound taken while a full-scope
 mutation run held four cores, not a latency measurement.
 
+## macOS 2026-08 2.1.238 receipts (`aarch64`)
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.238-macos-aarch64.json` | Paid macos ceiling. `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 54 ms against the pooled 1000 ms bound. Per-version fit 250 ms is published and not shipped. `/clear` menu at this version paints above the composer with indent 2. |
+| `macos-operator-eval-2.1.238-aarch64.json` | Pin confirmation (`GREEN_OPERATOR`), not a promotion. Messages sticky same-cell cache hit. Does not by itself drop `--tested-claude-profile`. |
+
 ## Linux 2026-08 Path B receipts (`x86_64`)
 
 `linux-minified-post-answer-x86_64.json` is still pinned in

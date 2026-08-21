@@ -484,7 +484,7 @@ impl PromotedProfile {
 pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
     PromotedProfile {
         claude_version_floor: "2.1.220",
-        claude_version_tested_through: "2.1.227",
+        claude_version_tested_through: "2.1.238",
         os: "macos",
         arch: "aarch64",
         terminal_profile: TerminalProfile::Transparent,
@@ -500,14 +500,14 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
         range_provenance: "floor 2.1.220: the version with a drain receipt, a Gate B campaign and the \
                        screen/preamble measurements; below it 2.1.201 and earlier have ZERO \
                        reachable cli arrivals, which is unestablished rather than safe. Tested \
-                       through 2.1.227: promote_claude_version.py drove 5 minified-cell turns \
-                       through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, \
-                       the four-grade suite served by one unchanging process across a `/clear` per \
-                       turn, sidechain and cache zero on every result, the pool never halted -- and \
-                       measured 5 reachable post-answer arrival(s) at this version, max 52 ms \
-                       against the pooled 1000 ms bound. NOT measured at 2.1.227: anything outside \
-                       a minified cell on macos/aarch64, and the per-version fit of 250 ms, which \
-                       is published to be read and NOT shipped.",
+                       through 2.1.238: promote_claude_version.py drove 5 minified-cell turns \
+                       through `pmux run` at claude-sonnet-5 low/high -- every graded reply exact, \
+                       the four-grade suite answered across a `/clear` per turn, sidechain and \
+                       cache zero on every result, the pool never halted -- and measured 5 \
+                       reachable post-answer arrival(s) at this version, max 54 ms against the \
+                       pooled 1000 ms bound. NOT measured at 2.1.238: anything outside a minified \
+                       cell on macos/aarch64, and the per-version fit of 250 ms, which is \
+                       published to be read and NOT shipped.",
     },
     PromotedProfile {
         claude_version_floor: "2.1.227",
