@@ -421,12 +421,15 @@ ever is. `VersionRange { floor, tested_through }` is inclusive at both ends and
 The floor is where the evidence starts: 2.1.220 has
 the drain receipt, the Gate B campaign and the screen/preamble measurements, and §3.1 shows 2.1.201
 and earlier at *zero* reachable `cli` arrivals — unestablished, not safe. The ceiling is where the
-evidence stops, and each ceiling was measured the same way: the launch bundle accepted with zero
-rejections, the post-`/clear` frame at 2 rendered rows below the cursor, the 5-row preamble
-identical in rows and order, the local-command menu's foreground-only selection, the `--effort`
-vocabulary byte-identical, and a pool mint reaching `state: ready` —
-`docs/2.1.226-compatibility.md` for 2.1.226, `docs/2.1.227-compatibility.md` for 2.1.227, and
-`evidence/promotion-2.1.238-macos-aarch64.json` for 2.1.238. The
+evidence stops. 2.1.226 and 2.1.227 were measured as an A/B of the launch bundle, the post-`/clear`
+frame at 2 rendered rows below the cursor, the 5-row preamble in rows and order, the
+local-command menu's foreground-only selection, the `--effort` vocabulary, and a pool mint
+reaching `state: ready` — `docs/2.1.226-compatibility.md` and `docs/2.1.227-compatibility.md`.
+2.1.238 is a different measurement: `promote_claude_version.py` grades plus drain on minified
+cells (`evidence/promotion-2.1.238-macos-aarch64.json`), and the `/clear` menu is proven in
+`driver_io.rs` as a new geometry (candidates above the composer, indent 2, unselected rows also
+uniform; selection is composer-command colour match, not “unique uniform row”). The
+2.1.226/2.1.227 A/B was not re-run at 238. The
 drain is **not** measurable from the free corpus at a fresh version — it held zero 2.1.226 rows on
 the day 2.1.226 was promoted and zero 2.1.227 rows on the day 2.1.227 was, and
 `measure_transcript_drain.py` exits 5 rather than passing — and that is precisely what the pooled
