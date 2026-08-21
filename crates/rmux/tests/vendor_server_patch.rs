@@ -189,6 +189,11 @@ fn collect_vendor_files(root: &Path, directory: &Path, files: &mut BTreeMap<Stri
             path.display()
         );
         if metadata.is_dir() {
+            // Cargo writes this when check.sh later builds the vendored
+            // crate in place. It is gitignored and is not published source.
+            if entry.file_name() == "target" {
+                continue;
+            }
             collect_vendor_files(root, &path, files);
         } else {
             assert!(

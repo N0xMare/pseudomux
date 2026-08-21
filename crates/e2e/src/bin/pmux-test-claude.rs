@@ -1266,7 +1266,11 @@ fn render_command_menu(command: &str) -> io::Result<()> {
             rendered.extend_from_slice(format!("\x1b[{row};1H{painted}").as_bytes());
         }
     }
-    rendered.extend_from_slice(format!("\x1b[9;1H\u{276f} {command}").as_bytes());
+    // MEASURED 2.1.220/2.1.227/2.1.238: the typed command in the composer is
+    // the same colour as the selected menu row. prove_control_command_selection
+    // matches those two colours; an unstyled composer makes the proof refuse
+    // and every pooled /clear remints.
+    rendered.extend_from_slice(format!("\x1b[9;1H\u{276f} {SELECTED}{command}{RESET}").as_bytes());
     write_terminal(&rendered)
 }
 
