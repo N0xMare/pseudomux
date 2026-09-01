@@ -428,7 +428,10 @@ reaching `state: ready` — `docs/2.1.226-compatibility.md` and `docs/2.1.227-co
 2.1.238 is a different measurement: `promote_claude_version.py` grades plus drain on minified
 cells (`evidence/promotion-2.1.238-macos-aarch64.json`), and the `/clear` menu is proven in
 `driver_io.rs` as a new geometry (candidates above the composer, indent 2, unselected rows also
-uniform; selection is composer-command colour match, not “unique uniform row”). The
+uniform; selection is composer-command colour match, not “unique uniform row”). The same
+menu-above geometry was measured on linux at 2.1.257, whose promotion widened the linux range to
+`2.1.227..=2.1.257` (`evidence/promotion-2.1.257-linux-x86_64.json`, corpus
+`crates/service/tests/corpus/claude-2.1.257-clear-menu.ndjson`). The
 2.1.226/2.1.227 A/B was not re-run at 238. The
 drain is **not** measurable from the free corpus at a fresh version — it held zero 2.1.226 rows on
 the day 2.1.226 was promoted and zero 2.1.227 rows on the day 2.1.227 was, and

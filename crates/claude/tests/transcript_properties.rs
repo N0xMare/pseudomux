@@ -510,10 +510,16 @@ fn semantic_mutation_rows(
 }
 
 fn graph_mutation_rows(prompt: &str, depth: usize, mutation: u8, text: &str) -> Vec<Value> {
-    const ATTACHMENTS: [&str; 5] = [
+    // Every name here is admitted by `is_supported_attachment_type`, so the
+    // chain this builds is one Claude could really write.
+    // `remote_session_change` joined the set at 2.1.257 (MEASURED linux/x86_64,
+    // `SessionCell::Minified`) and rides an arbitrary-depth chain here for the
+    // same reason the others do.
+    const ATTACHMENTS: [&str; 6] = [
         "agent_listing_delta",
         "deferred_tools_delta",
         "file",
+        "remote_session_change",
         "skill_listing",
         "task_reminder",
     ];

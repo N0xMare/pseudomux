@@ -810,7 +810,7 @@ pub fn validate_prompt(prompt: &str) -> DriverResult<String> {
 /// The variant carries no payload for the same reason. A `ControlCommand(String)`
 /// would reintroduce exactly the injection question this type exists to close.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ControlCommand {
+pub enum ControlCommand {
     /// `/clear`: abandons the current transcript, rotates the session id, and
     /// opens a new transcript in the same project directory. Statelessness for a
     /// minified cell is bought with this command rather than with a relaunch,
@@ -819,7 +819,16 @@ enum ControlCommand {
 }
 
 impl ControlCommand {
-    const fn literal(self) -> &'static str {
+    /// The command a recorded screen-corpus frame names in `expect_selection`,
+    /// or `None` for anything pmux does not type. The mapping is closed over
+    /// the variants for the same reason the enum carries no payload.
+    #[must_use]
+    pub fn from_literal(literal: &str) -> Option<Self> {
+        (literal == Self::Clear.literal()).then_some(Self::Clear)
+    }
+
+    #[must_use]
+    pub const fn literal(self) -> &'static str {
         match self {
             Self::Clear => "/clear",
         }
@@ -1419,9 +1428,10 @@ async fn enter_once(
 /// This is deliberately weaker than [`wait_for_stable_prompt_render`], which
 /// additionally requires the cursor-correlated editor geometry to be preserved.
 /// A slash command opens Claude's command menu. On 2.1.220/2.1.227 the composer
-/// jumps UP and candidates paint below it; on 2.1.238 in a 24-row pane the
-/// composer stays at the bottom and candidates paint ABOVE it. Either way the
-/// editor signature a prompt is proven by does not exist on this screen.
+/// jumps UP and candidates paint below it; on 2.1.238 (macos) and 2.1.257
+/// (linux) in a 24-row pane the composer stays at the bottom and candidates
+/// paint ABOVE it. Either way the editor signature a prompt is proven by does
+/// not exist on this screen.
 ///
 /// What replaces it is not nothing. The frame this returns is handed to
 /// [`prove_control_command_selection`], which proves from that same frame that
@@ -1439,6 +1449,14 @@ async fn enter_once(
 /// replaced. The stability predicate itself is unchanged: it still compares the
 /// plain-text view, so what "the screen held still" means here is the same
 /// statement it is at every other gate.
+///
+/// This gate asserts NOTHING about where the menu is. It does not look at the
+/// rows above or below the cursor, only at whether the plain-text frame
+/// differs from the pre-paste fence and then holds still for `stable_for`. So
+/// the menu-below (2.1.220) and menu-above (2.1.238/2.1.257) layouts are the
+/// same thing to it — MEASURED, it settled on the 2.1.257 frame and the
+/// refusal came from [`prove_control_command_selection`] alone — and the
+/// geometry is decided in exactly one place, there.
 async fn wait_for_stable_control_render(
     terminal: &mut dyn TerminalSession,
     budget: &InputGateBudget,
@@ -1476,7 +1494,8 @@ async fn wait_for_stable_control_render(
 }
 
 /// MEASURED 2.1.220/2.1.227: the menu's lower rule sits on the row directly
-/// below the composer. 2.1.238 still draws that lower rule (and an upper one);
+/// below the composer. 2.1.238 (macos) and 2.1.257 (linux) still draw that
+/// lower rule (and an upper one, the row directly above the composer);
 /// candidates may sit below the lower rule or above the upper one.
 const MENU_RULE_ROWS_BELOW_COMPOSER: u16 = 1;
 
@@ -1490,9 +1509,10 @@ const MENU_RULE_GLYPH: char = '─';
 const COMPOSER_TEXT_OFFSET: u16 = 2;
 
 /// MEASURED: a candidate token starts within this many leading ASCII spaces.
-/// 2.1.220/2.1.227 start at column 0; 2.1.238 indents two spaces. Wrapped
-/// description lines start around column 30 and must not count as candidates
-/// even when they contain a solidus (` /resume)`).
+/// 2.1.220/2.1.227 start at column 0; 2.1.238 and 2.1.257 indent two spaces.
+/// Wrapped description lines start around column 30 (2.1.220) or exactly at
+/// column 32 (2.1.257, `  /clear` + 30-column description field) and must not
+/// count as candidates even when they contain a solidus (` /resume)`).
 const MAX_MENU_TOKEN_INDENT: usize = 2;
 
 /// One rendered menu row that offers a command.
@@ -1521,12 +1541,42 @@ struct MenuCandidate {
 /// r15 /simplify     Review the changed code…     <- candidate 2
 /// ```
 ///
-/// On 2.1.238 in a 24x120 pane the composer stays at the bottom, the same
-/// U+2500 box still surrounds it, and candidates paint ABOVE the upper rule
-/// with a two-space indent. Unselected rows are also a uniform colour (they
-/// were mixed on 2.1.227), so "this row is uniform" is no longer the
+/// On 2.1.238 (macos) in a 24x120 pane the composer stays at the bottom, the
+/// same U+2500 box still surrounds it, and candidates paint ABOVE the upper
+/// rule with a two-space indent. Unselected rows are also a uniform colour
+/// (they were mixed on 2.1.227), so "this row is uniform" is no longer the
 /// selection. The selected row is the unique candidate whose body colour
 /// equals the composer's typed-command colour — compared, never named.
+///
+/// MEASURED again on linux/x86_64 at 2.1.257, 24x120, recorded by this crate's
+/// own screen-corpus recorder at site `control_channel.selection`
+/// (`tests/corpus/claude-2.1.257-clear-menu.ndjson`, replayed through this
+/// function by `tests/screen_corpus_replay.rs`). The rule is the row directly
+/// above the composer; the candidates are `  /clear` (selected) and
+/// `  /code-review`, each wrapping its description onto a continuation row
+/// indented 32 spaces:
+///
+/// ```text
+/// r16   /clear                        Start a new session with empty context; …   SELECTED
+/// r17                                 /resume)                                     (continuation)
+/// r18   /code-review                  Review the current diff, or a PR number/…
+/// r19                                 reuse/simplification/efficiency cleanups …   (continuation)
+/// r20 ──────────────────────────────────────────── (full 120 cols)
+/// r21 ❯ /clear                                      <- composer, cursor at col 8
+/// r22 ──────────────────────────────────────────── (full 120 cols)
+/// r23   ⏵⏵ don't ask on (shift+tab to cycle)                              /rc active
+/// ```
+///
+/// The selected row and the composer's typed `/clear` share one opaque
+/// foreground encoding (`45201913`, as rmux reports it); the unselected
+/// `/code-review` row is uniform in another (`43620761`). The continuation of
+/// the selected entry (row 17) carries the selection colour too and is
+/// excluded by its indent, not by its colour. 2.1.236 — the linux ceiling
+/// promoted before either menu-above measurement — was observed on 2026-09-01
+/// to refuse the below-only proof with `menu_not_rendered`, so the move
+/// happened somewhere in 2.1.228..=2.1.236 and that promotion never recycled
+/// a cell through `/clear`: the pool fell back to a per-turn relaunch after
+/// the answer was already delivered.
 ///
 /// Enter selects the HIGHLIGHTED ENTRY, not the composer text. That is
 /// submitted evidence, not inference: with `/c` in the composer and `/cd`
@@ -1551,8 +1601,8 @@ struct MenuCandidate {
 /// `/c` renders its `c` in the same colour). On 2.1.220/2.1.227 the selected
 /// row is one colour from column 0 through the last glyph, blanks between token
 /// and description included, while an unselected row leaves those blanks at the
-/// terminal default. On 2.1.238 unselected rows are also uniform (in a different
-/// colour) and tokens indent two unstyled spaces, so uniformity alone is not
+/// terminal default. On 2.1.238 and 2.1.257 unselected rows are also uniform
+/// (in a different colour) and tokens indent two unstyled spaces, so uniformity alone is not
 /// the selection: the selected candidate is the unique one whose body colour
 /// equals the composer's typed-command colour. Compared, never named. A theme
 /// change degrades this to a refusal, never to a wrong answer.
@@ -1580,7 +1630,7 @@ struct MenuCandidate {
 /// painted yet, and Enter in that window still executes `/clear` correctly —
 /// the filter is computed on input and only the paint lags. This refuses that
 /// frame anyway, because an absent menu is not evidence about the selection.
-fn prove_control_command_selection(
+pub fn prove_control_command_selection(
     screen: &StyledScreen,
     command: ControlCommand,
 ) -> DriverResult<()> {
@@ -1664,7 +1714,7 @@ fn is_menu_rule(rendered: &str) -> bool {
 ///
 /// The idle composer is boxed by the same U+2500 rule, so a rule is necessary
 /// and not sufficient: candidates are the rows BELOW the lower rule (2.1.220/
-/// 2.1.227) and/or ABOVE the upper rule (2.1.238). Without an adjacent rule,
+/// 2.1.227) and/or ABOVE the upper rule (2.1.238, 2.1.257). Without an adjacent rule,
 /// leftover slash-prefixed text is not a menu. Wrapped description lines are
 /// indented past [`MAX_MENU_TOKEN_INDENT`] and are not candidates, so a
 /// highlighted wrap does not count as a second selected entry.
@@ -1708,8 +1758,10 @@ fn menu_candidate_at(screen: &StyledScreen, row: u16) -> Option<MenuCandidate> {
 /// The explicit colour of the first glyph of the typed command in the composer.
 ///
 /// Used as the identity of "selected" so a theme is never named. On 2.1.238
-/// unselected candidate rows are also a uniform colour, so uniformity alone
-/// cannot mark the selection; matching this colour can.
+/// and 2.1.257 unselected candidate rows are also a uniform colour, so
+/// uniformity alone cannot mark the selection; matching this colour can.
+/// MEASURED at 2.1.220 (`❯ /clear` is `[2..7 fg=idx153]`, the selected row's
+/// colour) and at 2.1.257 (`[2..7 fg=45201913]`, likewise).
 fn composer_command_colour(screen: &StyledScreen, composer_row: u16) -> Option<CellColor> {
     let rendered = screen.row_text(composer_row);
     let prompt_col = prompt_glyph_col(&rendered)?;
@@ -1722,8 +1774,8 @@ fn composer_command_colour(screen: &StyledScreen, composer_row: u16) -> Option<C
 /// skipped, then one colour from the token through the last glyph, blanks
 /// between token and description included.
 ///
-/// 2.1.220/2.1.227 selected rows have no indent. 2.1.238 selected rows indent
-/// two unstyled spaces and then paint the rest as one run.
+/// 2.1.220/2.1.227 selected rows have no indent. 2.1.238 and 2.1.257 selected
+/// rows indent two unstyled spaces and then paint the rest as one run.
 fn candidate_body_colour(cells: &[StyledCell]) -> Option<CellColor> {
     let last_glyph = cells
         .iter()
@@ -5175,6 +5227,11 @@ mod tests {
         Words(u8),
         /// Nothing on this row carries an explicit colour.
         Plain,
+        /// Runs in rmux's opaque foreground encoding, exactly as the screen
+        /// corpus records them: `fg=[45201913]` over columns 2..=117 is
+        /// `(2, 117, 45201913)`. Used for the 2.1.257 capture, whose colours
+        /// are not palette indices.
+        Encoded(Vec<(usize, usize, i32)>),
     }
 
     #[derive(Clone)]
@@ -5208,19 +5265,37 @@ mod tests {
         cursor_row: u16,
         cursor_col: u16,
     ) -> StyledScreen {
+        captured_screen_of(80, revision, rows, cursor_row, cursor_col)
+    }
+
+    /// [`captured_screen`] at a stated width: the 2.1.220 captures are 24x80,
+    /// the 2.1.257 capture is 24x120.
+    fn captured_screen_of(
+        cols: u16,
+        revision: u64,
+        rows: Vec<CapturedRow>,
+        cursor_row: u16,
+        cursor_col: u16,
+    ) -> StyledScreen {
         const ROWS: u16 = 24;
-        const COLS: u16 = 80;
         let mut cells: Vec<Vec<StyledCell>> = (0..ROWS)
             .map(|_| {
-                (0..COLS)
+                (0..cols)
                     .map(|_| StyledCell::new(" ", CellColor::Unstyled))
                     .collect()
             })
             .collect();
         for row in rows {
             let glyphs: Vec<char> = row.text.chars().collect();
-            let runs = match &row.style {
-                CapturedStyle::Runs(runs) => runs.clone(),
+            let runs: Vec<(usize, usize, CellColor)> = match &row.style {
+                CapturedStyle::Runs(runs) => runs
+                    .iter()
+                    .map(|(start, end, index)| (*start, *end, CellColor::indexed(*index)))
+                    .collect(),
+                CapturedStyle::Encoded(runs) => runs
+                    .iter()
+                    .map(|(start, end, encoded)| (*start, *end, CellColor::Explicit(*encoded)))
+                    .collect(),
                 CapturedStyle::Plain => Vec::new(),
                 CapturedStyle::Words(index) => {
                     let mut runs = Vec::new();
@@ -5229,14 +5304,14 @@ mod tests {
                         match (glyph.is_whitespace(), start) {
                             (false, None) => start = Some(column),
                             (true, Some(opened)) => {
-                                runs.push((opened, column - 1, *index));
+                                runs.push((opened, column - 1, CellColor::indexed(*index)));
                                 start = None;
                             }
                             _ => {}
                         }
                     }
                     if let Some(opened) = start {
-                        runs.push((opened, glyphs.len() - 1, *index));
+                        runs.push((opened, glyphs.len() - 1, CellColor::indexed(*index)));
                     }
                     runs
                 }
@@ -5246,16 +5321,14 @@ mod tests {
                 let foreground = runs
                     .iter()
                     .find(|(start, end, _)| (*start..=*end).contains(&column))
-                    .map_or(CellColor::Unstyled, |(_, _, index)| {
-                        CellColor::indexed(*index)
-                    });
+                    .map_or(CellColor::Unstyled, |(_, _, colour)| *colour);
                 *cell = StyledCell::new(glyph.to_string(), foreground);
             }
         }
         StyledScreen::new(
             revision,
             ROWS,
-            COLS,
+            cols,
             Some(TerminalCursor {
                 row: cursor_row,
                 col: cursor_col,
@@ -5343,6 +5416,117 @@ mod tests {
                 CapturedStyle::Plain,
             ),
         ]
+    }
+
+    /// The MEASURED foreground encodings of Claude Code 2.1.257's command menu,
+    /// as rmux reports them (opaque; compared, never interpreted): the selected
+    /// entry and the composer's typed command share one, every other menu row
+    /// and the transcript's dim text share another, the rules a third. Named
+    /// here ONLY to rebuild the capture cell for cell.
+    const CAPTURED_257_SELECTED: i32 = 45_201_913;
+    const CAPTURED_257_DIM: i32 = 43_620_761;
+    const CAPTURED_257_RULE: i32 = 42_502_280;
+    const CAPTURED_257_FOOTER_MODE: i32 = 50_293_632;
+    const CAPTURED_257_FOOTER_RC: i32 = 38_713_957;
+
+    /// MEASURED at 2.1.257: the rule spans the full 120-column pane and is
+    /// itself coloured.
+    fn menu_rule_row_257(row: u16) -> CapturedRow {
+        captured(
+            row,
+            "─".repeat(120),
+            CapturedStyle::Encoded(vec![(0, 119, CAPTURED_257_RULE)]),
+        )
+    }
+
+    /// VERBATIM CAPTURE, Claude Code 2.1.257 linux/x86_64, 24x120, the settled
+    /// frame `wait_for_stable_control_render` returned for a pasted `/clear`
+    /// (corpus `claude-2.1.257-clear-menu.ndjson`, site
+    /// `control_channel.selection`, revision 23). The menu is ABOVE the
+    /// composer, two entries survive the filter and each wraps its description
+    /// onto a continuation row. The rows below the composer are its idle box
+    /// rule and the footer.
+    fn measured_257_clear_menu() -> Vec<CapturedRow> {
+        vec![
+            captured(
+                14,
+                "✻ Cooked for 1s · done 4:38 PM",
+                CapturedStyle::Encoded(vec![(0, 0, CAPTURED_257_DIM), (2, 29, CAPTURED_257_DIM)]),
+            ),
+            captured(
+                16,
+                "  /clear                        Start a new session with empty context; \
+                 previous session stays on disk (resumable with",
+                CapturedStyle::Encoded(vec![(2, 117, CAPTURED_257_SELECTED)]),
+            ),
+            captured(
+                17,
+                "                                /resume)",
+                CapturedStyle::Encoded(vec![(32, 39, CAPTURED_257_SELECTED)]),
+            ),
+            captured(
+                18,
+                "  /code-review                  Review the current diff, or a PR \
+                 number/branch/path target, for correctness bugs and",
+                CapturedStyle::Encoded(vec![(2, 115, CAPTURED_257_DIM)]),
+            ),
+            captured(
+                19,
+                "                                reuse/simplification/efficiency cleanups \
+                 at the given effort level (low/medium: fewer…",
+                CapturedStyle::Encoded(vec![(32, 117, CAPTURED_257_DIM)]),
+            ),
+            menu_rule_row_257(20),
+            captured(
+                21,
+                "❯\u{a0}/clear",
+                CapturedStyle::Encoded(vec![(2, 7, CAPTURED_257_SELECTED)]),
+            ),
+            menu_rule_row_257(22),
+            captured(
+                23,
+                "  ⏵⏵ don't ask on (shift+tab to cycle)                                       \
+                                                  /rc active",
+                CapturedStyle::Encoded(vec![
+                    (2, 16, CAPTURED_257_FOOTER_MODE),
+                    (17, 37, CAPTURED_257_DIM),
+                    (108, 117, CAPTURED_257_FOOTER_RC),
+                ]),
+            ),
+        ]
+    }
+
+    fn measured_257_clear_screen() -> StyledScreen {
+        captured_screen_of(120, 23, measured_257_clear_menu(), 21, 8)
+    }
+
+    /// The 2.1.257 rows with the colour of the `/clear` entry (and its
+    /// continuation) and of the `/code-review` entry (and its continuation)
+    /// each replaced. Only colouring changes; every glyph is the captured glyph.
+    fn measured_257_clear_menu_coloured(clear: i32, code_review: i32) -> StyledScreen {
+        let rows = measured_257_clear_menu()
+            .into_iter()
+            .map(|captured| match captured.row {
+                16 => CapturedRow {
+                    style: CapturedStyle::Encoded(vec![(2, 117, clear)]),
+                    ..captured
+                },
+                17 => CapturedRow {
+                    style: CapturedStyle::Encoded(vec![(32, 39, clear)]),
+                    ..captured
+                },
+                18 => CapturedRow {
+                    style: CapturedStyle::Encoded(vec![(2, 115, code_review)]),
+                    ..captured
+                },
+                19 => CapturedRow {
+                    style: CapturedStyle::Encoded(vec![(32, 117, code_review)]),
+                    ..captured
+                },
+                _ => captured,
+            })
+            .collect();
+        captured_screen_of(120, 23, rows, 21, 8)
     }
 
     /// The same captured rows with the highlight moved to the neighbour below.
@@ -10222,6 +10406,149 @@ mod tests {
             "menu_selects_a_different_command",
         );
         assert_eq!(error.details["selected_command"], "/code-review");
+    }
+
+    /// The linux measurement of the same geometry: the real 2.1.257 screen,
+    /// menu above the composer, is proven. This is the frame the pool refused
+    /// with `menu_not_rendered` on 2026-09-01 at both 2.1.236 and 2.1.257 under
+    /// the below-only proof, which turned every post-turn `/clear` into a
+    /// silent ~5 s relaunch. The same frame is replayed from the corpus by
+    /// `tests/screen_corpus_replay.rs`.
+    ///
+    /// The continuation row of the selected entry (row 17) carries the
+    /// selection colour and is NOT a second highlighted candidate — if it were,
+    /// this would refuse `menu_selection_not_unique`.
+    #[test]
+    fn the_measured_2_1_257_menu_above_the_composer_proves_its_own_selection() {
+        let screen = measured_257_clear_screen();
+        prove_control_command_selection(&screen, ControlCommand::Clear).unwrap();
+        // The two-cell indent is unstyled and skipped; the body is one colour,
+        // the composer's own.
+        assert_eq!(
+            candidate_body_colour(screen.row(16)),
+            Some(CellColor::Explicit(CAPTURED_257_SELECTED))
+        );
+        assert_eq!(
+            composer_command_colour(&screen, 21),
+            Some(CellColor::Explicit(CAPTURED_257_SELECTED))
+        );
+        // The continuation row shares the colour, which is why it is excluded
+        // by indent rather than by colour.
+        assert!(candidate_body_colour(screen.row(17)).is_some());
+        assert!(menu_candidate_at(&screen, 17).is_none());
+        // MEASURED: the unselected row is ALSO uniform, in the other colour, so
+        // uniformity alone would count two rows.
+        assert_eq!(
+            candidate_body_colour(screen.row(18)),
+            Some(CellColor::Explicit(CAPTURED_257_DIM))
+        );
+    }
+
+    /// The negative at 2.1.257: the composer says `/clear`, the entry Enter
+    /// would select (the row in the composer's colour) is `/code-review`.
+    #[test]
+    fn a_2_1_257_menu_that_would_select_a_different_command_is_refused() {
+        let error = assert_selection_refused(
+            &measured_257_clear_menu_coloured(CAPTURED_257_DIM, CAPTURED_257_SELECTED),
+            "menu_selects_a_different_command",
+        );
+        assert_eq!(error.details["selected_command"], "/code-review");
+    }
+
+    /// Two counts that are not one at 2.1.257: both entries in the composer's
+    /// colour, neither in it, and a colourless composer (a theme in which the
+    /// typed command carries no explicit colour names no entry).
+    #[test]
+    fn a_2_1_257_menu_whose_selection_is_not_exactly_one_row_is_refused() {
+        let doubled =
+            measured_257_clear_menu_coloured(CAPTURED_257_SELECTED, CAPTURED_257_SELECTED);
+        let error = assert_selection_refused(&doubled, "menu_selection_not_unique");
+        assert_eq!(error.details["highlighted_rows"], 2);
+
+        let unhighlighted = measured_257_clear_menu_coloured(CAPTURED_257_DIM, CAPTURED_257_DIM);
+        let error = assert_selection_refused(&unhighlighted, "menu_selection_not_unique");
+        assert_eq!(error.details["highlighted_rows"], 0);
+
+        let colourless_composer = captured_screen_of(
+            120,
+            23,
+            measured_257_clear_menu()
+                .into_iter()
+                .map(|captured| match captured.row {
+                    21 => CapturedRow {
+                        style: CapturedStyle::Plain,
+                        ..captured
+                    },
+                    _ => captured,
+                })
+                .collect(),
+            21,
+            8,
+        );
+        let error = assert_selection_refused(&colourless_composer, "menu_selection_not_unique");
+        assert_eq!(error.details["highlighted_rows"], 0);
+    }
+
+    /// VERBATIM CAPTURE, 2.1.257, the idle boxed composer (corpus revision 22,
+    /// the frame before the paste): rows 16–19 blank, the same two rules around
+    /// `❯`, and the footer. A rule on either side of the composer proves
+    /// nothing without a candidate beside it.
+    #[test]
+    fn the_idle_boxed_composer_at_2_1_257_is_not_a_menu() {
+        let screen = captured_screen_of(
+            120,
+            23,
+            measured_257_clear_menu()
+                .into_iter()
+                .filter(|captured| !(16..=19).contains(&captured.row))
+                .collect(),
+            21,
+            8,
+        );
+        assert_selection_refused(&screen, "menu_not_rendered");
+    }
+
+    /// Continuation rows are never candidates. A screen whose only rows above
+    /// the rule are the 32-space continuations — no row with a two-cell indent
+    /// and a solidus — offers no candidate, even though one of them is painted
+    /// in the selection colour and begins with `/resume)`.
+    #[test]
+    fn continuation_rows_alone_above_the_2_1_257_rule_are_not_a_menu() {
+        let screen = captured_screen_of(
+            120,
+            23,
+            measured_257_clear_menu()
+                .into_iter()
+                .filter(|captured| captured.row != 16 && captured.row != 18)
+                .collect(),
+            21,
+            8,
+        );
+        assert_selection_refused(&screen, "menu_not_rendered");
+    }
+
+    /// The precondition is a precondition at 2.1.257 too: a refusal leaves
+    /// Enter unsent, and the accepted measured screen sends it once.
+    #[tokio::test]
+    async fn the_2_1_257_menu_gates_enter_the_same_way_the_2_1_220_menu_does() {
+        let (control, handle) = clear_control_showing(
+            measured_257_clear_menu_coloured(CAPTURED_257_DIM, CAPTURED_257_SELECTED),
+            Duration::from_secs(1),
+        );
+        let error = control
+            .type_control_command(ControlCommand::Clear, test_deadline())
+            .await
+            .unwrap_err();
+        assert_eq!(error.details["reason"], "menu_selects_a_different_command");
+        assert_eq!(handle.counts(), (1, 0));
+
+        let (control, handle) =
+            clear_control_showing(measured_257_clear_screen(), Duration::from_secs(1));
+        control
+            .type_control_command(ControlCommand::Clear, test_deadline())
+            .await
+            .unwrap();
+        assert_eq!(handle.counts(), (1, 1));
     }
 
     /// The negative the whole check exists for: the composer says `/clear`, the

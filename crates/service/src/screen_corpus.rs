@@ -54,7 +54,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use pseudomux_rmux::{CellColor, StyledCell, StyledScreen, TerminalCursor, TerminalSnapshot};
 use serde::{Deserialize, Serialize};
 
-use crate::driver_io::{TerminalScreenState, classify_terminal_snapshot, screen_geometry};
+use crate::driver_io::{
+    ControlCommand, TerminalScreenState, classify_terminal_snapshot,
+    prove_control_command_selection, screen_geometry,
+};
 
 /// Environment variable that turns recording on. Its value is a directory.
 pub const CORPUS_DIR_ENV: &str = "PMUX_SCREEN_CORPUS_DIR";
@@ -224,6 +227,12 @@ pub enum CorpusFrame {
         cells: Vec<Vec<CorpusCell>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         expect_ready: Option<bool>,
+        /// The slash command this frame is independently known to be a
+        /// settled, correctly highlighted menu for — `"/clear"` — set by hand
+        /// on a frame read by eye, never at record time. Additive: an older
+        /// corpus has none and the schema is unchanged.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        expect_selection: Option<String>,
     },
 }
 
@@ -259,6 +268,7 @@ impl CorpusFrame {
                 .map(|row| screen.row(row).iter().map(CorpusCell::from_cell).collect())
                 .collect(),
             expect_ready: None,
+            expect_selection: None,
         }
     }
 
@@ -292,6 +302,23 @@ impl CorpusFrame {
             Self::Snapshot { expect_ready, .. } | Self::Styled { expect_ready, .. } => {
                 *expect_ready
             }
+        }
+    }
+
+    /// The command whose menu selection this frame is independently known to
+    /// prove, if anyone established one. The unconditional half of the
+    /// `/clear` selection proof, for the same reason [`Self::expect_ready`] is
+    /// the unconditional half of the composer gate: MEASURED, the 2.1.257
+    /// menu-above frame was refused `menu_not_rendered` by a proof that only
+    /// knew the 2.1.220 layout, and nothing in the standing suite could say so
+    /// because no recorded frame carried a verdict.
+    #[must_use]
+    pub fn expect_selection(&self) -> Option<&str> {
+        match self {
+            Self::Snapshot { .. } => None,
+            Self::Styled {
+                expect_selection, ..
+            } => expect_selection.as_deref(),
         }
     }
 
@@ -576,6 +603,37 @@ pub fn check_frame(index: usize, frame: &CorpusFrame) -> Vec<InvariantViolation>
             );
         }
         _ => {}
+    }
+
+    // 0b. The UNCONDITIONAL selection check: a styled frame a human read as a
+    //     settled, correctly highlighted menu for the named command must be
+    //     proven by the production proof, whichever geometry it finds.
+    if let Some(literal) = frame.expect_selection() {
+        match (
+            ControlCommand::from_literal(literal),
+            frame.to_styled_screen(),
+        ) {
+            (Some(command), Some(screen)) => {
+                if let Err(refusal) = prove_control_command_selection(&screen, command) {
+                    violated(
+                        "a_frame_known_to_select_the_typed_command_is_proven",
+                        format!(
+                            "this frame was independently established as a settled menu \
+                             selecting {literal}, and the proof refused: {}",
+                            refusal.details
+                        ),
+                    );
+                }
+            }
+            (None, _) => violated(
+                "expect_selection_names_a_command_pmux_types",
+                format!("{literal:?} is not a control command pmux can type"),
+            ),
+            (_, None) => violated(
+                "expect_selection_is_set_on_a_styled_frame",
+                "a selection can only be proven from a cell grid".to_owned(),
+            ),
+        }
     }
 
     // 1. Ready is a claim about a composer, so a Ready frame must have one.

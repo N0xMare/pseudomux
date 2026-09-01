@@ -206,8 +206,8 @@ def pool_census(binaries: dict, sandbox: Sandbox) -> dict:
 def wait_idle(binaries: dict, sandbox: Sandbox, seconds: float) -> dict[str, object]:
     """Wait until a warm instance is idle. Used only before the first turn.
 
-    After a turn, do not wait on doctor: linux 2.1.236 replaces the Claude pid
-    across `/clear`, so a census can read live=0 while recycle or remint is
+    After a turn, do not wait on doctor: linux 2.1.236 replaced the Claude pid
+    across `/clear` (a refused `/clear` plus remint, fixed 2026-09-01), so a census can read live=0 while recycle or remint is
     in flight. The next `pmux run` is the product wait (`admit` on Clearing
     or a free slot).
     """

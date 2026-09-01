@@ -669,6 +669,21 @@ fn is_metadata_record(record_type: &str) -> bool {
             | "last-prompt"
             | "pr-link"
             | "bridge-session"
+            // MEASURED on Claude Code 2.1.257 linux/x86_64, SessionCell::Minified:
+            // the third row of the launch preamble, between `permission-mode`
+            // and `bridge-session`, as `{"type":"atis-latch","atis":"",
+            // "sessionId":"<session>"}`. Absent at 2.1.236. No `parentUuid` and
+            // no `timestamp`, so it never joins the active graph.
+            | "atis-latch"
+            // MEASURED on Claude Code 2.1.257 linux/x86_64, SessionCell::Minified:
+            // written after the turn, once between `bridge-session` and
+            // `last-prompt` and again after it, carrying `sessionId`,
+            // `totalCostUSD`, `totalDuration`, `startTime` and `modelUsage`.
+            // Absent at 2.1.236. Like every other metadata record it is admitted
+            // by type only; no field of it is read. No `parentUuid` and no
+            // `timestamp`, so it joins neither the active graph nor the
+            // post-answer arrival census in `measure_transcript_drain.py`.
+            | "cost-state"
     )
 }
 
@@ -693,6 +708,13 @@ fn is_supported_attachment_type(attachment_type: &str) -> bool {
             | "total_tokens_reminder"
             | "ultra_effort_enter"
             | "workflow_keyword_request"
+            // MEASURED on Claude Code 2.1.257 linux/x86_64, SessionCell::Minified:
+            // attachment.type was this string on the row that follows
+            // `total_tokens_reminder` on the typed prompt, carrying `url`,
+            // `commit`, `pr` and `sendUserFileHint`. Absent at 2.1.236; its arrival was
+            // the SchemaDrift that failed every pmux turn. This match admits the
+            // type name only; it does not read attachment.url or attachment.pr.
+            | "remote_session_change"
     )
 }
 

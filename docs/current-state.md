@@ -1,6 +1,6 @@
 # current-state.md
 
-**Position of pmux, 2026-08-21.** This file is normative for *where the project
+**Position of pmux, 2026-09-01.** This file is normative for *where the project
 stands*. `spec.md` is normative for product behaviour. `testing.md` is
 normative for test ownership. The product is the local API (Messages +
 `run_stateless`) over a warm pool of constrained Claude cells.
@@ -75,16 +75,18 @@ Claude's tool surface stays denied; the harness runs tools and sends
 `tool_result`. Token streaming is reconstructed after the turn commits.
 
 Measured on this Linux host. Promoted linux cell is **2.1.227 through
-2.1.236** (`evidence/promotion-2.1.236-linux-x86_64.json`). Operator-eval
-`evidence/linux-operator-eval-2.1.236-x86_64.json` remains the pin-confirmation
-receipt. Earlier 2.1.233 receipts remain historical:
+2.1.257** (`evidence/promotion-2.1.257-linux-x86_64.json`). Operator-eval
+`evidence/linux-operator-eval-2.1.257-x86_64.json` is the pin-confirmation
+receipt and `evidence/linux-model-matrix-2.1.257-x86_64.json` is the
+model/effort probe. Earlier 2.1.233 and 2.1.236 receipts remain historical:
 
 | Receipt | What it showed |
 | --- | --- |
 | `evidence/linux-minified-noclear-cache-x86_64.json` | Path A minified, no `/clear`: T2 `cache_read` matches T1 write |
 | `evidence/linux-pool-leased-sticky-x86_64.json` | Pool `Leased`: T1 write 1733 / T2 read 1733, same `s{slot}e{epoch}` |
 | `evidence/linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky, cache hit above the ~1024-token floor |
-| `evidence/linux-pi-agentic-subagent-x86_64.json` | Pi agentic + sequential + parallel subagents, all GREEN |
+| `evidence/linux-pi-agentic-subagent-x86_64.json` | Pi agentic + sequential + parallel subagents, all GREEN (2.1.233) |
+| `evidence/linux-pi-agentic-subagent-2.1.257-x86_64.json` | Same three Pi scenarios on the promoted 2.1.257 cell with no operator flag, all GREEN; release returns the same pids to idle through `/clear` |
 | `evidence/linux-minified-system-remainder-2.1.236-x86_64.json` | REPLACE displacer: TUI `pmux run` billed 199 cold / 288 after `/clear`, cache 0. Leftover envelope is hundreds (chars/4 bound 265 after `/clear`), not the 29k tool surface. Not a dump of the API body. |
 | `evidence/linux-minified-system-body-2.1.236-x86_64.json` | Live `/v1/messages` body. Armed Sonnet turn: billing header, `You are Claude Code…` identity (not REPLACE), displacer, user `<system-reminder>` (`userEmail`, `currentDate`), `<total_tokens>` reminder. Tools/CLAUDE.md/git/cwd absent. |
 
@@ -92,23 +94,66 @@ receipt. Earlier 2.1.233 receipts remain historical:
 
 `PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.220 through
 2.1.238 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
-2.1.236 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
+2.1.257 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
 macos ceiling receipt is `evidence/promotion-2.1.238-macos-aarch64.json`;
 pin-confirmation is `evidence/macos-operator-eval-2.1.238-aarch64.json`.
-A linux PATH Claude newer than 2.1.236 still needs `--tested-claude-profile`.
-macos PATH 2.1.238 does not.
+linux ceiling receipt is `evidence/promotion-2.1.257-linux-x86_64.json`;
+pin-confirmation is `evidence/linux-operator-eval-2.1.257-x86_64.json`.
+This host's `claude` is 2.1.257 and needs no flag; macos PATH 2.1.238 does
+not either. A PATH Claude newer than either ceiling still needs
+`--tested-claude-profile`.
 
 The linux drain is `evidence/pooled-transcript-drain-linux-x86_64.json`:
 191 reachable Path B arrivals over 2.1.227/2.1.232/2.1.233, max 118 ms,
 estimator 250 ms. Every named version's own fit is also 250 ms because
 118×2.0=236 sits inside the 250 ms rounding quantum — that is saturation,
 not a one-version fit. The paid ceiling is
-`evidence/promotion-2.1.236-linux-x86_64.json` (`pmux run` grades,
-emptiness after `/clear`, 5 reachable arrivals at 2.1.236 max 46 ms).
+`evidence/promotion-2.1.257-linux-x86_64.json` (`pmux run` grades,
+emptiness after `/clear`, 5 reachable arrivals at 2.1.257, max 39 ms,
+median 35). `evidence/promotion-2.1.236-linux-x86_64.json` is the prior
+ceiling and stays historical.
 
 `evidence/linux-minified-post-answer-x86_64.json` remains the fast-path
 46 ms pin, **not** the promotion drain. Do not treat the macos
 2.1.220..=2.1.238 range as covering Linux.
+
+### 2.1.257 drift
+
+Four changes between 2.1.236 and 2.1.257 needed code, not only a wider range.
+
+1. **Transcript rows.** New attachment `remote_session_change`; new records
+   `atis-latch` (launch preamble) and `cost-state` (after every turn). Until
+   the parser admitted them, every `pmux run` failed with `SchemaDrift`.
+2. **Slash-command menu geometry.** The menu now renders *above* the composer.
+   The `/clear` selection proof knew only the 2.1.220 below-composer geometry
+   and refused `menu_not_rendered`, so the post-turn `/clear` failed and the
+   pool destroyed and re-minted a cell per turn. 2.1.236 fails the same way
+   (measured), so the linux 2.1.227..=2.1.236 promotion was running per-turn
+   remint, not `/clear`; the differing `pids_after_each_turn` in
+   `evidence/promotion-2.1.236-linux-x86_64.json` was that symptom. The proof
+   now accepts both geometries (`driver_io.rs`, corpus
+   `crates/service/tests/corpus/claude-2.1.257-clear-menu.ndjson`), and
+   `pool/mod.rs::finish_turn` emits a `tracing::warn!` (`a stateless instance
+   failed to clear after its turn and will be replaced`) so a failed clear is
+   visible in pmuxd's log. At 2.1.257 one claude pid served four consecutive
+   `pmux run` turns.
+3. **Remote Control.** Pool cells auto-started the claude.ai Remote Control
+   bridge (`/rc active`, a `bridge-session` record, a `remote_session_change`
+   attachment carrying the claude.ai session URL), about 200 extra input tokens
+   per turn: 498 input with the bridge, 289 without, on the same one-line
+   prompt. No env var or CLI flag disables it; pmux seeds
+   `remoteControlAtStartup: false` and `disableRemoteControl: true` in the
+   cell's private `settings.json` (`config_isolation.rs`).
+4. **Model table.** `claude-fable-5` is replaced by `claude-fable-5-1`
+   (aliases `fable`, `fable-5-1`, `fable-5.1`); 2.1.257's own `fable` alias
+   resolves to `claude-fable-5-1`. Claude Code still knows `claude-fable-5` and
+   adds `claude-mythos-5-1`; neither is in pmux's `MODEL_TABLE`.
+
+The free 2.1.236 -> 2.1.257 launch-bundle A/B moved nothing: every launch flag
+parses identically, the effort vocabulary is unchanged
+(`low`/`medium`/`high`/`xhigh`/`max`), and no option was removed. The new
+options are `--restricted`, `--system-prompt-snapshot`, and the
+background-session commands.
 
 ### Recommended Pi warm set
 
@@ -118,7 +163,7 @@ At the owner-set cap of 15:
 --pool-size 15
 --pool-warm claude-opus-5/medium=12
 --pool-warm claude-opus-5/xhigh=2
---pool-warm claude-fable-5/xhigh=1
+--pool-warm claude-fable-5-1/xhigh=1
 ```
 
 One cell per live Pi conversation (root + each live subagent) when each
@@ -138,13 +183,14 @@ mint.
 | Dimension | Status |
 | --- | --- |
 | Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
-| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.238-aarch64.json`; linux/x86_64 also measured with Pi. |
-| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.238 and linux/x86_64 2.1.227..=2.1.236. |
-| Linux without a flag | **Shipped** for 2.1.227..=2.1.236. PATH 2.1.237 is outside the ceiling. |
+| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.238-aarch64.json`; linux sticky pin `evidence/linux-operator-eval-2.1.257-x86_64.json`, also measured with Pi. |
+| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.238 and linux/x86_64 2.1.227..=2.1.257. |
+| Linux without a flag | **Shipped** for 2.1.227..=2.1.257. This host's PATH `claude` is 2.1.257, inside the ceiling. |
 | Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |
 | `tools/dev/check.sh` | Living commit/push check. `--push` adds e2e + process blackbox. |
 | `tools/dev/operator_eval.py` | Confirms a Claude binary on **this** OS (grades + Messages sticky). No pooled drain required. Does not edit `PROMOTED_PROFILES`. |
+| `tools/dev/model_matrix.py` | One real turn per admitted `(model, effort)` cell on **this** OS. Gates nothing; edits neither `MODEL_TABLE` nor `PROMOTED_PROFILES`. |
 | `tools/dev/promote.py` | Drops `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists. linux/x86_64 and macos/aarch64 both have one. |
 | Gate A | **Removed.** Living verification is `tools/dev/`. |
 | Phase 0 / linux-docker / package-smoke | **Removed.** Historical freeze envelope, not a living pin. |

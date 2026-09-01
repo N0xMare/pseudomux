@@ -782,6 +782,35 @@ mutation run held four cores, not a latency measurement.
 | `linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky eval. Cache hits only above the ~1024-token floor. |
 | `linux-pi-agentic-subagent-x86_64.json` | Pi on Messages: agentic tools, sequential reviewer, parallel reviewers. |
 
+## Linux 2026-09 Path B receipts (`x86_64`)
+
+The 2.1.257 promotion. The pooled drain is unchanged
+(`pooled-transcript-drain-linux-x86_64.json`, 250 ms); these widen the linux
+cell's ceiling from 2.1.236 to 2.1.257.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.257-linux-x86_64.json` | Paid ceiling: 2.1.257 `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 39 ms (median 35) against the pooled 250 ms bound. Verdict promotable, floor 2.1.227, tested through 2.1.257. Over 5 turns one claude pid served four consecutive turns (a real `/clear` recycle); the fifth turn was a different class (effort high) and used a second cell. |
+| `linux-operator-eval-2.1.257-x86_64.json` | `GREEN_OPERATOR` pin confirmation for the 2.1.257 binary on this OS: grades all exact at sonnet-5 low and high, Messages sticky on the same cell, cache write 1915 / read 1915. Does not edit `PROMOTED_PROFILES`. |
+| `linux-pi-agentic-subagent-2.1.257-x86_64.json` | Pi 0.84.2 + pi-subagents 0.50.0 through `examples/pi/pmux.ts` (`pmux-client`) against a 12-cell opus-5/medium pool on 2.1.257 with no `--tested-claude-profile`: agentic (read/write/bash), one sequential subagent, two parallel subagents, all GREEN; cache hit on every post-first turn; leases release within 2 s of Pi exit and the same claude pids return to idle (`/clear`, epoch e0 throughout, zero failed-clear warnings). 25 turns. |
+| `linux-model-matrix-2.1.257-x86_64.json` | `tools/dev/model_matrix.py` probe of `MODEL_TABLE` at 2.1.257: one real pooled turn per admitted `(model, effort)` cell. Gates nothing; reads and writes no pooled-drain receipt. |
+| `linux-operator-eval-2.1.236-x86_64.json` | The prior operator pin, at 2.1.236. Historical. |
+
+The pinned 2.1.257 binary is `~/.local/share/pmux/claude/2.1.257/claude`
+(npm `@anthropic-ai/claude-code@2.1.257`, bundled linux-x64 ELF), sha256
+`9a64bda9d8722a1fa05bef9a5961d07e0331b99597eda9e2f6a732f3a0ff7f05`. What moved
+between 2.1.236 and 2.1.257 — transcript row kinds, slash-menu geometry, the
+Remote Control bridge, the `fable` model id — is in `docs/current-state.md`
+§2 "2.1.257 drift".
+
+One number quoted there is OBSERVED, not receipted: the same one-line `pmux run`
+prompt (`Reply with exactly <label> and nothing else.`) on a fresh 2.1.257 cell
+billed `input_tokens: 498` with the Remote Control bridge auto-started
+(`/rc active`, `remote_session_change` attachment present) and `289` after
+`config_isolation.rs` seeded `remoteControlAtStartup:false` +
+`disableRemoteControl:true`, both read from the `pmux run --output json`
+`usage.main` block on 2026-09-01. No file here carries those two raw results.
+
 Phase 0 has been removed. `model-attempt-ledger.ndjson` is a frozen historical
 ledger. Do not reseal it. Do not run `phase0.py budget`. Living pin confirmation
 is `tools/dev/operator_eval.py`. Drop-flag promotion is `tools/dev/promote.py`.

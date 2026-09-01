@@ -40,12 +40,13 @@ target/release/pmuxd serve \
 
 `--pool-claude` must be absolute. The binary's version must be in the
 promoted table below for this OS/arch, or you pass `--tested-claude-profile`.
-macos PATH 2.1.238 is inside the macos cell. A linux PATH Claude above 2.1.236
-(for example 2.1.237) is still outside the linux ceiling:
+macos PATH 2.1.238 is inside the macos cell; on this linux host PATH `claude`
+is 2.1.257, inside the linux cell. A version above either ceiling still needs
+the flag:
 
 ```bash
 --tested-claude-profile \
-  '{"claude_version":"2.1.237","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
+  '{"claude_version":"<version above the ceiling>","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
 ```
 
 Check the daemon (starts nothing, spends no tokens):
@@ -61,7 +62,7 @@ leases are live it also reports `leased` and `conversation_leases`.
 
 ## Development
 
-Living verification is [`tools/dev`](tools/dev/README.md): `check.sh` (fmt/clippy/tests; `--push` adds e2e and process blackbox), `operator_eval.py` (this OS, grades + Messages sticky; no pooled drain; does not edit `PROMOTED_PROFILES`), `promote.py` (drop `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists). `tools/promotion/` is the drop-flag engine. Gate A, Phase 0, linux-docker, and package-smoke have been removed.
+Living verification is [`tools/dev`](tools/dev/README.md): `check.sh` (fmt/clippy/tests; `--push` adds e2e and process blackbox), `operator_eval.py` (this OS, grades + Messages sticky; no pooled drain; does not edit `PROMOTED_PROFILES`), `model_matrix.py` (one real turn per admitted `(model, effort)` cell; gates nothing), `promote.py` (drop `--tested-claude-profile` only when `evidence/pooled-transcript-drain-<os>-<arch>.json` already exists). `tools/promotion/` is the drop-flag engine. Gate A, Phase 0, linux-docker, and package-smoke have been removed.
 
 ## Use it from a harness
 
@@ -94,7 +95,7 @@ example):
 --pool-size 15 \
 --pool-warm claude-opus-5/medium=12 \
 --pool-warm claude-opus-5/xhigh=2 \
---pool-warm claude-fable-5/xhigh=1
+--pool-warm claude-fable-5-1/xhigh=1
 ```
 
 Pi is the reference adapter ([examples/pi](examples/pi/README.md)). It has
@@ -144,7 +145,7 @@ re-exec, so instances are fungible within a class and never across one.
 
 | model | aliases | admitted `--effort` |
 | --- | --- | --- |
-| `claude-fable-5` | `fable`, `fable-5` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `claude-fable-5-1` | `fable`, `fable-5-1`, `fable-5.1` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-5` | `opus`, `opus-5` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-8` | `opus-4-8`, `opus-4.8` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-7` | `opus-4-7`, `opus-4.7` | `low`, `medium`, `high`, `xhigh`, `max` |
@@ -200,7 +201,7 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
 | 2.1.220 through 2.1.238 | macos / aarch64 | transparent / sdk | 1000 |
-| 2.1.227 through 2.1.236 | linux / x86_64 | transparent / sdk | 250 |
+| 2.1.227 through 2.1.257 | linux / x86_64 | transparent / sdk | 250 |
 
 A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.

@@ -23,7 +23,10 @@
 use std::path::{Path, PathBuf};
 
 use pseudomux_rmux::{CellColor, StyledCell, StyledScreen, TerminalCursor, TerminalSnapshot};
-use pseudomux_service::driver_io::{TerminalScreenState, classify_terminal_snapshot};
+use pseudomux_service::driver_io::{
+    ControlCommand, TerminalScreenState, classify_terminal_snapshot,
+    prove_control_command_selection,
+};
 use pseudomux_service::screen_corpus::{
     CORPUS_SCHEMA, Corpus, CorpusFrame, CorpusStamp, CorpusWriter, check_corpus,
 };
@@ -165,6 +168,61 @@ fn the_seed_corpus_still_contains_the_screens_it_was_built_from() {
             "the corpus no longer contains a frame recorded at {expected}"
         );
     }
+}
+
+/// The `/clear` selection proof has its own unconditional half.
+///
+/// MEASURED 2026-09-01: Claude Code moved the command menu from below the
+/// composer (2.1.220) to above it (somewhere in 2.1.228..=2.1.236, observed at
+/// 2.1.236 and 2.1.257), and `prove_control_command_selection` refused every
+/// post-turn `/clear` with `menu_not_rendered` while the pool silently fell
+/// back to a per-turn relaunch. No standing test could see it, because no
+/// recorded styled frame carried a verdict. The 2.1.257 corpus now does:
+/// `check_corpus` replays the proof over every frame with `expect_selection`,
+/// and this asserts that at least one such frame exists and that it is a
+/// frame the proof really accepts, so a proof that stops describing Claude
+/// Code's menu fails here by name instead of turning the invariant vacuous.
+#[test]
+fn the_corpus_contains_a_settled_menu_frame_whose_selection_is_proven() {
+    let corpora = load_all();
+    let mut proven = 0;
+    for corpus in &corpora {
+        for frame in &corpus.frames {
+            let Some(literal) = frame.expect_selection() else {
+                continue;
+            };
+            let command = ControlCommand::from_literal(literal)
+                .unwrap_or_else(|| panic!("{literal} is not a command pmux types"));
+            let screen = frame
+                .to_styled_screen()
+                .expect("a selection expectation sits on a styled frame");
+            prove_control_command_selection(&screen, command).unwrap_or_else(|refusal| {
+                panic!(
+                    "{}: a frame read by eye as a settled {literal} menu was refused: {}",
+                    corpus.source.display(),
+                    refusal.details
+                )
+            });
+            proven += 1;
+        }
+    }
+    assert!(
+        proven >= 1,
+        "no recorded frame carries expect_selection, so the selection proof is \
+         never replayed against a real screen"
+    );
+    // And the frame is the one it claims to be: the pool's own read of the
+    // 2.1.257 menu-above screen, not a fixture that happens to prove.
+    assert!(
+        corpora.iter().any(|corpus| {
+            corpus.stamp.claude_version.starts_with("2.1.257")
+                && corpus.frames.iter().any(|frame| {
+                    frame.site() == "control_channel.selection"
+                        && frame.expect_selection() == Some("/clear")
+                })
+        }),
+        "the 2.1.257 control_channel.selection frame is no longer in the corpus"
+    );
 }
 
 // ---------------------------------------------------------------------------

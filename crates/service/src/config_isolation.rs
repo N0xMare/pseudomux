@@ -50,6 +50,13 @@
 //!   [`SeedDisposition::VerifyOnly`] start refused. Seeding the migration's own
 //!   destination is stable because `aCm()` then returns at its first
 //!   condition. See `a_real_claude_launch_leaves_the_seed_already_satisfied`.
+//! * **`settings.json` `remoteControlAtStartup: false` and
+//!   `disableRemoteControl: true`** -- MEASURED on Claude Code 2.1.257: with
+//!   neither key a minified cell auto-started the claude.ai Remote Control
+//!   bridge, so a pool cell was a session anyone could pick up from claude.ai
+//!   and its transcript carried a `remote_session_change` attachment naming
+//!   that session's URL. The explicit preference is what wins over the
+//!   rollout default. See [`REMOTE_CONTROL_AT_STARTUP`].
 //! * **`bypassPermissionsModeAccepted: false`** -- from the same recipe, and
 //!   deliberately `false` even when the caller asked for
 //!   `--dangerously-skip-permissions`. See [`Self::user_settings_document`].
@@ -95,6 +102,28 @@ const USER_SETTINGS_FILE: &str = "settings.json";
 /// updater off, and the value Claude's own migration writes.
 const DISABLE_AUTOUPDATER: &str = "DISABLE_AUTOUPDATER";
 const DISABLE_AUTOUPDATER_VALUE: &str = "1";
+/// MEASURED on Claude Code 2.1.257 linux/x86_64: a minified cell with neither
+/// key present auto-started the claude.ai Remote Control bridge (`/rc active`
+/// in the status row, a `bridge-session` record and a `remote_session_change`
+/// attachment naming a claude.ai session URL in the transcript). The resolver's
+/// own precedence is "explicit setting -> policy default -> rollout", so the
+/// explicit user-settings preference below is what beats the rollout default.
+/// The same two keys exist, byte-identical, in the 2.1.236 bundle; no
+/// environment variable or CLI flag turns the bridge off.
+///
+/// MEASURED with the keys seeded (2026-09-01, same binary, one `pmux run`
+/// turn on a fresh cell): the status row no longer shows `/rc active`, the
+/// transcript carries no `bridge-session` record and no
+/// `remote_session_change` attachment, and the same one-line prompt billed 289
+/// input tokens against 498 without the keys. Both keys survived a real
+/// 2.1.257 launch under `VerifyOnly`
+/// (`a_real_claude_launch_leaves_the_seed_already_satisfied`, run that day).
+const REMOTE_CONTROL_AT_STARTUP: &str = "remoteControlAtStartup";
+/// The broader switch: it names auto-start, `--rc`, `claude remote-control`
+/// and the in-session toggle. Documented as "typically set in managed
+/// settings"; written here as well because it costs nothing and the key
+/// above does not depend on it being honoured from the user layer.
+const DISABLE_REMOTE_CONTROL: &str = "disableRemoteControl";
 
 /// Whether pmux is allowed to write to this root right now.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -227,6 +256,11 @@ impl ConfigRootSeed<'_> {
             DISABLE_AUTOUPDATER.into(),
             Value::String(DISABLE_AUTOUPDATER_VALUE.into()),
         );
+        // A pool cell answers one caller on this host. It must not also be a
+        // session anyone can pick up from claude.ai, and the model must not be
+        // handed a claude.ai session URL as context. See the constants.
+        document.insert(REMOTE_CONTROL_AT_STARTUP.into(), Value::Bool(false));
+        document.insert(DISABLE_REMOTE_CONTROL.into(), Value::Bool(true));
         if self.dangerous_permission_bypass {
             document.insert(
                 "skipDangerousModePermissionPrompt".into(),
@@ -494,7 +528,11 @@ mod tests {
 
     /// The keys pmux asserts in `settings.json` for an ordinary session.
     fn asserted_settings() -> Value {
-        json!({"env": {DISABLE_AUTOUPDATER: DISABLE_AUTOUPDATER_VALUE}})
+        json!({
+            "env": {DISABLE_AUTOUPDATER: DISABLE_AUTOUPDATER_VALUE},
+            REMOTE_CONTROL_AT_STARTUP: false,
+            DISABLE_REMOTE_CONTROL: true,
+        })
     }
 
     fn root() -> tempfile::TempDir {
@@ -722,6 +760,8 @@ mod tests {
             read(&directory.path().join(USER_SETTINGS_FILE)),
             json!({
                 "env": {DISABLE_AUTOUPDATER: DISABLE_AUTOUPDATER_VALUE},
+                REMOTE_CONTROL_AT_STARTUP: false,
+                DISABLE_REMOTE_CONTROL: true,
                 "skipDangerousModePermissionPrompt": true,
             }),
             "PW() reads userSettings, which resolves to <config root>/settings.json"

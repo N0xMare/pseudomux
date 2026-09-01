@@ -215,38 +215,81 @@ impl Drop for HybridLifecycle {
         if let Some(task) = self.task.take() {
             task.abort();
         }
-        remove_if_same_file(&self.socket_path, self.socket_identity);
-        remove_if_same_file(&self.settings_path, self.settings_identity);
+        remove_if_same_file(&self.socket_path, &self.socket_identity);
+        remove_if_same_file(&self.settings_path, &self.settings_identity);
     }
 }
 
-#[derive(Clone, Copy)]
+/// Device and inode of an artifact we created, plus, where the platform allows
+/// it, an open handle that keeps that inode allocated.
+///
+/// Inode numbers are recycled: on ext4 a file unlinked and immediately
+/// recreated at the same path usually lands on the very same inode, which would
+/// make a same-user replacement indistinguishable from our own artifact and get
+/// it deleted by cleanup. Holding a handle keeps the kernel from freeing the
+/// inode number for as long as we might still act on it.
 struct FileIdentity {
     device: u64,
     inode: u64,
+    pin: Option<std::fs::File>,
 }
 
 impl FileIdentity {
     fn capture(path: &Path) -> Result<Self> {
-        let metadata = std::fs::symlink_metadata(path)
+        let pin = pin_inode(path);
+        let metadata = match pin.as_ref() {
+            Some(pin) => pin.metadata(),
+            None => std::fs::symlink_metadata(path),
+        }
+        .context("failed to inspect a Hybrid runtime artifact")?;
+        Self::new(&metadata, pin)
+    }
+
+    fn from_file(file: &std::fs::File) -> Result<Self> {
+        let metadata = file
+            .metadata()
             .context("failed to inspect a Hybrid runtime artifact")?;
+        Self::new(&metadata, file.try_clone().ok())
+    }
+
+    fn new(metadata: &std::fs::Metadata, pin: Option<std::fs::File>) -> Result<Self> {
         ensure!(
             metadata.uid() == effective_uid(),
             "Hybrid runtime artifact is owned by another user"
         );
-        Ok(Self::from_metadata(&metadata))
-    }
-
-    fn from_metadata(metadata: &std::fs::Metadata) -> Self {
-        Self {
+        Ok(Self {
             device: metadata.dev(),
             inode: metadata.ino(),
-        }
+            pin,
+        })
     }
 
-    fn matches(self, metadata: &std::fs::Metadata) -> bool {
-        metadata.dev() == self.device && metadata.ino() == self.inode
+    fn matches(&self, metadata: &std::fs::Metadata) -> bool {
+        let (device, inode) = match self.pin.as_ref().and_then(|pin| pin.metadata().ok()) {
+            Some(pinned) => (pinned.dev(), pinned.ino()),
+            None => (self.device, self.inode),
+        };
+        metadata.dev() == device && metadata.ino() == inode
     }
+}
+
+/// Opens a handle that pins `path`'s inode without opening the file for I/O.
+///
+/// `O_PATH` is Linux-only, and a bound Unix socket cannot be opened for I/O
+/// anywhere, so platforms without it fall back to the recorded device and
+/// inode alone.
+#[cfg(target_os = "linux")]
+fn pin_inode(path: &Path) -> Option<std::fs::File> {
+    OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_PATH | libc::O_NOFOLLOW)
+        .open(path)
+        .ok()
+}
+
+#[cfg(not(target_os = "linux"))]
+fn pin_inode(_path: &Path) -> Option<std::fs::File> {
+    None
 }
 
 #[derive(Serialize, Deserialize)]
@@ -328,7 +371,7 @@ pub async fn prepare_lifecycle(
     let settings_identity = match write_private_file(&settings_path, &encoded) {
         Ok(identity) => identity,
         Err(error) => {
-            remove_if_same_file(&socket_path, socket_identity);
+            remove_if_same_file(&socket_path, &socket_identity);
             remove_owned_file(&settings_path);
             return Err(error);
         }
@@ -733,18 +776,14 @@ fn write_private_file(path: &Path, bytes: &[u8]) -> Result<FileIdentity> {
         .mode(0o600)
         .open(path)
         .context("failed to create Hybrid settings")?;
-    let identity = FileIdentity::from_metadata(
-        &file
-            .metadata()
-            .context("failed to inspect Hybrid settings")?,
-    );
+    let identity = FileIdentity::from_file(&file).context("failed to inspect Hybrid settings")?;
     let write_result = file
         .write_all(bytes)
         .context("failed to write Hybrid settings")
         .and_then(|()| file.sync_all().context("failed to sync Hybrid settings"));
     if let Err(error) = write_result {
         drop(file);
-        remove_if_same_file(path, identity);
+        remove_if_same_file(path, &identity);
         return Err(error);
     }
     Ok(identity)
@@ -762,7 +801,7 @@ fn remove_owned_file(path: &Path) {
     }
 }
 
-fn remove_if_same_file(path: &Path, identity: FileIdentity) {
+fn remove_if_same_file(path: &Path, identity: &FileIdentity) {
     let Ok(metadata) = std::fs::symlink_metadata(path) else {
         return;
     };

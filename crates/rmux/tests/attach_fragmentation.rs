@@ -87,7 +87,7 @@ fn read_initial_resize(stream: &mut UnixStream) {
 fn open_test_pty() -> (File, File) {
     let mut master = MaybeUninit::<libc::c_int>::uninit();
     let mut slave = MaybeUninit::<libc::c_int>::uninit();
-    let mut size = libc::winsize {
+    let size = libc::winsize {
         ws_row: 24,
         ws_col: 80,
         ws_xpixel: 0,
@@ -101,7 +101,7 @@ fn open_test_pty() -> (File, File) {
             slave.as_mut_ptr(),
             std::ptr::null_mut(),
             std::ptr::null_mut(),
-            &mut size,
+            &size,
         )
     };
     assert_eq!(

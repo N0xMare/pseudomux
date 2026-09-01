@@ -644,7 +644,16 @@ fn strict_parser_admits_an_api_error_only_when_its_payload_proves_it_is_a_retry_
 #[test]
 fn current_session_control_rows_are_typed_metadata() {
     let parser = JsonlParser::new(ParseMode::Strict);
-    for record_type in ["mode", "permission-mode", "ai-title"] {
+    // `atis-latch` and `cost-state` are the two record types Claude Code 2.1.257
+    // added on linux/x86_64; the rest predate it. This is the enumerating table
+    // for `is_metadata_record`, so a record type admitted there belongs here.
+    for record_type in [
+        "mode",
+        "permission-mode",
+        "ai-title",
+        "atis-latch",
+        "cost-state",
+    ] {
         let row = line(format!(r#"{{"type":"{record_type}","sessionId":"s"}}"#).as_bytes());
         let parsed = parser.parse(&row).unwrap();
         assert!(matches!(
@@ -654,6 +663,90 @@ fn current_session_control_rows_are_typed_metadata() {
             } if parsed_type == record_type
         ));
     }
+}
+
+/// MEASURED on Claude Code 2.1.257 linux/x86_64, `SessionCell::Minified`: the
+/// real field shapes of the three rows 2.1.236 did not write, with the session
+/// URL replaced by a placeholder. `atis-latch` sits third in the launch
+/// preamble and `cost-state` after the turn; `remote_session_change` follows
+/// `total_tokens_reminder` on the typed prompt. Strict mode must type all
+/// three, and must type them from the name alone -- no field is read.
+#[test]
+fn measured_2_1_257_records_are_typed_metadata_and_attachment() {
+    let parser = JsonlParser::new(ParseMode::Strict);
+
+    for (row, record_type) in [
+        (
+            line(br#"{"type":"atis-latch","atis":"","sessionId":"s"}"#),
+            "atis-latch",
+        ),
+        (
+            line(
+                br#"{"type":"cost-state","sessionId":"s","totalCostUSD":0,"totalAPIDuration":0,"totalDuration":2712,"startTime":1788294529829,"modelUsage":{}}"#,
+            ),
+            "cost-state",
+        ),
+    ] {
+        let parsed = parser.parse(&row).unwrap();
+        assert!(
+            matches!(
+                parsed.kind,
+                RowKind::Metadata {
+                    record_type: ref parsed_type
+                } if parsed_type == record_type
+            ),
+            "{record_type} must parse as metadata: {:?}",
+            parsed.kind
+        );
+    }
+
+    let remote = line(
+        br#"{"parentUuid":"reminder","sessionId":"s","type":"attachment","uuid":"remote","attachment":{"type":"remote_session_change","url":"https://claude.ai/code/session_PLACEHOLDER","commit":"Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_PLACEHOLDER","pr":"Generated with Claude Code\n\nhttps://claude.ai/code/session_PLACEHOLDER","sendUserFileHint":false}}"#,
+    );
+    let parsed = parser.parse(&remote).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "remote_session_change"
+    ));
+    // Admitted by name only: the payload is still verbatim on the raw row, and
+    // nothing in the parser has promised to interpret it.
+    assert_eq!(parsed.raw["attachment"]["sendUserFileHint"], false);
+}
+
+/// The other names a `strings` scan of the 2.1.257 binary turned up. None of
+/// them was OBSERVED on a minified pool cell, so strict mode still refuses
+/// them: an unobserved kind must fail closed until it is measured, which is the
+/// only reason the three above could be admitted with confidence.
+#[test]
+fn unobserved_2_1_257_kinds_are_still_refused() {
+    let parser = JsonlParser::new(ParseMode::Strict);
+
+    // A new attachment type is drift, not a new inert node: the row could carry
+    // tool output, and admitting it by name would put that on the active chain.
+    let tool_host_result_lines = line(
+        br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"a","attachment":{"type":"tool_host_result_lines"}}"#,
+    );
+    assert!(matches!(
+        parser.parse(&tool_host_result_lines),
+        Err(TranscriptError::SchemaDrift { ref path, .. }) if path == "$.attachment.type"
+    ));
+
+    // A new top-level record type is `Unknown`, which the engine refuses on the
+    // active parent chain and the pool's assert-empty proof refuses outright.
+    // (`tool_host_result` and `cloud_session_status` are system SUBTYPES rather
+    // than top-level types; their refusal is proved by
+    // `unobserved_2_1_257_system_subtypes_are_refused_on_the_active_chain` in
+    // transcript_engine.rs.)
+    let fork_briefing = line(br#"{"type":"fork_briefing","sessionId":"s"}"#);
+    let parsed = parser.parse(&fork_briefing).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Unknown {
+            declared_type: Some(ref declared)
+        } if declared == "fork_briefing"
+    ));
 }
 
 fn line(bytes: &[u8]) -> CompleteLine {

@@ -511,7 +511,7 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
     },
     PromotedProfile {
         claude_version_floor: "2.1.227",
-        claude_version_tested_through: "2.1.236",
+        claude_version_tested_through: "2.1.257",
         os: "linux",
         arch: "x86_64",
         terminal_profile: TerminalProfile::Transparent,
@@ -528,16 +528,16 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        tools/promotion/measure_transcript_drain.py",
         range_provenance: "floor 2.1.227: first linux/x86_64 Path B drain receipt \
                        (evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) \
-                       pooled with 2.1.232/2.1.233 in evidence/pooled-transcript-drain-linux-x86_64.json; \
-                       below it linux minified cells were not measured as a promotion floor. Tested \
-                       through 2.1.236: promote_claude_version.py drove 5 minified-cell turns \
-                       through `pmux run` at claude-sonnet-5 low/high -- every graded reply exact, \
-                       the four-grade suite answered across a `/clear` per turn, sidechain and \
-                       cache zero on every result, the pool never halted -- and measured 5 \
-                       reachable post-answer arrival(s) at this version, max 46 ms against the \
-                       pooled 250 ms bound. NOT measured at 2.1.236: anything outside a minified \
-                       cell on linux/x86_64, and the per-version fit of 250 ms, which is published \
-                       to be read and NOT shipped.",
+                       pooled with 2.1.232/2.1.233 in \
+                       evidence/pooled-transcript-drain-linux-x86_64.json; below it linux minified \
+                       cells were not measured as a promotion floor. Tested through 2.1.257: \
+                       promote_claude_version.py drove 5 minified-cell turns through `pmux run` at \
+                       claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite \
+                       answered across a `/clear` per turn, sidechain and cache zero on every result, \
+                       the pool never halted -- and measured 5 reachable post-answer arrival(s) at \
+                       this version, max 39 ms against the pooled 250 ms bound. NOT measured at \
+                       2.1.257: anything outside a minified cell on linux/x86_64, and the per-version \
+                       fit of 250 ms, which is published to be read and NOT shipped.",
     },
 ];
 

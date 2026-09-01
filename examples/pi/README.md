@@ -23,7 +23,7 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 ## Models
 
 Effort is in the model id. `/model` lists the recommended warm-set
-families (`claude-opus-5-*`, `claude-sonnet-5-*`, `claude-fable-5-*`).
+families (`claude-opus-5-*`, `claude-sonnet-5-*`, `claude-fable-5-1-*`).
 `GET /v1/models` is the full pool table.
 
 Recommended warm set (at the owner-set cap of 15):
@@ -32,7 +32,7 @@ Recommended warm set (at the owner-set cap of 15):
 --pool-size 15
 --pool-warm claude-opus-5/medium=12
 --pool-warm claude-opus-5/xhigh=2
---pool-warm claude-fable-5/xhigh=1
+--pool-warm claude-fable-5-1/xhigh=1
 ```
 
 Use medium as the workhorse, xhigh sparingly, fable for phase-gates. One
@@ -43,4 +43,4 @@ and `/clear`s the first. The measured parallel-subagent receipt used child
 processes. Spawn, steer, and delete stay Pi's job. Session end POSTs
 `/v1/conversations/{id}/release` so the cell `/clear`s.
 
-Measured: `evidence/linux-pi-agentic-subagent-x86_64.json`.
+Measured: `evidence/linux-pi-agentic-subagent-2.1.257-x86_64.json` (Pi 0.84.2 + pi-subagents 0.50.0 on the promoted 2.1.257 cell, no operator flag; agentic, sequential and parallel subagents, release returns the same cell to idle); `evidence/linux-pi-agentic-subagent-x86_64.json` is the 2.1.233 run.

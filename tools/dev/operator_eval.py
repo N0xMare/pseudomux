@@ -101,10 +101,13 @@ class EvalDaemon:
         sandbox: Sandbox,
         profile: dict[str, Any],
         claude: pathlib.Path,
-        messages_bind: str,
+        messages_bind: str | None,
         model: str,
-        effort: str,
+        effort: str | None,
     ) -> None:
+        # `messages_bind` and `effort` are optional so model_matrix.py can reuse
+        # this daemon: it needs no Messages listener, and it warms a class whose
+        # model takes no `--effort` at all. operator_eval always passes both.
         self.sandbox = sandbox
         self.log_path = sandbox.root / "pmuxd.log"
         self.log = self.log_path.open("wb")
@@ -134,10 +137,10 @@ class EvalDaemon:
             "--pool-turn-timeout-ms",
             "180000",
             "--pool-warm",
-            f"{model}/{effort}=1",
-            "--messages-bind",
-            messages_bind,
+            f"{model}/{effort}=1" if effort else f"{model}=1",
         ]
+        if messages_bind:
+            argv += ["--messages-bind", messages_bind]
         self.process = subprocess.Popen(
             argv,
             env=sandbox.environment(),

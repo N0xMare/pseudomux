@@ -1,0 +1,1917 @@
+{
+  "schema": "pmux.model-matrix.v1",
+  "kind": "model_effort_matrix",
+  "not_a_promotion": true,
+  "claude_version": "2.1.257",
+  "os": "linux",
+  "arch": "x86_64",
+  "pin": {
+    "path": "<HOME>/.local/share/pmux/claude/2.1.257/claude",
+    "sha256": "9a64bda9d8722a1fa05bef9a5961d07e0331b99597eda9e2f6a732f3a0ff7f05",
+    "bytes": 215469464,
+    "version": "2.1.257"
+  },
+  "warm": {
+    "capacity": 3,
+    "clearing": 0,
+    "configured": true,
+    "conversation_leases": [],
+    "declared_warm": 1,
+    "halted": null,
+    "idle": 1,
+    "in_flight": 0,
+    "instance_terminals_present": 1,
+    "leaked": 0,
+    "leased": 0,
+    "live": 1,
+    "pool_size": 3,
+    "registered_instances": 1,
+    "reserved": 0,
+    "tearing_down": 0
+  },
+  "rows": [
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "claude-fable-5-1",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "LE14",
+      "expected": "LE14-107",
+      "text": "LE14-107",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 3440.6,
+      "error": null
+    },
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "claude-fable-5-1",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "TCH4",
+      "expected": "TCH4-73",
+      "text": "TCH4-73",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5403.7,
+      "error": null
+    },
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "claude-fable-5-1",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "W10S",
+      "expected": "W10S-58",
+      "text": "W10S-58",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6760.2,
+      "error": null
+    },
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "claude-fable-5-1",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "XCGX",
+      "expected": "XCGX-77",
+      "text": "XCGX-77",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6266.7,
+      "error": null
+    },
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "claude-fable-5-1",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "X5BU",
+      "expected": "X5BU-63",
+      "text": "X5BU-63",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5657.1,
+      "error": null
+    },
+    {
+      "model": "claude-fable-5-1",
+      "spelling": "fable",
+      "alias_used": "fable",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "YO3Z",
+      "expected": "YO3Z-90",
+      "text": "YO3Z-90",
+      "answered": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 305,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 305,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6616.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "KSLZ",
+      "expected": "KSLZ-80",
+      "text": "KSLZ-80",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5717.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "ZJBM",
+      "expected": "ZJBM-86",
+      "text": "ZJBM-86",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5870.8,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "LW2Z",
+      "expected": "LW2Z-85",
+      "text": "LW2Z-85",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5683.4,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "MQXO",
+      "expected": "MQXO-80",
+      "text": "MQXO-80",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 20,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 20,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5597.0,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "JFJE",
+      "expected": "JFJE-106",
+      "text": "JFJE-106",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 20,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 20,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5096.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "opus",
+      "alias_used": "opus",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "FLO8",
+      "expected": "FLO8-108",
+      "text": "FLO8-108",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 15,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 15,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5706.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "claude-opus-4-8",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "SZBI",
+      "expected": "SZBI-55",
+      "text": "SZBI-55",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6185.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "claude-opus-4-8",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "ZRDB",
+      "expected": "ZRDB-54",
+      "text": "ZRDB-54",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5013.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "claude-opus-4-8",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "LFZ9",
+      "expected": "LFZ9-108",
+      "text": "LFZ9-108",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 304,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 4916.4,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "claude-opus-4-8",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "740C",
+      "expected": "740C-69",
+      "text": "740C-69",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 302,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 302,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5842.9,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "claude-opus-4-8",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "N8XT",
+      "expected": "N8XT-96",
+      "text": "N8XT-96",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 19,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 19,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5114.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-8",
+      "spelling": "opus-4-8",
+      "alias_used": "opus-4-8",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "Q80R",
+      "expected": "Q80R-59",
+      "text": "Q80R-59",
+      "answered": true,
+      "reported_model": "claude-opus-4-8",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 303,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 303,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5483.9,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "claude-opus-4-7",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "42GA",
+      "expected": "42GA-64",
+      "text": "42GA-64",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 323,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 323,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5486.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "claude-opus-4-7",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "5DDY",
+      "expected": "5DDY-83",
+      "text": "5DDY-83",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6231.8,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "claude-opus-4-7",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "CTZX",
+      "expected": "CTZX-73",
+      "text": "CTZX-73",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 323,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 323,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5195.7,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "claude-opus-4-7",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "7059",
+      "expected": "7059-65",
+      "text": "7059-65",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 322,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 322,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5713.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "claude-opus-4-7",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "0ATY",
+      "expected": "0ATY-75",
+      "text": "0ATY-75",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5673.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-7",
+      "spelling": "opus-4-7",
+      "alias_used": "opus-4-7",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "4V0I",
+      "expected": "4V0I-60",
+      "text": "4V0I-60",
+      "answered": true,
+      "reported_model": "claude-opus-4-7",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 324,
+          "output_tokens": 11,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6459.4,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-6",
+      "spelling": "claude-opus-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "V7W8",
+      "expected": "V7W8-63",
+      "text": "V7W8-63",
+      "answered": true,
+      "reported_model": "claude-opus-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6276.4,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-6",
+      "spelling": "claude-opus-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "GG55",
+      "expected": "GG55-104",
+      "text": "GG55-104",
+      "answered": true,
+      "reported_model": "claude-opus-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6454.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-6",
+      "spelling": "claude-opus-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "HX83",
+      "expected": "HX83-82",
+      "text": "HX83-82",
+      "answered": true,
+      "reported_model": "claude-opus-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6221.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-6",
+      "spelling": "claude-opus-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "02HM",
+      "expected": "02HM-60",
+      "text": "02HM-60",
+      "answered": true,
+      "reported_model": "claude-opus-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5683.7,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-6",
+      "spelling": "opus-4-6",
+      "alias_used": "opus-4-6",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "AWT5",
+      "expected": "AWT5-74",
+      "text": "AWT5-74",
+      "answered": true,
+      "reported_model": "claude-opus-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6216.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-5",
+      "spelling": "claude-opus-4-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "LL2D",
+      "expected": "LL2D-114",
+      "text": "LL2D-114",
+      "answered": true,
+      "reported_model": "claude-opus-4-5-20251101",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 374,
+          "output_tokens": 65,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 374,
+          "output_tokens": 65,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6219.7,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-5",
+      "spelling": "claude-opus-4-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "DUSS",
+      "expected": "DUSS-75",
+      "text": "DUSS-75",
+      "answered": true,
+      "reported_model": "claude-opus-4-5-20251101",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 373,
+          "output_tokens": 63,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 373,
+          "output_tokens": 63,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6950.7,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-5",
+      "spelling": "claude-opus-4-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "IVW0",
+      "expected": "IVW0-81",
+      "text": "IVW0-81",
+      "answered": true,
+      "reported_model": "claude-opus-4-5-20251101",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 272,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 272,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6253.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-4-5",
+      "spelling": "opus-4-5",
+      "alias_used": "opus-4-5",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "62B5",
+      "expected": "62B5-66",
+      "text": "62B5-66",
+      "answered": true,
+      "reported_model": "claude-opus-4-5-20251101",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 478,
+          "output_tokens": 64,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 478,
+          "output_tokens": 64,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 2916.5,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "claude-sonnet-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "17V4",
+      "expected": "17V4-66",
+      "text": "17V4-66",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 319,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 319,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5920.4,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "claude-sonnet-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "EDNL",
+      "expected": "EDNL-99",
+      "text": "EDNL-99",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5505.2,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "claude-sonnet-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "ESUW",
+      "expected": "ESUW-74",
+      "text": "ESUW-74",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6010.3,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "claude-sonnet-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "Z42Z",
+      "expected": "Z42Z-64",
+      "text": "Z42Z-64",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 320,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 320,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5019.5,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "claude-sonnet-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "G126",
+      "expected": "G126-82",
+      "text": "G126-82",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 317,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 317,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5537.8,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-5",
+      "spelling": "sonnet",
+      "alias_used": "sonnet",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "M6NA",
+      "expected": "M6NA-93",
+      "text": "M6NA-93",
+      "answered": true,
+      "reported_model": "claude-sonnet-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5753.1,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "spelling": "claude-sonnet-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "OZ27",
+      "expected": "OZ27-91",
+      "text": "OZ27-91",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 12584.2,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "spelling": "claude-sonnet-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "SAU7",
+      "expected": "SAU7-70",
+      "text": "SAU7-70",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 12400.4,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "spelling": "claude-sonnet-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "SNPS",
+      "expected": "SNPS-83",
+      "text": "SNPS-83",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 242,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 11726.3,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "spelling": "claude-sonnet-4-6",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "3E0H",
+      "expected": "3E0H-82",
+      "text": "3E0H-82",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 244,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 244,
+          "output_tokens": 10,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 11811.6,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "spelling": "sonnet-4-6",
+      "alias_used": "sonnet-4-6",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "R2MF",
+      "expected": "R2MF-54",
+      "text": "R2MF-54",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-6",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 243,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5232.4,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-5",
+      "spelling": "claude-sonnet-4-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": null,
+      "nonce": "O29E",
+      "expected": "O29E-91",
+      "text": "O29E-91",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-5-20250929",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 271,
+          "output_tokens": 80,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 271,
+          "output_tokens": 80,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5794.7,
+      "error": null
+    },
+    {
+      "model": "claude-sonnet-4-5",
+      "spelling": "sonnet-4-5",
+      "alias_used": "sonnet-4-5",
+      "via_alias": true,
+      "effort": null,
+      "nonce": "X323",
+      "expected": "X323-61",
+      "text": "X323-61",
+      "answered": true,
+      "reported_model": "claude-sonnet-4-5-20250929",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 374,
+          "output_tokens": 77,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 374,
+          "output_tokens": 77,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 4019.8,
+      "error": null
+    },
+    {
+      "model": "claude-haiku-4-5",
+      "spelling": "claude-haiku-4-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": null,
+      "nonce": "JDMH",
+      "expected": "JDMH-104",
+      "text": "JDMH-104",
+      "answered": true,
+      "reported_model": "claude-haiku-4-5-20251001",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 273,
+          "output_tokens": 91,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 273,
+          "output_tokens": 91,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5654.6,
+      "error": null
+    },
+    {
+      "model": "claude-haiku-4-5",
+      "spelling": "haiku",
+      "alias_used": "haiku",
+      "via_alias": true,
+      "effort": null,
+      "nonce": "7DFT",
+      "expected": "7DFT-85",
+      "text": "7DFT-85",
+      "answered": true,
+      "reported_model": "claude-haiku-4-5-20251001",
+      "reported_model_matches": true,
+      "claude_version": "2.1.257",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 377,
+          "output_tokens": 85,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 377,
+          "output_tokens": 85,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 3453.4,
+      "error": null
+    }
+  ],
+  "summary": {
+    "rows": 48,
+    "answered": 48,
+    "failed": 0,
+    "reported_model_mismatches": []
+  },
+  "pool_after": {
+    "halted": null,
+    "leaked": 0
+  },
+  "verdict": "GREEN_MATRIX"
+}

@@ -786,7 +786,10 @@ def check_grades_answer(run: Run) -> dict[str, Any]:
     (`evidence/linux-operator-eval-2.1.236-x86_64.json` `process_tree_note`;
     promotion-2.1.236-linux first pass: one new pid per grade). Product
     identity is the pool census (`leaked=0`, `halted` null) plus the emptiness
-    probe. Pids are recorded, not asserted.
+    probe. Pids are recorded, not asserted. (2026-09-01: that per-turn pid
+    change was the post-turn `/clear` refusing `menu_not_rendered` and the pool
+    reminting; fixed for the menu-above-composer layout, and the 2.1.257
+    promotion shows one pid across four turns.)
     """
 
     effort = run.args.efforts[0]

@@ -9,8 +9,8 @@ isolation). Operators integrating a harness should not start here.
 pool of them.** This file was a design specification. **It is now mostly a description of a shipped
 thing**, and where it still describes a design the tense says so explicitly.
 
-**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.238
-and linux/x86_64 2.1.227..=2.1.236 are reachable without a flag.
+**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21; linux 2.1.257 2026-09-01).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.238
+and linux/x86_64 2.1.227..=2.1.257 are reachable without a flag.
 
 | Shipped | Where |
 |---|---|
@@ -21,7 +21,7 @@ and linux/x86_64 2.1.227..=2.1.236 are reachable without a flag.
 | `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
 | Sticky `Leased` instances and the opt-in loopback Messages facade (`--messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
-| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.238 and linux/x86_64 2.1.227 through 2.1.236 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.238-macos-aarch64.json`, `evidence/promotion-2.1.236-linux-x86_64.json` |
+| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.238 and linux/x86_64 2.1.227 through 2.1.257 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.238-macos-aarch64.json`, `evidence/promotion-2.1.257-linux-x86_64.json` |
 
 **Still design, and labelled as such in place:** admission by a measured memory budget (§7 — the
 budget is a boot assertion, not a runtime gate), the retention/pruning policy of §8 above the two
@@ -520,12 +520,25 @@ The allowlist is exactly the record types a real preamble contains, MEASURED:
 | `file-history-snapshot` | both preambles | none -- MEASURED absent on 289 of 289 rows |
 | `last-prompt` | trailing row of a cleared preamble, `lastPrompt: null` | `sessionId` required |
 
-Anything else -- `summary`, `ai-title`, `queue-operation`, `progress`, `pr-link`, and any record type
-a future Claude adds -- is `unexpected_metadata_record`, naming the offending record type as a
-bounded schema token. `last-prompt` additionally requires `lastPrompt` to be absent or null
-(`metadata_prompt_present` otherwise): MEASURED it is null in the one post-`/clear` transcript of the
-61-file corpus that served no work, and carries the prompt text verbatim in 2,337 of 2,365 rows
-everywhere else. The row is admitted for what it says, not for its type.
+Anything else -- `summary`, `ai-title`, `queue-operation`, `progress`, `pr-link`, `atis-latch`,
+`cost-state`, and any record type a future Claude adds -- is `unexpected_metadata_record`, naming the
+offending record type as a bounded schema token. `last-prompt` additionally requires `lastPrompt` to
+be absent or null (`metadata_prompt_present` otherwise): MEASURED it is null in the one post-`/clear`
+transcript of the 61-file corpus that served no work, and carries the prompt text verbatim in 2,337
+of 2,365 rows everywhere else. The row is admitted for what it says, not for its type.
+
+**MEASURED on Claude Code 2.1.257 linux/x86_64 (2026-09-01), a minified cell:** the launch preamble
+grew a third row, `{"type":"atis-latch","atis":"","sessionId":<session>}`, and the turn is now
+followed by `cost-state` rows (`sessionId`, `totalCostUSD`, `totalDuration`, `startTime`,
+`modelUsage`). Both are `is_metadata_record` at the parser as of 2.1.257 -- they parse, and a turn
+carrying them analyses cleanly -- but **neither is in the allowlist above**, so an `atis-latch` in a
+preamble this proof is asked to declare empty is refused as `unexpected_metadata_record` rather than
+accepted. That is the intended direction: the allowlist is what a preamble that served no work was
+MEASURED to contain. The post-`/clear` successor at 2.1.257 WAS measured (2026-09-01, two cells): it
+is the 2.1.220 shape -- `mode`, `file-history-snapshot`, the caveat `user` row, the
+`<command-name>/clear</command-name>` `user` row, `system`/`local_command` -- with no `atis-latch` and no
+`cost-state`, and `evidence/promotion-2.1.257-linux-x86_64.json` shows one Claude pid serving four
+consecutive `pmux run` turns through that allowlist. `atis-latch` is a LAUNCH-preamble row only.
 
 **Identity applies to metadata here.** MEASURED over 231 transcripts: the four stamped record types
 carry `sessionId` on 100% of 7,222 rows and it equals the transcript's own id on every one; no
@@ -580,8 +593,13 @@ adversarial passes; the invariant is the conjunction listed in §5.6.
 
 **What makes it pass.** Concretely the file will contain only preamble:
 
-- **Newly launched:** the launch preamble — MEASURED `mode`, `permission-mode`, `bridge-session`,
-  `file-history-snapshot`. All parse as `RowKind::Metadata`.
+- **Newly launched:** the launch preamble — MEASURED on 2.1.220 as the four rows `mode`,
+  `permission-mode`, `bridge-session`, `file-history-snapshot`. MEASURED again on **2.1.257**
+  linux/x86_64 as **five** rows: `mode`, `permission-mode`, **`atis-latch`**, `bridge-session`,
+  `file-history-snapshot` — `atis-latch` is new at 2.1.257 and was absent at 2.1.236. All five parse
+  as `RowKind::Metadata`; only the 2.1.220 four are on the preamble allowlist above, so a 2.1.257
+  launch preamble reaches assert-empty as an `unexpected_metadata_record` refusal naming
+  `atis-latch`.
 - **Cleared:** the 5 rows `/clear` writes (MEASURED: 5 rows into the new file, **0 into the old**;
   a `last-prompt` metadata row follows once nothing else does). An earlier revision described these
   as "one of which is `{"type":"system","subtype":"local_command"}`", which is true but radically
@@ -766,10 +784,10 @@ Rebind is how an instance stops reading the abandoned file and starts reading th
 **The seam already exists.** `trait TranscriptSource` already takes `session_id` as a **per-call**
 parameter on both methods (`crates/service/src/v1/backend.rs:452-459` — `arm_at_eof(&self,
 session_id)` and `poll(&self, session_id, position)`). `FileTranscriptSource` takes it on both
-(`arm_at_eof` forwards to `arm_sync` at `driver_io.rs:3257`.
-`poll` forwards to `poll_sync` at `driver_io.rs:3265`.
-The `expected_session_id` field is at `driver_io.rs:2842`.
-A `TranscriptLocator` is bound at construction at `driver_io.rs:2273`). Rebinding is therefore a
+(`arm_at_eof` forwards to `arm_sync` at `driver_io.rs:3309`.
+`poll` forwards to `poll_sync` at `driver_io.rs:3317`.
+The `expected_session_id` field is at `driver_io.rs:2894`.
+A `TranscriptLocator` is bound at construction at `driver_io.rs:2325`). Rebinding is therefore a
 **wiring** change, not a new abstraction.
 
 **Procedure.**
@@ -1144,7 +1162,7 @@ Not even a **mode**-keyed dimension yet. **CORRECTION (2026-08-06): this paragra
 "No tested cell exists for 2.1.220 on macOS/aarch64 today". That is now FALSE — two ranges are
 promoted** (macos / aarch64 / transparent / sdk, 2.1.220 through 2.1.238,
 `transcript_drain_ms: 1000`, and linux / x86_64
-2.1.227 through 2.1.236, drain 250), which is what makes Path B reachable with no
+2.1.227 through 2.1.257, drain 250), which is what makes Path B reachable with no
 `--tested-claude-profile` on argv; MEASURED with the flag absent, a real turn
 `served in 4540ms by claude 2.1.220`. **UPDATED 2026-08-09 / 2026-08-20 / 2026-08-21: each cell is a RANGE** —
 see §12.4 for what was driven at each ceiling and what was not.
@@ -1803,12 +1821,31 @@ Stated plainly, because the rest of this document reads as more settled than the
      screens and 5/5 recovered 2.1.70 fixtures**, enforced at four. **This was never `/clear`-specific
      — the same defect was failing plain second turns on PATH A**, intermittently, and it survived
      four review rounds because it is not findable by reading.
+   - **The menu has TWO measured geometries, and the proof accepts both.** At 2.1.220/2.1.227 the
+     menu renders BELOW the composer (the composer jumps up, the rule is the row below it, tokens at
+     column 0). At **2.1.238** (macos, 24-row pane) and **2.1.257** (linux/x86_64, 24x120, recorded by
+     pmux's own corpus recorder into `crates/service/tests/corpus/claude-2.1.257-clear-menu.ndjson`
+     and replayed through the proof by `tests/screen_corpus_replay.rs`) it renders **ABOVE** the
+     composer: the composer stays boxed between its idle rules, candidates sit above the top rule
+     with the token after exactly two blank cells, wrapped descriptions continue on a
+     32-column-indented row that is not a candidate. **Measured on linux 2026-09-01, 2.1.236 — the
+     then-promoted linux ceiling — already refused the below-only proof with `menu_not_rendered`**,
+     so the move happened in 2.1.228..=2.1.236 and the 2.1.236 promotion did not catch it: the pool
+     marked every post-turn clear `clear_not_submitted` and relaunched (~5 s) instead, unnoticed
+     because the answer is delivered before the clear runs. Two further facts from that screen: the
+     unselected row is ALSO one uniform colour from its token onward (`43620761` against the selected
+     row's `45201913`, in rmux's opaque encoding), so the uniform-colour shape alone no longer marks
+     the selection there — the highlighted entry is the one whose body colour equals the colour the
+     composer painted the typed `/clear` in (true at 2.1.220 too, `fg=idx153` on both). `menu_candidates`
+     in `driver_io.rs` scans both sides of the composer box; `pool/mod.rs::finish_turn` now logs a
+     failed clear at `warn` so a per-turn remint is visible in `pmuxd.log`.
 
    **The selection is now proven before Enter.** `prove_control_command_selection` refuses to
    submit unless exactly one menu candidate has the typed token and a body colour equal to the
    composer's typed-command colour. 2.1.220/2.1.227 paint candidates below the composer at
-   column 0; 2.1.238 paints them above the upper U+2500 rule with a two-space indent, and
-   unselected rows are also uniform, so uniqueness-of-uniform-colour is not the discriminator.
+   column 0; 2.1.238 (macos) and 2.1.257 (linux) paint them above the upper U+2500 rule with a
+   two-space indent, and unselected rows are also uniform, so uniqueness-of-uniform-colour is not
+   the discriminator.
    `wait_for_stable_control_render` remains weaker than the prompt gate. `wrong_local_command`
    remains the post-hoc detector if a rotating command still was not `/clear`. Residual: a
    pre-menu frame whose history already contains a unique composer-coloured `/clear` is the
@@ -2008,7 +2045,7 @@ to drift.
 (`crates/service/src/compatibility.rs:484`) ships macos / aarch64 floor **2.1.220** through
 tested-ceiling **2.1.238**, `transcript_drain_ms: 1000`; and linux / x86_64
 `claude_version_floor` **2.1.227** (`crates/service/src/compatibility.rs:513`) through
-tested-ceiling **2.1.236**, `transcript_drain_ms: 250`
+tested-ceiling **2.1.257**, `transcript_drain_ms: 250`
 (`crates/service/src/compatibility.rs:519`). `resolve` searches the
 OPERATOR's cells first, so an operator profile for the same identity **overrides** it rather than
 colliding.
@@ -2053,7 +2090,7 @@ The receipts are `evidence/pooled-transcript-drain-macos-aarch64.json` (the maco
 `evidence/promotion-2.1.226-macos-aarch64.json` are retained and are what a range that stopped there
 rested on). Linux is `evidence/pooled-transcript-drain-linux-x86_64.json` (the bound),
 `evidence/promoted-profile-2.1.227-linux-x86_64.json` (the floor) and
-`evidence/promotion-2.1.236-linux-x86_64.json` (the ceiling).
+`evidence/promotion-2.1.257-linux-x86_64.json` (the ceiling; `promotion-2.1.236-linux-x86_64.json` is the previous one).
 `tools/promotion/measure_transcript_drain.py` regenerates the pooled receipts and **fails on a row kind nobody
 classified rather than defaulting**; a unit test binds each shipped drain to that OS's receipt so the two
 cannot drift. Each receipt names what would invalidate it, which is the

@@ -1,0 +1,411 @@
+{
+ "schema": "pmux.linux-operator-eval.v1",
+ "real_claude_turns": {
+  "count": 25,
+  "on_eval_pool_2_1_257": 24,
+  "scenario_root_turns": 13,
+  "scenario_child_turns": 6,
+  "probe_turns_on_eval_pool": 5,
+  "probe_turns_on_preexisting_2_1_233_daemon": 1,
+  "probe_note": "one --no-extensions probe resolved the pmux provider from <HOME>/.pi/agent/models.json (baseUrl 127.0.0.1:8765, the operator's pre-existing 2.1.233 daemon) before the adapter was in play; every other turn went through examples/pi/pmux.ts to this receipt's daemon on 127.0.0.1:8766"
+ },
+ "title": "Pi through pool-leased pmux at Claude Code 2.1.257 \u2014 agentic + subagent live eval, promoted without a flag",
+ "claude_version": "2.1.257",
+ "promoted_without_flag": true,
+ "adapter": "examples/pi/pmux.ts via pmux-client",
+ "host": {
+  "os": "linux",
+  "arch": "x86_64",
+  "pi": "0.84.2",
+  "pi_subagents": "0.50.0"
+ },
+ "daemon": {
+  "pool_size": 12,
+  "warm": "claude-opus-5/medium=12",
+  "messages": "http://127.0.0.1:8766",
+  "tested_claude_profile_flag": null,
+  "command": "<REPO>/target/release/pmuxd serve --socket /tmp/claude-1000/pi-eval/pmux.sock --rmuxd <REPO>/target/release/pmux-rmuxd --launcher <REPO>/target/release/pmux-launcher --runtime-parent /tmp/claude-1000/pi-eval/private --pool-parent /tmp/claude-1000/pi-eval/pool --pool-claude <HOME>/.local/share/pmux/claude/2.1.257/claude --pool-size 12 --pool-warm claude-opus-5/medium=12 --messages-bind 127.0.0.1:8766",
+  "runtime_dir_note": "owner-only (0700) short /tmp dir: the session scratchpad path pushed the launcher UDS path past the 108-byte sockaddr_un limit (failed to bind launch broker ...launcher.sock), so the runtime moved to /tmp/claude-1000/pi-eval",
+  "port_note": "8765 was held by the operator's pre-existing 2.1.233 pmuxd; this eval bound 8766 and set PMUX_MESSAGES_URL for pi",
+  "idle_ttl_ms": 300000
+ },
+ "setup": {
+  "extension_backup": "<HOME>/.pi/agent/extensions/pmux.ts.bak-2026-09-01",
+  "extension_installed_from": "examples/pi/pmux.ts",
+  "pmux_client": "npm install --prefix <HOME>/.pi/agent <REPO>/clients/typescript (symlinked)",
+  "settings_json": "unchanged; matches examples/pi/settings.json in defaultProvider, defaultModel, enabledModels, packages, subagents",
+  "models_json_note": "<HOME>/.pi/agent/models.json also declares a pmux provider pinned to 127.0.0.1:8765; the extension's registerProvider plus PMUX_MESSAGES_URL took precedence in every extension-loaded run (verified by lease census on 8766)"
+ },
+ "agentic": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "read"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 22103,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22103,
+    "cacheWrite": 198,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "bash"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22371,
+    "cacheWrite": 169,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "AGENTIC_OK TOKEN=PMUX-AGENTIC-257-4F9C",
+    "input": 2,
+    "cacheRead": 22588,
+    "cacheWrite": 147,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "notes": "TOKEN=PMUX-AGENTIC-257-4F9C\nSTATUS=verified",
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "read"
+   ],
+   [
+    "write"
+   ],
+   [
+    "bash"
+   ],
+   []
+  ],
+  "census": {
+   "samples": 14,
+   "idle_min": 11,
+   "occupied_max": 1,
+   "leased_max": 0,
+   "in_flight_max": 1,
+   "occupied_ge_2": 0,
+   "occupied_ge_3": 0,
+   "clearing_max": 0,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05f20-39ef-7cc3-a0e4-a8c2579b6daf"
+   ],
+   "distinct_cells": [
+    "s5e0"
+   ]
+  },
+  "elapsed_s": 13.0
+ },
+ "subagent_sequential": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "bash"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 22117,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22117,
+    "cacheWrite": 595,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22755,
+    "cacheWrite": 387,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 23325,
+    "cacheWrite": 7972,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "MULTI_OK",
+    "input": 2,
+    "cacheRead": 31297,
+    "cacheWrite": 4872,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "census": {
+   "samples": 94,
+   "idle_min": 10,
+   "occupied_max": 2,
+   "leased_max": 1,
+   "in_flight_max": 1,
+   "occupied_ge_2": 54,
+   "occupied_ge_3": 0,
+   "clearing_max": 1,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05f21-04b7-7276-a183-6248b92111bf",
+    "01a05f21-36a5-7c0f-9e38-ebd959f7c71e"
+   ],
+   "distinct_cells": [
+    "s6e0",
+    "s7e0"
+   ]
+  },
+  "review_excerpt": "## Review\n\nReviewed: `/tmp/claude-1000/pi-eval/runs/subagent_sequential/server.py` (27 lines, read in full). No edits made (review-only).\n\n### Correct (verified)\n- `_send` (lines 5\u201311) computes `Content-Length` from the encoded byte string, not the `str` length, so multi-byte bodies would still be framed correctly.\n- `/health` (lines 15\u201316) returns `200 ok` unconditionally \u2014 the basic contract is ",
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "bash"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "write"
+   ],
+   []
+  ],
+  "elapsed_s": 99.3
+ },
+ "subagent_parallel": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 22188,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22188,
+    "cacheWrite": 484,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 22934,
+    "cacheWrite": 5559,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "PARALLEL_OK",
+    "input": 2,
+    "cacheRead": 28493,
+    "cacheWrite": 10405,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "census": {
+   "samples": 124,
+   "idle_min": 9,
+   "occupied_max": 3,
+   "leased_max": 1,
+   "in_flight_max": 2,
+   "occupied_ge_2": 60,
+   "occupied_ge_3": 47,
+   "clearing_max": 1,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05f22-b463-7ed6-9303-014702ebda67",
+    "01a05f22-ec72-7108-ba84-ff687ccdeb68",
+    "01a05f22-ec82-7e72-bf32-f2de12292dd0"
+   ],
+   "distinct_cells": [
+    "s10e0",
+    "s8e0",
+    "s9e0"
+   ]
+  },
+  "review_excerpt": "# Merged Review\n\n## server.py\n\n### Scope\nSingle file reviewed: `server.py` (27 lines). Focus: `/health` and `/add`. Review-only; no edits made, no commands run.\n\n### Correct (verified)\n- `server.py:5-11` \u2014 `_send` encodes the body **before** computing `Content-Length`, so the header always matches the byte length rather than the character count. This is the common bug here and it is done right.\n- ",
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "subagent"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "write"
+   ],
+   []
+  ],
+  "elapsed_s": 131.6
+ },
+ "child_metas": [
+  {
+   "file": "/tmp/claude-1000/pi-eval/runs/subagent_parallel-sessions/subagent-artifacts/5a1ded64_reviewer_0_meta.json",
+   "runId": "5a1ded64",
+   "model": "pmux/claude-opus-5-medium",
+   "exitCode": 0,
+   "usage": {
+    "input": 4,
+    "output": 3856,
+    "cacheRead": 4911,
+    "cacheWrite": 5285,
+    "cost": 0,
+    "turns": 2
+   },
+   "durationMs": 51021
+  },
+  {
+   "file": "/tmp/claude-1000/pi-eval/runs/subagent_parallel-sessions/subagent-artifacts/def57b03_reviewer_0_meta.json",
+   "runId": "def57b03",
+   "model": "pmux/claude-opus-5-medium",
+   "exitCode": 0,
+   "usage": {
+    "input": 4,
+    "output": 4707,
+    "cacheRead": 4903,
+    "cacheWrite": 5432,
+    "cost": 0,
+    "turns": 2
+   },
+   "durationMs": 65307
+  },
+  {
+   "file": "/tmp/claude-1000/pi-eval/runs/subagent_sequential-sessions/subagent-artifacts/a898a633_reviewer_0_meta.json",
+   "runId": "a898a633",
+   "model": "pmux/claude-opus-5-medium",
+   "exitCode": 0,
+   "usage": {
+    "input": 4,
+    "output": 4316,
+    "cacheRead": 4621,
+    "cacheWrite": 5206,
+    "cost": 0,
+    "turns": 2
+   },
+   "durationMs": 58320
+  }
+ ],
+ "release": {
+  "agentic": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 12,
+   "live_after": 12,
+   "claude_pid_count_before": 14,
+   "claude_pid_count_after": 14,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "subagent_sequential": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 12,
+   "live_after": 12,
+   "claude_pid_count_before": 13,
+   "claude_pid_count_after": 13,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "subagent_parallel": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 12,
+   "live_after": 12,
+   "claude_pid_count_before": 13,
+   "claude_pid_count_after": 13,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "clear_warn_count": 0,
+  "pmuxd_warn_or_error_lines": 0,
+  "verdict": "GREEN",
+  "note": "each Pi process end POSTed /v1/conversations/{id}/release; every leased cell returned to idle by /clear (census clearing_max 1, tearing_down_max 0) with the same claude pid set and every cell id at epoch 0 across the whole eval"
+ },
+ "observations": {
+  "pi_startup_stalls": {
+   "what": "four `pi -p` invocations idled 45 s to 6 min with zero connect(); no lease, no turn, no facade contact",
+   "root_cause": "harness artifact, not pi-subagents, the adapter, or pmux: pi's print mode awaits stdin EOF (readPipedStdin) whenever stdin is not a TTY, and the launching shell's fd 0 was an inherited harness socket whose write side stayed open, so pi sat in epoll_wait on fd 0 until the enclosing timeout killed it",
+   "reproduced": "deterministically with no model turns: socketpair stdin held open -> zero connections; shutdown(SHUT_WR) -> proceeds immediately; </dev/null -> 0 stalls in 21 runs, inherited fd 0 -> 4 stalls in ~24",
+   "ruled_out": [
+    "file locks",
+    "child processes",
+    "DNS/UDP",
+    "pi.dev version check",
+    "jiti transpile cache",
+    "pi-subagents supervisor poll",
+    "pmux facade"
+   ],
+   "mitigation": "launch non-interactive pi as `pi -p ... </dev/null`; the three recorded scenarios ran that way"
+  }
+ }
+}

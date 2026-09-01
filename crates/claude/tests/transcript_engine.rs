@@ -7,6 +7,11 @@ use pseudomux_claude::{
     TranscriptError, TurnStatus,
 };
 
+/// MEASURED on Claude Code 2.1.257 linux/x86_64, `SessionCell::Minified`: the
+/// post-turn `cost-state` row, verbatim but for the session id. It carries no
+/// `uuid`, no `parentUuid` and no `timestamp`.
+const COST_STATE_ROW: &str = r#"{"type":"cost-state","sessionId":"s","totalCostUSD":0,"totalAPIDuration":0,"totalDuration":2712,"startTime":1788294529829,"modelUsage":{}}"#;
+
 #[test]
 fn fragmented_tool_turn_is_grouped_correlated_and_deduplicated() {
     let rows = fixture("fragmented_tool_turn.jsonl", ParseMode::Strict);
@@ -327,6 +332,137 @@ fn measured_total_tokens_reminder_text_is_not_final_text() {
     assert!(!final_turn.final_text.contains("15000000"));
     assert!(!final_turn.final_text.contains("tokens left"));
     assert!(analysis.tools.is_empty());
+}
+
+/// The 2.1.257 turn shape, MEASURED on linux/x86_64 in a `SessionCell::Minified`
+/// pool cell: the typed prompt is followed by `total_tokens_reminder` and then
+/// by a `remote_session_change` attachment before the assistant answers. Both
+/// attachments sit ON the active parent chain, so the proof this test carries is
+/// that the new one neither closes the logical message nor interleaves it: the
+/// answer text and its usage still resolve. The session URL is a placeholder.
+#[test]
+fn measured_2_1_257_remote_session_change_rides_the_chain_without_closing_the_turn() {
+    const SESSION_URL: &str = "https://claude.ai/code/session_PLACEHOLDER";
+
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    engine.arm_turn("go").unwrap();
+    engine.ingest(parse(user(None, "u", "go"))).unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"reminder","attachment":{"type":"total_tokens_reminder","text":"<total_tokens>15000000 tokens left</total_tokens>"}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(format!(
+            r#"{{"parentUuid":"reminder","sessionId":"s","type":"attachment","uuid":"remote","attachment":{{"type":"remote_session_change","url":"{SESSION_URL}","commit":"Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\nClaude-Session: {SESSION_URL}","pr":"Generated with Claude Code\n\n{SESSION_URL}","sendUserFileHint":false}}}}"#
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(assistant(
+            "remote",
+            "answer",
+            Some("message"),
+            None,
+            text("done"),
+            Some("end_turn"),
+            3,
+            1,
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"answer","sessionId":"s","type":"system","subtype":"turn_duration","uuid":"duration","durationMs":2712}"#,
+        ))
+        .unwrap();
+
+    let analysis = engine.analyze().unwrap();
+    let TurnStatus::Terminal(final_turn) = &analysis.status else {
+        panic!("expected terminal result: {analysis:#?}");
+    };
+    assert_eq!(final_turn.outcome, TerminalOutcome::Completed);
+    assert_eq!(final_turn.final_text, "done");
+    // The attachment's own strings are transport, not answer.
+    assert!(!final_turn.final_text.contains("claude.ai/code/session"));
+    assert!(!final_turn.final_text.contains("Co-Authored-By"));
+    // One logical message, not two: the attachment did not split the answer.
+    assert_eq!(analysis.messages.len(), 1);
+    assert_eq!(analysis.usage.model_calls_with_usage, 1);
+    assert_eq!(analysis.usage.tokens.input_tokens, 3);
+    assert_eq!(analysis.usage.tokens.output_tokens, 1);
+    assert!(analysis.turn_duration_seen);
+    assert_eq!(analysis.warnings, []);
+}
+
+/// The whole 2.1.257 file shape MEASURED on linux/x86_64 in a
+/// `SessionCell::Minified` pool cell: a five-row launch preamble (`atis-latch`
+/// is the row 2.1.236 did not write), one turn, and a trailing
+/// `bridge-session`/`cost-state`/`last-prompt`/`cost-state` tail. None of the
+/// metadata rows carries `parentUuid`, `uuid` or `timestamp`. Strict analysis
+/// must complete the turn and warn about nothing: an `UnknownRow` warning here
+/// would mean the new record types are still drifting past the parser.
+#[test]
+fn measured_2_1_257_launch_preamble_and_cost_state_tail_analyse_cleanly() {
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    for preamble in [
+        r#"{"type":"mode","sessionId":"s","mode":"default"}"#,
+        r#"{"type":"permission-mode","sessionId":"s","permissionMode":"bypassPermissions"}"#,
+        r#"{"type":"atis-latch","atis":"","sessionId":"s"}"#,
+        r#"{"type":"bridge-session","sessionId":"s"}"#,
+        r#"{"type":"file-history-snapshot","messageId":"snapshot","snapshot":{}}"#,
+    ] {
+        engine.ingest(parse(preamble)).unwrap();
+    }
+
+    engine.arm_turn("go").unwrap();
+    engine.ingest(parse(user(None, "u", "go"))).unwrap();
+    engine
+        .ingest(parse(attachment("u", "reminder", "total_tokens_reminder")))
+        .unwrap();
+    engine
+        .ingest(parse(attachment(
+            "reminder",
+            "remote",
+            "remote_session_change",
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(r#"{"type":"ai-title","sessionId":"s"}"#))
+        .unwrap();
+    engine
+        .ingest(parse(assistant(
+            "remote",
+            "answer",
+            Some("message"),
+            None,
+            text("done"),
+            Some("end_turn"),
+            3,
+            1,
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"answer","sessionId":"s","type":"system","subtype":"turn_duration","uuid":"duration","durationMs":2712}"#,
+        ))
+        .unwrap();
+
+    for tail in [
+        r#"{"type":"bridge-session","sessionId":"s"}"#,
+        COST_STATE_ROW,
+        r#"{"type":"last-prompt","sessionId":"s","lastPrompt":"go"}"#,
+        COST_STATE_ROW,
+    ] {
+        engine.ingest(parse(tail)).unwrap();
+    }
+
+    let analysis = engine.analyze().unwrap();
+    let TurnStatus::Terminal(final_turn) = &analysis.status else {
+        panic!("expected terminal result: {analysis:#?}");
+    };
+    assert_eq!(final_turn.outcome, TerminalOutcome::Completed);
+    assert_eq!(final_turn.final_text, "done");
+    assert!(analysis.turn_duration_seen);
+    assert_eq!(analysis.warnings, []);
 }
 
 #[test]
@@ -1326,6 +1462,45 @@ fn strict_rejects_newer_unknown_user_content_after_a_terminal_assistant() {
         engine.analyze(),
         Err(TranscriptError::SchemaDrift { path, .. }) if path == "$.message"
     ));
+}
+
+/// A `strings` scan of the 2.1.257 binary turned up two system subtypes that
+/// were never OBSERVED on a minified pool cell: `tool_host_result` (converted
+/// from an equally unobserved `tool_host_result_lines` attachment) and
+/// `cloud_session_status`. Neither is admitted, so both are drift the moment
+/// they land on the active chain. This is the negative control for the three
+/// names 2.1.257 measurement did admit.
+#[test]
+fn unobserved_2_1_257_system_subtypes_are_refused_on_the_active_chain() {
+    for subtype in ["tool_host_result", "cloud_session_status"] {
+        let mut engine = TranscriptEngine::new(ParseMode::Strict);
+        engine.arm_turn("go").unwrap();
+        engine.ingest(parse(user(None, "u", "go"))).unwrap();
+        engine
+            .ingest(parse(assistant(
+                "u",
+                "a",
+                Some("m"),
+                None,
+                text("done"),
+                Some("end_turn"),
+                1,
+                1,
+            )))
+            .unwrap();
+        engine
+            .ingest(parse(format!(
+                r#"{{"type":"system","subtype":"{subtype}","uuid":"system","parentUuid":"a","sessionId":"s"}}"#
+            )))
+            .unwrap();
+        assert!(
+            matches!(
+                engine.analyze(),
+                Err(TranscriptError::SchemaDrift { ref path, .. }) if path == "$.subtype"
+            ),
+            "{subtype} must stay refused on the active chain"
+        );
+    }
 }
 
 #[test]

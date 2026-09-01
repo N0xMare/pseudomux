@@ -1249,8 +1249,8 @@ mod tests {
             ("claude-sonnet-5".to_owned(), Some(XHigh))
         );
         assert_eq!(
-            split_model_and_effort("claude-fable-5-max"),
-            ("claude-fable-5".to_owned(), Some(Max))
+            split_model_and_effort("claude-fable-5-1-max"),
+            ("claude-fable-5-1".to_owned(), Some(Max))
         );
         assert_eq!(
             split_model_and_effort("claude-sonnet-5"),

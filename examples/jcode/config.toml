@@ -22,5 +22,5 @@ id = "claude-sonnet-5-medium"
 context_window = 200000
 
 [[providers.pmux.models]]
-id = "claude-fable-5-xhigh"
+id = "claude-fable-5-1-xhigh"
 context_window = 200000

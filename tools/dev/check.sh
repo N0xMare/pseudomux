@@ -82,6 +82,10 @@ if [[ "$push" -eq 1 ]]; then
   unset PMUX_POOL_REAL_CLAUDE || true
 
   echo "== e2e living product"
+  # The pool e2e refuses a candidate binary that ships no cargo depinfo (a
+  # `pmux-test-claude` left over from an older build has none), so build the
+  # doubles explicitly rather than trusting whatever `target/debug` holds.
+  cargo build --locked -p pseudomux-e2e --bins
   cargo test --locked -p pseudomux-e2e --all-targets -- --include-ignored --test-threads=1
 
   echo "== ignored sidecar (no real Claude)"

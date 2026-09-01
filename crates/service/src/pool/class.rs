@@ -122,14 +122,20 @@ impl ModelEntry {
 /// probed before this table is pinned to a Claude version -- one
 /// `--model <M> --effort <E>` probe per cell, recorded with the version.
 /// Getting a row wrong makes an admitted request fail at launch, which is the
-/// diagnostic this table exists to eliminate.
+/// diagnostic this table exists to eliminate. PROBED at Claude Code 2.1.257
+/// linux/x86_64 by `tools/dev/model_matrix.py`: every row at every admitted
+/// tier answered, `evidence/linux-model-matrix-2.1.257-x86_64.json`.
 ///
 /// The table is compile-time rather than protocol so a new Anthropic model is
 /// an operator change, not a three-language protocol event.
 pub static MODEL_TABLE: &[ModelEntry] = &[
+    // MEASURED on Claude Code 2.1.257: the catalogue names `claude-fable-5-1`
+    // (Fable 5.1) and its own bare `fable` alias resolves to it; `claude-fable-5`
+    // is still a known id upstream but is no longer pmux's fable, so the word
+    // means the same model to both systems.
     ModelEntry {
-        canonical: "claude-fable-5",
-        aliases: &["fable", "fable-5"],
+        canonical: "claude-fable-5-1",
+        aliases: &["fable", "fable-5-1", "fable-5.1"],
         efforts: EFFORTS_ALL,
     },
     ModelEntry {
