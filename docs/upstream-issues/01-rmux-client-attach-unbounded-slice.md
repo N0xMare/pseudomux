@@ -1,20 +1,17 @@
-# Issue draft — rmux-client
+# `attach.rs:694`: a fragmented attach data frame is completed with stale bytes from the previous read, silently corrupting the payload
 
-**Title:** `attach.rs:694`: a fragmented attach data frame is completed with stale bytes from the previous read, silently corrupting the payload
-
-**Repo:** https://github.com/Helvesec/rmux
 **Crate:** `rmux-client` (Unix attach path)
 **Affected:** 0.9.0, 0.9.1, 0.10.0 and `main`. `crates/rmux-client/src/attach.rs` is byte-identical
 across all four (md5 `ccddf8572567fd0943a47433312cefc9`: the three published crate sources, and
 `main` at `1f4571e7` via the contents API), and the expression below is at line 694 in each.
 **Severity:** silent data corruption, then desynchronisation of the attach stream.
-**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
+
+Checked against `main` at `1f4571e7` on 2026-09-01; I could not find an existing issue covering
+this.
 
 Context, in one sentence: I drive terminal panes programmatically over the rmux client/server API,
 which fragments attach writes more often than an interactive user does. Nothing below depends on
 that — the reproduction is a socket pair and one dependency on the published crate.
-
----
 
 ## Summary
 
@@ -225,8 +222,8 @@ a stricter version polls `FIONREAD` on a clone of the writer's socket instead of
 That restores the incomplete-frame signal: the partial frame falls through to `break` and is handed
 to the incremental `decoder` by line 709, which is what that branch exists for.
 
-Verified on an otherwise-pristine 0.10.0 source tree with only that line changed: the test above
+I ran this on an otherwise-pristine 0.10.0 source tree with only that line changed: the test above
 passes 10/10, and `cargo test` over the crate's own suite is unchanged at **160 passed, 0 failed**
 across its 8 test binaries, before and after.
 
-Happy to open the PR with the fix and a regression test.
+Happy to open a PR with the fix and a regression test if that is useful.

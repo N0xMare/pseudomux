@@ -393,12 +393,12 @@ and `main` through the contents API:
   `src/handler_attach_tests/set_titles.rs:585` and `:593` on pristine 0.10.0 and `main`; 0.9.0 and
   0.9.1 build the cell clean (the file does not exist there). A one-line
   `#[cfg(feature = "web")]` on `the_web_and_snapshot_renders_carry_no_title` fixes it with no
-  new warnings; that is a PR, not an issue.
+  new warnings; it is filed as an issue that carries that fix.
 
 The drafts in `docs/upstream-issues/` carry all §2 revisions, were re-read line by line against
 today's release, and were then reviewed once more for a maintainer's eyes (re-verification
-paragraphs cut, 03 retitled as the contract question it is, 04 reshaped as a PR description). The
-`PMUX-PATCH.md` path repair §5 lists is done in this refresh.
+paragraphs cut, 03 retitled as the contract question it is, 04 reshaped as an issue carrying
+its one-line fix). The `PMUX-PATCH.md` path repair §5 lists is done in this refresh.
 
 Upgrade sizing is unchanged: six `pane_io.rs` conflicts, the tests file merges clean, every symbol
 pmux uses is present at 0.10.0, `non_exhaustive` is not a risk (pmux matches on no `Request` /

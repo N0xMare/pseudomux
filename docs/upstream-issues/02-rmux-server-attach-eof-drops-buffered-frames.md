@@ -1,22 +1,18 @@
-# Issue draft — rmux-server
+# `pane_io.rs`: attach input already buffered in the frame decoder is dropped when the client half-closes, so the last complete frame never reaches the pane
 
-**Title:** `pane_io.rs`: attach input already buffered in the frame decoder is dropped when the
-client half-closes, so the last complete frame never reaches the pane
-
-**Repo:** https://github.com/Helvesec/rmux
 **Crate:** `rmux-server`, default features
 **Affected:** 0.9.0 (`src/pane_io.rs:402`), 0.9.1 (`:451`), 0.10.0 and `main` (`:461`).
 `crates/rmux-server/src/pane_io.rs` is byte-identical at 0.10.0 and `main` (`1f4571e7`, md5
 `ac809b2997cf4e00b181a055f91dd73e`). Line numbers below are 0.10.0.
 **Severity:** silent input loss — the client observes a successful write and an orderly close, and
 the pane never receives the bytes.
-**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
+
+Checked against `main` at `1f4571e7` on 2026-09-01; I could not find an existing issue covering
+this.
 
 Where this comes from: I drive terminal panes programmatically over the rmux client/server API,
 so my clients write and then half-close rather than staying attached; that is the shape that hits
-this. The reproduction below is upstream's own test module plus one test.
-
----
+this. The reproduction below is the crate's own test module plus one test.
 
 ## Summary
 
@@ -222,7 +218,7 @@ run. It also leaves one path open: the two `continue`s between the `break` and t
 (`attach_shutdown_observable` at `:473`, and the `begin_attach_mutation_batch` fallback at
 `:476-479`) drop the flag, so during a concurrent shutdown drain the buffered frame is still not
 dispatched — the next iteration re-reads the closed stream and takes the same path again. Treat the
-diff as the shape of a fix, not the PR.
+diff as the shape of a fix, not a finished patch.
 
 Three behaviours a fix should hold, because a naive one gets them wrong:
 
@@ -234,4 +230,4 @@ Three behaviours a fix should hold, because a naive one gets them wrong:
   in the same burst must keep its order, so the dispatch step has to run to completion before the
   close is classified rather than being short-circuited once EOF is known.
 
-Happy to open the PR with the deferral at both sites plus those three regressions.
+Happy to open a PR with the deferral at both sites plus those three regressions if that is useful.

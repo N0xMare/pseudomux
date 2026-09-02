@@ -1,9 +1,5 @@
-# Issue draft — rmux-sdk / rmux-proto (documentation)
+# What does `PaneSnapshot::revision` promise between two captures? Docs read as a mutation counter, the registry is a per-capture comparator
 
-**Title:** What does `PaneSnapshot::revision` promise between two captures? Docs read as a mutation
-counter, the registry is a per-capture comparator
-
-**Repo:** https://github.com/Helvesec/rmux
 **Crates:** `rmux-sdk` (`PaneSnapshot::revision`), `rmux-proto` (`PaneSnapshotResponse::revision`)
 **Affected:** the documented text is unchanged across 0.9.0, 0.9.1, 0.10.0 and `main` (`1f4571e7`).
 `rmux-sdk/src/snapshot.rs` is byte-identical in all four (md5 `090bee4c6ca170154e3920f7ec728fbf`).
@@ -11,13 +7,13 @@ Line numbers below are 0.10.0 unless stated.
 **Severity:** documentation. Nothing misbehaves; the daemon is internally consistent and its own
 tests describe the implemented semantics exactly. The published prose describes a different one.
 **Platform:** all.
-**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
+
+Checked against `main` at `1f4571e7` on 2026-09-01; I could not find an existing issue
+covering this.
 
 Why I am asking: I drive terminal panes programmatically over the rmux client/server API
 and poll `snapshot()` to decide when a pane has settled, so what `revision` promises about the
 interval between two captures is load-bearing for me — and I could not determine it from the docs.
-
----
 
 ## Summary
 
@@ -209,3 +205,5 @@ Read from the published crates (`rmux-sdk`, `rmux-proto`, `rmux-server` 0.9.0 / 
 from `main` at `1f4571e7`. Every rmux source file cited above is byte-identical between 0.10.0 and
 `main`. The test was run against an unmodified `rmux-server` 0.10.0 tree from `static.crates.io`,
 default features, macOS arm64, `rustc 1.97.1`.
+
+Thanks for any clarification you can give on which reading is intended.
