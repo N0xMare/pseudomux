@@ -1,5 +1,7 @@
 # What does `PaneSnapshot::revision` promise between two captures? Docs read as a mutation counter, the registry is a per-capture comparator
 
+Filed 2026-09-02 as https://github.com/Helvesec/rmux/issues/223.
+
 **Crates:** `rmux-sdk` (`PaneSnapshot::revision`), `rmux-proto` (`PaneSnapshotResponse::revision`)
 **Affected:** the documented text is unchanged across 0.9.0, 0.9.1, 0.10.0 and `main` (`1f4571e7`).
 `rmux-sdk/src/snapshot.rs` is byte-identical in all four (md5 `090bee4c6ca170154e3920f7ec728fbf`).

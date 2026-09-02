@@ -1,5 +1,7 @@
 # `attach.rs:694`: a fragmented attach data frame is completed with stale bytes from the previous read, silently corrupting the payload
 
+Filed 2026-09-02 as https://github.com/Helvesec/rmux/issues/221.
+
 **Crate:** `rmux-client` (Unix attach path)
 **Affected:** 0.9.0, 0.9.1, 0.10.0 and `main`. `crates/rmux-client/src/attach.rs` is byte-identical
 across all four (md5 `ccddf8572567fd0943a47433312cefc9`: the three published crate sources, and

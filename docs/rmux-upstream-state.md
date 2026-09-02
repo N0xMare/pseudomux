@@ -404,3 +404,16 @@ Upgrade sizing is unchanged: six `pane_io.rs` conflicts, the tests file merges c
 pmux uses is present at 0.10.0, `non_exhaustive` is not a risk (pmux matches on no `Request` /
 `Response`), `bincode` is a new dependency, and the wire move 5 -> 8 is contained behind the private
 socket. Benefit: zero patches retired.
+
+### Filed, 2026-09-02
+
+| text | upstream issue |
+|---|---|
+| 01 client unbounded slice | https://github.com/Helvesec/rmux/issues/221 |
+| 02 server drops buffered frames at EOF | https://github.com/Helvesec/rmux/issues/222 |
+| 03 `revision` contract question | https://github.com/Helvesec/rmux/issues/223 |
+| 04 `--no-default-features` test build break | https://github.com/Helvesec/rmux/issues/224 |
+
+Each file under `docs/upstream-issues/` is the title and body as submitted, with the issue URL on
+its second line. The vendored patches stay until upstream ships a fix and the vendor gates are
+re-derived against that release.

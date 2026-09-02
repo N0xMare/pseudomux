@@ -1,5 +1,7 @@
 # `pane_io.rs`: attach input already buffered in the frame decoder is dropped when the client half-closes, so the last complete frame never reaches the pane
 
+Filed 2026-09-02 as https://github.com/Helvesec/rmux/issues/222.
+
 **Crate:** `rmux-server`, default features
 **Affected:** 0.9.0 (`src/pane_io.rs:402`), 0.9.1 (`:451`), 0.10.0 and `main` (`:461`).
 `crates/rmux-server/src/pane_io.rs` is byte-identical at 0.10.0 and `main` (`1f4571e7`, md5

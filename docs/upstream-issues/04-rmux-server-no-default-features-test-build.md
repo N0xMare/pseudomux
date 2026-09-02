@@ -1,5 +1,7 @@
 # `rmux-server` 0.10.0: `cargo check --all-targets --no-default-features` fails, two tests call `web`-gated functions without a gate
 
+Filed 2026-09-02 as https://github.com/Helvesec/rmux/issues/224.
+
 **Crate:** `rmux-server`, `--no-default-features` (i.e. without `web`)
 **Affected:** 0.10.0 and `main` (`1f4571e7`). `src/handler_attach_tests/set_titles.rs` (md5
 `6841d92f445f0e24d5686a399d0de4a9`) and `src/handler_attach.rs` (md5
