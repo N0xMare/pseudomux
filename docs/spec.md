@@ -80,8 +80,20 @@ Successful `POST /v1/messages` echoes `x-pmux-conversation`, `x-pmux-cell`
 `replayed`), `x-pmux-idle-ttl-ms`. An in-flight pin or a full lease cap is
 HTTP 409 `session_busy` and MAY be retried.
 
+The response body's `model` MUST be the `model` string the request carried,
+byte for byte (`claude-opus-5-xhigh`, or the alias the caller used), never
+the pool's canonical stem. A harness that verifies a child answered with the
+model it launched compares against the id it sent; pi-subagents 0.63 refused
+every pmux child (`model_verification_failed`) while the facade answered
+`claude-opus-5` (measured macos 2026-09-01, Claude Code 2.1.258).
+
 Claude's tool surface stays denied (`--disallowedTools *`). The harness
-runs tools and sends `tool_result`.
+runs tools and sends `tool_result`. The cell emits a tool call as a
+`<tool_call>{...}</tool_call>` block whose payload is JSON; a payload that
+is strict JSON except for raw control characters inside a string literal
+(a model writing a real newline where `\n` belongs; measured on
+opus-5/medium at 2.1.258) MUST still be accepted as a `tool_use` block, and
+anything else non-JSON stays text.
 
 ### 3.2 `run_stateless` / `pmux run`
 
@@ -170,7 +182,7 @@ child.
 ## 5. Compatibility
 
 `require_tested` is the default for pool mint. The distribution ships one
-promoted range per os/arch: Claude Code 2.1.220 through 2.1.238 on
+promoted range per os/arch: Claude Code 2.1.220 through 2.1.258 on
 macos/aarch64, and 2.1.227 through 2.1.257 on linux/x86_64, both
 transparent/sdk. A version outside those ranges needs
 `--tested-claude-profile`. Receipts live under `evidence/`.

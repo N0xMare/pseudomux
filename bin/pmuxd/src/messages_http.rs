@@ -345,7 +345,9 @@ fn lease_headers(lease: &LeaseTurn) -> Vec<(String, String)> {
 }
 
 fn anthropic_message_from_lease(lease: &LeaseTurn, completion: &ParsedCompletion) -> Value {
-    anthropic_message(&lease.model, &lease.result, completion)
+    // Echo the id the caller sent, not the pool's canonical stem: see
+    // `LeaseTurn::requested_model`.
+    anthropic_message(&lease.requested_model, &lease.result, completion)
 }
 
 /// Split `claude-sonnet-5-xhigh` into (`claude-sonnet-5`, Some(XHigh)).
@@ -403,7 +405,7 @@ pub fn flatten_prompt(body: &Value) -> Result<String, String> {
             out.push_str(r#"{"name":"TOOL_NAME","id":"toolu_...","input":{}}"#);
             out.push_str(TOOL_CALL_CLOSE);
             out.push_str(
-                "\nDo not execute anything. The consumer will run the tool and send a tool_result.\nIf you can answer without a tool, answer in plain text and emit no tool_call blocks.\nAvailable tools (JSON Schema):\n",
+                "\nThe payload is strict JSON: escape newlines inside strings as \\n.\nDo not execute anything. The consumer will run the tool and send a tool_result.\nIf you can answer without a tool, answer in plain text and emit no tool_call blocks.\nAvailable tools (JSON Schema):\n",
             );
             out.push_str(&serde_json::to_string_pretty(tools).unwrap_or_else(|_| "[]".to_owned()));
             out.push_str("\n\n");
@@ -549,6 +551,68 @@ pub struct ParsedCompletion {
     pub tool_calls: Vec<ToolCall>,
 }
 
+/// Strict JSON first; then the one leniency a real model needs.
+///
+/// MEASURED on macos at Claude Code 2.1.258 (2026-09-01, Pi reviewer scenario):
+/// opus-5/medium emitted a `write` call whose `content` string carried RAW
+/// newlines rather than `\n` escapes. Strict JSON refuses a control character
+/// inside a string, so the whole block fell through as text, Pi rendered a
+/// literal `<tool_call>` and the review never reached `review.md`. The fallback
+/// escapes control characters that sit INSIDE a string literal and retries; it
+/// touches nothing outside strings, so `not-json` still stays text. A raw
+/// control character directly AFTER a backslash is left as written: that is
+/// not a JSON escape either way, the retry fails, and the block stays text.
+fn parse_tool_call_payload(payload: &str) -> Result<Value, serde_json::Error> {
+    serde_json::from_str::<Value>(payload).or_else(|strict| {
+        let escaped = escape_control_characters_in_strings(payload);
+        if escaped == payload {
+            Err(strict)
+        } else {
+            serde_json::from_str::<Value>(&escaped).map_err(|_| strict)
+        }
+    })
+}
+
+fn escape_control_characters_in_strings(payload: &str) -> String {
+    let mut out = String::with_capacity(payload.len());
+    let mut in_string = false;
+    let mut escaped = false;
+    for character in payload.chars() {
+        if in_string {
+            if escaped {
+                escaped = false;
+                out.push(character);
+                continue;
+            }
+            match character {
+                '\\' => {
+                    escaped = true;
+                    out.push(character);
+                }
+                '"' => {
+                    in_string = false;
+                    out.push(character);
+                }
+                '\n' => out.push_str("\\n"),
+                '\r' => out.push_str("\\r"),
+                '\t' => out.push_str("\\t"),
+                // JSON forbids exactly U+0000..U+001F raw inside a string;
+                // DEL and the C1 range are legal as-is and left alone.
+                control if u32::from(control) < 0x20 => {
+                    out.push_str(&format!("\\u{:04x}", u32::from(control)));
+                }
+                other => out.push(other),
+            }
+        } else {
+            if character == '"' {
+                in_string = true;
+            }
+            out.push(character);
+        }
+    }
+    out
+}
+
 pub fn parse_completion(text: &str) -> ParsedCompletion {
     let mut tool_calls = Vec::new();
     let mut remaining = String::new();
@@ -565,7 +629,7 @@ pub fn parse_completion(text: &str) -> ParsedCompletion {
         let payload = after[..end].trim();
         let raw_block = &cursor[start..start + TOOL_CALL_OPEN.len() + end + TOOL_CALL_CLOSE.len()];
         cursor = &after[end + TOOL_CALL_CLOSE.len()..];
-        match serde_json::from_str::<Value>(payload) {
+        match parse_tool_call_payload(payload) {
             Ok(value) => {
                 let name = value
                     .get("name")
@@ -1027,6 +1091,50 @@ mod tests {
         )]));
     }
 
+    /// The response names the id the CALLER sent, not the pool's canonical
+    /// stem. pi-subagents 0.63 compares the model a child reports against the
+    /// launch candidate it configured (`pmux/claude-opus-5-xhigh`), accepting
+    /// the bare leaf id; a response carrying `claude-opus-5` failed every
+    /// reviewer child with `model_verification_failed` on macos at Claude Code
+    /// 2.1.258 (2026-09-01) even though the review itself had landed.
+    #[test]
+    fn the_response_model_is_the_requested_id_not_the_canonical_stem() {
+        use pseudomux_protocol::v1::{TokenUsage, UsageBreakdown};
+        let lease = LeaseTurn {
+            conversation_id: "c".to_owned(),
+            cell: "s0e0".to_owned(),
+            kind: crate::conversation::LeaseKind::Primed,
+            idle_ttl_ms: 1,
+            requested_model: "claude-opus-5-xhigh".to_owned(),
+            result: StatelessResult {
+                model: "claude-opus-5".to_owned(),
+                reported_model: Some("claude-opus-5".to_owned()),
+                effort: Some(EffortLevel::XHigh),
+                text: "ok".to_owned(),
+                stop_reason: None,
+                usage: UsageBreakdown {
+                    main: TokenUsage::default(),
+                    sidechain: TokenUsage::default(),
+                    combined: TokenUsage::default(),
+                    cost_usd: None,
+                },
+                claude_version: "2.1.258".to_owned(),
+            },
+        };
+        let completion = parse_completion("ok");
+        let message = anthropic_message_from_lease(&lease, &completion);
+        assert_eq!(message["model"], "claude-opus-5-xhigh");
+        // And an alias is echoed as the alias: the caller's id is the contract.
+        let aliased = LeaseTurn {
+            requested_model: "opus-5-medium".to_owned(),
+            ..lease
+        };
+        assert_eq!(
+            anthropic_message_from_lease(&aliased, &completion)["model"],
+            "opus-5-medium"
+        );
+    }
+
     #[test]
     fn flatten_includes_system_tools_history_and_tool_results() {
         let body = json!({
@@ -1230,6 +1338,35 @@ mod tests {
         assert!(NOT_FOUND_MESSAGE.contains("GET /v1/models"));
         assert!(NOT_FOUND_MESSAGE.contains("GET /v1/capabilities"));
         assert!(NOT_FOUND_MESSAGE.contains("POST /v1/messages"));
+    }
+
+    /// The measured 2.1.258 shape: a raw newline inside `input.content`.
+    #[test]
+    fn a_tool_call_whose_string_carries_raw_newlines_is_still_a_tool_call() {
+        let text = "<tool_call>{\"name\":\"write\",\"id\":\"toolu_03\",\"input\":{\"path\":\"review.md\",\
+                    \"content\":\"# Review\n\n- line one\n\t- tabbed \\\"quoted\\\"\n\"}}</tool_call>";
+        let parsed = parse_completion(text);
+        assert_eq!(parsed.tool_calls.len(), 1, "{parsed:?}");
+        let call = &parsed.tool_calls[0];
+        assert_eq!(call.name, "write");
+        assert_eq!(
+            call.input["content"],
+            "# Review\n\n- line one\n\t- tabbed \"quoted\"\n"
+        );
+        assert!(parsed.text.is_empty(), "{:?}", parsed.text);
+    }
+
+    /// The leniency is confined to string literals: a raw newline BETWEEN
+    /// tokens is already legal JSON whitespace, and non-JSON stays non-JSON.
+    #[test]
+    fn control_character_escaping_touches_only_string_interiors() {
+        assert_eq!(
+            escape_control_characters_in_strings("{\n\"a\":\n\"x\ny\"\n}"),
+            "{\n\"a\":\n\"x\\ny\"\n}"
+        );
+        assert_eq!(escape_control_characters_in_strings("not-json"), "not-json");
+        assert!(parse_tool_call_payload("not-json").is_err());
+        assert!(parse_tool_call_payload("{\"a\":\"x\ny\"").is_err());
     }
 
     #[test]

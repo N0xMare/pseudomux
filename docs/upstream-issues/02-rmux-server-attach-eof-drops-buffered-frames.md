@@ -10,8 +10,9 @@ client half-closes, so the last complete frame never reaches the pane
 `ac809b2997cf4e00b181a055f91dd73e`). Line numbers below are 0.10.0.
 **Severity:** silent input loss — the client observes a successful write and an orderly close, and
 the pane never receives the bytes.
+**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
 
-Context, in one sentence: I drive terminal panes programmatically over the rmux client/server API,
+Where this comes from: I drive terminal panes programmatically over the rmux client/server API,
 so my clients write and then half-close rather than staying attached; that is the shape that hits
 this. The reproduction below is upstream's own test module plus one test.
 
@@ -214,10 +215,14 @@ the read loop, let the existing dispatch run, and only then classify the close.
              }
 ```
 
-Measured with exactly that diff applied to an otherwise-pristine 0.10.0 tree:
-`cargo test --lib pane_io::` goes from **206 passed, 1 failed** (the new test) to **207 passed,
-0 failed**. That patch covers site 1 only; the `select!` arm at `:611-620` needs the same treatment
-and was not changed in that run.
+With exactly that diff applied to an otherwise-pristine 0.10.0 tree, `cargo test --lib pane_io::`
+goes from **206 passed, 1 failed** (the new test) to **207 passed, 0 failed**. That patch covers
+site 1 only; the `select!` arm at `:611-620` needs the same treatment and was not changed in that
+run. It also leaves one path open: the two `continue`s between the `break` and the new check
+(`attach_shutdown_observable` at `:473`, and the `begin_attach_mutation_batch` fallback at
+`:476-479`) drop the flag, so during a concurrent shutdown drain the buffered frame is still not
+dispatched — the next iteration re-reads the closed stream and takes the same path again. Treat the
+diff as the shape of a fix, not the PR.
 
 Three behaviours a fix should hold, because a naive one gets them wrong:
 

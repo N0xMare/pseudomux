@@ -1,7 +1,7 @@
 # Issue draft — rmux-sdk / rmux-proto (documentation)
 
-**Title:** `PaneSnapshot::revision` is documented as a mutation counter and implemented as a
-comparison against the previous capture
+**Title:** What does `PaneSnapshot::revision` promise between two captures? Docs read as a mutation
+counter, the registry is a per-capture comparator
 
 **Repo:** https://github.com/Helvesec/rmux
 **Crates:** `rmux-sdk` (`PaneSnapshot::revision`), `rmux-proto` (`PaneSnapshotResponse::revision`)
@@ -11,8 +11,9 @@ Line numbers below are 0.10.0 unless stated.
 **Severity:** documentation. Nothing misbehaves; the daemon is internally consistent and its own
 tests describe the implemented semantics exactly. The published prose describes a different one.
 **Platform:** all.
+**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
 
-Context, in one sentence: I drive terminal panes programmatically over the rmux client/server API
+Why I am asking: I drive terminal panes programmatically over the rmux client/server API
 and poll `snapshot()` to decide when a pane has settled, so what `revision` promises about the
 interval between two captures is load-bearing for me — and I could not determine it from the docs.
 
@@ -99,8 +100,8 @@ Two consequences follow directly, and upstream's own tests assert both:
 
 The whole argument is one consumer's two captures, run twice over the same pane history, differing
 only in whether a second producer looked in between. Appended to
-`crates/rmux-server/src/handler_pane/snapshot.rs` as a sibling of the existing `#[cfg(test)] mod
-tests` (it uses the crate's own test-only `revision_for`), this **passes** on pristine 0.10.0:
+`crates/rmux-server/src/handler_pane/snapshot.rs` as a `#[cfg(test)]` sibling module (it uses the
+crate's own test-only `revision_for`), this **passes** on pristine 0.10.0:
 
 ```rust
 #[test]
@@ -127,13 +128,10 @@ fn two_captures_of_the_same_pane_history_report_different_revisions() {
 
 ```
 running 1 test
-test handler::pane_support::pane_snapshot::doc_contract_probe::two_captures_of_the_same_pane_history_report_different_revisions ... ok
+test two_captures_of_the_same_pane_history_report_different_revisions ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4081 filtered out; finished in 0.01s
 ```
-
-(`doc_contract_probe` is the module name I gave it; `handler::pane_support::pane_snapshot` is where
-`src/handler_pane/snapshot.rs` lands in the module tree.)
 
 The consumer's own two captures are identical in both runs. Its revisions are `1, 1` in one and
 `1, 3` in the other. What differs is only whether some *other* producer materialised a capture in
@@ -156,10 +154,7 @@ The gap that matters to a consumer: `PaneSnapshotResponse` carries only `cols`, 
 `revision` routinely advances between two responses that are equal in every field the client can
 read. That is the expected behaviour, but neither list says so.
 
-There are now four hand-written copies of this list — two doc comments, the argument list, and
-`compute_snapshot_fingerprint_changes_with_each_observable_field` (`:559-599`, one `assert_ne!` per
-input). Drift between them is not surprising; deriving the docs from the signature, or simply
-pointing them at it, would stop it recurring.
+Pointing the docs at `compute_snapshot_fingerprint` would keep them in sync.
 
 ## What I am asking for
 

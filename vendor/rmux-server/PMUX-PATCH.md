@@ -112,8 +112,8 @@ checks the local patched hashes, validates this document, and proves Cargo
 resolves the exact `=0.9.0` dependency to this path. It also proves
 `pmux-rmuxd` declares `uses_default_features = false`, requests no explicit
 features, and resolves the server node with an exactly empty feature set.
-`apps/pmux-rmuxd/tests/process_blackbox.rs::real_attach_half_close_delivers_the_final_complete_frame_exactly_once`
+`bin/pmux-rmuxd/tests/process_blackbox.rs::real_attach_half_close_delivers_the_final_complete_frame_exactly_once`
 repeats the invariant across the actual private sidecar, rmux client wire, and
-PTY. `TESTING.md` defines the standalone offline validation lane. Pmux uses
+PTY. `docs/testing.md` defines the standalone offline validation lane. Pmux uses
 `rmux-server` with no default or explicit features; `web`, `fuzzing`, and
 `perf-instrument` are outside this patch and product path.

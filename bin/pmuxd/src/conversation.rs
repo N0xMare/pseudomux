@@ -80,7 +80,16 @@ pub struct LeaseTurn {
     pub cell: String,
     pub kind: LeaseKind,
     pub idle_ttl_ms: u64,
-    pub model: String,
+    /// The `model` string the request carried, byte for byte
+    /// (`claude-opus-5-xhigh`, or an alias). This is what the Messages
+    /// response echoes: a harness that verifies "the child answered with the
+    /// model I launched" compares against the id IT sent, and pi-subagents
+    /// 0.63 refused every pmux child with `model_verification_failed`
+    /// (expected `pmux/claude-opus-5-xhigh`, observed `claude-opus-5`) when
+    /// the response named the canonical stem instead. Measured on macos
+    /// 2026-09-01 at Claude Code 2.1.258. The canonical stem is
+    /// `result.model`, so nothing is lost by echoing the caller's spelling.
+    pub requested_model: String,
     pub result: StatelessResult,
 }
 
@@ -364,6 +373,7 @@ impl ConversationBook {
         let effort = effort_from_id.or(effort_from_body(body)?);
         let (class, resolved) =
             resolve_pool_class(&model, effort).map_err(ModelEffortRefusal::into_error_body)?;
+        let requested_model = raw_model.to_owned();
         let model = class.canonical_model.to_owned();
         let effort = resolved.effort_level;
         let conversation_id =
@@ -405,7 +415,7 @@ impl ConversationBook {
                                 cell,
                                 kind: LeaseKind::Replayed,
                                 idle_ttl_ms: self.idle_ttl_ms(),
-                                model,
+                                requested_model,
                                 result: last_result,
                             });
                         }
@@ -419,6 +429,7 @@ impl ConversationBook {
                         planned = Some(Planned {
                             conversation_id: conversation_id.clone(),
                             model: model.clone(),
+                            requested_model: requested_model.clone(),
                             effort,
                             next: next.clone(),
                             kind: PlannedKind::Continue { from },
@@ -431,6 +442,7 @@ impl ConversationBook {
                         planned = Some(Planned {
                             conversation_id: conversation_id.clone(),
                             model: model.clone(),
+                            requested_model: requested_model.clone(),
                             effort,
                             next: next.clone(),
                             kind: PlannedKind::Reprime,
@@ -450,6 +462,7 @@ impl ConversationBook {
                 Planned {
                     conversation_id: conversation_id.clone(),
                     model: model.clone(),
+                    requested_model: requested_model.clone(),
                     effort,
                     next,
                     kind: PlannedKind::Prime,
@@ -609,7 +622,7 @@ impl ConversationBook {
             cell: turn.cell,
             kind,
             idle_ttl_ms: self.idle_ttl_ms(),
-            model,
+            requested_model: planned.requested_model,
             result: turn.result,
         })
     }
@@ -618,6 +631,7 @@ impl ConversationBook {
 struct Planned {
     conversation_id: String,
     model: String,
+    requested_model: String,
     effort: Option<EffortLevel>,
     next: ConversationFingerprint,
     kind: PlannedKind,

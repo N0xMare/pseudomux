@@ -363,3 +363,44 @@ Two additions worth making at the same time:
   activity picture in §1 says only that someone is there.
 * The wider local ordering work described in `vendor/rmux-server/PMUX-PATCH.md` beyond the minimal
   EOF repair was not re-derived or re-justified here; §3 reports its size, not its necessity.
+
+## 7. Refresh, 2026-09-01
+
+Re-checked on macOS 15 / arm64 with the same three labels. **Nothing moved upstream in the twenty
+days since §1: the answer is still file all four, do not bump.**
+
+| fact | 2026-08-12 | 2026-09-01 |
+|---|---|---|
+| latest release (all four crates, none yanked) | 0.10.0, 2026-08-04 | 0.10.0, unchanged |
+| `main` HEAD / `pushed_at` | `1f4571e7` / 2026-08-09 | unchanged |
+| commits ahead of v0.10.0 | 25 | 25 |
+| open issues touching attach framing, EOF, or `revision` | none | none (new: #217, #218, #219; PR #220) |
+| filed by anyone | no | no |
+
+Per draft, VERIFIED-EXTERNAL against the 0.10.0 tarballs (sha256 equal to the crates.io checksums)
+and `main` through the contents API:
+
+* **01** `rmux-client/src/attach.rs` still md5 `ccddf8572567fd0943a47433312cefc9` at 0.10.0 and
+  `main`; `:694` unbounded, `:709` bounded. MEASURED: the draft's standalone test re-run against
+  `rmux-client = "=0.10.0"` from crates.io fails with `unknown attach-stream message tag 121` and
+  nine stale `A`s delivered as the second frame; the one-line fix makes it pass.
+* **02** `rmux-server/src/pane_io.rs` still md5 `ac809b2997cf4e00b181a055f91dd73e`; the `Closed`
+  arms still `return Ok(())` at `:461-469` and `:611-620` ahead of the dispatch at `:480` / `:628`.
+  Source read against a byte-identical file; the §2.2 execution stands.
+* **03** `rmux-sdk/src/snapshot.rs` still md5 `090bee4c6ca170154e3920f7ec728fbf`; every citation in
+  the rewritten draft resolves at 0.10.0 and `main`.
+* **04** (the `--no-default-features` test build break §5 names) MEASURED again: two `E0425`s at
+  `src/handler_attach_tests/set_titles.rs:585` and `:593` on pristine 0.10.0 and `main`; 0.9.0 and
+  0.9.1 build the cell clean (the file does not exist there). A one-line
+  `#[cfg(feature = "web")]` on `the_web_and_snapshot_renders_carry_no_title` fixes it with no
+  new warnings; that is a PR, not an issue.
+
+The drafts in `docs/upstream-issues/` carry all §2 revisions, were re-read line by line against
+today's release, and were then reviewed once more for a maintainer's eyes (re-verification
+paragraphs cut, 03 retitled as the contract question it is, 04 reshaped as a PR description). The
+`PMUX-PATCH.md` path repair §5 lists is done in this refresh.
+
+Upgrade sizing is unchanged: six `pane_io.rs` conflicts, the tests file merges clean, every symbol
+pmux uses is present at 0.10.0, `non_exhaustive` is not a risk (pmux matches on no `Request` /
+`Response`), `bincode` is a new dependency, and the wire move 5 -> 8 is contained behind the private
+socket. Benefit: zero patches retired.

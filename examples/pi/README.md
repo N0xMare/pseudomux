@@ -43,4 +43,4 @@ and `/clear`s the first. The measured parallel-subagent receipt used child
 processes. Spawn, steer, and delete stay Pi's job. Session end POSTs
 `/v1/conversations/{id}/release` so the cell `/clear`s.
 
-Measured: `evidence/linux-pi-agentic-subagent-2.1.257-x86_64.json` (Pi 0.84.2 + pi-subagents 0.50.0 on the promoted 2.1.257 cell, no operator flag; agentic, sequential and parallel subagents, release returns the same cell to idle); `evidence/linux-pi-agentic-subagent-x86_64.json` is the 2.1.233 run.
+Measured: `evidence/macos-pi-agentic-subagent-2.1.258-aarch64.json` (Pi 0.84.4 + pi-subagents 0.63.0 on the promoted macos 2.1.258 cell, no operator flag, Messages on `127.0.0.1:8766`, the recommended 15-cell warm set: agentic, sequential and parallel reviewer subagents all GREEN, every child exit 0, release returns the same cells to idle); `evidence/linux-pi-agentic-subagent-2.1.257-x86_64.json` (Pi 0.84.2 + pi-subagents 0.50.0 on the promoted linux 2.1.257 cell, no operator flag; agentic, sequential and parallel subagents, release returns the same cell to idle); `evidence/linux-pi-agentic-subagent-x86_64.json` is the 2.1.233 run.

@@ -1,0 +1,452 @@
+{
+ "schema": "pmux.linux-operator-eval.v1",
+ "real_claude_turns": {
+  "count": 21,
+  "on_eval_pool_2_1_258": 21,
+  "scenario_root_turns": 14,
+  "scenario_child_turns": 7,
+  "probe_turns_on_eval_pool": 0,
+  "probe_turns_on_preexisting_daemon": 0,
+  "probe_note": "no probe turns: the three scenarios are the whole spend, and every one of them went through examples/pi/pmux.ts to this receipt's daemon on 127.0.0.1:8766"
+ },
+ "title": "Pi through pool-leased pmux at Claude Code 2.1.258 on macOS \u2014 agentic + subagent live eval, promoted without a flag",
+ "claude_version": "2.1.258",
+ "promoted_without_flag": true,
+ "adapter": "examples/pi/pmux.ts via pmux-client",
+ "host": {
+  "os": "macos",
+  "arch": "aarch64",
+  "pi": "0.84.4",
+  "pi_subagents": "0.63.0"
+ },
+ "daemon": {
+  "pool_size": 15,
+  "warm": "claude-opus-5/medium=12, claude-opus-5/xhigh=2, claude-fable-5-1/xhigh=1",
+  "messages": "http://127.0.0.1:8766",
+  "tested_claude_profile_flag": null,
+  "command": "<REPO>/target/release/pmuxd serve --socket /tmp/pi-eval-43449/pmux.sock --rmuxd <REPO>/target/release/pmux-rmuxd --launcher <REPO>/target/release/pmux-launcher --runtime-parent /tmp/pi-eval-43449/private --pool-parent /tmp/pi-eval-43449/pool --pool-claude <HOME>/.local/share/claude/versions/2.1.258 --pool-size 15 --pool-warm claude-opus-5/medium=12 --pool-warm claude-opus-5/xhigh=2 --pool-warm claude-fable-5-1/xhigh=1 --messages-bind 127.0.0.1:8766",
+  "runtime_dir_note": "owner-only (0700) short /tmp dir: macOS sockaddr_un is 104 bytes, four shorter than Linux, so the session scratchpad path cannot hold the launch broker socket and the runtime tree lives at /tmp/pi-eval-43449",
+  "port_note": "bound 8766 and set PMUX_MESSAGES_URL for pi rather than the adapter's 8765 default, so a pre-existing operator daemon on 8765 cannot answer any request in this receipt",
+  "idle_ttl_ms": null
+ },
+ "setup": {
+  "extension_backup": "<HOME>/.pi/agent/extensions/pmux.ts.bak-2026-09-01",
+  "extension_installed_from": "examples/pi/pmux.ts",
+  "pmux_client": "npm install --prefix <HOME>/.pi/agent <REPO>/clients/typescript (symlinked), after npm run build in clients/typescript",
+  "settings_json": "UNCHANGED. The operator's defaultProvider and defaultModel name a different provider, so --provider pmux --model claude-opus-5-medium was passed on every pi argv instead. The subagents block already pins children to pmux/claude-opus-5-medium with modelScope allow pmux/*, so children were in scope without an edit.",
+  "models_json_note": "the extension's registerProvider plus PMUX_MESSAGES_URL is what resolved the pmux provider in every run; verified by lease census on this receipt's port"
+ },
+ "agentic": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "read"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 23944,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 23944,
+    "cacheWrite": 189,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "bash"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 24217,
+    "cacheWrite": 183,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "AGENTIC_OK TOKEN=PMUX-AGENTIC-258-CD69",
+    "input": 2,
+    "cacheRead": 24448,
+    "cacheWrite": 159,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "read"
+   ],
+   [
+    "write"
+   ],
+   [
+    "bash"
+   ],
+   []
+  ],
+  "census": {
+   "samples": 16,
+   "idle_min": 14,
+   "occupied_max": 1,
+   "leased_max": 0,
+   "in_flight_max": 1,
+   "occupied_ge_2": 0,
+   "occupied_ge_3": 0,
+   "clearing_max": 0,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05fb7-1c10-7d0b-aa8c-d1e43391d6b0"
+   ],
+   "distinct_cells": [
+    "s0e0"
+   ]
+  },
+  "elapsed_s": 16.1,
+  "notes": "TOKEN=PMUX-AGENTIC-258-CD69\nSTATUS=verified",
+  "token": "PMUX-AGENTIC-258-CD69",
+  "checks": {
+   "final_text": "AGENTIC_OK TOKEN=PMUX-AGENTIC-258-CD69",
+   "tool_calls": [
+    "read",
+    "write",
+    "bash"
+   ],
+   "verified_txt": "TOKEN=PMUX-AGENTIC-258-CD69\nSTATUS=verified\n"
+  }
+ },
+ "subagent_sequential": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "bash"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 23929,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 23929,
+    "cacheWrite": 182,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 24215,
+    "cacheWrite": 2929,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "MULTI_OK",
+    "input": 2,
+    "cacheRead": 29667,
+    "cacheWrite": 2621,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "bash"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "write"
+   ],
+   []
+  ],
+  "census": {
+   "samples": 118,
+   "idle_min": 13,
+   "occupied_max": 2,
+   "leased_max": 1,
+   "in_flight_max": 1,
+   "occupied_ge_2": 83,
+   "occupied_ge_3": 0,
+   "clearing_max": 1,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05fb7-5c26-7f6d-9187-2b2f7c85c5b9",
+    "01a05fb7-7b48-7c24-9cd2-0bfe7e3b543f"
+   ],
+   "distinct_cells": [
+    "s12e0",
+    "s1e0"
+   ]
+  },
+  "elapsed_s": 123.2,
+  "review_excerpt": "# Code Review: server.py (28 lines)\n\n## Verdict: BLOCK\n\n## Correct (with evidence)\n\n- `_send` computes `Content-Length` from the **encoded** bytes (`server.py:6,9`), not `len(body)` \u2014 multi-byte bodies are not truncated.\n- Response ordering is correct: `send_response` -> headers -> `end_headers` -> `wfile.write` (`server.py:7-11`).\n- Binds to `127.0.0.1` (`server.py:28`), not `0.0.0.0`, limiting e",
+  "checks": {
+   "final_text": "MULTI_OK",
+   "tool_calls": [
+    "bash",
+    "subagent",
+    "write"
+   ],
+   "review_bytes": 5863,
+   "subagent_calls": 1
+  }
+ },
+ "subagent_parallel": {
+  "verdict": "GREEN",
+  "turns": [
+   {
+    "tools": [
+     "bash"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 0,
+    "cacheWrite": 23962,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 23962,
+    "cacheWrite": 804,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "subagent"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 24809,
+    "cacheWrite": 660,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "bg_wait"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 25469,
+    "cacheWrite": 1057,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [
+     "write"
+    ],
+    "text": "",
+    "input": 2,
+    "cacheRead": 26577,
+    "cacheWrite": 4053,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   },
+   {
+    "tools": [],
+    "text": "PARALLEL_OK",
+    "input": 2,
+    "cacheRead": 30630,
+    "cacheWrite": 5175,
+    "provider": "pmux",
+    "model": "claude-opus-5-medium"
+   }
+  ],
+  "cache_hit_after_first": true,
+  "tools_sequence": [
+   [
+    "bash"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "subagent"
+   ],
+   [
+    "bg_wait"
+   ],
+   [
+    "write"
+   ],
+   []
+  ],
+  "census": {
+   "samples": 95,
+   "idle_min": 12,
+   "occupied_max": 3,
+   "leased_max": 1,
+   "in_flight_max": 3,
+   "occupied_ge_2": 46,
+   "occupied_ge_3": 41,
+   "clearing_max": 1,
+   "tearing_down_max": 0,
+   "distinct_conversations": [
+    "01a05fb9-3e08-781f-89ce-41ddd4fc186b",
+    "01a05fb9-8a3d-7e7b-925b-0d1ea08b6206",
+    "01a05fb9-8a52-766b-91d7-687d29b88f12"
+   ],
+   "distinct_cells": [
+    "s12e0",
+    "s13e0",
+    "s2e0"
+   ]
+  },
+  "elapsed_s": 98.4,
+  "review_excerpt": "# server.py Review\n\nTwo parallel reviews merged: `/health` and `/add`.\n\n---\n\n## 1. `/health` (server.py:16-17, via `_send` at server.py:5-11)\n\n**Correct:** Returns `200` with `{\"status\": \"ok\"}`. `_send` sets `Content-Type: application/json` and a byte-accurate `Content-Length` (computed after `.encode()`), then `end_headers()` before writing. Status code, method, and body semantics are appropriate",
+  "checks": {
+   "final_text": "PARALLEL_OK",
+   "tool_calls": [
+    "bash",
+    "subagent",
+    "subagent",
+    "bg_wait",
+    "write"
+   ],
+   "review_bytes": 5666,
+   "subagent_calls": 2,
+   "parallel_evidence": true
+  }
+ },
+ "child_metas": [
+  {
+   "file": "/tmp/pi-eval-43449/runs/subagent_sequential-sessions/subagent-artifacts/eb460451-85ca-4578-907f-7bc21f0d2293_reviewer_0_meta.json",
+   "runId": "eb460451-85ca-4578-907f-7bc21f0d2293",
+   "model": "pmux/claude-opus-5-xhigh",
+   "exitCode": 0,
+   "error": null,
+   "usage": {
+    "input": 6,
+    "output": 6266,
+    "cacheRead": 9321,
+    "cacheWrite": 5031,
+    "cost": 0,
+    "turns": 3
+   },
+   "durationMs": 86663
+  },
+  {
+   "file": "/tmp/pi-eval-43449/runs/subagent_parallel-sessions/subagent-artifacts/445e798b-6ffc-4489-9f76-840deb22def8_reviewer_0_meta.json",
+   "runId": "445e798b-6ffc-4489-9f76-840deb22def8",
+   "model": "pmux/claude-opus-5-xhigh",
+   "exitCode": 0,
+   "error": null,
+   "usage": {
+    "input": 4,
+    "output": 3386,
+    "cacheRead": 4338,
+    "cacheWrite": 4899,
+    "cost": 0,
+    "turns": 2
+   },
+   "durationMs": 47401
+  },
+  {
+   "file": "/tmp/pi-eval-43449/runs/subagent_parallel-sessions/subagent-artifacts/b292d100-fb15-4e75-972c-dd3ee8338c6b_reviewer_0_meta.json",
+   "runId": "b292d100-fb15-4e75-972c-dd3ee8338c6b",
+   "model": "pmux/claude-opus-5-xhigh",
+   "exitCode": 0,
+   "error": null,
+   "usage": {
+    "input": 4,
+    "output": 2884,
+    "cacheRead": 4459,
+    "cacheWrite": 5042,
+    "cost": 0,
+    "turns": 2
+   },
+   "durationMs": 42194
+  }
+ ],
+ "release": {
+  "agentic": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 14,
+   "live_after": 15,
+   "claude_pid_count_before": 15,
+   "claude_pid_count_after": 15,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "subagent_sequential": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 14,
+   "live_after": 15,
+   "claude_pid_count_before": 15,
+   "claude_pid_count_after": 15,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "subagent_parallel": {
+   "release_poll_seconds": 2,
+   "conversation_leases_after": [],
+   "leased_after": 0,
+   "idle_after": 14,
+   "live_after": 15,
+   "claude_pid_count_before": 15,
+   "claude_pid_count_after": 15,
+   "claude_pids_unchanged": true,
+   "cells_all_epoch_0": true,
+   "pi_exit": 0,
+   "stalls": [
+    "attempt 1: completed"
+   ]
+  },
+  "clear_warn_count": 0,
+  "pmuxd_warn_or_error_lines": 0,
+  "verdict": "GREEN",
+  "note": "each Pi process end POSTed /v1/conversations/{id}/release; the pool was read back to idle with the same claude pid set and every observed cell id at epoch 0"
+ },
+ "observations": {
+  "pi_startup_stalls": {
+   "what": "carried forward from the Linux receipt, not re-measured here",
+   "root_cause": "pi's print mode awaits stdin EOF (readPipedStdin) whenever stdin is not a TTY",
+   "mitigation": "every pi process in this receipt ran with </dev/null"
+  },
+  "verdict": "GREEN"
+ }
+}

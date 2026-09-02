@@ -416,8 +416,9 @@ lines later, and `2.1.99` above `2.1.207` is the one bug a range key is guarante
 ever is. `VersionRange { floor, tested_through }` is inclusive at both ends and
 `TestedCompatibilityProfile::matches` asks it for containment.
 
-**The shipped range is `2.1.220..=2.1.238`** (`2.1.220..=2.1.226` from 2026-08-09 to 2026-08-11;
-`2.1.220..=2.1.227` from 2026-08-11; `2.1.220..=2.1.238` from 2026-08-21).
+**The shipped range is `2.1.220..=2.1.258`** (`2.1.220..=2.1.226` from 2026-08-09 to 2026-08-11;
+`2.1.220..=2.1.227` from 2026-08-11; `2.1.220..=2.1.238` from 2026-08-21;
+`2.1.220..=2.1.258` from 2026-09-01).
 The floor is where the evidence starts: 2.1.220 has
 the drain receipt, the Gate B campaign and the screen/preamble measurements, and §3.1 shows 2.1.201
 and earlier at *zero* reachable `cli` arrivals — unestablished, not safe. The ceiling is where the
@@ -432,13 +433,19 @@ uniform; selection is composer-command colour match, not “unique uniform row�
 menu-above geometry was measured on linux at 2.1.257, whose promotion widened the linux range to
 `2.1.227..=2.1.257` (`evidence/promotion-2.1.257-linux-x86_64.json`, corpus
 `crates/service/tests/corpus/claude-2.1.257-clear-menu.ndjson`). The
-2.1.226/2.1.227 A/B was not re-run at 238. The
+2.1.226/2.1.227 A/B was not re-run at 238. **2.1.258 widened the macos range again on 2026-09-01**
+(`evidence/promotion-2.1.258-macos-aarch64.json`): no new transcript row kind over 2.1.257's, the
+same menu-above geometry recorded as
+`crates/service/tests/corpus/claude-2.1.258-clear-menu.ndjson` and replayed through the unchanged
+proof, and a launch-bundle A/B against 2.1.251 that adds only the `--system-prompt-snapshot`
+option 2.1.257 already introduced and rewords the background `--resume` help.
+`evidence/promotion-2.1.238-macos-aarch64.json` is the prior ceiling and stays historical. The
 drain is **not** measurable from the free corpus at a fresh version — it held zero 2.1.226 rows on
 the day 2.1.226 was promoted and zero 2.1.227 rows on the day 2.1.227 was, and
 `measure_transcript_drain.py` exits 5 rather than passing — and that is precisely what the pooled
 bound of P1 is for. What answers it instead is the daemon's OWN evidence mirror, written by the
-promotion run: 5 reachable arrivals at 2.1.238, max **54 ms** (2.1.227 was 5 arrivals, max
-52 ms). `range_provenance` on the profile says
+promotion run: 5 reachable arrivals at 2.1.258, max **42 ms** (median 25, min 19); 2.1.238 was 5
+arrivals, max 54 ms, and 2.1.227 was 5 arrivals, max 52 ms. `range_provenance` on the profile says
 all of that, and the daemon publishes it.
 
 Four properties the range key has that the string key did not, each with a test that fails without

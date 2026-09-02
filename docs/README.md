@@ -19,5 +19,7 @@ test ownership, and dated measurements. It is not a second product.
 | Reading the historical Gate A freeze census | [archive/testing-gate-a-census.md](archive/testing-gate-a-census.md) |
 | Dated one-shot dumps (handoffs, reviews) | [archive/](archive/) |
 | Looking up where the project stands | [current-state.md](current-state.md) |
+| Filing the vendored rmux defects upstream, or sizing an rmux bump | [rmux-upstream-state.md](rmux-upstream-state.md), drafts in [upstream-issues/](upstream-issues/) |
+| Running the linux battery in a guest on this Mac | [tart-linux-guest.md](tart-linux-guest.md) |
 
 Dated receipts and `docs/archive/` are not updated to stay true.

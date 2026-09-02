@@ -1,0 +1,274 @@
+{
+  "schema": "pmux.operator-eval.v1",
+  "kind": "operator_compatibility",
+  "not_a_promotion": true,
+  "claude_version": "2.1.258",
+  "os": "macos",
+  "arch": "aarch64",
+  "pin": {
+    "path": "<HOME>/.local/share/claude/versions/2.1.258",
+    "sha256": "b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78",
+    "bytes": 199027600,
+    "version": "2.1.258"
+  },
+  "promotion_status": {
+    "may_replace_operator_pin": true,
+    "may_ship_without_flag": false,
+    "requires_for_flagless": "evidence/pooled-transcript-drain-macos-aarch64.json and tools/dev/promote.py"
+  },
+  "operator_profile": {
+    "claude_version": "2.1.258",
+    "os": "macos",
+    "arch": "aarch64",
+    "terminal_profile": "transparent",
+    "input_transport": "sdk",
+    "transcript_drain_ms": 250
+  },
+  "launch_bundle_parses": {
+    "probed": {
+      "--session-id": "accepted",
+      "--model": "accepted",
+      "--effort": "accepted",
+      "--permission-mode": "accepted",
+      "--disallowedTools": "accepted",
+      "--strict-mcp-config": "accepted",
+      "--system-prompt-file": "accepted"
+    },
+    "rejected": {},
+    "negative_control_rejected": true,
+    "ok": true
+  },
+  "turns": [
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "low",
+      "nonce": "LCCU",
+      "expected": "LCCU-105",
+      "text": "LCCU-105",
+      "answered": true,
+      "client_wall_ms": 3022.4,
+      "claude_version": "2.1.258",
+      "usage": {
+        "main": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 319,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "02-context-is-empty-after-clear",
+      "effort": "low",
+      "nonce": "RDED",
+      "expected": "NONE",
+      "text": "NONE",
+      "answered": true,
+      "client_wall_ms": 7662.3,
+      "claude_version": "2.1.258",
+      "usage": {
+        "main": {
+          "input_tokens": 335,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 335,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "03-unicode-echo",
+      "effort": "low",
+      "nonce": "M8J0",
+      "expected": "M8J0 caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "text": "M8J0 caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "answered": true,
+      "client_wall_ms": 2676.9,
+      "claude_version": "2.1.258",
+      "usage": {
+        "main": {
+          "input_tokens": 433,
+          "output_tokens": 17,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 433,
+          "output_tokens": 17,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "04-ordered-long-reply",
+      "effort": "low",
+      "nonce": "WZK9",
+      "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 WZK9",
+      "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 WZK9",
+      "answered": true,
+      "client_wall_ms": 3023.9,
+      "claude_version": "2.1.258",
+      "usage": {
+        "main": {
+          "input_tokens": 323,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 323,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "high",
+      "nonce": "BGOZ",
+      "expected": "BGOZ-99",
+      "text": "BGOZ-99",
+      "answered": true,
+      "client_wall_ms": 9675.7,
+      "claude_version": "2.1.258",
+      "usage": {
+        "main": {
+          "input_tokens": 320,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 320,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    }
+  ],
+  "checks": {
+    "minified_cell_is_admitted": {
+      "ok": true,
+      "census": {
+        "capacity": 3,
+        "clearing": 0,
+        "configured": true,
+        "conversation_leases": [],
+        "declared_warm": 1,
+        "halted": null,
+        "idle": 1,
+        "in_flight": 0,
+        "instance_terminals_present": 1,
+        "leaked": 0,
+        "leased": 0,
+        "live": 1,
+        "pool_size": 3,
+        "registered_instances": 1,
+        "reserved": 0,
+        "tearing_down": 0
+      },
+      "doctor_status": "healthy"
+    },
+    "grades_answer": {
+      "ok": true,
+      "wrong": []
+    },
+    "context_did_not_survive_recycling": {
+      "ok": true,
+      "leaked": []
+    },
+    "no_tool_surface": {
+      "ok": true,
+      "offenders": []
+    },
+    "pool_never_halted": {
+      "ok": true,
+      "halted": null,
+      "leaked": 0
+    },
+    "messages_sticky": {
+      "ok": true,
+      "turn1": {
+        "status": 200,
+        "elapsed_s": 2.43,
+        "lease": "primed",
+        "cell": "s0e0",
+        "conversation": "operator-eval-1788310068",
+        "usage": {
+          "cache_creation_input_tokens": 1914,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 14
+        },
+        "text": "ACK Otter-Cache-68",
+        "raw_head": "{\"content\":[{\"text\":\"ACK Otter-Cache-68\",\"type\":\"text\"}],\"id\":\"msg_18d15a88ce828570\",\"model\":\"claude-sonnet-5\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":1914,\"ca"
+      },
+      "turn2": {
+        "status": 200,
+        "elapsed_s": 2.51,
+        "lease": "continued",
+        "cell": "s0e0",
+        "conversation": "operator-eval-1788310068",
+        "usage": {
+          "cache_creation_input_tokens": 141,
+          "cache_read_input_tokens": 1914,
+          "input_tokens": 2,
+          "output_tokens": 11
+        },
+        "text": "Otter-Cache-68",
+        "raw_head": "{\"content\":[{\"text\":\"Otter-Cache-68\",\"type\":\"text\"}],\"id\":\"msg_18d15a8963f5dff8\",\"model\":\"claude-sonnet-5\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":141,\"cache_r"
+      },
+      "release_status": 200,
+      "release_body": "{\"conversation\":\"operator-eval-1788310068\",\"released\":true}",
+      "same_cell": true,
+      "cache_write_t1": 1914,
+      "cache_read_t2": 1914,
+      "cache_hit": true
+    }
+  },
+  "verdict": "GREEN_OPERATOR"
+}

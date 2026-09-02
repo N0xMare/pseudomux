@@ -9,7 +9,7 @@ isolation). Operators integrating a harness should not start here.
 pool of them.** This file was a design specification. **It is now mostly a description of a shipped
 thing**, and where it still describes a design the tense says so explicitly.
 
-**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21; linux 2.1.257 2026-09-01).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.238
+**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21; linux 2.1.257 2026-09-01; macos 2.1.258 2026-09-01).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.258
 and linux/x86_64 2.1.227..=2.1.257 are reachable without a flag.
 
 | Shipped | Where |
@@ -21,7 +21,7 @@ and linux/x86_64 2.1.227..=2.1.257 are reachable without a flag.
 | `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
 | Sticky `Leased` instances and the opt-in loopback Messages facade (`--messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
-| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.238 and linux/x86_64 2.1.227 through 2.1.257 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.238-macos-aarch64.json`, `evidence/promotion-2.1.257-linux-x86_64.json` |
+| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.258 and linux/x86_64 2.1.227 through 2.1.257 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.258-macos-aarch64.json`, `evidence/promotion-2.1.257-linux-x86_64.json` |
 
 **Still design, and labelled as such in place:** admission by a measured memory budget (§7 — the
 budget is a boot assertion, not a runtime gate), the retention/pruning policy of §8 above the two
@@ -1160,7 +1160,7 @@ into a permanent bypass.
 
 Not even a **mode**-keyed dimension yet. **CORRECTION (2026-08-06): this paragraph used to open
 "No tested cell exists for 2.1.220 on macOS/aarch64 today". That is now FALSE — two ranges are
-promoted** (macos / aarch64 / transparent / sdk, 2.1.220 through 2.1.238,
+promoted** (macos / aarch64 / transparent / sdk, 2.1.220 through 2.1.258,
 `transcript_drain_ms: 1000`, and linux / x86_64
 2.1.227 through 2.1.257, drain 250), which is what makes Path B reachable with no
 `--tested-claude-profile` on argv; MEASURED with the flag absent, a real turn
@@ -1823,9 +1823,11 @@ Stated plainly, because the rest of this document reads as more settled than the
      four review rounds because it is not findable by reading.
    - **The menu has TWO measured geometries, and the proof accepts both.** At 2.1.220/2.1.227 the
      menu renders BELOW the composer (the composer jumps up, the rule is the row below it, tokens at
-     column 0). At **2.1.238** (macos, 24-row pane) and **2.1.257** (linux/x86_64, 24x120, recorded by
+     column 0). At **2.1.238** (macos, 24-row pane), **2.1.257** (linux/x86_64, 24x120, recorded by
      pmux's own corpus recorder into `crates/service/tests/corpus/claude-2.1.257-clear-menu.ndjson`
-     and replayed through the proof by `tests/screen_corpus_replay.rs`) it renders **ABOVE** the
+     and replayed through the proof by `tests/screen_corpus_replay.rs`) and **2.1.258** (macos,
+     24x120, corpus `crates/service/tests/corpus/claude-2.1.258-clear-menu.ndjson`, same recorder and
+     same replay, no proof change needed) it renders **ABOVE** the
      composer: the composer stays boxed between its idle rules, candidates sit above the top rule
      with the token after exactly two blank cells, wrapped descriptions continue on a
      32-column-indented row that is not a candidate. **Measured on linux 2026-09-01, 2.1.236 — the
@@ -1843,8 +1845,8 @@ Stated plainly, because the rest of this document reads as more settled than the
    **The selection is now proven before Enter.** `prove_control_command_selection` refuses to
    submit unless exactly one menu candidate has the typed token and a body colour equal to the
    composer's typed-command colour. 2.1.220/2.1.227 paint candidates below the composer at
-   column 0; 2.1.238 (macos) and 2.1.257 (linux) paint them above the upper U+2500 rule with a
-   two-space indent, and unselected rows are also uniform, so uniqueness-of-uniform-colour is not
+   column 0; 2.1.238 and 2.1.258 (macos) and 2.1.257 (linux) paint them above the upper U+2500 rule
+   with a two-space indent, and unselected rows are also uniform, so uniqueness-of-uniform-colour is not
    the discriminator.
    `wait_for_stable_control_render` remains weaker than the prompt gate. `wrong_local_command`
    remains the post-hoc detector if a rotating command still was not `/clear`. Residual: a
@@ -2043,7 +2045,7 @@ to drift.
 
 **Two cells, and each is a RANGE, not a version.** `PROMOTED_PROFILES`
 (`crates/service/src/compatibility.rs:484`) ships macos / aarch64 floor **2.1.220** through
-tested-ceiling **2.1.238**, `transcript_drain_ms: 1000`; and linux / x86_64
+tested-ceiling **2.1.258**, `transcript_drain_ms: 1000`; and linux / x86_64
 `claude_version_floor` **2.1.227** (`crates/service/src/compatibility.rs:513`) through
 tested-ceiling **2.1.257**, `transcript_drain_ms: 250`
 (`crates/service/src/compatibility.rs:519`). `resolve` searches the
@@ -2066,7 +2068,7 @@ reason on the record*: `queue-operation` (the task queue is a harness feature),
 injection), and `system/api_error`, which is stamped at the moment of the failure inside the turn and
 so is retrospective rather than a post-answer arrival at all.
 
-**2.1.226, 2.1.227, and 2.1.238 were each driven; 2.1.238 is the ceiling.**
+**2.1.226, 2.1.227, 2.1.238, and 2.1.258 were each driven; 2.1.258 is the ceiling.**
 `tools/promotion/promote_claude_version.py` ran nine ordered checks and five real minified-cell turns
 at `claude-sonnet-5` low/high per version, and **generated** the `range_provenance` sentence the
 profile ships; `every_promoted_range_is_the_sentence_its_promotion_receipt_generated` requires the
@@ -2078,14 +2080,16 @@ shipped copy to equal the one in the receipt for the CEILING and that receipt to
 | 2.1.226 | 5 | 223 ms | 500 ms |
 | 2.1.227 | 5 | 52 ms | **250 ms** |
 | 2.1.238 | 5 | 54 ms | **250 ms** |
+| 2.1.258 | 5 | 42 ms | **250 ms** |
 
 The fit is the row to read. 250 ms is below `POST_MARKER_CATCH_WINDOW_FLOOR_MS`, so a promotion that
 fitted its own version rather than reading the pooled bound would have shipped a drain that
-truncates answers — the §P1 hazard, reproduced on later ceilings (2.1.227, then 2.1.238) rather than argued.
+truncates answers — the §P1 hazard, reproduced on later ceilings (2.1.227, then 2.1.238, then 2.1.258) rather than argued.
 
 The receipts are `evidence/pooled-transcript-drain-macos-aarch64.json` (the macos bound),
 `evidence/promoted-profile-2.1.220-macos-aarch64.json` (the macos floor's original per-version receipt) and
-`evidence/promotion-2.1.238-macos-aarch64.json` (the macos ceiling; previous ceilings
+`evidence/promotion-2.1.258-macos-aarch64.json` (the macos ceiling; previous ceilings
+`evidence/promotion-2.1.238-macos-aarch64.json`,
 `evidence/promotion-2.1.227-macos-aarch64.json` and
 `evidence/promotion-2.1.226-macos-aarch64.json` are retained and are what a range that stopped there
 rested on). Linux is `evidence/pooled-transcript-drain-linux-x86_64.json` (the bound),

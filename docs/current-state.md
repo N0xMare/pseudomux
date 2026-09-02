@@ -93,15 +93,18 @@ model/effort probe. Earlier 2.1.233 and 2.1.236 receipts remain historical:
 ### Linux admission
 
 `PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.220 through
-2.1.238 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
+2.1.258 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
 2.1.257 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
-macos ceiling receipt is `evidence/promotion-2.1.238-macos-aarch64.json`;
-pin-confirmation is `evidence/macos-operator-eval-2.1.238-aarch64.json`.
+macos ceiling receipt is `evidence/promotion-2.1.258-macos-aarch64.json`;
+pin-confirmation is `evidence/macos-operator-eval-2.1.258-aarch64.json`.
+`evidence/promotion-2.1.238-macos-aarch64.json` and
+`evidence/macos-operator-eval-2.1.238-aarch64.json` are the prior macos
+ceiling and pin, and stay historical.
 linux ceiling receipt is `evidence/promotion-2.1.257-linux-x86_64.json`;
 pin-confirmation is `evidence/linux-operator-eval-2.1.257-x86_64.json`.
-This host's `claude` is 2.1.257 and needs no flag; macos PATH 2.1.238 does
-not either. A PATH Claude newer than either ceiling still needs
-`--tested-claude-profile`.
+A macos PATH `claude` at 2.1.258 and a linux one at 2.1.257 are each inside
+their own cell and need no flag. A PATH Claude newer than either ceiling
+still needs `--tested-claude-profile`.
 
 The linux drain is `evidence/pooled-transcript-drain-linux-x86_64.json`:
 191 reachable Path B arrivals over 2.1.227/2.1.232/2.1.233, max 118 ms,
@@ -115,7 +118,7 @@ ceiling and stays historical.
 
 `evidence/linux-minified-post-answer-x86_64.json` remains the fast-path
 46 ms pin, **not** the promotion drain. Do not treat the macos
-2.1.220..=2.1.238 range as covering Linux.
+2.1.220..=2.1.258 range as covering Linux.
 
 ### 2.1.257 drift
 
@@ -155,6 +158,70 @@ parses identically, the effort vocabulary is unchanged
 options are `--restricted`, `--system-prompt-snapshot`, and the
 background-session commands.
 
+### 2.1.258 (macos)
+
+Measured on this MacBook Pro (macos/aarch64) on 2026-09-01. **Nothing Claude
+Code ships changed shape for pmux.** 2.1.258 introduced no transcript row kind beyond the
+four 2.1.257 already forced into the parser (`atis-latch`, `cost-state`,
+`ai-title`, `remote_session_change`), and the slash-command menu has the same
+above-composer geometry as 2.1.238 macos and 2.1.257 linux, so the `/clear`
+selection proof needed no change. The launch-bundle A/B 2.1.251 -> 2.1.258
+adds the `--system-prompt-snapshot` option that 2.1.257 already introduced
+and rewords the background `--resume` help; every minified launch flag is
+still accepted.
+
+The promotion therefore only widened the macos cell from 2.1.238 to 2.1.258 on
+the unchanged pooled 1000 ms drain: 5 reachable post-answer arrivals, max
+42 ms, median 25, min 19; per-version fit 250 ms published and not shipped.
+One claude pid served four consecutive same-class turns through real `/clear`
+recycles, and the fifth turn (effort high, a different class) took a second
+cell. `tools/dev/model_matrix.py` answered 48/48 rows with zero
+`reported_model` mismatches — the first macos model-matrix receipt.
+
+| Receipt | What it showed |
+| --- | --- |
+| `evidence/promotion-2.1.258-macos-aarch64.json` | Paid macos ceiling: verdict promotable, floor 2.1.220, tested through 2.1.258, 5 reachable arrivals max 42 ms against the pooled 1000 ms bound. |
+| `evidence/macos-operator-eval-2.1.258-aarch64.json` | `GREEN_OPERATOR` pin confirmation: grades exact at sonnet-5 low and high, Messages sticky on the same cell `s0e0`, cache write 1914 / read 1914. |
+| `evidence/macos-model-matrix-2.1.258-aarch64.json` | `GREEN_MATRIX`: 48/48 rows answered, 0 `reported_model` mismatches, pool never halted. |
+| `evidence/macos-pi-agentic-subagent-2.1.258-aarch64.json` | Pi 0.84.4 + pi-subagents 0.63.0 through `examples/pi/pmux.ts` on the promoted 2.1.258 macos cell with no operator flag, against the recommended 15-cell warm set: agentic (read/write/bash, `AGENTIC_OK`), one sequential reviewer subagent (`MULTI_OK`), two parallel reviewer subagents (`PARALLEL_OK`, `in_flight_max` 3 on three distinct cells), all GREEN; cache hit on every post-first turn; every reviewer child exit 0 on `pmux/claude-opus-5-xhigh`; leases release within 2 s of Pi exit, the same 15 claude pids stay live, every cell at epoch 0, zero failed-clear warnings. 21 real turns (14 root, 7 child). Two facade defects this eval found and fixed before its final run are in §2 "2.1.258 (macos)". |
+
+**Two Messages-facade defects the Pi eval exposed, both fixed here.** Neither
+is a Claude Code change; both were latent and surfaced because the harness
+side moved (pi-subagents 0.50.0 -> 0.63.0) and because a model turn happened
+to take a shape the parser had never met.
+
+1. **Response `model` was the canonical stem.** `POST /v1/messages` answered
+   `"model":"claude-opus-5"` for a request that sent `claude-opus-5-xhigh`.
+   pi-subagents 0.63 verifies the model a child reports against the launch
+   candidate it configured (accepting the bare leaf id), so every reviewer
+   child finished its review and then exited 1 with
+   `model_verification_failed: expected 'pmux/claude-opus-5-xhigh' ... observed
+   'claude-opus-5'`. The facade now echoes the request's `model` string byte
+   for byte (`conversation.rs::LeaseTurn::requested_model`,
+   `messages_http.rs::tests::the_response_model_is_the_requested_id_not_the_canonical_stem`);
+   the canonical stem stays in `StatelessResult::model`. `docs/spec.md` §3.1
+   states the rule.
+2. **A tool call with raw newlines inside a JSON string fell through as text.**
+   opus-5/medium emitted `<tool_call>{"name":"write",...,"content":"# Review\n\n..."}</tool_call>`
+   with real newlines where `\n` escapes belong. Strict JSON refuses a control
+   character inside a string, so the whole block reached Pi as literal text
+   and `review.md` was never written. `parse_completion` now retries a payload
+   that fails strict parsing after escaping control characters that sit inside
+   string literals only (`messages_http.rs::escape_control_characters_in_strings`;
+   `not-json` still stays text), and the `TOOLS:` primer now says the payload
+   is strict JSON with `\n` escaped. Tests
+   `a_tool_call_whose_string_carries_raw_newlines_is_still_a_tool_call` and
+   `control_character_escaping_touches_only_string_interiors`.
+
+The Pi harness for this receipt also had to gate on the children's own exit
+codes: the scenario verdicts (files written, final token text) were GREEN on
+the run whose every child had exited 1.
+
+Hygiene the same change carried: `crates/rmux/tests/attach_fragmentation.rs`
+stopped compiling on macOS after the linux clippy fix passed `&size` to
+`openpty`, which takes `*mut winsize` on Apple's libc and `*const` on glibc;
+it is now `&raw mut size`, which coerces to both.
+
 ### Recommended Pi warm set
 
 At the owner-set cap of 15:
@@ -183,8 +250,8 @@ mint.
 | Dimension | Status |
 | --- | --- |
 | Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
-| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.238-aarch64.json`; linux sticky pin `evidence/linux-operator-eval-2.1.257-x86_64.json`, also measured with Pi. |
-| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.238 and linux/x86_64 2.1.227..=2.1.257. |
+| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.258-aarch64.json`; linux sticky pin `evidence/linux-operator-eval-2.1.257-x86_64.json`, both also measured with Pi. |
+| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.258 and linux/x86_64 2.1.227..=2.1.257. |
 | Linux without a flag | **Shipped** for 2.1.227..=2.1.257. This host's PATH `claude` is 2.1.257, inside the ceiling. |
 | Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |

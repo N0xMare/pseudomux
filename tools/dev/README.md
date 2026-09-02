@@ -46,9 +46,11 @@ python3 tools/dev/promote.py \
   --output evidence/promotion-2.1.257-linux-x86_64.json
 ```
 
+On macos the pinned binary is `$HOME/.local/share/claude/versions/2.1.258` and the output is `evidence/promotion-2.1.258-macos-aarch64.json`.
+
 If `evidence/pooled-transcript-drain-<os>-<arch>.json` is missing, the tool exits 2 and says you cannot **drop the flag** on that OS. Use `operator_eval.py` to pin the binary instead.
 
-macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.220; linux floor is 2.1.227, tested through 2.1.257. A first promotion on an OS with no shipped cell needs `--floor`.
+macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.220, tested through 2.1.258; linux floor is 2.1.227, tested through 2.1.257. A first promotion on an OS with no shipped cell needs `--floor`.
 
 ## model-matrix
 

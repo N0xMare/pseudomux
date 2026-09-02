@@ -763,6 +763,33 @@ mutation run held four cores, not a latency measurement.
 | `promotion-2.1.238-macos-aarch64.json` | Paid macos ceiling. `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 54 ms against the pooled 1000 ms bound. Per-version fit 250 ms is published and not shipped. `/clear` menu at this version paints above the composer with indent 2. |
 | `macos-operator-eval-2.1.238-aarch64.json` | Pin confirmation (`GREEN_OPERATOR`), not a promotion. Messages sticky same-cell cache hit. Does not by itself drop `--tested-claude-profile`. |
 
+## macOS 2026-09 2.1.258 receipts (`aarch64`)
+
+The 2.1.258 promotion. The pooled drain is unchanged
+(`pooled-transcript-drain-macos-aarch64.json`, 1000 ms); these widen the macos
+cell's ceiling from 2.1.238 to 2.1.258.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.258-macos-aarch64.json` | Paid macos ceiling: 2.1.258 `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 42 ms (median 25, min 19) against the pooled 1000 ms bound. Verdict promotable, floor 2.1.220, tested through 2.1.258. Per-version fit 250 ms is published and not shipped. Over 5 turns one claude pid served four consecutive same-class turns through real `/clear` recycles; the fifth turn was a different class (effort high) and used a second cell. Sidechain and cache zero, pool never halted, nothing survived a clear. |
+| `macos-operator-eval-2.1.258-aarch64.json` | `GREEN_OPERATOR` pin confirmation (`pmux.operator-eval.v1`) for the 2.1.258 binary on this OS: launch bundle parses (7 flags accepted, negative control rejected), grades all exact at sonnet-5 low and high, context did not survive recycling, no tool surface, Messages sticky on the same cell `s0e0`, cache write 1914 on turn 1 / cache read 1914 on turn 2, release 200. Replaces `macos-operator-eval-2.1.238-aarch64.json` as the current pin receipt. Does not edit `PROMOTED_PROFILES`. |
+| `macos-model-matrix-2.1.258-aarch64.json` | `tools/dev/model_matrix.py` probe of `MODEL_TABLE` at 2.1.258, and the first macos model-matrix receipt: `GREEN_MATRIX`, 48/48 rows answered, 0 `reported_model` mismatches (`claude-fable-5-1` rows report `claude-fable-5-1`), pool halted null and leaked 0. Gates nothing; reads and writes no pooled-drain receipt. |
+| `macos-pi-agentic-subagent-2.1.258-aarch64.json` | Pi 0.84.4 (`@earendil-works/pi-coding-agent`) + pi-subagents 0.63.0 through `examples/pi/pmux.ts` (`pmux-client`) on the promoted 2.1.258 macos cell with no `--tested-claude-profile`, Messages on `127.0.0.1:8766`, against the README's recommended 15-cell warm set (`claude-opus-5/medium=12`, `claude-opus-5/xhigh=2`, `claude-fable-5-1/xhigh=1`): agentic (read/write/bash), one sequential reviewer subagent, two parallel reviewer subagents (`in_flight_max` 3, three distinct cells), all GREEN; cache hit on every post-first turn; every reviewer child exit 0 on `pmux/claude-opus-5-xhigh`; leases release within 2 s of Pi exit, the same 15 claude pids stay live, every cell at epoch 0, zero failed-clear warnings. 21 real turns (14 root, 7 child). It is the fourth run: run 1 was a harness artifact (survivor check raced daemon teardown), runs 2 and 3 each exposed a facade defect (the response `model` was the canonical stem, so pi-subagents 0.63 marked every reviewer child `model_verification_failed`; a `write` tool call whose JSON carried raw newlines inside a string fell through as text) that `docs/current-state.md` §2 "2.1.258 (macos)" records and this commit fixes. |
+| `promotion-2.1.238-macos-aarch64.json` | The prior macos ceiling, at 2.1.238. Historical. |
+| `macos-operator-eval-2.1.238-aarch64.json` | The prior macos operator pin, at 2.1.238. Historical. |
+
+The pinned 2.1.258 binary is `~/.local/share/claude/versions/2.1.258` (also the
+PATH `claude` on this macos host), sha256
+`b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78`,
+199,027,600 bytes. What did **not** move between 2.1.257 and 2.1.258 is the
+point of the receipt set: no transcript row kind beyond the ones 2.1.257
+introduced (`atis-latch`, `cost-state`, `ai-title`, `remote_session_change`,
+all already admitted), the same above-composer `/clear` menu geometry recorded
+as `crates/service/tests/corpus/claude-2.1.258-clear-menu.ndjson` and replayed
+through an unchanged proof, and a launch-bundle A/B against 2.1.251 that adds
+only the `--system-prompt-snapshot` option 2.1.257 already introduced and
+rewords the background `--resume` help. See `docs/current-state.md` §2 "2.1.258 (macos)".
+
 ## Linux 2026-08 Path B receipts (`x86_64`)
 
 `linux-minified-post-answer-x86_64.json` is still pinned in

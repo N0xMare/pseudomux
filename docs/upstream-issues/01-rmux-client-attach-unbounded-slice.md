@@ -8,6 +8,7 @@
 across all four (md5 `ccddf8572567fd0943a47433312cefc9`: the three published crate sources, and
 `main` at `1f4571e7` via the contents API), and the expression below is at line 694 in each.
 **Severity:** silent data corruption, then desynchronisation of the attach stream.
+**Status:** checked against `main` at `1f4571e7` on 2026-09-01; no existing issue covers this.
 
 Context, in one sentence: I drive terminal panes programmatically over the rmux client/server API,
 which fragments attach writes more often than an interactive user does. Nothing below depends on
@@ -79,9 +80,9 @@ payload tail is read out of buffer positions the peer has not written yet — wh
 read left there. Line 709, eleven lines below, bounds the same buffer to `..bytes_read`; only 694
 omits the bound.
 
-Every attach entry point in the crate reaches this loop: `attach_terminal`, `attach_with_terminal`
-and `drive_attach_stream` all funnel through `drive_attach_stream_inner` (`:241`, `:267`) into
-`output_loop_with_termination` (`:305`).
+Every public attach entry point (`attach_terminal`, `attach_terminal_with_initial_bytes`,
+`attach_with_terminal`, `drive_attach_stream`) funnels through `drive_attach_stream_inner`, called
+at `:241` and `:267`, into `output_loop_with_termination` (`:305`).
 
 ## What the consumer sees
 
@@ -99,7 +100,7 @@ which byte that is:
   This is the case in the reproduction below;
 * a known tag → the bytes are read as a fresh message header and the stream desynchronises **with no
   error at all**. `13` is `RENDER_TAG` (`rmux-proto` 0.10.0 `src/attach.rs:18`), so a fragment
-  boundary that leaves the tail beginning at a `\r` is the quiet one. Measured, with the second
+  boundary that leaves the tail beginning at a `\r` is the quiet one. With the second
   frame's payload changed to `b"\r\n"` and a third complete frame sent afterwards: the client emitted
   66 bytes (the 64-byte first frame plus two stale `A`s), **never delivered the third frame at all**,
   reported no decode error, and failed only once the peer closed, with `attach stream closed before
@@ -228,4 +229,4 @@ Verified on an otherwise-pristine 0.10.0 source tree with only that line changed
 passes 10/10, and `cargo test` over the crate's own suite is unchanged at **160 passed, 0 failed**
 across its 8 test binaries, before and after.
 
-Happy to open the PR with the fix and a regression test in `src/attach/tests.rs` if useful.
+Happy to open the PR with the fix and a regression test.

@@ -87,7 +87,7 @@ fn read_initial_resize(stream: &mut UnixStream) {
 fn open_test_pty() -> (File, File) {
     let mut master = MaybeUninit::<libc::c_int>::uninit();
     let mut slave = MaybeUninit::<libc::c_int>::uninit();
-    let size = libc::winsize {
+    let mut size = libc::winsize {
         ws_row: 24,
         ws_col: 80,
         ws_xpixel: 0,
@@ -101,7 +101,9 @@ fn open_test_pty() -> (File, File) {
             slave.as_mut_ptr(),
             std::ptr::null_mut(),
             std::ptr::null_mut(),
-            &size,
+            // `*mut` on Apple libc, `*const` on glibc; a raw `*mut` coerces to
+            // both, so neither host sees a needless-mut or a mutability error.
+            &raw mut size,
         )
     };
     assert_eq!(
