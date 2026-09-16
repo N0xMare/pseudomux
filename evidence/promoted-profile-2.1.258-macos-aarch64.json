@@ -46,100 +46,50 @@
    },
    "recommended_transcript_drain_ms": 250,
    "turns": 5
-  },
-  "2.1.272": {
-   "files_at_this_version": 100,
-   "full_drain_binds_on": {
-    "cli_turns_with_a_terminal_candidate": 100,
-    "fraction": 0.0,
-    "without_a_turn_duration_marker": 0
-   },
-   "partition_balances": true,
-   "post_answer_arrivals": {
-    "all": {
-     "count": 100,
-     "max_ms": 20,
-     "median_ms": 2,
-     "min_ms": 1,
-     "p90_ms": 12,
-     "p95_ms": 16,
-     "p99_ms": 20
-    },
-    "by_kind": {
-     "system/turn_duration": {
-      "count": 100,
-      "max_ms": 20,
-      "median_ms": 2,
-      "min_ms": 1,
-      "p90_ms": 12,
-      "p95_ms": 16,
-      "p99_ms": 20,
-      "reachable_on_a_minified_cell": true,
-      "timestamp_is_retrospective": false,
-      "why": "the end-of-turn marker Claude Code writes for every turn"
-     }
-    },
-    "reachable_on_a_minified_cell": {
-     "count": 100,
-     "max_ms": 20,
-     "median_ms": 2,
-     "min_ms": 1,
-     "p90_ms": 12,
-     "p95_ms": 16,
-     "p99_ms": 20
-    },
-    "unreachable_on_a_minified_cell": null
-   },
-   "recommended_transcript_drain_ms": 250,
-   "turns": 100
   }
  },
  "claude_version": "2.1.258",
  "claude_versions": [
-  "2.1.258",
-  "2.1.272"
+  "2.1.258"
  ],
  "corpus": {
-  "files_at_these_versions": 107,
-  "files_scanned": 107,
-  "note": "Minified SessionCell::Minified only. 2.1.258: evidence/promotion-2.1.258-macos-aarch64.json (5 arrivals, max 42 ms). 2.1.272: evidence/macos-drain-n50-2.1.272-aarch64.json and evidence/macos-drain-n50-2.1.272-aarch64-2.json (100 arrivals, max 20 ms). The 2.1.207/215/220/223 campaign (max 438 ms) is no longer in this pool; it remains in evidence/promoted-profile-2.1.220-macos-aarch64.json as history.",
+  "files_at_these_versions": 7,
+  "files_scanned": 7,
+  "note": "Minified-cell evidence mirror from evidence/promotion-2.1.258-macos-aarch64.json (5 reachable arrivals, max 42 ms). Host transcripts are not committed.",
   "roots": [
-   "evidence/promotion-2.1.258-macos-aarch64.json",
-   "evidence/macos-drain-n50-2.1.272-aarch64.json",
-   "evidence/macos-drain-n50-2.1.272-aarch64-2.json"
+   "evidence/promotion-2.1.258-macos-aarch64.json"
   ],
-  "tracked": true,
-  "turns": 105
+  "tracked": false,
+  "turns": 5
  },
  "full_drain_binds_on": {
-  "cli_turns_with_a_terminal_candidate": 105,
+  "cli_turns_with_a_terminal_candidate": 5,
   "fraction": 0.0,
   "without_a_turn_duration_marker": 0
  },
  "os": "macos",
  "partition_balances": true,
  "per_version_recommendations_not_to_be_shipped": {
-  "2.1.258": 250,
-  "2.1.272": 250
+  "2.1.258": 250
  },
  "post_answer_arrivals": {
   "all": {
-   "count": 105,
+   "count": 5,
    "max_ms": 42,
-   "median_ms": 3,
-   "min_ms": 1,
-   "p90_ms": 16,
-   "p95_ms": 20,
+   "median_ms": 25,
+   "min_ms": 19,
+   "p90_ms": 42,
+   "p95_ms": 42,
    "p99_ms": 42
   },
   "by_kind": {
    "system/turn_duration": {
-    "count": 105,
+    "count": 5,
     "max_ms": 42,
-    "median_ms": 3,
-    "min_ms": 1,
-    "p90_ms": 16,
-    "p95_ms": 20,
+    "median_ms": 25,
+    "min_ms": 19,
+    "p90_ms": 42,
+    "p95_ms": 42,
     "p99_ms": 42,
     "reachable_on_a_minified_cell": true,
     "timestamp_is_retrospective": false,
@@ -147,12 +97,12 @@
    }
   },
   "reachable_on_a_minified_cell": {
-   "count": 105,
+   "count": 5,
    "max_ms": 42,
-   "median_ms": 3,
-   "min_ms": 1,
-   "p90_ms": 16,
-   "p95_ms": 20,
+   "median_ms": 25,
+   "min_ms": 19,
+   "p90_ms": 42,
+   "p95_ms": 42,
    "p99_ms": 42
   },
   "unreachable_on_a_minified_cell": null
@@ -160,8 +110,7 @@
  "recommendation_basis": {
   "margin": 2.0,
   "pooled_over_versions": [
-   "2.1.258",
-   "2.1.272"
+   "2.1.258"
   ],
   "rounded_up_to_ms": 250,
   "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"

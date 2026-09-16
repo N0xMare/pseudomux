@@ -228,6 +228,17 @@ ROW_KINDS: dict[tuple[str, str | None], dict[str, Any]] = {
             "One post-answer row on this host, interactive cli, sample +1045 s"
         ),
     },
+    ("system", "informational"): {
+        "reachable": False,
+        "why": (
+            "Interactive Remote Control chrome (e.g. 'Remote Control not "
+            "started here · another Claude Code on this machine already has "
+            "Remote Control for this conversation'). A minified cell writes "
+            "disableRemoteControl in userSettings and does not start a bridge. "
+            "Measured macos 2.1.258 interactive cli, one post-answer row "
+            "+75 s after the assistant"
+        ),
+    },
     ("system", "compact_boundary"): {
         "reachable": False,
         "why": (

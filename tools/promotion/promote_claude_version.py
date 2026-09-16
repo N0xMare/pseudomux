@@ -23,12 +23,13 @@ WHAT IT EXERCISES, AND WHY A MINIFIED CELL IS THE WHOLE POINT
 -------------------------------------------------------------
 
 `require_tested_for_minified_cell` (`crates/service/src/v1/actor.rs`) gates
-exactly one thing: `SessionCell::Minified`. Living probe is `pmux run`
+exactly one thing: `SessionCell::Minified`. Living probe is `pmux ask`
 (always the minified pool). Session launch flags are refused; this tool is
 the graded no-tools oracle.
 
-Every turn here goes through `pmux run`, which is Path B and therefore always
-`SessionCell::Minified`, and the caller can name no resource on it. The oracle
+Every turn here goes through `pmux ask`, which is the stateless engine and
+therefore always `SessionCell::Minified`, and the caller can name no resource
+on it. The oracle
 is a nonce plus a result the prompt makes computable, so it needs no tool: a
 cell launched with `--disallowedTools "*"` can satisfy it. Historical Phase 0
 prompts that instructed the model to run `shasum` cannot be satisfied by one
@@ -484,6 +485,7 @@ class Run:
             profile,
             self.claude,
             f"{self.args.model}/{self.args.efforts[0]}=1",
+            securestorage_dir=self.args.pool_securestorage_dir,
         )
 
     def stop(self) -> None:
@@ -617,7 +619,7 @@ class Run:
             self.binaries,
             self.sandbox,
             [
-                "run",
+                "ask",
                 "--model",
                 self.args.model,
                 "--effort",
@@ -1122,6 +1124,13 @@ FLOOR_PROVENANCE = {
         "screen/preamble measurements; below it 2.1.201 and earlier have ZERO "
         "reachable cli arrivals, which is unestablished rather than safe."
     ),
+    ("macos", "aarch64", "2.1.258"): (
+        "floor 2.1.258: previous macos ceiling "
+        "(evidence/promotion-2.1.258-macos-aarch64.json, 5 reachable arrivals max 42 ms) "
+        "pooled with 2.1.272 n=100 minified drain campaigns (max 20 ms) in "
+        "evidence/pooled-transcript-drain-macos-aarch64.json; below 2.1.258 the "
+        "2.1.220 campaign max of 438 ms is historical and needs --tested-claude-profile."
+    ),
     ("linux", "x86_64", "2.1.227"): (
         "floor 2.1.227: first linux/x86_64 Path B drain receipt "
         "(evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) "
@@ -1180,7 +1189,7 @@ def range_provenance(run: Run, results: list[dict[str, Any]]) -> str:
     return (
         f"{floor_text} Tested through {run.version}: "
         f"promote_claude_version.py drove {len(run.turns)} minified-cell turns "
-        f"through `pmux run` at {run.args.model} {efforts} -- every graded reply "
+        f"through `pmux ask` at {run.args.model} {efforts} -- every graded reply "
         "exact, the four-grade suite answered across a "
         "`/clear` per turn, sidechain and cache zero on every result, the pool "
         f"never halted -- and measured {reachable['count']} reachable post-answer "
@@ -1272,7 +1281,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "real_claude_turns": {
             "count": len(run.turns) if run.real else 0,
             "reserved_ledger_ordinals": 0,
-            "why": "`pmux run` reserves nothing on the frozen attempt ledger.",
+            "why": "`pmux ask` reserves nothing on the frozen attempt ledger.",
         },
         "turns": run.turns,
         # Derived from the check table rather than written out: a check added
@@ -1342,6 +1351,11 @@ def _parse(arguments: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--keep-sandbox", action="store_true")
+    parser.add_argument(
+        "--pool-securestorage-dir",
+        default="empty",
+        help="empty (default) or an absolute credential pin",
+    )
     parser.add_argument(
         "--driver-environment",
         dest="driver_environment",
