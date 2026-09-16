@@ -504,7 +504,7 @@ fn result_required_paths(result_type: &str) -> Vec<String> {
         // second is omitted when the resolved model takes no depth setting.
         // `stop_reason` is optional as a whole; its `kind` is required whenever
         // the object is present, which is the same rule `turn_result` follows.
-        "stateless_result" => {
+        "stateless_result" | "stateful_result" => {
             let mut paths = direct(&["model", "text", "usage", "claude_version"]);
             for scope in ["main", "sidechain", "combined"] {
                 paths.push(format!("{prefix}/usage/{scope}"));
@@ -694,7 +694,7 @@ fn every_strict_request_object_pointer_rejects_an_additive_field() {
         // agent methods, which add 28: twelve each for `create_agent` and
         // `update_agent` (envelope, `params`, and the ten strict objects of an
         // `AgentSpec`) and two each for `get_agent` and `list_agents`.
-        77,
+        79,
         "the reviewed strict request-object inventory changed"
     );
 
@@ -937,7 +937,7 @@ fn every_golden_result_event_and_error_accepts_additions_at_every_object_boundar
     // response and therefore additive like every other result boundary -- plus
     // `agent_list`'s envelope, `result`, `result/data` and its one summary.
     assert_eq!(
-        result_boundaries, 118,
+        result_boundaries, 126,
         "review new result object boundaries"
     );
 

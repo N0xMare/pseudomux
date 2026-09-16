@@ -17,7 +17,8 @@
     "create_agent",
     "get_agent",
     "list_agents",
-    "update_agent"
+    "update_agent",
+    "run_stateful"
   ],
   "results": [
     "pong",
@@ -35,7 +36,8 @@
     "agent_created",
     "agent",
     "agent_list",
-    "agent_updated"
+    "agent_updated",
+    "stateful_result"
   ],
   "events": [
     "session_state_changed",

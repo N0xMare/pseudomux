@@ -504,8 +504,8 @@ pub enum Request {
     /// the same reason `Ping` is: this request selects nothing and bounds
     /// nothing, so there is no parameter a caller could get wrong.
     Diagnose,
-    /// One complete `(model, effort, prompt) -> tokens` exchange, served by the
-    /// pool, naming no resource.
+    /// One complete `(model, effort, prompt[, account]) -> tokens` exchange,
+    /// served by the pool, naming no resource.
     ///
     /// Appended after [`Self::Diagnose`] for the reason stated above: the two
     /// arrived on separate branches and the manifest compares positionally, so
@@ -520,6 +520,10 @@ pub enum Request {
     GetAgent(GetAgentRequest),
     ListAgents(ListAgentsRequest),
     UpdateAgent(UpdateAgentRequest),
+    /// One Full-cell turn: Claude Code with its default tools in a caller-named
+    /// cwd. Requires `pmuxd --stateful`. Appended so the conformance manifest
+    /// keeps positional method order.
+    RunStateful(RunStatefulRequest),
 }
 
 /// A response correlated to one request.
@@ -654,6 +658,10 @@ pub enum ResponseResult {
     Agent(Box<AgentDescriptor>),
     AgentList(Box<AgentList>),
     AgentUpdated(Box<AgentDescriptor>),
+    /// Full-cell one-shot. Payload is the same shape as [`StatelessResult`];
+    /// the tag is distinct because the golden corpus requires one result type
+    /// per method.
+    StatefulResult(Box<StatelessResult>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -2133,13 +2141,11 @@ pub struct EnvironmentSpec {
 /// Folding them together would also make isolation non-composable with
 /// [`AuthPolicy::Inherit`], which is a real combination.
 ///
-/// An isolated session shares the caller's credential store **by
-/// construction**: pmux pins `CLAUDE_SECURESTORAGE_CONFIG_DIR` to the config
-/// root the same request would have resolved *without* isolation, so no value
-/// of this field changes which account the session authenticates as. That pin
-/// is computed by the service and is not expressible here, because a caller who
-/// set `CLAUDE_CONFIG_DIR` by hand and forgot it would silently get a login
-/// screen instead of a session.
+/// Configuration root and credential pin are separate: `root` is whose
+/// transcripts and trust file, `securestorage_dir` is whose keychain slot.
+/// Empty `securestorage_dir` is the unsuffixed store. The pool sets this from
+/// the instance's account pin (`--pool-securestorage-dir` for `default`, else
+/// `--pool-account`); it is never derived from `root`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ConfigIsolation {
@@ -2150,6 +2156,10 @@ pub struct ConfigIsolation {
     /// a filesystem-write capability on the admission path that nothing else in
     /// v1 has.
     pub root: String,
+    /// Exact `CLAUDE_SECURESTORAGE_CONFIG_DIR` bytes. Empty = unsuffixed store.
+    /// Not canonicalized. Absent on the wire means empty.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub securestorage_dir: String,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -3066,7 +3076,7 @@ pub struct ClearSessionResult {
     pub state: SessionState,
 }
 
-/// The Path B token engine: `(model, effort, prompt) -> tokens`.
+/// The Path B token engine: `(model, effort, prompt[, account]) -> tokens`.
 ///
 /// It names no resource. There is no session id, no generation, no turn id, no
 /// cwd, no config root, no environment, no tool list, no permission mode, no
@@ -3105,9 +3115,41 @@ pub struct RunStatelessRequest {
     /// the service prompt limit, no leading solidus past invisibles, no unsafe
     /// control characters.
     pub prompt: String,
+    /// Operator-configured account name (`--pool-account`). Omit for `default`.
+    /// A name, never a filesystem path: the pin stays daemon configuration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
     /// Absolute Unix deadline. Omit for daemon policy. It may only SHORTEN
     /// pmux's wait; nothing here lengthens a correctness deadline. Same idiom
     /// and same reason as [`ClearSessionRequest::deadline_unix_ms`].
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "optional_safe_u64"
+    )]
+    pub deadline_unix_ms: Option<TimestampMs>,
+}
+
+/// One Full-cell turn: Claude Code with its default tools in a named directory.
+///
+/// `cwd` is the one resource this request is allowed to name. Config root,
+/// Claude binary, pin, and system prompt stay daemon configuration. `deny_unknown_fields`
+/// so a caller cannot smuggle isolation or tools through this DTO.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunStatefulRequest {
+    pub model: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<EffortLevel>,
+    pub prompt: String,
+    /// Absolute task directory. Required. Not a pool slot and not a config root.
+    pub cwd: String,
+    /// Operator `--pool-account` name. Omit for `default`. Never a path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
+    /// Unattended Full cells must skip the TUI permission prompt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permission_mode: Option<PermissionMode>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

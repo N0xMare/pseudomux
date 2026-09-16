@@ -426,12 +426,28 @@ fn absent_config_isolation_is_omitted_and_a_named_root_round_trips_strictly() {
 
     start.config_isolation = Some(ConfigIsolation {
         root: "/var/pmux/config-roots/cell-0".into(),
+        securestorage_dir: String::new(),
     });
     let envelope = RequestEnvelope::new(REQUEST_ID, Request::StartSession(start.clone()));
     let encoded = serde_json::to_value(&envelope).unwrap();
     assert_eq!(
         encoded["params"]["config_isolation"],
         serde_json::json!({"root": "/var/pmux/config-roots/cell-0"})
+    );
+    assert_json_round_trip(&envelope);
+
+    start.config_isolation = Some(ConfigIsolation {
+        root: "/var/pmux/config-roots/cell-0".into(),
+        securestorage_dir: "/Users/me/.claude-1".into(),
+    });
+    let envelope = RequestEnvelope::new(REQUEST_ID, Request::StartSession(start.clone()));
+    let encoded = serde_json::to_value(&envelope).unwrap();
+    assert_eq!(
+        encoded["params"]["config_isolation"],
+        serde_json::json!({
+            "root": "/var/pmux/config-roots/cell-0",
+            "securestorage_dir": "/Users/me/.claude-1"
+        })
     );
     assert_json_round_trip(&envelope);
 
@@ -1857,8 +1873,8 @@ fn a_stateless_request_refuses_every_field_it_does_not_declare() {
         );
     }
 
-    // `model` and `prompt` are required; the other two are absent-means-default
-    // and must not be serialized when unset.
+    // `model` and `prompt` are required; effort, account, and deadline are
+    // absent-means-default and must not be serialized when unset.
     for required in ["model", "prompt"] {
         let mut shrunk = admitted.clone();
         shrunk.as_object_mut().expect("object").remove(required);
@@ -1872,6 +1888,7 @@ fn a_stateless_request_refuses_every_field_it_does_not_declare() {
         effort: None,
         prompt: "hello".into(),
         deadline_unix_ms: None,
+        account: None,
     };
     assert_eq!(
         serde_json::to_value(&minimal).expect("serializes"),
@@ -1990,6 +2007,7 @@ fn the_stateless_variants_are_appended_last_and_carry_their_own_tags() {
             effort: None,
             prompt: "hello".into(),
             deadline_unix_ms: None,
+            account: None,
         }),
     };
     let value = serde_json::to_value(&request).expect("serializes");

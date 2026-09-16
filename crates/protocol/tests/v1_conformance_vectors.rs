@@ -305,6 +305,7 @@ fn shared_manifest_matches_the_closed_v1_surface() {
                 Request::GetAgent(_) => "get_agent",
                 Request::ListAgents(_) => "list_agents",
                 Request::UpdateAgent(_) => "update_agent",
+                Request::RunStateful(_) => "run_stateful",
             ]
         )
     );
@@ -329,6 +330,7 @@ fn shared_manifest_matches_the_closed_v1_surface() {
                 ResponseResult::Agent(_) => "agent",
                 ResponseResult::AgentList(_) => "agent_list",
                 ResponseResult::AgentUpdated(_) => "agent_updated",
+                ResponseResult::StatefulResult(_) => "stateful_result",
             ]
         )
     );

@@ -931,6 +931,42 @@
           }
         }
       }
+    },
+    {
+      "method": "run_stateful",
+      "request": {
+        "version": 1,
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "method": "run_stateful",
+        "params": {
+          "model": "opus",
+          "effort": "medium",
+          "prompt": "Write hello.txt with the word hi.",
+          "cwd": "/work",
+          "permission_mode": "dangerously_skip_permissions",
+          "deadline_unix_ms": 1
+        }
+      },
+      "response": {
+        "version": 1,
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "result": {
+          "type": "stateful_result",
+          "data": {
+            "model": "claude-opus-5",
+            "reported_model": "claude-opus-5",
+            "effort": "medium",
+            "text": "Wrote hello.txt.",
+            "stop_reason": {"kind": "end_turn", "raw": "end_turn"},
+            "usage": {
+              "main": {"input_tokens": 10, "output_tokens": 4, "cache_creation_input_tokens": 2, "cache_read_input_tokens": 8},
+              "sidechain": {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0},
+              "combined": {"input_tokens": 10, "output_tokens": 4, "cache_creation_input_tokens": 2, "cache_read_input_tokens": 8}
+            },
+            "claude_version": "2.1.272"
+          }
+        }
+      }
     }
   ],
   "events": [
