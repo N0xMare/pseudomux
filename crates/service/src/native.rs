@@ -8868,11 +8868,22 @@ mod tests {
             "stateless.rs::launch_request_for",
             Route::Driven("pool_start"),
         ),
+        (
+            "stateful.rs::stateful_launch_request",
+            Route::Driven("full_start"),
+        ),
         // -- Routes the derivation reports that carry no start of their own --
         (
             "stateless.rs::start_session_pool",
             Route::CarriesNoStart(
                 "forwards the request `launch_request_for` built, unchanged, and is driven \
+                 through that builder",
+            ),
+        ),
+        (
+            "stateful.rs::run_stateful",
+            Route::CarriesNoStart(
+                "forwards the request `stateful_launch_request` built, unchanged, and is driven \
                  through that builder",
             ),
         ),
@@ -9070,6 +9081,38 @@ mod tests {
         )
     }
 
+    /// ROUTE 4: Full-cell one-shot, through `stateful_launch_request`.
+    ///
+    /// Isolation root is `config_isolation`, cwd is the caller's task dir,
+    /// cell is `SessionCell::Full`. Driven so a leak-family spelling of either
+    /// bound resource is refused the same way as the minified pool mint.
+    #[cfg(unix)]
+    fn full_start(root: &Path, cwd: &Path, identity: SessionIdentity) -> StartSessionRequest {
+        StartSessionRequest {
+            identity,
+            cwd: cwd.to_string_lossy().into_owned(),
+            claude: Some(differential_launch()),
+            agent: None,
+            environment: pseudomux_protocol::v1::EnvironmentSpec {
+                snapshot: BTreeMap::from([("PATH".to_owned(), "/usr/bin:/bin".to_owned())]),
+                set: BTreeMap::new(),
+                unset: BTreeSet::new(),
+            },
+            auth_policy: pseudomux_protocol::v1::AuthPolicy::Subscription,
+            config_isolation: Some(pseudomux_protocol::v1::ConfigIsolation {
+                root: root.to_string_lossy().into_owned(),
+                securestorage_dir: String::new(),
+            }),
+            terminal: pseudomux_protocol::v1::TerminalSpec::default(),
+            lifecycle: pseudomux_protocol::v1::LifecycleMode::Transcript,
+            retention: RetentionPolicy::Persistent {
+                idle_ttl_ms: 600_000,
+            },
+            compatibility: CompatibilityPolicy::AllowUntested,
+            cell: SessionCell::Full,
+        }
+    }
+
     /// Every spelling of one directory this family of leaks taught us to try.
     ///
     /// Each row's premise is asserted before it is used, so a spelling that
@@ -9248,6 +9291,7 @@ mod tests {
         drivers.insert("caller_start", caller_start);
         drivers.insert("run_once_start", run_once_start);
         drivers.insert("pool_start", pool_start);
+        drivers.insert("full_start", full_start);
         let driven: Vec<&'static str> = ADMISSION_ROUTES
             .iter()
             .filter_map(|(_, route)| match route {
