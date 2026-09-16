@@ -64,7 +64,12 @@ const PATCH_DOCUMENT_LIST_HEADING: &str = "The exact regression names are:";
 /// reason [`REGRESSION_LANES`] gives — only the address tells a document that
 /// quotes a name from a lane that restates one. MEASURED: `227063f` and
 /// `41a25a0` each landed one, and this scan was red from the day each landed.
-const UPSTREAM_REPORT_HOMES: [&str; 2] = ["docs/upstream-issues", "docs/rmux-upstream-state.md"];
+const UPSTREAM_REPORT_HOMES: [&str; 4] = [
+    "docs/upstream-issues",
+    "docs/rmux-upstream-state.md",
+    "docs/engineering/upstream-issues",
+    "docs/engineering/rmux-upstream-state.md",
+];
 
 /// Build output and tool caches, skipped by the scan. Everything else under
 /// the workspace root is read and refused a restated regression name.

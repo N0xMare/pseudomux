@@ -234,7 +234,8 @@ table names a different set of subcommands or gives any one a different label.
 | `doctor` | Ops | Validate the socket, health tree, and Claude executable. |
 
 `pmux <command> --help` is the flag reference. The published surface is
-`run`, `ask`, `ping`, and `doctor`. The contract is [docs/spec.md](docs/spec.md).
+`run`, `ask`, `ping`, and `doctor`. The contract is [docs/spec](docs/spec/README.md). How-to is
+[docs/user-guide](docs/user-guide/README.md).
 
 ### MCP
 
@@ -256,8 +257,10 @@ It exposes exactly these tools: `run_stateless`. That is the MCP surface of
 
 ## Further reading
 
-[docs/README.md](docs/README.md) is the index. Protocol and test ownership
-stay in `docs/spec.md` and `docs/testing.md`.
+[docs/user-guide](docs/user-guide/README.md) is the how-to.
+[docs/spec](docs/spec/README.md) is the contract. [docs/README.md](docs/README.md)
+indexes engineering notes. Test ownership is `docs/testing.md` (symlink to
+engineering). Living cmds: [`tools/dev`](tools/dev/README.md).
 
 ## License
 

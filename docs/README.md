@@ -1,25 +1,15 @@
 # Docs
 
-**To use pmux, read the root [README](../README.md) and [spec.md](spec.md).**
-Pi setup is [examples/pi](../examples/pi/README.md).
-
-The product is a local API over a warm pool of constrained embedded Claude
-Code processes. TypeScript, Rust, and Python clients plus `pmux run` /
-`ask` / `ping` / `doctor` are the caller surface.
-
-Everything else in this directory is engineering: compatibility receipts,
-test ownership, and dated measurements. It is not a second product.
+**To use pmux:** root [README](../README.md), then the
+[user guide](user-guide/README.md), then the [spec](spec/README.md).
+Pi: [examples/pi](../examples/pi/README.md).
 
 | If you are… | Read |
 | --- | --- |
-| Calling the API or wiring a harness | Root README, then [spec.md](spec.md), then [examples](../examples/README.md) |
-| Checking the tree, pinning Claude, or dropping `--tested-claude-profile` | [tools/dev](../tools/dev/README.md) |
-| Promoting a Claude Code version (historical receipts) | [version-drift.md](version-drift.md) |
-| Test ownership and the coverage matrix | [testing.md](testing.md) |
-| Reading the historical Gate A freeze census | [archive/testing-gate-a-census.md](archive/testing-gate-a-census.md) |
-| Dated one-shot dumps (handoffs, reviews) | [archive/](archive/) |
-| Looking up where the project stands | [current-state.md](current-state.md) |
-| Filing the vendored rmux defects upstream, or sizing an rmux bump | [rmux-upstream-state.md](rmux-upstream-state.md), the four issue texts in [upstream-issues/](upstream-issues/) |
-| Running the linux battery in a guest on this Mac | [tart-linux-guest.md](tart-linux-guest.md) |
+| Calling the API or wiring a harness | [user-guide](user-guide/README.md), then [spec](spec/README.md) |
+| Checking the tree or promoting Claude | [tools/dev](../tools/dev/README.md) |
+| Reading pool internals / Path B | [engineering](engineering/README.md) (frozen essays) |
+| Dated dumps | [archive](archive/) |
 
-Dated receipts and `docs/archive/` are not updated to stay true.
+`docs/path-b.md` and friends at this directory are **symlinks** into
+`engineering/` so historical citations keep working. Do not start there.
