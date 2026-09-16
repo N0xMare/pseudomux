@@ -11,5 +11,5 @@ Pi: [examples/pi](../examples/pi/README.md).
 | Reading pool internals / Path B | [engineering](engineering/README.md) (frozen essays) |
 | Dated dumps | [archive](archive/) |
 
-`docs/path-b.md` and friends at this directory are **symlinks** into
-`engineering/` so historical citations keep working. Do not start there.
+Path B essays and other internals are under [engineering/](engineering/README.md).
+Do not start there.

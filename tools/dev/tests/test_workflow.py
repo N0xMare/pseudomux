@@ -419,7 +419,7 @@ class LivingDocs(unittest.TestCase):
         self.assertNotIn("Linux currently has no pooled-drain receipt", readme)
 
     def test_testing_md_is_not_a_living_phase0_spec(self) -> None:
-        text = (ROOT / "docs" / "testing.md").read_text(encoding="utf-8")
+        text = (ROOT / "docs" / "engineering" / "testing.md").read_text(encoding="utf-8")
         self.assertNotIn("Phase 0 working specification", text)
         self.assertIn("Living verification is `tools/dev/`", text)
         self.assertIn("package-smoke deleted", text)

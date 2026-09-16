@@ -1,1 +1,0 @@
-engineering/register-currency.md

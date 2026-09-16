@@ -62,7 +62,7 @@ import subprocess
 import sys
 from collections.abc import Callable
 
-CRITERIA_DOCUMENT = "docs/path-b-verdict.md"
+CRITERIA_DOCUMENT = "docs/engineering/path-b-verdict.md"
 DEFECT_REGISTER = "evidence/path-b-defect-register.json"
 DEFECT_REGISTER_SCHEMA = "pmux.path-b-defect-register.v1"
 SURVIVOR_REGISTER = "evidence/mutation-survivor-register.json"
@@ -70,7 +70,7 @@ ENUMERATION_CENSUS = "evidence/mutation-enumeration.json"
 MUTATION_REGISTER_TOOL = "scripts/mutation_register.py"
 REGISTER_CURRENCY_TOOL = "scripts/register_currency.py"
 DEBT_DOCUMENT = "docs/current-state.md"
-ADVERSARIAL_DOCUMENT = "docs/path-b-adversarial.md"
+ADVERSARIAL_DOCUMENT = "docs/engineering/path-b-adversarial.md"
 COMPATIBILITY_SOURCE = "crates/service/src/compatibility.rs"
 PROMOTION_TOOL = "tools/promotion/promote_claude_version.py"
 MANIFEST = "tools/gate-a-candidate/phase-manifest.json"
@@ -1286,7 +1286,7 @@ def criterion_doc_claims_reconciled(context: Context) -> Verdict:
     # reordered every time something on it is finished, and a comment pinned to
     # "item 8" is a citation that rots on the next edit to a file this one does
     # not import.
-    order = read_text(context.repo, "docs/path-b.md")
+    order = read_text(context.repo, "docs/engineering/path-b.md")
     verdict.note(
         "criteria_document_is_graded",
         str(f"`{CRITERIA_DOCUMENT}`" in order),

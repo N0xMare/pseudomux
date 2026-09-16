@@ -64,9 +64,7 @@ const PATCH_DOCUMENT_LIST_HEADING: &str = "The exact regression names are:";
 /// reason [`REGRESSION_LANES`] gives — only the address tells a document that
 /// quotes a name from a lane that restates one. MEASURED: `227063f` and
 /// `41a25a0` each landed one, and this scan was red from the day each landed.
-const UPSTREAM_REPORT_HOMES: [&str; 4] = [
-    "docs/upstream-issues",
-    "docs/rmux-upstream-state.md",
+const UPSTREAM_REPORT_HOMES: [&str; 2] = [
     "docs/engineering/upstream-issues",
     "docs/engineering/rmux-upstream-state.md",
 ];
@@ -141,9 +139,13 @@ const REGRESSION_COUNT_CLAIMS: [(&str, &str, &str); 4] = [
         "run all ",
         " patch-owned EOF regressions",
     ),
-    ("docs/testing.md", "file and ", " regressions differ"),
     (
-        "docs/testing.md",
+        "docs/engineering/testing.md",
+        "file and ",
+        " regressions differ",
+    ),
+    (
+        "docs/engineering/testing.md",
         "every one of the ",
         " patch-owned regressions",
     ),

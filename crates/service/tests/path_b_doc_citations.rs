@@ -152,7 +152,7 @@ const CITED_EXTENSIONS: [&str; 8] = [".rs", ".py", ".md", ".sh", ".toml", ".json
 ///
 /// The one path this file spells. Everything else -- which documents are Path B
 /// documents, what status each carries, which are linted -- is read out of it.
-const READING_ORDER_DOCUMENT: &str = "docs/path-b.md";
+const READING_ORDER_DOCUMENT: &str = "docs/engineering/path-b.md";
 
 /// The heading §0.0's table lives under, named so an edit that deletes the
 /// table fails loudly instead of silently linting nothing.
@@ -426,6 +426,17 @@ fn scanned_files(root: &Path) -> Vec<PathBuf> {
 /// at a scan.
 fn names_the_document(cited: &str, document: &str) -> bool {
     let cited = cited.strip_prefix("./").unwrap_or(cited);
+    // Historical `docs/<file>` after the freeze-move to `docs/engineering/<file>`.
+    // Frozen essays still spell the old path; they must still name this document.
+    let remapped = cited.strip_prefix("docs/").and_then(|rest| {
+        if rest.contains('/') {
+            None
+        } else {
+            let candidate = format!("docs/engineering/{rest}");
+            (candidate == document).then_some(candidate)
+        }
+    });
+    let cited = remapped.as_deref().unwrap_or(cited);
     let cited = cited.split('/').collect::<Vec<_>>();
     let document = document.split('/').collect::<Vec<_>>();
     cited.len() <= document.len() && document[document.len() - cited.len()..] == cited[..]
@@ -523,31 +534,42 @@ fn every_path_b_section_the_workspace_names_is_a_heading_that_document_has() {
     for path in scanned_files(&root) {
         let text = read_lossy(&path);
         for document in &linted {
-            for (offset, _) in text.match_indices(document.as_str()) {
-                // `docs/path-b.md` §2.2 -- optionally through a closing
-                // backtick, which is how every site in the tree spells it.
-                let tail = text[offset + document.len()..]
-                    .trim_start_matches('`')
-                    .trim_start();
-                let Some(rest) = tail.strip_prefix('§') else {
-                    continue;
-                };
-                let section = rest
-                    .trim_start()
-                    .chars()
-                    .take_while(|character| character.is_ascii_digit() || *character == '.')
-                    .collect::<String>();
-                let section = section.trim_end_matches('.').to_owned();
-                if section.is_empty() {
-                    continue;
-                }
-                checked += 1;
-                if !headings[document].contains(&section) {
-                    let line = text[..offset].matches('\n').count() + 1;
-                    offences.push(format!(
-                        "{}:{line} cites {document} §{section}, which is not a heading it has",
-                        path.strip_prefix(&root).unwrap_or(&path).display(),
-                    ));
+            let historical = document
+                .strip_prefix("docs/engineering/")
+                .filter(|rest| !rest.contains('/'))
+                .map(|rest| format!("docs/{rest}"));
+            let needles: Vec<&str> = historical
+                .as_deref()
+                .into_iter()
+                .chain(std::iter::once(document.as_str()))
+                .collect();
+            for needle in needles {
+                for (offset, _) in text.match_indices(needle) {
+                    // `docs/path-b.md` §2.2 -- optionally through a closing
+                    // backtick, which is how every site in the tree spells it.
+                    let tail = text[offset + needle.len()..]
+                        .trim_start_matches('`')
+                        .trim_start();
+                    let Some(rest) = tail.strip_prefix('§') else {
+                        continue;
+                    };
+                    let section = rest
+                        .trim_start()
+                        .chars()
+                        .take_while(|character| character.is_ascii_digit() || *character == '.')
+                        .collect::<String>();
+                    let section = section.trim_end_matches('.').to_owned();
+                    if section.is_empty() {
+                        continue;
+                    }
+                    checked += 1;
+                    if !headings[document].contains(&section) {
+                        let line = text[..offset].matches('\n').count() + 1;
+                        offences.push(format!(
+                            "{}:{line} cites {document} §{section}, which is not a heading it has",
+                            path.strip_prefix(&root).unwrap_or(&path).display(),
+                        ));
+                    }
                 }
             }
         }

@@ -259,8 +259,9 @@ It exposes exactly these tools: `run_stateless`. That is the MCP surface of
 
 [docs/user-guide](docs/user-guide/README.md) is the how-to.
 [docs/spec](docs/spec/README.md) is the contract. [docs/README.md](docs/README.md)
-indexes engineering notes. Test ownership is `docs/testing.md` (symlink to
-engineering). Living cmds: [`tools/dev`](tools/dev/README.md).
+indexes engineering notes. Test ownership is
+[docs/engineering/testing.md](docs/engineering/testing.md).
+Living cmds: [`tools/dev`](tools/dev/README.md).
 
 ## License
 

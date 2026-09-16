@@ -49,7 +49,7 @@ import machine  # noqa: E402
 
 REPO = machine.WORKSPACE
 DEFAULT_RANGE = "origin/main..HEAD"
-ARCHIVE = "docs/defect-log.md"
+ARCHIVE = "docs/engineering/defect-log.md"
 
 
 def git(*args):
@@ -69,7 +69,7 @@ HEX = re.compile(r"\b[0-9a-f]{7,40}\b")
 # Derived from the same table `crates/service/tests/path_b_doc_citations.rs`
 # reads its own set out of, and from the same status vocabulary, so a
 # document promoted or demoted there moves this too.
-READING_ORDER_DOCUMENT = "docs/path-b.md"
+READING_ORDER_DOCUMENT = "docs/engineering/path-b.md"
 READING_ORDER_HEADING = "## 0.0 THE PATH B READING ORDER"
 LINTED_STATUSES = {"CURRENT", "DATED RECEIPT"}
 
