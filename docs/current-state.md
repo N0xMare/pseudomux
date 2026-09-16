@@ -10,9 +10,8 @@ Code 2.1.258 through 2.1.272 on macos/aarch64 and 2.1.227 through 2.1.272
 on linux/x86_64, both `transcript_drain_ms` 250.
 
 The 3,618-line 2026-08 essay is [archive/current-state-2026-08.md](archive/current-state-2026-08.md).
-The pre-squash commit ledger is [engineering/defect-log.md](engineering/defect-log.md)
-(also linked as `docs/defect-log.md`). Dated Path B receipts stay in
-[engineering/](engineering/README.md).
+The pre-squash commit ledger is [engineering/defect-log.md](engineering/defect-log.md).
+Dated Path B receipts stay in [engineering/](engineering/README.md).
 
 ### 9.4 Post-commit findings tombstone (C6)
 

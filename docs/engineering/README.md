@@ -4,9 +4,8 @@ Not the product. Operators start at the [user guide](../user-guide/README.md)
 and the [spec](../spec/README.md).
 
 These files are **frozen or slowly edited internals**: pool design, drain
-campaigns, citation rules, defect ledger, rmux vendor notes. Path B essays
-keep their historical `docs/path-b.md` paths via symlinks so line-citation
-tests do not move.
+campaigns, citation rules, defect ledger, rmux vendor notes. Historical
+prose may still spell `docs/path-b.md`; the files live here.
 
 | File | What |
 | --- | --- |
