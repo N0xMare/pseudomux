@@ -219,6 +219,8 @@ def invoke_typed(client: PmuxClient, request: dict[str, Any]) -> dict[str, Any]:
         return {"type": "diagnosis", "data": client.diagnose()}
     if method == "run_stateless":
         return {"type": "stateless_result", "data": client.run_stateless(params)}
+    if method == "run_stateful":
+        return {"type": "stateful_result", "data": client.run_stateful(params)}
     if method == "create_agent":
         return {"type": "agent_created", "data": client.create_agent(params["spec"])}
     if method == "get_agent":
@@ -369,7 +371,9 @@ class GoldenConformanceTests(unittest.TestCase):
         # ``run_stateless``, whose twenty required result pointers plus the same
         # five add twenty-five. 226 before the four agent methods: three
         # descriptors of six plus five, and ``agent_list``'s six plus five.
-        self.assertEqual(len(result_cases), 270)
+        # 270 before ``run_stateful``, whose ``stateful_result`` is the same
+        # twenty-plus-five as ``stateless_result``.
+        self.assertEqual(len(result_cases), 295)
         self.assertEqual(len(event_cases), 223)
         self.assertEqual(len(deletions["error"]), 6)
         handlers: list[Handler] = []
@@ -468,8 +472,10 @@ class GoldenConformanceTests(unittest.TestCase):
         # ``result``, ``result/data``, ``result/data/stop_reason``,
         # ``result/data/usage``, and one per usage scope. 72 before the agent
         # methods, whose four exchanges add 46; the echoed ``spec`` is OPAQUE on
-        # a response, so its boundaries are additive like every other.
-        self.assertEqual(result_boundaries, 118, "review new result object boundaries")
+        # a response, so its boundaries are additive like every other. 118 before
+        # ``run_stateful``, whose ``stateful_result`` adds the same eight as
+        # ``stateless_result``.
+        self.assertEqual(result_boundaries, 126, "review new result object boundaries")
 
         event_boundaries = 0
         subscription = request_for("subscribe_events")

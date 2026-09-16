@@ -1107,6 +1107,7 @@ async fn run_stateless_resource_fields_refuse_as_protocol_error() {
                 effort: None,
                 prompt: "hello".into(),
                 deadline_unix_ms: None,
+                account: None,
             })
             .await
             .unwrap_err();

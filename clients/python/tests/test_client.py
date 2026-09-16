@@ -508,6 +508,7 @@ class ClientTests(unittest.TestCase):
                 "get_agent",
                 "list_agents",
                 "update_agent",
+                "run_stateful",
             ],
         )
         self.assertEqual(
@@ -529,6 +530,7 @@ class ClientTests(unittest.TestCase):
                 "agent",
                 "agent_list",
                 "agent_updated",
+                "stateful_result",
             ],
         )
         self.assertEqual(

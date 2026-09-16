@@ -10,11 +10,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from pmux_client import (
+    PMUX_ACCOUNT_HEADER,
     PMUX_CONVERSATION_HEADER,
     PMUX_CONVERSATION_HEADER_ALIASES,
     PmuxMessages,
     PmuxMessagesError,
+    account_header,
     conversation_header,
+    set_account_header,
     set_conversation_header,
 )
 
@@ -93,6 +96,14 @@ class MessagesHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "conversation id must not be empty"):
             PmuxMessages("http://127.0.0.1:8765").release(" \t ")
         self.assertEqual(headers, {})
+
+    def test_set_account_header_writes_the_class_selector(self) -> None:
+        headers: dict[str, str] = {}
+        set_account_header(headers, " claude-1 ")
+        self.assertEqual(headers[PMUX_ACCOUNT_HEADER], "claude-1")
+        self.assertEqual(account_header("work"), (PMUX_ACCOUNT_HEADER, "work"))
+        with self.assertRaisesRegex(ValueError, "account name must not be empty"):
+            set_account_header(headers, "  ")
 
     def test_path_unsafe_conversation_ids_are_rejected(self) -> None:
         headers: dict[str, str] = {}

@@ -4,8 +4,10 @@ import { createServer as createNetServer } from "node:net";
 import { test } from "node:test";
 
 import {
+  PMUX_ACCOUNT_HEADER,
   PMUX_CONVERSATION_HEADER,
   PmuxMessages,
+  setAccountHeader,
   setConversationHeader,
 } from "../dist/messages.js";
 
@@ -13,6 +15,13 @@ test("setConversationHeader writes the pin", () => {
   const headers = {};
   setConversationHeader(headers, " sess-1 ");
   assert.equal(headers[PMUX_CONVERSATION_HEADER], "sess-1");
+});
+
+test("setAccountHeader writes the class selector", () => {
+  const headers = {};
+  setAccountHeader(headers, " claude-1 ");
+  assert.equal(headers[PMUX_ACCOUNT_HEADER], "claude-1");
+  assert.throws(() => setAccountHeader(headers, "  "), /must not be empty/);
 });
 
 test("empty conversation id is rejected", async () => {

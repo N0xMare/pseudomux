@@ -14,6 +14,7 @@ use tokio::net::TcpStream;
 use tokio::time::timeout;
 
 pub const CONVERSATION_HEADER: &str = "x-pmux-conversation";
+pub const ACCOUNT_HEADER: &str = "x-pmux-account";
 const EXCHANGE_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 
@@ -66,6 +67,17 @@ impl MessagesClient {
 
     pub fn conversation_header(id: &str) -> Result<(&'static str, String), MessagesError> {
         Ok((CONVERSATION_HEADER, path_safe_conversation_id(id)?))
+    }
+
+    /// Class selector, not a conversation pin. Omit for `default`. Never a path.
+    pub fn account_header(name: &str) -> Result<(&'static str, String), MessagesError> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(MessagesError::InvalidConfig(
+                "account name must not be empty".into(),
+            ));
+        }
+        Ok((ACCOUNT_HEADER, name.to_owned()))
     }
 
     pub async fn release(&self, conversation_id: &str) -> Result<(), MessagesError> {
@@ -253,6 +265,15 @@ mod tests {
             let err = MessagesClient::conversation_header(id).unwrap_err();
             assert!(err.to_string().contains("path-safe"), "{id}: {err}");
         }
+    }
+
+    #[test]
+    fn account_header_is_the_class_selector() {
+        let (name, value) = MessagesClient::account_header(" claude-1 ").unwrap();
+        assert_eq!(name, ACCOUNT_HEADER);
+        assert_eq!(value, "claude-1");
+        let empty = MessagesClient::account_header("  ").unwrap_err();
+        assert!(empty.to_string().contains("must not be empty"), "{empty}");
     }
 
     #[test]

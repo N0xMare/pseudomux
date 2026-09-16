@@ -156,14 +156,12 @@ class CompatibilityReport(TypedDict):
 class ConfigIsolation(TypedDict):
     """A pmux-owned Claude configuration root for one session.
 
-    Answers *whose configuration*, which is a different question from
-    ``auth_policy``'s *whose credentials*: the daemon pins the credential store
-    to the root the same request would have used without isolation, so an
-    isolated session still authenticates as the same account. Omitting the field
-    inherits the caller's root.
+    Answers *whose configuration*. Credentials are ``securestorage_dir``
+    (empty = unsuffixed store), never derived from ``root``.
     """
 
     root: str
+    securestorage_dir: NotRequired[str]
 
 
 class AgentRef(TypedDict):
@@ -540,7 +538,8 @@ class TurnResult(TypedDict):
 class RunStatelessRequest(TypedDict):
     """The whole Path B request surface.
 
-    Every field a session start carries and this does not -- ``cwd``,
+    ``account`` is a ``--pool-account`` name (omit for ``default``), never a
+    path. Every field a session start carries and this does not -- ``cwd``,
     ``config_isolation``, ``claude``, ``environment``, ``system_prompt``,
     ``identity`` -- is a resource the daemon mints from its own configuration.
     Their absence is the product statement, not an omission.
@@ -549,6 +548,20 @@ class RunStatelessRequest(TypedDict):
     model: str
     effort: NotRequired[EffortLevel]
     prompt: str
+    # Operator `--pool-account` name. Omit for `default`. Never a path.
+    account: NotRequired[str]
+    deadline_unix_ms: NotRequired[int]
+
+
+class RunStatefulRequest(TypedDict):
+    """Full-cell one-shot. ``cwd`` is the only caller-named resource."""
+
+    model: str
+    effort: NotRequired[EffortLevel]
+    prompt: str
+    cwd: str
+    account: NotRequired[str]
+    permission_mode: NotRequired[PermissionMode]
     deadline_unix_ms: NotRequired[int]
 
 

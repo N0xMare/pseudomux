@@ -3,6 +3,7 @@
 import { request as httpRequest } from "node:http";
 
 export const PMUX_CONVERSATION_HEADER = "x-pmux-conversation";
+export const PMUX_ACCOUNT_HEADER = "x-pmux-account";
 
 export const PMUX_CONVERSATION_HEADER_ALIASES = [
   "x-pmux-conversation",
@@ -31,6 +32,18 @@ export function setConversationHeader(
   conversationId: string,
 ): void {
   headers[PMUX_CONVERSATION_HEADER] = pathSafeConversationId(conversationId);
+}
+
+/** Class selector, not a conversation pin. Omit for `default`. Never a path. */
+export function setAccountHeader(
+  headers: Record<string, string>,
+  account: string,
+): void {
+  const name = account.trim();
+  if (!name) {
+    throw new TypeError("account name must not be empty");
+  }
+  headers[PMUX_ACCOUNT_HEADER] = name;
 }
 
 export interface PmuxMessagesOptions {

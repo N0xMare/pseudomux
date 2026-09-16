@@ -291,12 +291,14 @@ test("shared v1 manifest and durable-id vectors match the TypeScript surface", (
     "attach_session", "close_session", "subscribe_events", "run_once", "clear_session",
     "diagnose", "run_stateless",
     "create_agent", "get_agent", "list_agents", "update_agent",
+    "run_stateful",
   ]);
   assert.deepEqual(CONFORMANCE_MANIFEST.results, [
     "pong", "session_started", "turn_accepted", "turn_cancelled", "session_snapshot",
     "attach_capability", "session_closed", "events", "turn_result", "session_cleared",
     "diagnosis", "stateless_result",
     "agent_created", "agent", "agent_list", "agent_updated",
+    "stateful_result",
   ]);
   assert.deepEqual(CONFORMANCE_MANIFEST.events, [
     "session_state_changed", "prompt_acknowledged", "logical_message", "tool_started",
@@ -1131,6 +1133,24 @@ test("a stateless call gets the full lifecycle budget and not the default", () =
     params: { model: "claude-sonnet-5", prompt: "hello", deadline_unix_ms: 10_001 },
   };
   assert.equal(requestTimeoutFor(shortDeadline, 300_000, 10_000), 300_000);
+});
+
+test("a stateful call gets the same lifecycle budget as a stateless call", () => {
+  const none = {
+    method: "run_stateful",
+    params: {
+      model: "claude-sonnet-5",
+      prompt: "hello",
+      cwd: "/tmp/task",
+      permission_mode: "dangerously_skip_permissions",
+    },
+  };
+  assert.equal(requestTimeoutFor(none, 45_000, 10_000), DEFAULT_RUN_ONCE_TIMEOUT_MS);
+  assert.notEqual(
+    requestTimeoutFor(none, 45_000, 10_000),
+    45_000,
+    "the wildcard arm handed a Full-cell turn the default request timeout",
+  );
 });
 
 test("event subscription reconnects at its cursor and surfaces ReplayGap", async () => {

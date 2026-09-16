@@ -70,15 +70,16 @@ export interface EnvironmentSpec {
 /**
  * A pmux-owned Claude configuration root for one session.
  *
- * Answers *whose configuration*, which is a different question from
- * `auth_policy`'s *whose credentials*: the daemon pins the credential store to
- * the root the same request would have used without isolation, so an isolated
- * session still authenticates as the same account. Omitting the field inherits
- * the caller's root, which is what every release to date does.
+ * Answers *whose configuration*. Credentials are `securestorage_dir`
+ * (empty or omitted = unsuffixed store), never derived from `root` or from
+ * snapshot `CLAUDE_CONFIG_DIR`. Omitting the whole object inherits the
+ * caller's root.
  */
 export interface ConfigIsolation {
   /** Absolute path to an existing, owner-only directory. pmux never creates it. */
   root: string;
+  /** Exact CLAUDE_SECURESTORAGE_CONFIG_DIR bytes. Empty or omitted = unsuffixed store. */
+  securestorage_dir?: string;
 }
 
 export const AUTH_POLICIES = ["subscription", "inherit"] as const;
@@ -769,7 +770,8 @@ export type PmuxRequest =
   | { method: "create_agent"; params: CreateAgentRequest }
   | { method: "get_agent"; params: GetAgentRequest }
   | { method: "list_agents"; params: Record<string, never> }
-  | { method: "update_agent"; params: UpdateAgentRequest };
+  | { method: "update_agent"; params: UpdateAgentRequest }
+  | { method: "run_stateful"; params: RunStatefulRequest };
 
 export interface CreateAgentRequest {
   spec: AgentSpec;
@@ -816,6 +818,19 @@ export interface RunStatelessRequest {
   model: string;
   effort?: EffortLevel;
   prompt: string;
+  /** Operator `--pool-account` name. Omit for `default`. Never a path. */
+  account?: string;
+  deadline_unix_ms?: number;
+}
+
+/** Full-cell one-shot. `cwd` is the only caller-named resource. */
+export interface RunStatefulRequest {
+  model: string;
+  effort?: EffortLevel;
+  prompt: string;
+  cwd: string;
+  account?: string;
+  permission_mode?: PermissionMode;
   deadline_unix_ms?: number;
 }
 
@@ -992,6 +1007,7 @@ export type ResponseResult =
   | { type: "session_cleared"; data: ClearSessionResult }
   | { type: "diagnosis"; data: DaemonDiagnosis }
   | { type: "stateless_result"; data: StatelessResult }
+  | { type: "stateful_result"; data: StatelessResult }
   | { type: "agent_created"; data: AgentDescriptor }
   | { type: "agent"; data: AgentDescriptor }
   | { type: "agent_list"; data: AgentList }

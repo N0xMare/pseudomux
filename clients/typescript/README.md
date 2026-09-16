@@ -5,7 +5,7 @@ dependencies.
 
 - **Harnesses** (Pi): `PmuxMessages` + `setConversationHeader`. You still POST
   Anthropic Messages; this package only pins, releases, and reads the catalog.
-- **One-shot**: `PmuxClient.runStateless` on the owner-only Unix socket.
+- **One-shot**: `PmuxClient.runStateless` (minified) and `PmuxClient.runStateful` (Full cell, `cwd` required) on the owner-only Unix socket.
 
 Interactive session methods (`startSession`, `runTurn`) remain in the package
 for protocol completeness and are refused by current daemons. Do not build

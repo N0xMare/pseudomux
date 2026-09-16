@@ -36,6 +36,7 @@ const UNPUBLISHED_TOOLS: &[&str] = &[
     "get_agent",
     "list_agents",
     "update_agent",
+    "run_stateful",
 ];
 
 static NEXT_SANDBOX: AtomicU64 = AtomicU64::new(1);

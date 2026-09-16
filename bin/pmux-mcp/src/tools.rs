@@ -164,9 +164,10 @@ pub fn published_tool_definitions() -> Vec<Value> {
         "run_stateless",
         concat!(
             "Ask the daemon's stateless token engine one question and get the text and token ",
-            "usage back. The whole contract is (model, effort, prompt) -> text + usage: model ",
-            "is required, effort is optional and is validated against the resolved model by ",
-            "the daemon, and prompt is the question. ",
+            "usage back. The whole contract is (model, effort, prompt[, account]) -> text + ",
+            "usage: model is required, effort is optional and is validated against the ",
+            "resolved model by the daemon, prompt is the question, and account is an optional ",
+            "--pool-account name (omit for default, never a path). ",
             "THE CALLER NAMES NO RESOURCE: there is no cwd, no configuration root, no system ",
             "prompt and no session id in this tool's schema, because the daemon mints every ",
             "one of them from its own configuration. ",
@@ -328,6 +329,11 @@ fn run_stateless_schema() -> Value {
                         .join(" ")
                 )
             },
+            "account": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Operator --pool-account name. Omit for default. Never a filesystem path."
+            },
             "deadline_unix_ms": {
                 "type": "integer",
                 "minimum": 0,
@@ -360,6 +366,7 @@ mod tests {
         "get_agent",
         "list_agents",
         "update_agent",
+        "run_stateful",
         "clear_session",
         "diagnose",
         "legacy_screen_text",
@@ -435,6 +442,7 @@ mod tests {
             effort: Some(pseudomux_protocol::v1::EffortLevel::XHigh),
             prompt: "what is two plus two".into(),
             deadline_unix_ms: Some(1_700_000_000_000),
+            account: Some("claude-1".into()),
         };
         let encoded = serde_json::to_value(&populated).unwrap();
         let rust_fields = encoded

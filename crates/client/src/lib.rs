@@ -29,10 +29,10 @@ use pseudomux_protocol::v1::{
     ClearSessionResult, ClosePolicy, CloseSessionRequest, CloseSessionResult, CreateAgentRequest,
     DaemonDiagnosis, ErrorBody, EventBatch, EventEnvelope, GetAgentRequest, InspectSessionRequest,
     ListAgentsRequest, Pong, ReplayGap, Request, RequestEnvelope, ResponseEnvelope,
-    ResponsePayload, ResponseResult, RunOnceRequest, RunStatelessRequest, RunTurnRequest,
-    SessionGenerationId, SessionHandle, SessionId, SessionIdentity, SessionSnapshot,
-    StartSessionRequest, StatelessResult, SubscribeEventsRequest, TurnAccepted, TurnId,
-    TurnRequest, TurnResult, UpdateAgentRequest,
+    ResponsePayload, ResponseResult, RunOnceRequest, RunStatefulRequest, RunStatelessRequest,
+    RunTurnRequest, SessionGenerationId, SessionHandle, SessionId, SessionIdentity,
+    SessionSnapshot, StartSessionRequest, StatelessResult, SubscribeEventsRequest, TurnAccepted,
+    TurnId, TurnRequest, TurnResult, UpdateAgentRequest,
 };
 use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -233,12 +233,13 @@ impl PmuxClient {
         }
     }
 
-    /// One stateless call: `(model, effort, prompt) -> text + usage`.
+    /// One stateless call: `(model, effort, prompt[, account]) -> text + usage`.
     ///
     /// The request DTO is the whole surface. It carries no cwd, no config root,
-    /// no system prompt and no session id, and it is `deny_unknown_fields`, so a
-    /// caller that believes it set one of those gets `invalid_config` rather
-    /// than silently not having set it.
+    /// no system prompt and no session id. `account` is a `--pool-account` name,
+    /// never a path. The DTO is `deny_unknown_fields`, so a caller that believes
+    /// it set a resource gets `invalid_config` rather than silently not having
+    /// set it.
     pub async fn run_stateless(
         &self,
         request: RunStatelessRequest,
@@ -246,6 +247,14 @@ impl PmuxClient {
         match self.request(Request::RunStateless(request)).await? {
             ResponseResult::StatelessResult(result) => Ok(*result),
             other => Err(unexpected_result("stateless_result", &other)),
+        }
+    }
+
+    /// One Full-cell turn: Claude Code with tools in `cwd`.
+    pub async fn run_stateful(&self, request: RunStatefulRequest) -> ClientResult<StatelessResult> {
+        match self.request(Request::RunStateful(request)).await? {
+            ResponseResult::StatefulResult(result) => Ok(*result),
+            other => Err(unexpected_result("stateful_result", &other)),
         }
     }
 
@@ -706,6 +715,16 @@ fn request_timeout_for_at(request: &Request, configured: Duration, now_ms: u64) 
         // answer that took longer, and a client that gives up first turns a
         // completed turn into a transport error the caller cannot retry
         // idempotently.
+        Request::RunStateful(params) => {
+            let answer_window =
+                params
+                    .deadline_unix_ms
+                    .map_or(DEFAULT_RUN_ONCE_TIMEOUT, |deadline| {
+                        Duration::from_millis(deadline.saturating_sub(now_ms))
+                            .saturating_add(RUN_ONCE_RESPONSE_MARGIN)
+                    });
+            configured.max(answer_window)
+        }
         Request::RunStateless(params) => {
             let answer_window =
                 params
@@ -792,6 +811,7 @@ mod timeout_tests {
             effort: None,
             prompt: "hello".into(),
             deadline_unix_ms,
+            account: None,
         })
     }
 
@@ -1418,6 +1438,7 @@ const fn response_result_name(result: &ResponseResult) -> &'static str {
         ResponseResult::Agent(_) => "agent",
         ResponseResult::AgentList(_) => "agent_list",
         ResponseResult::AgentUpdated(_) => "agent_updated",
+        ResponseResult::StatefulResult(_) => "stateful_result",
     }
 }
 

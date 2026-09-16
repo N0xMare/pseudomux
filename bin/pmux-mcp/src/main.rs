@@ -180,7 +180,7 @@ async fn process_value(client: &PmuxClient, raw: Value) -> Option<Value> {
                         "name": "pmux-mcp",
                         "version": env!("CARGO_PKG_VERSION")
                     },
-                    "instructions": "This server is a thin mapper to one explicit pmuxd protocol-v1 socket. run_stateless is (model, effort, prompt) -> text + usage. The caller names no resource."
+                    "instructions": "This server is a thin mapper to one explicit pmuxd protocol-v1 socket. run_stateless is (model, effort, prompt[, account]) -> text + usage. account is a --pool-account name, never a path. The caller names no resource."
                 }),
             ))
         }

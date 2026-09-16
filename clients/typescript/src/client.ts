@@ -47,6 +47,7 @@ import {
   type ResponseEnvelope,
   type ResponseResult,
   type RunOnceRequest,
+  type RunStatefulRequest,
   type RunStatelessRequest,
   type SessionHandle,
   type SessionGenerationId,
@@ -800,6 +801,7 @@ function validateResponseResult(value: unknown): ResponseResult {
       validateDaemonDiagnosis(data, field);
       break;
     case "stateless_result":
+    case "stateful_result":
       validateStatelessResult(data, field);
       break;
     case "agent_created":
@@ -829,6 +831,7 @@ interface ResponseDataMap {
   session_cleared: ClearSessionResult;
   diagnosis: DaemonDiagnosis;
   stateless_result: StatelessResult;
+  stateful_result: StatelessResult;
   agent_created: AgentDescriptor;
   agent: AgentDescriptor;
   agent_list: AgentList;
@@ -1042,7 +1045,7 @@ export function requestTimeoutFor(
   // launch) before the model is asked. The default 45s request timeout gave
   // up first and turned a completed, billed turn into an unretryable
   // transport error.
-  if (request.method === "run_stateless") {
+  if (request.method === "run_stateless" || request.method === "run_stateful") {
     const deadline = request.params.deadline_unix_ms;
     const answerWindow = deadline === undefined
       ? DEFAULT_RUN_ONCE_TIMEOUT_MS
@@ -1510,12 +1513,13 @@ export class PmuxClient {
   }
 
   /**
-   * One stateless call: `(model, effort, prompt)` in, text and usage out.
+   * One stateless call: `(model, effort, prompt[, account])` in, text and usage out.
    *
    * THE CALLER NAMES NO RESOURCE. {@link RunStatelessRequest} carries a model,
-   * an optional effort, a prompt and an optional deadline, and nothing else.
-   * The daemon mints every path, environment variable and system prompt from
-   * its own configuration plus a slot identity.
+   * an optional effort, a prompt, an optional `--pool-account` name, and an
+   * optional deadline. The daemon mints every path, environment variable and
+   * system prompt from its own configuration plus a slot identity. `account`
+   * is a configured name, never a filesystem path.
    */
   async runStateless(
     request: RunStatelessRequest,
@@ -1524,6 +1528,16 @@ export class PmuxClient {
     return expectResult(
       await this.request({ method: "run_stateless", params: request }, options),
       "stateless_result",
+    );
+  }
+
+  async runStateful(
+    request: RunStatefulRequest,
+    options?: RequestOptions,
+  ): Promise<StatelessResult> {
+    return expectResult(
+      await this.request({ method: "run_stateful", params: request }, options),
+      "stateful_result",
     );
   }
 

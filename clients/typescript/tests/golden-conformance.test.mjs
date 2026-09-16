@@ -207,6 +207,8 @@ async function invokeTyped(client, request) {
       return { type: "diagnosis", data: await client.diagnose() };
     case "run_stateless":
       return { type: "stateless_result", data: await client.runStateless(params) };
+    case "run_stateful":
+      return { type: "stateful_result", data: await client.runStateful(params) };
     case "create_agent":
       return { type: "agent_created", data: await client.createAgent(params.spec) };
     case "get_agent":
@@ -351,10 +353,11 @@ test("shared required-field inventory rejects every nested result, event, and er
   // shared envelope pointers add fourteen. 201 before `run_stateless`, whose
   // twenty required result pointers plus the same five add twenty-five. 226
   // before the four agent methods: three descriptors of nine plus five, and
-  // `agent_list`'s six plus five.
+  // `agent_list`'s six plus five. 270 before `run_stateful`, whose
+  // `stateful_result` is the same twenty-plus-five as `stateless_result`.
   assert.equal(deletions.results.length, GOLDEN.requests_and_results.length);
   assert.equal(deletions.events.length, GOLDEN.events.length);
-  assert.equal(resultCases.length, 270);
+  assert.equal(resultCases.length, 295);
   assert.equal(eventCases.length, 223);
   assert.equal(deletions.error.length, 6);
   await withFakeServer(
@@ -441,7 +444,9 @@ test("shared goldens accept additions at every result, event, and error object b
   // `result/data/stop_reason`, `result/data/usage`, and one per usage scope.
   // 72 before the agent methods, whose four exchanges add 46. The echoed `spec`
   // is OPAQUE on a response, so its boundaries are additive like every other.
-  assert.equal(resultBoundaries, 118, "review new result object boundaries");
+  // 118 before `run_stateful`, whose `stateful_result` adds the same eight as
+  // `stateless_result`.
+  assert.equal(resultBoundaries, 126, "review new result object boundaries");
 
   let eventBoundaries = 0;
   const subscription = requestFor("subscribe_events");

@@ -11,6 +11,7 @@ from typing import Any, Final
 from urllib.parse import urlparse
 
 PMUX_CONVERSATION_HEADER: Final = "x-pmux-conversation"
+PMUX_ACCOUNT_HEADER: Final = "x-pmux-account"
 PMUX_CONVERSATION_HEADER_ALIASES: Final = (
     "x-pmux-conversation",
     "x-session-id",
@@ -47,6 +48,18 @@ def conversation_header(conversation_id: str) -> tuple[str, str]:
 
 def set_conversation_header(headers: MutableMapping[str, str], conversation_id: str) -> None:
     name, value = conversation_header(conversation_id)
+    headers[name] = value
+
+
+def account_header(account: str) -> tuple[str, str]:
+    name = account.strip()
+    if not name:
+        raise ValueError("account name must not be empty")
+    return (PMUX_ACCOUNT_HEADER, name)
+
+
+def set_account_header(headers: MutableMapping[str, str], account: str) -> None:
+    name, value = account_header(account)
     headers[name] = value
 
 

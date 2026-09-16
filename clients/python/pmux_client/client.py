@@ -41,6 +41,7 @@ from .protocol import (
     ReplayGap,
     ResponseResult,
     RunOnceRequest,
+    RunStatefulRequest,
     RunStatelessRequest,
     SessionGenerationId,
     SessionHandle,
@@ -124,7 +125,7 @@ def _timeout_for(
     # Same shape as run_once, and for a stronger reason: a stateless call may
     # have to mint a cold class (TUI launch) before the model is asked. The
     # default 45s request timeout gave up first.
-    if method == "run_stateless" and params is not None:
+    if method in ("run_stateless", "run_stateful") and params is not None:
         deadline = params.get("deadline_unix_ms")
         answer_window = (
             DEFAULT_RUN_ONCE_TIMEOUT
@@ -409,12 +410,13 @@ class PmuxClient:
         )
 
     def run_stateless(self, request: RunStatelessRequest) -> StatelessResult:
-        """Unix-socket one-shot: ``(model, effort, prompt)`` in, text and usage out.
+        """Unix-socket one-shot: ``(model, effort, prompt[, account])`` in, text and usage out.
 
         THE CALLER NAMES NO RESOURCE. ``RunStatelessRequest`` carries a model, an
-        optional effort, a prompt and an optional deadline, and nothing else: no
-        cwd, no configuration root, no system prompt and no session id. The
-        daemon mints every one of those from its own configuration plus a slot
+        optional effort, a prompt, an optional ``--pool-account`` name, and an
+        optional deadline: no cwd, no configuration root, no system prompt and
+        no session id. ``account`` is a configured name, never a path. The
+        daemon mints every resource from its own configuration plus a slot
         identity, and the request DTO is ``deny_unknown_fields`` on the Rust
         side, so a caller that believes it set one of them is told so rather than
         silently not having set it.
@@ -424,6 +426,16 @@ class PmuxClient:
             self._expect(
                 self.request("run_stateless", cast(dict[str, Any], request)),
                 "stateless_result",
+            ),
+        )
+
+    def run_stateful(self, request: RunStatefulRequest) -> StatelessResult:
+        """Full-cell one-shot: Claude Code with tools in ``cwd``."""
+        return cast(
+            StatelessResult,
+            self._expect(
+                self.request("run_stateful", cast(dict[str, Any], request)),
+                "stateful_result",
             ),
         )
 
@@ -1597,7 +1609,7 @@ def _validate_result(value: object) -> None:
         _require_enum(data, "state", field, _SESSION_STATES)
     elif result_type == "diagnosis":
         _validate_diagnosis(data, field)
-    elif result_type == "stateless_result":
+    elif result_type in ("stateless_result", "stateful_result"):
         _validate_stateless_result(data, field)
     elif result_type in {"agent_created", "agent", "agent_updated"}:
         _validate_agent_descriptor(data, field)

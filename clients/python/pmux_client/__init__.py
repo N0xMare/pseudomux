@@ -24,11 +24,14 @@ from .client import (
     missing_health_layers,
 )
 from .messages import (
+    PMUX_ACCOUNT_HEADER,
     PMUX_CONVERSATION_HEADER,
     PMUX_CONVERSATION_HEADER_ALIASES,
     PmuxMessages,
     PmuxMessagesError,
+    account_header,
     conversation_header,
+    set_account_header,
     set_conversation_header,
 )
 from .protocol import (
@@ -42,6 +45,7 @@ from .protocol import (
     HealthLayerName,
     LayerFinding,
     PmuxErrorCode,
+    RunStatefulRequest,
     RunStatelessRequest,
     StatelessResult,
     StopReason,
@@ -58,6 +62,7 @@ __all__ = [
     "DEFAULT_RUN_ONCE_TIMEOUT",
     "MAX_NATIVE_FRAME_BYTES",
     "MAX_SAFE_JSON_INTEGER",
+    "PMUX_ACCOUNT_HEADER",
     "PMUX_CONVERSATION_HEADER",
     "PMUX_CONVERSATION_HEADER_ALIASES",
     "PROTOCOL_VERSION",
@@ -86,12 +91,15 @@ __all__ = [
     "PmuxUnexpectedResultError",
     "PmuxVersionError",
     "ReplayGapItem",
+    "RunStatefulRequest",
     "RunStatelessRequest",
     "StatelessResult",
     "StopReason",
     "TokenUsage",
     "UsageBreakdown",
+    "account_header",
     "conversation_header",
     "missing_health_layers",
+    "set_account_header",
     "set_conversation_header",
 ]

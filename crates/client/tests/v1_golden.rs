@@ -281,6 +281,10 @@ async fn invoke_typed(
             .update_agent(params.agent_id, params.expected_version, params.spec)
             .await
             .map(|descriptor| ResponseResult::AgentUpdated(Box::new(descriptor))),
+        Request::RunStateful(params) => client
+            .run_stateful(params)
+            .await
+            .map(|result| ResponseResult::StatefulResult(Box::new(result))),
     }
 }
 
@@ -445,7 +449,9 @@ async fn shared_required_field_inventory_rejects_every_nested_result_event_and_e
         // `run_stateless`, whose twenty required result pointers plus the same
         // five add twenty-five. 226 before the four agent methods: three
         // descriptors of six plus five, and `agent_list`'s six plus five.
-        270
+        // 270 before `run_stateful`, whose `stateful_result` is the same
+        // twenty-plus-five as `stateless_result`.
+        295
     );
     assert_eq!(
         cases
@@ -595,9 +601,11 @@ async fn shared_goldens_accept_additive_fields_at_every_result_event_and_error_o
     // `result`, `result/data`, `result/data/stop_reason`, `result/data/usage`,
     // and one per usage scope. 72 before the agent methods, whose four
     // exchanges add 46. The echoed `spec` is OPAQUE on a response, so its
-    // boundaries are additive like every other result boundary.
+    // boundaries are additive like every other result boundary. 118 before
+    // `run_stateful`, whose `stateful_result` adds the same eight as
+    // `stateless_result`.
     assert_eq!(
-        result_boundaries, 118,
+        result_boundaries, 126,
         "review new result object boundaries"
     );
 
