@@ -2,12 +2,12 @@
 
 **Position of pmux, 2026-09-01.** This file is normative for *where the project
 stands*. `spec.md` is normative for product behaviour. `testing.md` is
-normative for test ownership. The product is the local API (Messages +
-`run_stateless`) over a warm pool of constrained Claude cells.
+normative for test ownership. The product is the local API (Messages + `run_stateless`, plus opt-in
+`run_stateful`) over a warm pool of constrained Claude cells.
 
 The 3,618-line 2026-08 essay that previously lived here is archived at
 `docs/archive/current-state-2026-08.md`. The historical commit-message ledger
-remains `docs/defect-log.md`. Neither archive is a CURRENT Path B document.
+remains `docs/defect-log.md`. Neither archive is a CURRENT product-position document.
 
 ---
 
@@ -21,8 +21,9 @@ the cells.
 | Surface | Caller names | What happens |
 | --- | --- | --- |
 | **Messages harness contract** — the product | pin + release + class | One leased minified cell per conversation. `/clear` on release. `--messages-bind`. |
-| **`pmux run` / MCP `run_stateless`** | `(model, effort, prompt)` only | A warm minified cell answers; `/clear` recycles it. |
-| **Interactive sessions** | — | Not a product. Public wire refused. Thin CLI is `run` / `ping` / `doctor`. |
+| **`pmux ask` / MCP `run_stateless`** | `(model, effort, prompt[, account])` | A warm minified cell answers; `/clear` recycles it. |
+| **`pmux run` / `run_stateful`** | cwd + prompt | Full Claude Code cell (tools on). Requires `--stateful`. |
+| **Interactive sessions** | — | Not a product. Public wire refused. Thin CLI is `run` / `ask` / `ping` / `doctor`. |
 
 Internal engineering docs still say Path A / Path B for the session stack
 and the pool. Those names are not the product surface.
@@ -35,20 +36,20 @@ Windows and print-mode Claude are unsupported.
 
 ---
 
-## 2. Path B as a harness engine
+## 2. The stateless (minified) engine
 
-A Path B cell is `SessionCell::Minified`: `--disallowedTools *`, private
+A stateless cell is `SessionCell::Minified`: `--disallowedTools *`, private
 config root, empty cwd, REPLACE system prompt (`The user message is the
 entire instruction.` — displaces Claude Code's default agent prompt; not
 consumer policy). The pool keys instances by
-`(canonical model, effort argv)`. Membership in the idle set **is** the
+`(canonical model, effort argv, account)`. Membership in the idle set **is** the
 emptiness proof. `/clear` is the recycle; remint happens only when
 `turns_started` hits the recycle cap, at lease end, not mid-conversation.
 
 ### Sticky leases
 
 `InstanceState::Leased` is a sixth live bucket. A Messages conversation pins
-one instance: between turns the cell is not idle, not stealable by `pmux run`,
+one instance: between turns the cell is not idle, not stealable by `pmux ask`,
 and not `/clear`ed. `x-pmux-conversation` is the pin; `x-pmux-cell` is
 `s{slot}e{epoch}` (never a Claude `SessionId`). Release is
 `POST /v1/conversations/{id}/release`; idle TTL is the backstop.
@@ -75,10 +76,11 @@ Claude's tool surface stays denied; the harness runs tools and sends
 `tool_result`. Token streaming is reconstructed after the turn commits.
 
 Measured on this Linux host. Promoted linux cell is **2.1.227 through
-2.1.257** (`evidence/promotion-2.1.257-linux-x86_64.json`). Operator-eval
-`evidence/linux-operator-eval-2.1.257-x86_64.json` is the pin-confirmation
-receipt and `evidence/linux-model-matrix-2.1.257-x86_64.json` is the
-model/effort probe. Earlier 2.1.233 and 2.1.236 receipts remain historical:
+2.1.272** (`evidence/promotion-2.1.272-linux-x86_64.json`). Operator-eval
+`evidence/linux-operator-eval-2.1.272-x86_64.json` is the pin-confirmation
+receipt and `evidence/linux-model-matrix-2.1.257-x86_64.json` is the last
+model/effort probe (at 2.1.257; `MODEL_TABLE` did not move). Earlier 2.1.233,
+2.1.236, and 2.1.257 receipts remain historical:
 
 | Receipt | What it showed |
 | --- | --- |
@@ -92,17 +94,19 @@ model/effort probe. Earlier 2.1.233 and 2.1.236 receipts remain historical:
 
 ### Linux admission
 
-`PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.220 through
-2.1.258 on macos/aarch64, pooled drain 1000 ms; and 2.1.227 through
-2.1.257 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
-macos ceiling receipt is `evidence/promotion-2.1.258-macos-aarch64.json`;
-pin-confirmation is `evidence/macos-operator-eval-2.1.258-aarch64.json`.
-`evidence/promotion-2.1.238-macos-aarch64.json` and
-`evidence/macos-operator-eval-2.1.238-aarch64.json` are the prior macos
+`PROMOTED_PROFILES` ships **two** cells: Claude Code 2.1.258 through
+2.1.272 on macos/aarch64, pooled drain 250 ms; and 2.1.227 through
+2.1.272 on linux/x86_64, pooled drain 250 ms. Both transparent/sdk.
+macos ceiling receipt is `evidence/promotion-2.1.272-macos-aarch64.json`;
+pin-confirmation is `evidence/macos-operator-eval-2.1.272-aarch64.json`.
+`evidence/promotion-2.1.258-macos-aarch64.json` and
+`evidence/macos-operator-eval-2.1.258-aarch64.json` are the prior macos
 ceiling and pin, and stay historical.
-linux ceiling receipt is `evidence/promotion-2.1.257-linux-x86_64.json`;
-pin-confirmation is `evidence/linux-operator-eval-2.1.257-x86_64.json`.
-A macos PATH `claude` at 2.1.258 and a linux one at 2.1.257 are each inside
+linux ceiling receipt is `evidence/promotion-2.1.272-linux-x86_64.json`;
+pin-confirmation is `evidence/linux-operator-eval-2.1.272-x86_64.json`.
+`evidence/promotion-2.1.257-linux-x86_64.json` is the prior linux ceiling
+and stays historical.
+A macos PATH `claude` at 2.1.272 and a linux one at 2.1.272 are each inside
 their own cell and need no flag. A PATH Claude newer than either ceiling
 still needs `--tested-claude-profile`.
 
@@ -111,9 +115,9 @@ The linux drain is `evidence/pooled-transcript-drain-linux-x86_64.json`:
 estimator 250 ms. Every named version's own fit is also 250 ms because
 118×2.0=236 sits inside the 250 ms rounding quantum — that is saturation,
 not a one-version fit. The paid ceiling is
-`evidence/promotion-2.1.257-linux-x86_64.json` (`pmux run` grades,
-emptiness after `/clear`, 5 reachable arrivals at 2.1.257, max 39 ms,
-median 35). `evidence/promotion-2.1.236-linux-x86_64.json` is the prior
+`evidence/promotion-2.1.272-linux-x86_64.json` (`pmux run` grades,
+emptiness after `/clear`, 5 reachable arrivals at 2.1.272, max 6 ms,
+median 5). `evidence/promotion-2.1.257-linux-x86_64.json` is the prior
 ceiling and stays historical.
 
 `evidence/linux-minified-post-answer-x86_64.json` remains the fast-path
@@ -222,6 +226,36 @@ stopped compiling on macOS after the linux clippy fix passed `&size` to
 `openpty`, which takes `*mut winsize` on Apple's libc and `*const` on glibc;
 it is now `&raw mut size`, which coerces to both.
 
+### 2.1.272 (linux)
+
+Five new `attachment.type` names on the typed-prompt chain of a minified
+cell: `session_context`, `date` (not `date_change`), `environment`,
+`model`, and `prompt_snapshot`. Their arrival was SchemaDrift at
+`$.attachment.type` on every `pmux run` until
+`parser.rs::is_supported_attachment_type` admitted them by name only
+(same pattern as `remote_session_change` at 2.1.257). MEASURED on
+macos/aarch64 and linux/x86_64. `prompt_snapshot.systemPrompt` is the
+REPLACE displacer (`The user message is the entire instruction.`), so
+`--system-prompt-file` is snapshotted. `/clear` recycle still answered
+`NONE` on linux and macos. macos 2.1.272 can parent the assistant through
+pre-prompt `prompt_snapshot` attachments; the engine follows that parent
+walk to the typed user. The usage-bearing account on this Mac is the
+hashed pin `/Users/cmace/.claude-1` (`--pool-account claude-1=...` or
+`--pool-securestorage-dir` of that path), not PATH `claude`. tars0 PATH
+`claude` is the same org. macos `PROMOTED_PROFILES` is `2.1.258..=2.1.272` at 250 ms
+(`evidence/pooled-transcript-drain-macos-aarch64.json`: 105 minified arrivals, max 42 ms at 2.1.258,
+max 20 ms over n=100 at 2.1.272).
+
+| Receipt | What it showed |
+| --- | --- |
+| `evidence/promotion-2.1.272-macos-aarch64.json` | Paid macos ceiling: verdict promotable, floor 2.1.258, tested through 2.1.272, 5 reachable arrivals max 8 ms. Drain 250 ms from the 2.1.258+2.1.272 pooled receipt. |
+| `evidence/macos-drain-n50-2.1.272-aarch64.json` | n=50 minified drain, max 11 ms, 0 unmarked. |
+| `evidence/macos-drain-n50-2.1.272-aarch64-2.json` | Second n=50, max 20 ms, 0 unmarked. |
+| `evidence/promotion-2.1.272-linux-x86_64.json` | Paid linux ceiling: verdict promotable, floor 2.1.227, tested through 2.1.272, 5 reachable arrivals max 6 ms against the pooled 250 ms bound. |
+| `evidence/linux-operator-eval-2.1.272-x86_64.json` | First `GREEN_OPERATOR` pin confirmation. |
+| `evidence/linux-operator-eval-2.1.272-x86_64-recheck.json` | Recheck on tars0 with the multi-account daemon: `GREEN_OPERATOR`, empty pin, Messages sticky `s0e0`, cache 2324/2324. |
+| `evidence/macos-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` on the configured `/Users/cmace/.claude-1` pin: grades exact, `/clear` → `NONE`, Messages sticky `s0e0`, cache 2315/2315. |
+
 ### Recommended Pi warm set
 
 At the owner-set cap of 15:
@@ -249,11 +283,12 @@ mint.
 
 | Dimension | Status |
 | --- | --- |
-| Pool + `/clear` recycle | Shipped. `pmux run` / MCP `run_stateless`. |
-| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin `evidence/macos-operator-eval-2.1.258-aarch64.json`; linux sticky pin `evidence/linux-operator-eval-2.1.257-x86_64.json`, both also measured with Pi. |
-| Promoted cell without a flag | macos/aarch64 2.1.220..=2.1.258 and linux/x86_64 2.1.227..=2.1.257. |
-| Linux without a flag | **Shipped** for 2.1.227..=2.1.257. This host's PATH `claude` is 2.1.257, inside the ceiling. |
-| Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
+| Pool + `/clear` recycle | Shipped. `pmux ask` / MCP `run_stateless`. |
+| Full-cell `pmux run` | Shipped, opt-in. `pmuxd --stateful`; caller names `--cwd`. |
+| Sticky `Leased` + Messages harness | Shipped, opt-in. macos sticky pin for the promoted cell is `evidence/macos-operator-eval-2.1.272-aarch64.json`; linux sticky pin `evidence/linux-operator-eval-2.1.272-x86_64.json`. |
+| Promoted cell without a flag | macos/aarch64 2.1.258..=2.1.272 and linux/x86_64 2.1.227..=2.1.272. |
+| Linux without a flag | **Shipped** for 2.1.227..=2.1.272. A linux PATH `claude` at 2.1.272 is inside the ceiling. |
+| Interactive session product | **Removed.** Public wire refused. CLI is `run` / `ask` / `ping` / `doctor`. Mint via `start_session_owned_with_retention` stays (`start_session_owned` is the pool wrapper). |
 | `native.rs` split / `step()` simplify | **Not done.** Idle-is-proof stays. |
 | `tools/dev/check.sh` | Living commit/push check. `--push` adds e2e + process blackbox. |
 | `tools/dev/operator_eval.py` | Confirms a Claude binary on **this** OS (grades + Messages sticky). No pooled drain required. Does not edit `PROMOTED_PROFILES`. |
@@ -267,8 +302,9 @@ mint.
 ## 4. What a future change must not break
 
 - Transcript is authority; the screen is a veto, never a vote.
-- The caller of Path B names no resource. Messages may name a *conversation
-  id*, which is a harness session token, not a Claude `SessionId` and not a
+- The caller of the stateless pool names no resource. Messages may name a *conversation
+  id* (harness session token) and an *account name* (`x-pmux-account`, a
+  `--pool-account` word, never a path). Neither is a Claude `SessionId` or a
   filesystem path.
 - Default daemon: owner-only UDS, no INET. Messages stays opt-in loopback.
 - `/clear` only at lease end (or TTL), never after every HTTP request.

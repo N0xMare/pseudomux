@@ -260,8 +260,8 @@ class DocumentedSurfaceTest(unittest.TestCase):
         )
         self.assertEqual(
             declared,
-            {"ping", "run", "doctor"},
-            "pmux publishes only ping, run, and doctor",
+            {"ping", "run", "ask", "doctor"},
+            "pmux publishes ping, run, ask, and doctor",
         )
         self.assertEqual(
             offered,
@@ -599,20 +599,18 @@ class DocumentedSurfaceTest(unittest.TestCase):
             "learns the ids MODEL_TABLE admits",
         )
 
-    def test_ask_remains_an_alias_of_run(self):
-        """`pmux ask` is still `run`. The alias cannot vanish."""
+    def test_ask_is_the_stateless_one_shot_and_run_is_full(self):
+        """`pmux ask` is minified; `pmux run` is Full and requires --cwd."""
 
         pmux = str(binary("pmux"))
         socket = str(WORKSPACE / "target" / "no-such-socket-for-ask-help.sock")
         ask = run([pmux, "--socket", socket, "ask", "--help"])
         run_help = run([pmux, "--socket", socket, "run", "--help"])
-        # clap renders the canonical name (`run`); the alias is that this
-        # invocation succeeded and shows the same flags.
-        self.assertRegex(ask, r"Usage: pmux .* run ")
+        self.assertRegex(ask, r"Usage: pmux .* ask ")
         self.assertIn("--model", ask)
-        self.assertIn("--effort", ask)
-        self.assertIn("--model", run_help)
-        self.assertIn("--effort", run_help)
+        self.assertNotIn("--cwd", ask)
+        self.assertIn("--cwd", run_help)
+        self.assertIn("--permission-mode", run_help)
 
 
 if __name__ == "__main__":

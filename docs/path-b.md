@@ -9,8 +9,8 @@ isolation). Operators integrating a harness should not start here.
 pool of them.** This file was a design specification. **It is now mostly a description of a shipped
 thing**, and where it still describes a design the tense says so explicitly.
 
-**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21; linux 2.1.257 2026-09-01; macos 2.1.258 2026-09-01).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.258
-and linux/x86_64 2.1.227..=2.1.257 are reachable without a flag.
+**Implementation status (2026-08-06; linux flagless 2026-08-20; macos 2.1.238 2026-08-21; linux 2.1.257 2026-09-01; macos 2.1.258 2026-09-01; linux 2.1.272 2026-09-15).** The cell AND the pool are shipped. macos/aarch64 2.1.220..=2.1.258
+and linux/x86_64 2.1.227..=2.1.272 are reachable without a flag.
 
 | Shipped | Where |
 |---|---|
@@ -21,7 +21,7 @@ and linux/x86_64 2.1.227..=2.1.257 are reachable without a flag.
 | `Request::RunStateless` / `StatelessResult`, and `pmux run` / MCP `run_stateless` in front of it | `crates/service/src/native.rs`, `bin/pmux`, `bin/pmux-mcp` |
 | Sticky `Leased` instances and the opt-in loopback Messages facade (`--messages-bind`) | `crates/service/src/pool/`, `bin/pmuxd/src/conversation.rs`, `bin/pmuxd/src/messages_http.rs` |
 | Per-cell private config root, containment admission, per-instance cwd (§4, §5) | `crates/service/src/{native.rs,config_isolation.rs,claude_launch.rs}` |
-| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.258 and linux/x86_64 2.1.227 through 2.1.257 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.258-macos-aarch64.json`, `evidence/promotion-2.1.257-linux-x86_64.json` |
+| Two promoted compatibility RANGES — macos/aarch64 2.1.220 through 2.1.258 and linux/x86_64 2.1.227 through 2.1.272 — so a supported host needs no `--tested-claude-profile` (§5.5, §12.4) | `crates/service/src/compatibility.rs`, `evidence/pooled-transcript-drain-macos-aarch64.json`, `evidence/pooled-transcript-drain-linux-x86_64.json`, `evidence/promotion-2.1.258-macos-aarch64.json`, `evidence/promotion-2.1.272-linux-x86_64.json` |
 
 **Still design, and labelled as such in place:** admission by a measured memory budget (§7 — the
 budget is a boot assertion, not a runtime gate), the retention/pruning policy of §8 above the two
@@ -310,7 +310,7 @@ three source files each carried their own sentence about it.
 | Replace-mode system prompt (`SystemPromptPolicy::Replace`) | REPLACE versus append for the agent-prompt *file*, and MEASURED to survive `/clear`. It is not the entire API `system` array: Claude Code still prepends its identity line. The **wording** is CHOSEN — see §2.3. |
 | `SessionIdentity::New { session_id: None }` | **pmux picks the id.** An earlier revision said `--session-id <fresh uuid>`; that was the design. A caller-chosen id is one of the two ways a transcript that already served work gets admitted as a fresh cell, and the pool has no caller to take one from. |
 | `<per-instance pre-trusted empty cwd>` | §4. |
-| `config_isolation` (pmux-owned `CLAUDE_CONFIG_DIR` + service-computed securestorage pin) | §5. |
+| `config_isolation` (pmux-owned `CLAUDE_CONFIG_DIR` + operator `--pool-securestorage-dir` pin) | §5. |
 | `CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL=1` | §2.3. MEASURED necessary. |
 | `RequireTested` + `cell: minified` | A minified cell runs only on a compatibility cell whose composer geometry has been measured (§5.5). |
 | Empty caller environment; the DAEMON's own environment as the snapshot | An empty environment was tried first and MEASURED to fail: with no `HOME` and no `PATH` the first turn returned `needs_login`. The daemon's environment is daemon configuration in the same sense `--path-b-claude` is; nothing on the wire can put a byte in it, and it still passes the allowlist, the subscription-auth removals and the transparent denylist. |
@@ -324,7 +324,7 @@ measurement.
 | Rejected | Standing | Reason, and how it is known |
 |---|---|---|
 | `--bare` | **STILL TRUE, re-grounded** | Breaks subscription auth. The original probe was the confounded one of §0.1 and proved nothing; the conclusion survives on **bundle evidence**, which is stronger: `rf()` is checked at the top of every OAuth accessor and bare mode deliberately ignores `claudeAiOauth`. Right answer, wrong probe — do not cite the old probe. |
-| `CLAUDE_CONFIG_DIR` override **alone** | **RETRACTED — the row was FALSE** | It read "Same auth break", a MEASURED claim from the confounded probe of §0.1. A private root works, and §5 is built on it. What is true is narrower: a config root **without** the securestorage pin gets a login screen, because the keychain service name is namespaced by `sha256(config_dir)[0:8]`. pmux computes the pin itself, so a caller never has to. |
+| `CLAUDE_CONFIG_DIR` override **alone** | **RETRACTED — the row was FALSE** | It read "Same auth break", a MEASURED claim from the confounded probe of §0.1. A private root works, and §5 is built on it. What is true is narrower: a config root **without** the securestorage pin gets a login screen, because the keychain service name is namespaced by `sha256(config_dir)[0:8]`. The pin is `ConfigIsolation.securestorage_dir` (`--pool-securestorage-dir`), never derived from the private root and never from snapshot `CLAUDE_CONFIG_DIR`; a session caller still cannot `set` it. |
 | `--max-turns` | ~~STILL TRUE~~ **FALSE, and not because of 2.1.226 — MEASURED 2026-08-09.** The row read *"Does not exist in 2.1.220."* | **The flag exists and is parsed**, at 2.1.226 AND at 2.1.223. Non-executing sentinel probe (§0.3 rule 5's instrument, from `docs/2.1.226-compatibility.md` §1.1): `claude --max-turns 5 --pmux-probe-sentinel doctor` reports `unknown option '--pmux-probe-sentinel'` at both versions, i.e. `--max-turns` was accepted; the control `--definitely-not-a-flag` and the three near-misses `--max-turn`, `--max-turnss`, `--maxturns` each name themselves. It is a HIDDEN option — absent from `--help` at 2.1.226, exactly like `--system-prompt-file`. **Corroborated without a probe at all:** the Claude Code process that hosted the session which found this was itself launched with `--max-turns 1000` on the same 2.1.226 binary, so the flag is not merely parsed, it is in use on this host. **Why nobody caught it:** the 36-flag sweep's set is DERIVED from what pmux emits or forbids (`MINIFIED_LAUNCH_FLAGS`, `SAFE_EXTRA_FLAGS`, `FORBIDDEN_DRIVER_FLAGS`), and a flag this document merely *rejected in prose* is in none of them, so the one instrument that re-checks flag existence every version is structurally blind to every row in this table. **Blast radius is zero and that was checked, not assumed:** pmux does not pass it, and `validate_extra_args` (`crates/service/src/claude_launch.rs:179`) allowlists caller `extra_args` to `SAFE_EXTRA_FLAGS` — two spellings — so a caller cannot reach it either. It is absent from `FORBIDDEN_DRIVER_FLAGS` and does not need to be there. but the RECORDED REASON is false, and a reader deciding whether to propose it would be told it cannot be had. |
 | `--tools ""` | STILL TRUE, one clause weakened | Cannot travel `push_value`, which bails on empty values by design. The clause "leaves 85 MCP tools" is a claim about a build with MCP servers configured; under the private root of §5 there are none (§0.2), so it is the `push_value` half that is load-bearing. |
 | `--disable-slash-commands` | STILL TRUE | Would remove `/clear`, the entire statelessness mechanism. The caller-facing `/` escape is already closed in `driver_io.rs::validate_prompt` (mirrored in `bin/pmux/src/cli.rs`), so this flag buys nothing and costs the design. |
@@ -988,8 +988,10 @@ directory is the same directory.
 ## 5. Private config root and trust pre-seeding
 
 **Implemented.** `StartSessionRequest::config_isolation` names a pmux-owned Claude configuration
-root; the daemon delivers it as `CLAUDE_CONFIG_DIR` and computes the credential pin itself. This is
-the section that supersedes §2.2's `CLAUDE_CONFIG_DIR` rejection.
+root; the daemon delivers it as `CLAUDE_CONFIG_DIR`. The credential pin is
+`ConfigIsolation.securestorage_dir` (`--pool-securestorage-dir`), never derived from that root
+and never from snapshot `CLAUDE_CONFIG_DIR`. This is the section that supersedes §2.2's
+`CLAUDE_CONFIG_DIR` rejection.
 
 ### 5.1 Why the config root and the credential store had to be separated
 
@@ -1008,20 +1010,16 @@ version every other fact in this document is pinned to:
 MEASURED on this host: `CLAUDE_CONFIG_DIR=$T claude auth status` → `loggedIn:false`;
 `CLAUDE_CONFIG_DIR=$T CLAUDE_SECURESTORAGE_CONFIG_DIR= claude auth status` → `loggedIn:true, max`.
 
-**The invariant, stated so it can be tested:** *the isolated child authenticates against exactly the
-credential store the same request would have used without isolation.* pmux computes the pin as
-`snapshot - unset + set` for `CLAUDE_CONFIG_DIR` and passes it **byte-for-byte** — Claude
-NFC-normalizes it itself, and normalizing on the pmux side risks hashing to a different service
-name than the operator's own un-isolated session. The root, by contrast, is delivered
-**canonicalized**, because it must name the same directory pmux seeds and the transcript locator
-walks. That asymmetry is pinned by
+**The invariant, stated so it can be tested:** *the isolated child's credential pin is
+`ConfigIsolation.securestorage_dir`, never the private config root and never snapshot
+`CLAUDE_CONFIG_DIR`.* Empty is the unsuffixed store (`--pool-securestorage-dir empty`).
+The pin is passed **byte-for-byte** — Claude NFC-normalizes it itself, and normalizing
+on the pmux side hashes a different service. The root is delivered **canonicalized**.
+That asymmetry is pinned by
 `claude_launch.rs::tests::the_pin_is_byte_exact_while_the_root_is_canonical`.
 
-The caller cannot supply the pin: `config_isolation` together with an explicit `CLAUDE_CONFIG_DIR`
-or `CLAUDE_SECURESTORAGE_CONFIG_DIR` in `set` is a refusal, because a caller who set the root by
-hand and forgot the pin would silently get a login screen instead of a session. An *ambient*
-snapshot value is not a conflict — it is the input to the pin, and refusing it would lock out
-exactly the operators who already run under a custom config root.
+The caller cannot `set` `CLAUDE_CONFIG_DIR` or `CLAUDE_SECURESTORAGE_CONFIG_DIR` together
+with isolation. An ambient snapshot `CLAUDE_CONFIG_DIR` is not a conflict and is not the pin.
 
 Step 6 of the environment order runs **after** the terminal-profile denylist. That list has acquired
 a `CLAUDE*` name after each of four live failures; if step 6 ran earlier, the next `CLAUDE_` prefix
@@ -1162,7 +1160,7 @@ Not even a **mode**-keyed dimension yet. **CORRECTION (2026-08-06): this paragra
 "No tested cell exists for 2.1.220 on macOS/aarch64 today". That is now FALSE — two ranges are
 promoted** (macos / aarch64 / transparent / sdk, 2.1.220 through 2.1.258,
 `transcript_drain_ms: 1000`, and linux / x86_64
-2.1.227 through 2.1.257, drain 250), which is what makes Path B reachable with no
+2.1.227 through 2.1.272, drain 250), which is what makes Path B reachable with no
 `--tested-claude-profile` on argv; MEASURED with the flag absent, a real turn
 `served in 4540ms by claude 2.1.220`. **UPDATED 2026-08-09 / 2026-08-20 / 2026-08-21: each cell is a RANGE** —
 see §12.4 for what was driven at each ceiling and what was not.
@@ -1230,8 +1228,8 @@ one:
    "there is no such directory" proves the applicant is not a directory a live cell holds. For a
    `..` spelling that claim is false, so the gate refuses it — on BOTH bound resources, so the rule
    holds for any future entry path that computes a root some other way. The identity predicate
-   itself keeps reporting the kernel's answer unchanged, because its other caller compares the
-   securestorage PIN, which is a keychain-service input rather than a directory pmux binds.
+   itself keeps reporting the kernel's answer unchanged, because its other caller is the
+   isolation-root vs inherited-root check, which wants the permissive answer on a vacant spelling.
 3. **The door itself is closed for Path B.** A `cell: minified` start may not carry
    `CLAUDE_CONFIG_DIR` or `CLAUDE_SECURESTORAGE_CONFIG_DIR` in `environment.set` at all. A minified
    cell already has a first-class way to name its root — `config_isolation`, which is canonicalized,
@@ -1983,10 +1981,11 @@ Reported, not made — file ownership is exclusive.
 Written last, in the present tense, because §§1-11 read as a design and a reader who stops before
 here will not know what shipped.
 
-### 12.1 The caller surface: `(model, effort, prompt) -> tokens`
+### 12.1 The caller surface: `(model, effort, prompt[, account]) -> tokens`
 
 `pmux run --model sonnet --effort low 'What is 2 plus 2?'` answers `4` with
-`input_tokens=174 output_tokens=3`. **Nothing else is named on the way in.** The response object
+`input_tokens=174 output_tokens=3`. **No resource is named on the way in.** `account` is an
+optional `--pool-account` name, never a path. The response object
 carries exactly `model reported_model effort text stop_reason usage claude_version` — **no session
 id, no cwd, no configuration root**. `RunStatelessRequest` denies unknown fields, so sixteen resource
 names a caller might reach for are refused **by name**; `StatelessResult` publishes seven keys and no
@@ -2003,25 +2002,27 @@ caller string in scope to leak.
 
 `BTreeMap<InstanceClass, IdleSet>` plus a global counter. `--model` and `--effort` are launch-time
 argv and `/clear` does not re-exec, so **"any instance serves any turn" is false once model and
-effort are caller inputs** — the class key is what restores fungibility *within* a class, and it is
-produced by the same `resolve_model_effort` call that renders argv, so the pool's model of an
-instance cannot drift from the process. `AdmittedEffort` pairs each tier with its argv token on one
-table, so no expression anywhere produces an `--effort` value from an `EffortLevel` alone.
+effort are caller inputs** — the class key is `(canonical model, effort argv, account)`, which
+restores fungibility *within* a class. Model and effort come from the same
+`resolve_model_effort` call that renders argv, so the pool's model of an instance cannot drift
+from the process; account is the operator pin (`--pool-securestorage-dir` / `--pool-account`).
+`AdmittedEffort` pairs each tier with its argv token on one table, so no expression anywhere
+produces an `--effort` value from an `EffortLevel` alone.
 
-Warming is an operator-declared warm set (`--path-b-warm`), high-water-mark re-warm when a checkout
+Warming is an operator-declared warm set (`--pool-warm MODEL[/EFFORT][@ACCOUNT]=COUNT`), high-water-mark re-warm when a checkout
 empties a class, and an idle TTL that drains a cold class to its declared floor and no further. Cold
 swap may still take a floor instance, because refusing a live caller to hold a speculative one is
 starvation.
 
 A Messages conversation may pin an instance in `Leased` between turns: the instance is not idle,
-`/clear` has not run, and a stateless `ask` cannot steal it. `--path-b-messages-bind` is the
+`/clear` has not run, and a stateless `ask` cannot steal it. `--messages-bind` is the
 opt-in loopback facade in front of that pin. The default daemon still binds only its owner-only
 UDS. `CensusBucket::Leased` is one of the six live buckets; `comes_back_on_its_own` is false for it.
 
 **Teardown order is the guarantee**: close and require a *positive* reaping, then discharge
 retention, then erase the tree, and only then release the slot. A close that cannot confirm reaping
 **leaks the slot permanently and keeps the tree**, because a root a live process may still be writing
-to is evidence. A quarantine keeps its evidence under `--path-b-retain-dir`; a clean recycle gets no
+to is evidence. A quarantine keeps its evidence under `--pool-retain-dir`; a clean recycle gets no
 floor. `machine::shutdown_action` is total over `InstanceState` with no wildcard — which it was not,
 and the gap was exactly the ordinary state: since the pool answers *before* it clears, the ordinary
 state at the end of any burst is "every instance is `Clearing`", so a daemon stopped after serving
@@ -2047,7 +2048,7 @@ to drift.
 (`crates/service/src/compatibility.rs:484`) ships macos / aarch64 floor **2.1.220** through
 tested-ceiling **2.1.258**, `transcript_drain_ms: 1000`; and linux / x86_64
 `claude_version_floor` **2.1.227** (`crates/service/src/compatibility.rs:513`) through
-tested-ceiling **2.1.257**, `transcript_drain_ms: 250`
+tested-ceiling **2.1.272**, `transcript_drain_ms: 250`
 (`crates/service/src/compatibility.rs:519`). `resolve` searches the
 OPERATOR's cells first, so an operator profile for the same identity **overrides** it rather than
 colliding.
@@ -2068,7 +2069,8 @@ reason on the record*: `queue-operation` (the task queue is a harness feature),
 injection), and `system/api_error`, which is stamped at the moment of the failure inside the turn and
 so is retrospective rather than a post-answer arrival at all.
 
-**2.1.226, 2.1.227, 2.1.238, and 2.1.258 were each driven; 2.1.258 is the ceiling.**
+**macos 2.1.226, 2.1.227, 2.1.238, and 2.1.258 were each driven; 2.1.258 is the macos ceiling.
+linux 2.1.257 then 2.1.272 were driven; 2.1.272 is the linux ceiling.**
 `tools/promotion/promote_claude_version.py` ran nine ordered checks and five real minified-cell turns
 at `claude-sonnet-5` low/high per version, and **generated** the `range_provenance` sentence the
 profile ships; `every_promoted_range_is_the_sentence_its_promotion_receipt_generated` requires the
@@ -2080,7 +2082,8 @@ shipped copy to equal the one in the receipt for the CEILING and that receipt to
 | 2.1.226 | 5 | 223 ms | 500 ms |
 | 2.1.227 | 5 | 52 ms | **250 ms** |
 | 2.1.238 | 5 | 54 ms | **250 ms** |
-| 2.1.258 | 5 | 42 ms | **250 ms** |
+| 2.1.258 macos | 5 | 42 ms | **250 ms** |
+| 2.1.272 linux | 5 | 6 ms | **250 ms** |
 
 The fit is the row to read. 250 ms is below `POST_MARKER_CATCH_WINDOW_FLOOR_MS`, so a promotion that
 fitted its own version rather than reading the pooled bound would have shipped a drain that
@@ -2094,7 +2097,7 @@ The receipts are `evidence/pooled-transcript-drain-macos-aarch64.json` (the maco
 `evidence/promotion-2.1.226-macos-aarch64.json` are retained and are what a range that stopped there
 rested on). Linux is `evidence/pooled-transcript-drain-linux-x86_64.json` (the bound),
 `evidence/promoted-profile-2.1.227-linux-x86_64.json` (the floor) and
-`evidence/promotion-2.1.257-linux-x86_64.json` (the ceiling; `promotion-2.1.236-linux-x86_64.json` is the previous one).
+`evidence/promotion-2.1.272-linux-x86_64.json` (the ceiling; `promotion-2.1.257-linux-x86_64.json` is the previous one).
 `tools/promotion/measure_transcript_drain.py` regenerates the pooled receipts and **fails on a row kind nobody
 classified rather than defaulting**; a unit test binds each shipped drain to that OS's receipt so the two
 cannot drift. Each receipt names what would invalidate it, which is the

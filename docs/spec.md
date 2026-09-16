@@ -14,7 +14,7 @@ Claude Code TUI processes (minified cells) and exposes them as:
 
 1. An opt-in loopback **Anthropic Messages** listener.
 2. A Unix-domain-socket method **`run_stateless`**.
-3. A thin CLI: **`pmux run`**, **`pmux ping`**, **`pmux doctor`**.
+3. A thin CLI: **`pmux run`** (Full cell), **`pmux ask`** (minified), **`pmux ping`**, **`pmux doctor`**.
 4. Three clients with the same contract: **TypeScript**, **Rust**, and
    **Python**.
 
@@ -62,17 +62,19 @@ Three verbs:
 2. **Release.** `POST /v1/conversations/{id}/release` on session end. That
    is when the cell `/clear`s. Idle TTL is only the backstop.
 3. **Class.** Effort is in the model id (`claude-opus-5-medium`) or in
-   `output_config.effort`. Compact, rewind, or a class change is a prefix
-   break; the same pin reprimes.
+   `output_config.effort`. Account is `x-pmux-account` (omit for `default`).
+   Compact, rewind, or a class change is a prefix break; the same pin
+   reprimes. Account is a class selector, not a conversation pin.
 
 Without a pin the request MUST be refused. `--messages-allow-implicit` is
-the single-session curl hatch: the listener hashes the first turn. The
-caller did not choose that id. Two sessions that start the same way share a
-cell.
+the single-session curl hatch: the listener hashes the first turn together
+with model, effort, and account. The caller did not choose that id. Two
+sessions that start the same way share a cell.
 
 `GET /v1/models` lists admitted ids. `GET /v1/capabilities` states the
 closed set: no images, reconstructed SSE after the turn commits, no
-`cache_control` on tools, no temperature. Auth is **presence-only** (any
+`cache_control` on tools, no temperature. `pin_headers` are conversation-id
+aliases. `account_header` is `x-pmux-account`. Auth is **presence-only** (any
 non-empty `x-api-key` or `Authorization`). Loopback is the trust boundary.
 
 Successful `POST /v1/messages` echoes `x-pmux-conversation`, `x-pmux-cell`
@@ -95,28 +97,35 @@ is strict JSON except for raw control characters inside a string literal
 opus-5/medium at 2.1.258) MUST still be accepted as a `tool_use` block, and
 anything else non-JSON stays text.
 
-### 3.2 `run_stateless` / `pmux run`
+### 3.2 `run_stateless` / `pmux ask`
 
-`(model, effort, prompt) -> text + usage`. The caller MUST NOT name a
-resource. `--model` is required. `--effort` is validated against the
-resolved model. `ask` is an alias of `run`.
+`(model, effort, prompt[, account]) -> text + usage`. The caller MUST NOT
+name a resource. `--model` is required. `--effort` is validated against the
+resolved model. `account` is a `--pool-account` name (omit for `default`),
+never a path.
 
 MCP `pmux-mcp` MUST advertise exactly `run_stateless` on `tools/list`.
-Unpublished tool names on `tools/call` MUST be `unknown_tool`.
+Unpublished tool names on `tools/call` MUST be `unknown_tool`. MCP MUST
+NOT advertise `run_stateful`.
 
-### 3.3 Ops
+### 3.3 `run_stateful` / `pmux run`
+
+Full Claude Code cell: tools on, `--cwd` required, unattended
+`--permission-mode dangerously-skip-permissions`. Requires `pmuxd --stateful`.
+
+### 3.4 Ops
 
 `ping` is liveness of the accept loop only. `doctor` is the health tree
 (pool configured, leased conversations, compatibility). Neither starts a
 turn.
 
-### 3.4 Clients
+### 3.5 Clients
 
 | Client | Package | Product API |
 | --- | --- | --- |
-| TypeScript | `pmux-client` | `PmuxMessages` + `setConversationHeader` + `PmuxClient.runStateless` |
-| Rust | `pseudomux-client` | `MessagesClient` + `PmuxClient::run_stateless` |
-| Python | `pmux_client` | `PmuxMessages` + `PmuxClient.run_stateless` |
+| TypeScript | `pmux-client` | `PmuxMessages` + `setConversationHeader` + `setAccountHeader` + `PmuxClient.runStateless` + `PmuxClient.runStateful` |
+| Rust | `pseudomux-client` | `MessagesClient` + `PmuxClient::run_stateless` + `PmuxClient::run_stateful` |
+| Python | `pmux_client` | `PmuxMessages` + `set_conversation_header` + `set_account_header` + `PmuxClient.run_stateless` + `PmuxClient.run_stateful` |
 
 Each Messages helper MUST refuse a non-loopback / non-`http://` URL and an
 empty conversation id. Each UDS client MUST take an explicit absolute
@@ -140,13 +149,16 @@ absolute.
 | `--pool-claude PATH` | — | Required with `--pool-parent`, absolute. |
 | `--pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15. |
 | `--pool-recycle-turns N` | `50` | Turns one instance serves before remint at lease end. |
-| `--pool-warm MODEL[/EFFORT]=COUNT` | none | Warm floor, repeatable. |
+| `--pool-securestorage-dir empty|DIR` | `empty` | Default account pin. `empty` is the unsuffixed store. |
+| `--pool-account NAME=empty|DIR` | none | Additional named pin, repeatable. Caller selects `NAME`. |
+| `--pool-warm MODEL[/EFFORT][@ACCOUNT]=COUNT` | none | Warm floor, repeatable. Omitted `@ACCOUNT` is `default`. |
 | `--pool-system-prompt TEXT` | `The user message is the entire instruction.` | REPLACE-mode displacer, 512 bytes. Not consumer policy. Empty MUST be refused. |
 | `--pool-system-prompt-file FILE` | — | Same prompt, from a file. |
 | `--pool-idle-ttl-ms MS` | `300000` | Idle hold, down to the warm floor. |
 | `--pool-turn-timeout-ms MS` | `600000` | Default stateless deadline. |
 | `--pool-retain-dir DIR` | erase | Quarantined tree. |
 | `--pool-rss-budget-mb MB` | derived | Boot check against `pool_size * 1024 MB`. |
+| `--stateful` | off | Admit Full-cell `pmux run` / `run_stateful`. Requires `--pool-parent`. |
 | `--messages-bind HOST:PORT` | off | Loopback Messages listener. |
 | `--messages-allow-implicit` | off | Headerless Messages hatch. |
 | `--pool-evidence-dir DIR` | `pool-evidence/` beside the socket | Redacted drain evidence. |
@@ -182,10 +194,17 @@ child.
 ## 5. Compatibility
 
 `require_tested` is the default for pool mint. The distribution ships one
-promoted range per os/arch: Claude Code 2.1.220 through 2.1.258 on
-macos/aarch64, and 2.1.227 through 2.1.257 on linux/x86_64, both
+promoted range per os/arch: Claude Code 2.1.258 through 2.1.272 on
+macos/aarch64, and 2.1.227 through 2.1.272 on linux/x86_64, both
 transparent/sdk. A version outside those ranges needs
 `--tested-claude-profile`. Receipts live under `evidence/`.
+
+`--pool-securestorage-dir empty` (default) pins the unsuffixed credential
+store for the `default` account. `--pool-account NAME=empty|ABS_PATH` adds
+another pin in the same process. The class key is
+`(model, effort, account)`; a request names the account, never the path
+(`run_stateless.account`, Messages `x-pmux-account`). `pmux doctor`
+exercises isolated-shape `claude auth status` for each configured pin.
 
 `allow_untested` is for deliberate probes and MUST be reported as untested.
 It does not skip transcript validation.
@@ -193,8 +212,10 @@ It does not skip transcript validation.
 ## 6. Transport
 
 Native protocol v1 is length-prefixed JSON on an owner-only Unix socket.
-The public methods are `ping`, `diagnose`, and `run_stateless`. Every other
-request variant MUST be refused with `session_surface_removed`.
+The public methods are `ping`, `diagnose`, `run_stateless`, and
+`run_stateful`. `run_stateful` MUST be refused with `stateful_not_enabled`
+unless `pmuxd --stateful` was given. Every other request variant MUST be
+refused with `session_surface_removed`.
 
 Pool mint uses an internal start funnel:
 `start_session_owned_with_retention` (the pool also calls
@@ -218,15 +239,15 @@ Pool mint uses an internal start funnel:
 | Path | Role |
 | --- | --- |
 | `bin/pmuxd` | Daemon: owner-only UDS, pool, optional Messages listener. |
-| `bin/pmux` | Thin CLI: `run`, `ping`, `doctor`. |
+| `bin/pmux` | Thin CLI: `run`, `ask`, `ping`, `doctor`. |
 | `bin/pmux-mcp` | stdio MCP: `run_stateless` only. |
 | `bin/pmux-rmuxd` | Private rmux sidecar. |
 | `bin/pmux-launcher` | One-use launch-token consumer. |
 | `bin/pmux-hook` | Bounded Hybrid hook relay. |
 | `crates/service` | Pool, mint, health, refuse. |
-| `crates/client` | Rust Messages + `run_stateless`. |
-| `clients/typescript` | TypeScript Messages + `runStateless`. |
-| `clients/python` | Python Messages + `run_stateless`. |
+| `crates/client` | Rust Messages + `run_stateless` + `run_stateful`. |
+| `clients/typescript` | TypeScript Messages + `runStateless` + `runStateful`. |
+| `clients/python` | Python Messages + `run_stateless` + `run_stateful`. |
 | `examples/pi` | Reference harness adapter. |
 
 Living verification is `tools/dev/`. `tools/promotion/` is the drop-flag engine. Gate A, Phase 0, linux-docker, and package-smoke have been removed.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import io
 import json
 import os
@@ -217,15 +218,8 @@ class PromotionFloor(unittest.TestCase):
 
     def test_macos_floor_is_not_inherited_by_linux(self) -> None:
         macos = self.promotion.promoted_version_floor("macos", "aarch64")
-        self.assertEqual(macos, "2.1.220")
-        try:
-            linux = self.promotion.promoted_version_floor("linux", "x86_64")
-        except self.promotion.PromotionRefused as error:
-            self.assertIn("--floor", str(error))
-            self.assertIn("linux/x86_64", str(error))
-            linux = self.promotion.promoted_version_floor(
-                "linux", "x86_64", "2.1.227"
-            )
+        self.assertEqual(macos, "2.1.258")
+        linux = self.promotion.promoted_version_floor("linux", "x86_64")
         self.assertEqual(linux, "2.1.227")
 
     def test_explicit_floor_cannot_disagree_with_a_shipped_cell(self) -> None:
@@ -253,7 +247,28 @@ class OperatorEval(unittest.TestCase):
             with self.assertRaises(SystemExit) as raised:
                 operator_eval.main(["--help"])
         self.assertEqual(raised.exception.code, 0)
-        self.assertIn("does not edit", stdout.getvalue())
+        text = stdout.getvalue()
+        self.assertIn("does not edit", text)
+        self.assertIn("--pool-securestorage-dir", text)
+
+    def test_eval_daemon_defaults_securestorage_to_empty(self) -> None:
+        default = inspect.signature(
+            operator_eval.EvalDaemon.__init__
+        ).parameters["securestorage_dir"].default
+        self.assertEqual(default, "empty")
+
+    def test_relative_securestorage_pin_is_refused(self) -> None:
+        with self.assertRaises(operator_eval.MeasurementError) as raised:
+            operator_eval.require_securestorage_pin("relative")
+        self.assertIn("--pool-securestorage-dir", str(raised.exception))
+        with self.assertRaises(operator_eval.MeasurementError) as raised:
+            operator_eval.require_securestorage_pin("~/.claude-1")
+        self.assertIn("--pool-securestorage-dir", str(raised.exception))
+        self.assertEqual(operator_eval.require_securestorage_pin("empty"), "empty")
+        self.assertEqual(
+            operator_eval.require_securestorage_pin("/Users/me/.claude-1"),
+            "/Users/me/.claude-1",
+        )
 
     def test_missing_required_flags_exit_2(self) -> None:
         stderr = io.StringIO()

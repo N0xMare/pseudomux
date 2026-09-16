@@ -12,16 +12,26 @@
  * Cell lifetime contract:
  *   - Every request carries x-pmux-conversation = Pi session id
  *     (or a process UUID for `pi -p --no-session`).
+ *   - Optional PMUX_ACCOUNT sets x-pmux-account (a --pool-account name).
  *   - session_start that switches sessions releases the previous id first.
  *   - session_shutdown POSTs /v1/conversations/<id>/release so the cell
  *     /clear's and returns to the pool instead of waiting for idle TTL.
  *     keepalive=true so the POST can outlive process teardown.
  *   - Compaction / rewind / class change is a prefix break; pmux repriming.
+ *   - pi-subagents 0.68+ foreground children disable ambient extensions, so
+ *     this file registers itself as a required child extension (conversation
+ *     pin / account header would otherwise be absent and Messages 400s).
  */
+import { homedir } from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { PmuxMessages, setConversationHeader } from "pmux-client";
+import { PmuxMessages, setAccountHeader, setConversationHeader } from "pmux-client";
+
+const SELF = fileURLToPath(import.meta.url);
 
 const BASE_URL = process.env.PMUX_MESSAGES_URL ?? "http://127.0.0.1:8765";
+const ACCOUNT = process.env.PMUX_ACCOUNT?.trim();
 const messages = new PmuxMessages({ baseUrl: BASE_URL, apiKey: "pmux" });
 
 const FAMILIES = [
@@ -34,30 +44,79 @@ const CONTEXT_WINDOW = 200_000;
 const MAX_OUTPUT = 128_000;
 const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
+type ChildExtensionRegistration = { dispose(): void };
+
+async function registerOnChildren(sessionId: string): Promise<ChildExtensionRegistration> {
+	const specs = [
+		"pi-subagents/required-child-extensions",
+		pathToFileURL(
+			path.join(
+				homedir(),
+				".pi/agent/npm/node_modules/pi-subagents/src/api/required-child-extensions.ts",
+			),
+		).href,
+	];
+	for (const spec of specs) {
+		try {
+			const mod = (await import(spec)) as {
+				registerRequiredChildExtensions?: (input: {
+					sessionId: string;
+					extensions: { id: string; path: string }[];
+				}) => ChildExtensionRegistration;
+			};
+			if (typeof mod.registerRequiredChildExtensions !== "function") continue;
+			return mod.registerRequiredChildExtensions({
+				sessionId,
+				extensions: [{ id: "pmux", path: SELF }],
+			});
+		} catch {
+			continue;
+		}
+	}
+	return { dispose() {} };
+}
+
 export default function (pi: ExtensionAPI) {
 	let conversationId = crypto.randomUUID();
+	let childExtensions: ChildExtensionRegistration | undefined;
 
 	const release = (id: string) =>
 		messages.release(id, { keepalive: true }).catch(() => {
 			/* idle TTL is the backstop */
 		});
 
-	pi.on("session_start", (_event, ctx) => {
-		const next = ctx.sessionManager.getSessionId();
-		if (next && next !== conversationId) {
+	const bindSession = (next: string) => {
+		if (next !== conversationId) {
 			void release(conversationId);
-			conversationId = next;
-		} else if (next) {
+			childExtensions?.dispose();
+			childExtensions = undefined;
 			conversationId = next;
 		}
+		void registerOnChildren(conversationId)
+			.then((registration) => {
+				childExtensions = registration;
+			})
+			.catch(() => {
+				/* parent still works; children without the pin 400 */
+			});
+	};
+
+	pi.on("session_start", (_event, ctx) => {
+		const next = ctx.sessionManager.getSessionId();
+		if (next) bindSession(next);
 	});
 
 	pi.on("before_provider_headers", (event) => {
 		setConversationHeader(event.headers, conversationId);
+		if (ACCOUNT) {
+			setAccountHeader(event.headers, ACCOUNT);
+		}
 	});
 
 	pi.on("session_shutdown", async () => {
 		const id = conversationId;
+		childExtensions?.dispose();
+		childExtensions = undefined;
 		await release(id);
 	});
 

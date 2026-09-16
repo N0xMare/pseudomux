@@ -261,7 +261,7 @@ def describe(rows: list[dict[str, Any]]) -> str:
         f"(one real turn each)",
     ]
     for row in rows:
-        argv = f"pmux run --model {row['spelling']}"
+        argv = f"pmux ask --model {row['spelling']}"
         if row["effort"]:
             argv += f" --effort {row['effort']}"
         suffix = f"  # alias of {row['model']}" if row["via_alias"] else ""
@@ -283,7 +283,7 @@ def probe_row(
     prompt = GRADE.render(nonce)
     expected = GRADE.expected(nonce)
     deadline_ms = int(time.time() * 1000) + turn_deadline_ms
-    arguments = ["run", "--model", row["spelling"]]
+    arguments = ["ask", "--model", row["spelling"]]
     if row["effort"]:
         arguments += ["--effort", row["effort"]]
     arguments += ["--deadline-unix-ms", str(deadline_ms), prompt]

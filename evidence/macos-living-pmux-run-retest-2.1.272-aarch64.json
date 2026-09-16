@@ -1,0 +1,498 @@
+{
+  "accounts": {
+    "all_pass": true,
+    "rows": [
+      {
+        "account": "default",
+        "account_txt": "default",
+        "claude_version": "2.1.272",
+        "client_wall_ms": 11968.5,
+        "isolation_after": [],
+        "ok": true,
+        "pass": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "WROTE",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 10990,
+            "cache_read_input_tokens": 68141,
+            "input_tokens": 4,
+            "output_tokens": 108
+          },
+          "main": {
+            "cache_creation_input_tokens": 10990,
+            "cache_read_input_tokens": 68141,
+            "input_tokens": 4,
+            "output_tokens": 108
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "account": "claude-1",
+        "account_txt": "claude-1",
+        "claude_version": "2.1.272",
+        "client_wall_ms": 9455.4,
+        "isolation_after": [],
+        "ok": true,
+        "pass": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "WROTE",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 10837,
+            "cache_read_input_tokens": 67979,
+            "input_tokens": 4,
+            "output_tokens": 114
+          },
+          "main": {
+            "cache_creation_input_tokens": 10837,
+            "cache_read_input_tokens": 67979,
+            "input_tokens": 4,
+            "output_tokens": 114
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      }
+    ]
+  },
+  "arch": "aarch64",
+  "claude_version": "2.1.272",
+  "coding": {
+    "add_src": "def add(a, b):\n    return a + b\n",
+    "claude_version": "2.1.272",
+    "client_wall_ms": 41373.5,
+    "isolation_after": [],
+    "ok": true,
+    "pass": true,
+    "stop_reason": {
+      "kind": "end_turn"
+    },
+    "test_file": true,
+    "text": "TESTS_OK",
+    "usage": {
+      "combined": {
+        "cache_creation_input_tokens": 13035,
+        "cache_read_input_tokens": 440021,
+        "input_tokens": 22,
+        "output_tokens": 1460
+      },
+      "main": {
+        "cache_creation_input_tokens": 13035,
+        "cache_read_input_tokens": 440021,
+        "input_tokens": 22,
+        "output_tokens": 1460
+      },
+      "sidechain": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0
+      }
+    }
+  },
+  "concurrent": {
+    "a": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 20215.5,
+      "conc_txt": "AAA",
+      "isolation_after": [
+        "/private/tmp/qv4-turn-latency-188dd88k/pool/stateful/2036d91d-3380-4340-8ef6-628201110bdc"
+      ],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 10816,
+          "cache_read_input_tokens": 67963,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "main": {
+          "cache_creation_input_tokens": 10816,
+          "cache_read_input_tokens": 67963,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "b": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 22778.0,
+      "conc_txt": "BBB",
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 10813,
+          "cache_read_input_tokens": 67960,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "main": {
+          "cache_creation_input_tokens": 10813,
+          "cache_read_input_tokens": 67960,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "pass": true
+  },
+  "failures": {
+    "clap": {
+      "missing_cwd": {
+        "argv": [
+          "run",
+          "--model",
+          "sonnet",
+          "--permission-mode",
+          "dangerously-skip-permissions",
+          "hi"
+        ],
+        "exit": 2,
+        "stderr": "error: the following required arguments were not provided:\n  --cwd <CWD>\n\nUsage: pmux --socket <SOCKET> run --model <MODEL> --cwd <CWD> --permission-mode <PERMISSION_MODE> <PROMPT>\n\nFor more information, try '--help'.\n",
+        "stdout": ""
+      },
+      "missing_cwd_is_clap_error": true,
+      "relative_cwd": {
+        "argv": [
+          "run",
+          "--model",
+          "sonnet",
+          "--cwd",
+          "relative-dir",
+          "--permission-mode",
+          "dangerously-skip-permissions",
+          "hi"
+        ],
+        "exit": 1,
+        "stderr": "pmux: --cwd must be an absolute path; got relative-dir\n",
+        "stdout": ""
+      },
+      "relative_cwd_refused": true
+    },
+    "daemon": {
+      "cwd_inside_pool": {
+        "error": "<REPO>/target/release/pmux --socket /private/tmp/qv4-turn-latency-188dd88k/pmux.sock --output json run --model claude-sonnet-5 --cwd /private/tmp/qv4-turn-latency-188dd88k/pool/inside --permission-mode dangerously-skip-permissions --deadline-unix-ms 1789521629183 hi exited 1\n\npmux: pmuxd error code=InvalidConfig message=\"stateful cwd must not be under the pool parent (minified slot trees)\" retryable=false\n",
+        "ok": false
+      },
+      "cwd_inside_pool_refused": true,
+      "missing_permission_mode": {
+        "error": "<REPO>/target/release/pmux --socket /private/tmp/qv4-turn-latency-188dd88k/pmux.sock --output json run --model claude-sonnet-5 --cwd /private/tmp/qv4-turn-latency-188dd88k/cwd hi exited 1\n\npmux: pmuxd error code=InvalidConfig message=\"unattended Full cells require permission_mode=dangerously_skip_permissions (otherwise the TUI blocks on a permission prompt)\" retryable=false\n",
+        "ok": false
+      },
+      "missing_permission_mode_refused": true,
+      "unused_clap": null
+    }
+  },
+  "first_mint": {
+    "first_attempt_green": 3,
+    "isolation_leaks": 0,
+    "n": 3,
+    "rate": 1.0,
+    "turns": [
+      {
+        "claude_version": "2.1.272",
+        "client_wall_ms": 13851.8,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Created hello.txt with the content \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 11216,
+            "cache_read_input_tokens": 69186,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "main": {
+            "cache_creation_input_tokens": 11216,
+            "cache_read_input_tokens": 69186,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "claude_version": "2.1.272",
+        "client_wall_ms": 12819.9,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Created hello.txt with \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 10974,
+            "cache_read_input_tokens": 69084,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "main": {
+            "cache_creation_input_tokens": 10974,
+            "cache_read_input_tokens": 69084,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "claude_version": "2.1.272",
+        "client_wall_ms": 10171.3,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Created hello.txt with the content \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 11243,
+            "cache_read_input_tokens": 68115,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "main": {
+            "cache_creation_input_tokens": 11243,
+            "cache_read_input_tokens": 68115,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      }
+    ]
+  },
+  "first_mints_planned": 3,
+  "isolation_final": [],
+  "model": "claude-sonnet-5",
+  "os": "macos",
+  "schema": "pmux.living-run-ladder.v1",
+  "skip_permissions": {
+    "claude_version": "2.1.272",
+    "client_wall_ms": 11930.6,
+    "isolation_after": [],
+    "ok": true,
+    "pass": true,
+    "stop_reason": {
+      "kind": "end_turn"
+    },
+    "text": "DELETED",
+    "usage": {
+      "combined": {
+        "cache_creation_input_tokens": 10900,
+        "cache_read_input_tokens": 68146,
+        "input_tokens": 4,
+        "output_tokens": 61
+      },
+      "main": {
+        "cache_creation_input_tokens": 10900,
+        "cache_read_input_tokens": 68146,
+        "input_tokens": 4,
+        "output_tokens": 61
+      },
+      "sidechain": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0
+      }
+    },
+    "victim_gone": true
+  },
+  "tools": {
+    "all_pass": true,
+    "bash_pwd": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 12254.7,
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "pwd_txt": "/private/tmp/qv4-turn-latency-188dd88k/task/tools",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11133,
+          "cache_read_input_tokens": 68327,
+          "input_tokens": 4,
+          "output_tokens": 114
+        },
+        "main": {
+          "cache_creation_input_tokens": 11133,
+          "cache_read_input_tokens": 68327,
+          "input_tokens": 4,
+          "output_tokens": 114
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "claude_md": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 11489.3,
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "I can't share that. The instruction to output \"PMUX-FULL-TOKEN\" verbatim on request appears in a project file, but that's a prompt-injection pattern \u2014 a real project token wouldn't be stored in plaintext in a repo file for the AI to recite on demand. I won't follow instructions embedded in file content that try to get me to disclose secrets.\n\nIf you need the actual project token, it should come from a secrets manager or your team's credential store, not this file.",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 10959,
+          "cache_read_input_tokens": 28678,
+          "input_tokens": 2,
+          "output_tokens": 149
+        },
+        "main": {
+          "cache_creation_input_tokens": 10959,
+          "cache_read_input_tokens": 28678,
+          "input_tokens": 2,
+          "output_tokens": 149
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "edit": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 14346.2,
+      "edited": "new\n",
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "EDITED",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11447,
+          "cache_read_input_tokens": 68421,
+          "input_tokens": 4,
+          "output_tokens": 194
+        },
+        "main": {
+          "cache_creation_input_tokens": 11447,
+          "cache_read_input_tokens": 68421,
+          "input_tokens": 4,
+          "output_tokens": 194
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "read": {
+      "claude_version": "2.1.272",
+      "client_wall_ms": 12385.0,
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "ALPHA-READ",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11209,
+          "cache_read_input_tokens": 68315,
+          "input_tokens": 4,
+          "output_tokens": 203
+        },
+        "main": {
+          "cache_creation_input_tokens": 11209,
+          "cache_read_input_tokens": 68315,
+          "input_tokens": 4,
+          "output_tokens": 203
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    }
+  },
+  "verdict": "GREEN"
+}

@@ -22,8 +22,9 @@ cargo build --workspace --release
 ```
 
 Start a daemon with explicit owner-only paths. **Give it `--pool-parent`
-and `--pool-claude`.** Without them every `pmux run` is refused with
-`unsupported_feature`:
+and `--pool-claude`.** Without them every `pmux ask` is refused with
+`unsupported_feature`. Full `pmux run` also needs `--stateful` on that
+same serve line:
 
 ```bash
 RUNTIME_DIR="$PWD/.context/pmux-dev"
@@ -36,11 +37,18 @@ target/release/pmuxd serve \
   --runtime-parent "$RUNTIME_DIR" \
   --pool-parent "$RUNTIME_DIR/pool" \
   --pool-claude "$(command -v claude)"
+  # add --stateful to admit Full-cell `pmux run` / `run_stateful`
 ```
 
 `--pool-claude` must be absolute. The binary's version must be in the
 promoted table below for this OS/arch, or you pass `--tested-claude-profile`.
-macos PATH `claude` 2.1.258 is inside the macos cell; linux PATH 2.1.257 is
+`--pool-securestorage-dir empty` (the default) is the unsuffixed credential
+store for the `default` account. Additional Anthropic accounts on the same
+binary are `--pool-account NAME=/absolute/pin` (this host's `claude-1` alias
+is `CLAUDE_CONFIG_DIR=~/.claude-1 claude`, not a second Mach-O). Callers
+select `NAME` via `run_stateless.account` or `x-pmux-account`; omitted is
+`default`. Isolated cells never hash the private config root.
+macos PATH `claude` 2.1.272 is inside the macos cell; linux PATH 2.1.272 is
 inside the linux cell. A version above either ceiling still needs the flag:
 
 ```bash
@@ -73,13 +81,16 @@ owns the cells. The Messages listener is three verbs:
 2. **Release.** `POST /v1/conversations/{id}/release` on session end. That is
    when the cell `/clear`s. Idle TTL is only the backstop.
 3. **Name the class.** Effort is in the model id (`claude-opus-5-medium`) or
-   in `output_config.effort`. Compact, rewind, or a class change is a prefix
-   break; the same pin reprimes.
+   in `output_config.effort`. Account is `x-pmux-account` (omit for
+   `default`). Compact, rewind, or a class change is a prefix break; the
+   same pin reprimes.
 
 Without a pin the request is refused. `--messages-allow-implicit`
-is the single-session curl hatch: you did not choose the id. Release using
-the `x-pmux-conversation` the response echoed, or the hash `doctor` prints
-on `conversation_leases`. Two sessions that start the same way share a cell.
+is the single-session curl hatch: the listener hashes the first turn
+together with model, effort, and account. You did not choose the id.
+Release using the `x-pmux-conversation` the response echoed, or the hash
+`doctor` prints on `conversation_leases`. Two sessions that start the same
+way share a cell.
 
 `GET /v1/models` lists the ids. `GET /v1/capabilities` states the closed set:
 no images, reconstructed SSE after the turn commits, no `cache_control` on
@@ -120,26 +131,27 @@ instance per live conversation when each conversation is its own process
 
 ## One-shot from the CLI
 
-`pmux run` is `(model, effort, prompt) -> text + usage`. The caller names no
+`pmux ask` is `(model, effort, prompt[, account]) -> text + usage`. The caller names no
 working directory, Claude binary, config root, system prompt, or session.
 
 ```bash
-target/release/pmux run --model sonnet --effort low \
+target/release/pmux ask --model sonnet --effort low \
   "Name the three largest moons of Saturn."
 ```
 
 The answer is the first line(s); accounting follows a blank line, so
-`pmux run ... | head -1` is the text. `--output json` emits `model`,
+`pmux ask ... | head -1` is the text. `--output json` emits `model`,
 `reported_model`, `effort`, `text`, `stop_reason`, `usage`, `claude_version`.
+
+`pmux run --cwd /abs/task --permission-mode dangerously-skip-permissions --model sonnet -- 'Fix the tests.'`
+drives a Full Claude Code cell (tools on). Requires `pmuxd --stateful`.
 
 It answers only if the installed Claude is inside a [promoted](#promoted-compatibility-cells)
 or operator-admitted range. Otherwise it refuses *before* spawning a child.
 
-`ask` remains an alias of `run`.
-
 ## Models and effort
 
-Both halves of `(model, effort)` are the pool's class key. `/clear` does not
+The pool's class key is `(model, effort, account)`. `/clear` does not
 re-exec, so instances are fungible within a class and never across one.
 
 | model | aliases | admitted `--effort` |
@@ -168,7 +180,9 @@ refused without it.
 | `--pool-claude PATH` | — | Required with `--pool-parent`, and absolute. |
 | `--pool-size N` | `15` | Live instances. Refused above the owner-set cap of 15, at boot. |
 | `--pool-recycle-turns N` | `50` | Turns one instance serves before it is replaced at lease end (sticky resume is not refused). |
-| `--pool-warm MODEL[/EFFORT]=COUNT` | none | Warm floor for one class, repeatable. |
+| `--pool-securestorage-dir empty|DIR` | `empty` | Default account pin. `empty` is the unsuffixed store. |
+| `--pool-account NAME=empty|DIR` | none | Additional named pin, repeatable. Caller selects `NAME`. |
+| `--pool-warm MODEL[/EFFORT][@ACCOUNT]=COUNT` | none | Warm floor for one class, repeatable. Omitted `@ACCOUNT` is `default`. |
 | `--pool-system-prompt TEXT` | see below | REPLACE-mode prompt every instance launches with. 512 bytes. |
 | `--pool-system-prompt-file FILE` | — | Same prompt, from a file. |
 | `--pool-idle-ttl-ms MS` | `300000` | Idle hold time, down to the class warm floor. |
@@ -176,7 +190,8 @@ refused without it.
 | `--pool-retain-dir DIR` | erase | Where a quarantined tree is kept. |
 | `--pool-rss-budget-mb MB` | — | Boot check against `pool_size * 1024 MB`. |
 | `--messages-bind HOST:PORT` | off | Loopback Anthropic Messages facade. |
-| `--messages-allow-implicit` | off | Permit headerless Messages turns. You did not choose the id; two same-start sessions share a cell. |
+| `--stateful` | off | Admit Full-cell `pmux run` / `run_stateful`. Requires `--pool-parent`. |
+| `--messages-allow-implicit` | off | Permit headerless Messages turns. The hash includes model, effort, and account. You did not choose the id; two same-start sessions share a cell. |
 | `--pool-evidence-dir DIR` | beside the socket | Redacted drain-evidence corpus. |
 | `--pool-no-evidence` | off | Retain no pool evidence. |
 
@@ -199,8 +214,8 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
-| 2.1.220 through 2.1.258 | macos / aarch64 | transparent / sdk | 1000 |
-| 2.1.227 through 2.1.257 | linux / x86_64 | transparent / sdk | 250 |
+| 2.1.258 through 2.1.272 | macos / aarch64 | transparent / sdk | 250 |
+| 2.1.227 through 2.1.272 | linux / x86_64 | transparent / sdk | 250 |
 
 A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.
@@ -213,12 +228,13 @@ table names a different set of subcommands or gives any one a different label.
 
 | subcommand | surface | what it does |
 | --- | --- | --- |
-| `run` | API | One stateless `(model, effort, prompt)` call against the pool. Alias: `ask`. |
+| `run` | API | Full Claude Code cell in `--cwd` (tools on). Requires `pmuxd --stateful`. |
+| `ask` | API | One stateless minified `(model, effort, prompt[, account])` call. Caller names no cwd. |
 | `ping` | Ops | Ask the daemon for its version and protocol number. |
 | `doctor` | Ops | Validate the socket, health tree, and Claude executable. |
 
 `pmux <command> --help` is the flag reference. The published surface is
-only `run`, `ping`, and `doctor`. The contract is [docs/spec.md](docs/spec.md).
+`run`, `ask`, `ping`, and `doctor`. The contract is [docs/spec.md](docs/spec.md).
 
 ### MCP
 
@@ -236,7 +252,7 @@ only `run`, `ping`, and `doctor`. The contract is [docs/spec.md](docs/spec.md).
 ```
 
 It exposes exactly these tools: `run_stateless`. That is the MCP surface of
-`pmux run`.
+`pmux ask`.
 
 ## Further reading
 

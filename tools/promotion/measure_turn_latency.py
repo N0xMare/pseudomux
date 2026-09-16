@@ -21,7 +21,7 @@ values:
   daemon's own view of one turn, from the instant it accepted the prompt to the
   instant it committed the result. This is the quantity pmux's machinery owns
   and the one the §9 row means.
-* `client_wall_ms` -- wall clock around one `pmux run` process,
+* `client_wall_ms` -- wall clock around one `pmux ask` process,
   measured with `time.monotonic()` in this process. It includes process spawn,
   socket connect, the request and the response, so it is always the larger of
   the two and it is what an operator's shell actually waits.
@@ -37,7 +37,7 @@ PATH B IS MEASURED WITH ONE CLOCK, NOT TWO, AND THAT IS NOT AN OVERSIGHT
 
 `StatelessResult` (`crates/protocol/src/v1.rs`) carries no `timings` member: a
 Path B caller names no session and is told nothing about the instance that
-served it, which is the product (`bin/pmux/src/cli.rs`, `Command::Run`). So
+served it, which is the product (`bin/pmux/src/cli.rs`, `Command::Ask`). So
 Path B has `client_wall_ms` only, and any sentence comparing Path A with Path B
 must compare `client_wall_ms` with `client_wall_ms`. Earlier drafts described
 both as "MEASURED the same way"; only the client clock is the same way.
@@ -300,6 +300,7 @@ class Daemon:
         claude: pathlib.Path,
         warm: str | None,
         extra_args: list[str] | None = None,
+        securestorage_dir: str = "empty",
     ) -> None:
         self.sandbox = sandbox
         self.log = (sandbox.root / "pmuxd.log").open("wb")
@@ -320,6 +321,8 @@ class Daemon:
             str(sandbox.root / "pool"),
             "--pool-claude",
             str(claude),
+            "--pool-securestorage-dir",
+            securestorage_dir,
             "--pool-size",
             "1",
             "--pool-recycle-turns",
@@ -438,13 +441,13 @@ def measure_path_b(
 ) -> dict[str, Any]:
     samples: list[dict[str, Any]] = []
     for index in range(turns + warmup):
-        arguments = ["run", "--model", model]
+        arguments = ["ask", "--model", model]
         if effort:
             arguments += ["--effort", effort]
         arguments.append(f"latency probe {uuid.uuid4()}")
         result, wall_ms = run_client(binaries, sandbox, arguments, timeout=180.0)
         if not result.get("text"):
-            raise MeasurementError("`pmux run` returned no text")
+            raise MeasurementError("`pmux ask` returned no text")
         samples.append({"warmup": index < warmup, "client_wall_ms": round(wall_ms, 1)})
     return {"samples": samples}
 
@@ -595,7 +598,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "pmuxd_argv": daemon.argv,
             "path_a": {
                 "removed": True,
-                "reason": "session CLI is not a product; this tool times only pmux run",
+                "reason": "session CLI is not a product; this tool times only pmux ask",
                 "samples": [],
             },
             "path_b": {

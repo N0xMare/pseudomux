@@ -809,6 +809,39 @@ rewords the background `--resume` help. See `docs/current-state.md` §2 "2.1.258
 | `linux-messages-sticky-eval-x86_64.json` | HTTP Messages sticky eval. Cache hits only above the ~1024-token floor. |
 | `linux-pi-agentic-subagent-x86_64.json` | Pi on Messages: agentic tools, sequential reviewer, parallel reviewers. |
 
+## Linux 2026-09-15 Path B receipts (`x86_64`)
+
+The 2.1.272 promotion. The pooled drain is unchanged
+(`pooled-transcript-drain-linux-x86_64.json`, 250 ms); these widen the linux
+cell's ceiling from 2.1.257 to 2.1.272. Parser admits five new
+`attachment.type` names (`session_context`, `date`, `environment`, `model`,
+`prompt_snapshot`) measured on minified cells at 2.1.272.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.272-linux-x86_64.json` | Paid ceiling: 2.1.272 `pmux run` grades, emptiness after `/clear`, 5 reachable arrivals max 6 ms (median 5) against the pooled 250 ms bound. Verdict promotable, floor 2.1.227, tested through 2.1.272. |
+| `linux-operator-eval-2.1.272-x86_64.json` | `GREEN_OPERATOR` pin confirmation for the 2.1.272 binary on this OS: grades all exact at sonnet-5 low and high, Messages sticky on the same cell `s0e0`, cache write 2328 / read 2328. Does not edit `PROMOTED_PROFILES`. |
+| `linux-operator-eval-2.1.272-x86_64-recheck.json` | Recheck on tars0 against the multi-account daemon with the empty (unsuffixed) pin: `GREEN_OPERATOR`, Messages sticky `s0e0`, cache write 2324 / read 2324. |
+
+The pinned 2.1.272 binary is `~/.local/share/pmux/claude/2.1.272/claude`
+(bundled linux-x64 ELF), sha256
+`d81396a668eb76fbddb49a2a5841f1b5d7af96b4c1f6500ced92f2c988f5bcd4`.
+
+## macos 2026-09-15 Path B receipts (`aarch64`)
+
+The 2.1.272 promotion, then the drain drop to 250 ms. The pooled macos receipt
+now covers 2.1.258 (5 arrivals, max 42 ms) and 2.1.272 (100 minified arrivals,
+max 20 ms). Floor is 2.1.258; 2.1.220..=2.1.257 need `--tested-claude-profile`.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.272-macos-aarch64.json` | Paid macos ceiling: 2.1.272 `pmux ask` grades, emptiness after `/clear`, 5 reachable arrivals max 8 ms. Floor 2.1.258, tested through 2.1.272, drain 250 ms. |
+| `macos-drain-n50-2.1.272-aarch64.json` | n=50 minified drain campaign 1: max 11 ms, 0 unmarked, recommended 250 ms. |
+| `macos-drain-n50-2.1.272-aarch64-2.json` | n=50 minified drain campaign 2: max 20 ms, 0 unmarked, recommended 250 ms. |
+| `promoted-profile-2.1.258-macos-aarch64.json` | Floor receipt for the 250 ms cell. |
+| `macos-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` on macos/aarch64 with the configured `/Users/cmace/.claude-1` pin (the usage-bearing Max org). Grades exact, `/clear` → `NONE`, Messages sticky `s0e0`, cache 2315/2315. |
+| `macos-pi-agentic-subagent-2.1.272-aarch64.json` | Pi 0.85.1 + pi-subagents 0.68.0 through `examples/pi/pmux.ts` on 2.1.272 with the usage-bearing pin: agentic (read/write/bash) `AGENTIC_OK`, one sequential reviewer `MULTI_OK`, two parallel reviewers + `bg_wait` `PARALLEL_OK`. Children `pmux/claude-opus-5-xhigh` exit 0. Pool returned to idle 5 / leased 0. First child attempt without required `pmux` extension 400'd missing `x-pmux-conversation` (0.68 disables ambient extensions on foreground children); the adapter now registers itself. |
+
 ## Linux 2026-09 Path B receipts (`x86_64`)
 
 The 2.1.257 promotion. The pooled drain is unchanged

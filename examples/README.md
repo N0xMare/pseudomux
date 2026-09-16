@@ -19,8 +19,9 @@ Every successful `POST /v1/messages` echoes lease headers:
 (`primed` / `continued` / `reprimed` / `replayed`), `x-pmux-idle-ttl-ms`.
 
 Headerless `POST /v1/messages` needs `--messages-allow-implicit`.
-You did not choose the id; release using the echoed
-`x-pmux-conversation`. Two sessions that start the same way share a cell.
+You did not choose the id; the hash includes model, effort, and account.
+Release using the echoed `x-pmux-conversation`. Two sessions that start
+the same way share a cell.
 
 | Adapter | Can pin and release per session? | Measured? |
 | --- | --- | --- |

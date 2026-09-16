@@ -1,0 +1,26 @@
+{
+  "schema": "pmux.living-stateful.v1",
+  "os": "macos",
+  "arch": "aarch64",
+  "claude_version": "2.1.272",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "permission_mode": "dangerously_skip_permissions",
+  "cwd": "/tmp/pmux-full-task",
+  "prompt": "Write hello.txt containing hi",
+  "text": "Created hello.txt with \"hi\".",
+  "stop_reason": {
+    "kind": "end_turn"
+  },
+  "hello_text": "hi",
+  "usage": {
+    "main": {
+      "input_tokens": 4,
+      "output_tokens": 103,
+      "cache_creation_input_tokens": 39811,
+      "cache_read_input_tokens": 39493
+    }
+  },
+  "notes": "First cold mint in this daemon returned PromptNotAcknowledged; retry on the same daemon wrote hello.txt. Usage cache ~40k is the Full tool surface, not a minified cell (minified ask on this host billed ~680 input / 0 cache).",
+  "verdict": "GREEN"
+}

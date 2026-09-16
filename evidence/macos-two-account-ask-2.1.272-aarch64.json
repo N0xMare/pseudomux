@@ -1,0 +1,130 @@
+{
+  "schema": "pmux.living-two-cell.v1",
+  "os": "macos",
+  "arch": "aarch64",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "claude": "/Users/cmace/.local/share/claude/versions/2.1.272",
+  "accounts": [
+    "default",
+    "claude-1"
+  ],
+  "stateful": true,
+  "pmuxd_argv": [
+    "/Users/cmace/dev/ai/harnussy/pseudomux/target/release/pmuxd",
+    "serve",
+    "--socket",
+    "/private/tmp/pmux-living-macos/pmux.sock",
+    "--rmuxd",
+    "/Users/cmace/dev/ai/harnussy/pseudomux/target/release/pmux-rmuxd",
+    "--launcher",
+    "/Users/cmace/dev/ai/harnussy/pseudomux/target/release/pmux-launcher",
+    "--runtime-parent",
+    "/private/tmp/pmux-living-macos/private",
+    "--pool-parent",
+    "/private/tmp/pmux-living-macos/pool",
+    "--pool-claude",
+    "/Users/cmace/.local/share/claude/versions/2.1.272",
+    "--pool-securestorage-dir",
+    "empty",
+    "--pool-size",
+    "2",
+    "--pool-no-evidence",
+    "--stateful",
+    "--pool-account",
+    "claude-1=/Users/cmace/.claude-1",
+    "--pool-warm",
+    "claude-sonnet-5/low=1",
+    "--pool-warm",
+    "claude-sonnet-5/low@claude-1=1",
+    "--tested-claude-profile",
+    "{\"claude_version\":\"2.1.272\",\"os\":\"macos\",\"arch\":\"aarch64\",\"terminal_profile\":\"transparent\",\"input_transport\":\"sdk\",\"transcript_drain_ms\":1000}"
+  ],
+  "doctor_status": "healthy",
+  "pool_census": {
+    "capacity": 2,
+    "clearing": 0,
+    "configured": true,
+    "conversation_leases": [],
+    "declared_warm": 2,
+    "halted": null,
+    "idle": 2,
+    "in_flight": 0,
+    "instance_terminals_present": 2,
+    "leaked": 0,
+    "leased": 0,
+    "live": 2,
+    "pool_size": 2,
+    "registered_instances": 2,
+    "reserved": 0,
+    "tearing_down": 0
+  },
+  "asks": [
+    {
+      "account": "default",
+      "nonce": "29ED3BB3",
+      "expected": "DEFAULT-29ED3BB3",
+      "text": "DEFAULT-29ED3BB3",
+      "answered": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "claude_version": "2.1.272",
+      "usage": {
+        "main": {
+          "input_tokens": 677,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 677,
+          "output_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 11086.0
+    },
+    {
+      "account": "claude-1",
+      "nonce": "FAD21DEA",
+      "expected": "CLAUDE-1-FAD21DEA",
+      "text": "CLAUDE-1-FAD21DEA",
+      "answered": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "claude_version": "2.1.272",
+      "usage": {
+        "main": {
+          "input_tokens": 683,
+          "output_tokens": 18,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 683,
+          "output_tokens": 18,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 12187.5
+    }
+  ],
+  "verdict": "GREEN",
+  "notes": "Two-account `pmux ask` only. Full-cell hello.txt is evidence/macos-stateful-hello-2.1.272-aarch64.json."
+}

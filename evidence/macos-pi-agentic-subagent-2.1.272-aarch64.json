@@ -1,0 +1,83 @@
+{
+  "schema": "pmux.linux-operator-eval.v1",
+  "title": "Pi through pool-leased pmux at Claude Code 2.1.272 on macOS — agentic + subagent live eval",
+  "claude_version": "2.1.272",
+  "promoted_without_flag": false,
+  "tested_claude_profile": {
+    "os": "macos",
+    "arch": "aarch64",
+    "claude_version": "2.1.272",
+    "terminal_profile": "transparent",
+    "input_transport": "sdk",
+    "transcript_drain_ms": 1000
+  },
+  "adapter": "examples/pi/pmux.ts via pmux-client",
+  "host": {
+    "os": "macos",
+    "arch": "aarch64",
+    "pi": "0.85.1",
+    "pi_subagents": "0.68.0"
+  },
+  "daemon": {
+    "pool_size": 5,
+    "warm": "claude-opus-5/medium=3, claude-opus-5/xhigh=2",
+    "messages": "http://127.0.0.1:8766",
+    "securestorage_dir": "configured",
+    "pin": "/Users/cmace/.claude-1",
+    "tested_claude_profile_flag": true
+  },
+  "setup": {
+    "extension_installed_from": "examples/pi/pmux.ts",
+    "pmux_client": "file: clients/typescript after npm run build",
+    "child_extensions": "pi-subagents 0.68 foreground children disable ambient extensions; the adapter registers itself via registerRequiredChildExtensions (required: [\"pmux\"]). First sequential attempt without that registration 400'd missing x-pmux-conversation."
+  },
+  "agentic": {
+    "verdict": "GREEN",
+    "pi_exit": 0,
+    "tools": ["read", "write", "bash"],
+    "final_text": "AGENTIC_OK TOKEN=PMUX-AGENTIC-272-A1",
+    "provider": "pmux",
+    "model": "claude-opus-5-medium",
+    "verified_txt": "TOKEN=PMUX-AGENTIC-272-A1\nSTATUS=verified\n",
+    "cache_hit_after_first": true
+  },
+  "subagent_sequential": {
+    "verdict": "GREEN",
+    "pi_exit": 0,
+    "tools": ["write", "subagent", "write"],
+    "final_text": "MULTI_OK",
+    "provider": "pmux",
+    "model": "claude-opus-5-medium",
+    "child": {
+      "agent": "reviewer",
+      "model": "pmux/claude-opus-5-xhigh",
+      "exitCode": 0,
+      "error": null,
+      "durationMs": 61371,
+      "required_extensions": ["pmux"]
+    },
+    "review_md_bytes": 2300
+  },
+  "subagent_parallel": {
+    "verdict": "GREEN",
+    "pi_exit": 0,
+    "tools": ["bash", "subagent", "subagent", "bg_wait", "write"],
+    "final_text": "PARALLEL_OK",
+    "provider": "pmux",
+    "model": "claude-opus-5-medium",
+    "children": [
+      {"agent": "reviewer", "model": "pmux/claude-opus-5-xhigh", "exitCode": 0, "error": null},
+      {"agent": "reviewer", "model": "pmux/claude-opus-5-xhigh", "exitCode": 0, "error": null}
+    ],
+    "required_extensions": ["pmux"]
+  },
+  "release": {
+    "leased_after": 0,
+    "idle_after": 5,
+    "live_after": 5,
+    "conversation_leases_after": [],
+    "clear_warn_count": 0,
+    "schema_drift_lines": 0,
+    "verdict": "GREEN"
+  }
+}

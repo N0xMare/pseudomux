@@ -61,8 +61,8 @@ measured."
 
 **Consequence A — an honest arm64 guest is a new cell.** Build pmuxd inside an arm64
 Ubuntu guest and it reports `linux`/`aarch64`. `PROMOTED_PROFILES`
-(`compatibility.rs:483-541`) holds exactly two cells: macos/aarch64 2.1.220..=2.1.258
-and linux/x86_64 2.1.227..=2.1.257. Nothing admits linux/aarch64, so every `pmux run`
+(`compatibility.rs:483-541`) holds exactly two cells: macos/aarch64 2.1.258..=2.1.272
+and linux/x86_64 2.1.227..=2.1.272. Nothing admits linux/aarch64, so every `pmux run`
 is refused unless you pass `--tested-claude-profile`. Dropping the flag needs
 `evidence/pooled-transcript-drain-linux-aarch64.json`, which does not exist;
 `tools/dev/promote.py` exits 2 without it, and a first promotion on a new OS/arch needs
@@ -83,9 +83,10 @@ receipt under those rules; it is admissible only as a smoke test. Turn latency a
 
 **Other guest-side facts.**
 - **Auth.** Claude Max OAuth on macOS lives in the login keychain
-  (`Claude Code-credentials`, service name namespaced by `sha256(config_dir)[0:8]`,
+  (`Claude Code-credentials`, service name namespaced by
+  `sha256(NFC(CLAUDE_SECURESTORAGE_CONFIG_DIR))[0:8]`, empty pin = unsuffixed store;
   `docs/defect-log.md:1797`, `docs/2.1.226-compatibility.md` §4.1). A Linux guest
-  cannot reach it, and proxying it "hands the guest the operator's OAuth token"
+  cannot reach the macOS keychain, and proxying it "hands the guest the operator's OAuth token"
   (`docs/defect-log.md:5094-5099`). The honest route is a separate `claude login` inside
   the guest writing `~/.claude/.credentials.json`. That is a second live session on the
   same Max subscription, and it spends real tokens from the same budget.
@@ -100,7 +101,7 @@ receipt under those rules; it is admissible only as a smoke test. Turn latency a
 
 - **Docker Desktop / OrbStack / colima `--platform linux/amd64`.** Same architectural
   lie plus a container. The repo *deleted* its linux-docker lane: it is a tombstone
-  (`docs/current-state.md:263,293`, row C6) — "Historical freeze envelope, not a living
+  (`docs/current-state.md:293,323`, row C6) — "Historical freeze envelope, not a living
   pin." Re-introducing a container lane re-opens a settled decision.
 - **Lima.** Same arm64-guest / Rosetta situation as Tart, less tidy image handling.
 - **UTM/QEMU full x86_64 emulation.** The only way to get a genuine linux/x86_64 *guest*

@@ -200,7 +200,7 @@ class Describe(unittest.TestCase):
         self.assertIn(model_matrix.GREEN, text)
         self.assertIn("not a promotion", text)
         rows = model_matrix.derive_rows(TABLE)
-        self.assertEqual(text.count("pmux run --model "), len(rows))
+        self.assertEqual(text.count("pmux ask --model "), len(rows))
         for item in TABLE:
             self.assertIn(f"--model {item['canonical']}", text)
 

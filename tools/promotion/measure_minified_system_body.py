@@ -447,7 +447,7 @@ def main() -> int:
         cold, cold_ms = run_client(
             binaries,
             sandbox,
-            ["run", "--model", "claude-sonnet-5", "--effort", "low", USER_PROMPT],
+            ["ask", "--model", "claude-sonnet-5", "--effort", "low", USER_PROMPT],
             timeout=180.0,
         )
         receipt["cold"] = summarize_turn(cold, cold_ms, "cold", displacer)
@@ -457,7 +457,7 @@ def main() -> int:
         cleared, cleared_ms = run_client(
             binaries,
             sandbox,
-            ["run", "--model", "claude-sonnet-5", "--effort", "low", USER_PROMPT],
+            ["ask", "--model", "claude-sonnet-5", "--effort", "low", USER_PROMPT],
             timeout=180.0,
         )
         receipt["after_clear"] = summarize_turn(

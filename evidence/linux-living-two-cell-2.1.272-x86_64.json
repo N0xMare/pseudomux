@@ -1,0 +1,122 @@
+{
+  "schema": "pmux.living-two-cell.v1",
+  "os": "linux",
+  "arch": "x86_64",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "claude": "/home/jm/.local/share/pmux/claude/2.1.272/claude",
+  "accounts": [
+    "default"
+  ],
+  "stateful": true,
+  "pmuxd_argv": [
+    "/home/jm/dev/pseudomux/target/release/pmuxd",
+    "serve",
+    "--socket",
+    "/tmp/pmux-living-linux/pmux.sock",
+    "--rmuxd",
+    "/home/jm/dev/pseudomux/target/release/pmux-rmuxd",
+    "--launcher",
+    "/home/jm/dev/pseudomux/target/release/pmux-launcher",
+    "--runtime-parent",
+    "/tmp/pmux-living-linux/private",
+    "--pool-parent",
+    "/tmp/pmux-living-linux/pool",
+    "--pool-claude",
+    "/home/jm/.local/share/pmux/claude/2.1.272/claude",
+    "--pool-securestorage-dir",
+    "empty",
+    "--pool-size",
+    "2",
+    "--pool-no-evidence",
+    "--stateful",
+    "--pool-warm",
+    "claude-sonnet-5/low=1"
+  ],
+  "doctor_status": "healthy",
+  "pool_census": {
+    "capacity": 2,
+    "clearing": 0,
+    "configured": true,
+    "conversation_leases": [],
+    "declared_warm": 1,
+    "halted": null,
+    "idle": 1,
+    "in_flight": 0,
+    "instance_terminals_present": 1,
+    "leaked": 0,
+    "leased": 0,
+    "live": 1,
+    "pool_size": 2,
+    "registered_instances": 1,
+    "reserved": 0,
+    "tearing_down": 0
+  },
+  "asks": [
+    {
+      "account": "default",
+      "nonce": "DB76A10A",
+      "expected": "DEFAULT-DB76A10A",
+      "text": "DEFAULT-DB76A10A",
+      "answered": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "claude_version": "2.1.272",
+      "usage": {
+        "main": {
+          "input_tokens": 671,
+          "output_tokens": 15,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 671,
+          "output_tokens": 15,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 2561.2
+    }
+  ],
+  "full": {
+    "text": "Done \u2014 created hello.txt with \"hi\".",
+    "stop_reason": {
+      "kind": "end_turn"
+    },
+    "claude_version": "2.1.272",
+    "usage": {
+      "main": {
+        "input_tokens": 4,
+        "output_tokens": 103,
+        "cache_creation_input_tokens": 10716,
+        "cache_read_input_tokens": 67898
+      },
+      "sidechain": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      },
+      "combined": {
+        "input_tokens": 4,
+        "output_tokens": 103,
+        "cache_creation_input_tokens": 10716,
+        "cache_read_input_tokens": 67898
+      }
+    },
+    "client_wall_ms": 8625.9,
+    "hello_path": "/tmp/pmux-full-task/hello.txt",
+    "hello_exists": true,
+    "hello_text": "hi"
+  },
+  "stateful_trees_after": [],
+  "verdict": "GREEN"
+}

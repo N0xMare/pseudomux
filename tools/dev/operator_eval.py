@@ -104,6 +104,7 @@ class EvalDaemon:
         messages_bind: str | None,
         model: str,
         effort: str | None,
+        securestorage_dir: str = "empty",
     ) -> None:
         # `messages_bind` and `effort` are optional so model_matrix.py can reuse
         # this daemon: it needs no Messages listener, and it warms a class whose
@@ -126,8 +127,12 @@ class EvalDaemon:
             json.dumps(profile, sort_keys=True),
             "--pool-parent",
             str(sandbox.root / "pool"),
+            "--pool-retain-dir",
+            str(sandbox.root / "retain"),
             "--pool-claude",
             str(claude),
+            "--pool-securestorage-dir",
+            securestorage_dir,
             "--pool-size",
             "3",
             "--pool-recycle-turns",
@@ -343,6 +348,14 @@ def messages_turn(
     }
 
 
+def require_securestorage_pin(pin: str) -> str:
+    if pin != "empty" and not pin.startswith("/"):
+        raise MeasurementError(
+            "--pool-securestorage-dir must be the word empty or an absolute path"
+        )
+    return pin
+
+
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     binaries = resolve_binaries(args.release_dir)
     claude = args.claude.resolve(strict=True)
@@ -387,6 +400,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     sandbox = Sandbox("operator")
     bind = free_loopback()
+    storage_pin = require_securestorage_pin(args.pool_securestorage_dir)
+    receipt["securestorage_dir"] = "empty" if storage_pin == "empty" else "configured"
     daemon = EvalDaemon(
         binaries,
         sandbox,
@@ -395,6 +410,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         bind,
         args.model,
         efforts[0],
+        storage_pin,
     )
     checks: dict[str, Any] = {}
     turns: list[dict[str, Any]] = []
@@ -429,7 +445,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 binaries,
                 sandbox,
                 [
-                    "run",
+                    "ask",
                     "--model",
                     args.model,
                     "--effort",
@@ -462,7 +478,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 binaries,
                 sandbox,
                 [
-                    "run",
+                    "ask",
                     "--model",
                     args.model,
                     "--effort",
@@ -608,6 +624,11 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--keep-sandbox", action="store_true")
+    parser.add_argument(
+        "--pool-securestorage-dir",
+        default="empty",
+        help="empty (default, unsuffixed store) or an absolute pin path",
+    )
     args = parser.parse_args(arguments)
     if args.describe:
         print(describe(), end="")

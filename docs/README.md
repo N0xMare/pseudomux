@@ -5,7 +5,7 @@ Pi setup is [examples/pi](../examples/pi/README.md).
 
 The product is a local API over a warm pool of constrained embedded Claude
 Code processes. TypeScript, Rust, and Python clients plus `pmux run` /
-`ping` / `doctor` are the caller surface.
+`ask` / `ping` / `doctor` are the caller surface.
 
 Everything else in this directory is engineering: compatibility receipts,
 test ownership, and dated measurements. It is not a second product.
