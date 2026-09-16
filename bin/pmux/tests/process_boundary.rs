@@ -54,7 +54,38 @@ fn stateless_reply(text: &str) -> NativeReply {
 }
 
 fn add_run_args(command: &mut Command) {
-    command.args(["--output", "json", "run", "--model", "sonnet"]);
+    command.args(["--output", "json", "ask", "--model", "sonnet"]);
+}
+
+fn stateful_reply(text: &str) -> NativeReply {
+    success(
+        "stateful_result",
+        json!({
+            "model": "sonnet",
+            "text": text,
+            "usage": {
+                "main": {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0
+                },
+                "sidechain": {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0
+                },
+                "combined": {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0
+                }
+            },
+            "claude_version": "test",
+        }),
+    )
 }
 
 #[test]
@@ -687,4 +718,55 @@ fn clap_and_config_rejections_have_stable_exit_boundaries() {
             .stderr_text()
             .contains("unrecognized subcommand")
     );
+}
+
+#[test]
+fn ask_sends_run_stateless_and_run_sends_run_stateful() {
+    let sandbox = Sandbox::new("ask-vs-run-wire");
+    let server = spawn_native_server(
+        sandbox.bind(),
+        vec![stateless_reply("asked"), stateful_reply("wrote")],
+    );
+
+    let mut ask = command(&sandbox.socket, &sandbox.root);
+    ask.args(["--output", "ndjson", "ask", "--model", "sonnet", "hello"]);
+    let ask = run(ask, None);
+    assert!(ask.status.success(), "{}", ask.stderr_text());
+    let ask_line: Value = serde_json::from_str(ask.stdout_text().trim()).unwrap();
+    assert_eq!(ask_line["type"], "stateless_result");
+
+    let mut full = command(&sandbox.socket, &sandbox.root);
+    full.args([
+        "--output",
+        "ndjson",
+        "run",
+        "--model",
+        "sonnet",
+        "--cwd",
+        "/tmp",
+        "--permission-mode",
+        "dangerously-skip-permissions",
+        "hello",
+    ]);
+    let full = run(full, None);
+    assert!(full.status.success(), "{}", full.stderr_text());
+    let full_line: Value = serde_json::from_str(full.stdout_text().trim()).unwrap();
+    assert_eq!(full_line["type"], "stateful_result");
+
+    let requests = server.join().unwrap();
+    assert!(
+        matches!(requests[0].request, Request::RunStateless(_)),
+        "ask must send run_stateless: {:?}",
+        requests[0].request
+    );
+    match &requests[1].request {
+        Request::RunStateful(params) => {
+            assert_eq!(params.cwd, "/tmp");
+            assert_eq!(
+                params.permission_mode,
+                Some(pseudomux_protocol::v1::PermissionMode::DangerouslySkipPermissions)
+            );
+        }
+        other => panic!("run must send run_stateful: {other:?}"),
+    }
 }

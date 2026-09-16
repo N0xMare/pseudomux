@@ -24,16 +24,18 @@ enum Surface {
     Ping,
     Doctor,
     Run,
+    Ask,
 }
 
 impl Surface {
-    const ALL: [Self; 3] = [Self::Ping, Self::Run, Self::Doctor];
+    const ALL: [Self; 4] = [Self::Ping, Self::Run, Self::Ask, Self::Doctor];
 
     const fn name(self) -> &'static str {
         match self {
             Self::Ping => "ping",
             Self::Doctor => "doctor",
             Self::Run => "run",
+            Self::Ask => "ask",
         }
     }
 
@@ -53,7 +55,19 @@ impl Surface {
                 process.args(["doctor", "--claude", "/bin/sh"]);
             }
             Self::Run => {
-                process.args(["run", "--model", "sonnet", TURN_PROMPT_SECRET]);
+                process.args([
+                    "run",
+                    "--model",
+                    "sonnet",
+                    "--cwd",
+                    "/tmp",
+                    "--permission-mode",
+                    "dangerously-skip-permissions",
+                    TURN_PROMPT_SECRET,
+                ]);
+            }
+            Self::Ask => {
+                process.args(["ask", "--model", "sonnet", TURN_PROMPT_SECRET]);
             }
         }
     }
@@ -72,7 +86,7 @@ fn public_runtime_error() -> NativeReply {
 }
 
 /// The published `--help` surface is derived from the binary. The product
-/// commands are ping/run/doctor; `ask` is the run alias.
+/// commands are ping/run/ask/doctor.
 #[test]
 fn the_matrix_covers_every_subcommand_pmux_publishes() {
     let sandbox = Sandbox::new("subcommand-census");
@@ -98,11 +112,11 @@ fn the_matrix_covers_every_subcommand_pmux_publishes() {
         .collect::<std::collections::BTreeSet<_>>();
     assert_eq!(
         published,
-        ["doctor", "ping", "run"]
+        ["ask", "doctor", "ping", "run"]
             .into_iter()
             .map(str::to_owned)
             .collect::<std::collections::BTreeSet<_>>(),
-        "the published --help surface is ping/run/doctor"
+        "the published --help surface is ping/run/ask/doctor"
     );
     let covered = Surface::ALL
         .iter()
@@ -138,7 +152,7 @@ fn the_matrix_covers_every_subcommand_pmux_publishes() {
     );
     assert!(
         ask.status.success(),
-        "`pmux ask --help` must stay invokable as the run alias: {}",
+        "`pmux ask --help` must stay invokable: {}",
         ask.stderr_text()
     );
     let ask_help = String::from_utf8(ask.stdout).expect("ask --help is utf-8");
@@ -306,6 +320,9 @@ fn parser_misuse_is_exit_two_for_every_command() {
             }
             Surface::Run => {
                 process.args(["run", "--effort", "definitely-not-a-tier", "prompt"]);
+            }
+            Surface::Ask => {
+                process.args(["ask", "--effort", "definitely-not-a-tier", "prompt"]);
             }
         }
 

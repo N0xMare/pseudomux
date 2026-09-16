@@ -18,13 +18,13 @@ const MAX_PROMPT_SOURCE_BYTES: u64 = MAX_PROMPT_BYTES * 2 + 1;
     about = "Thin CLI for the pmux token engine",
     long_about = "pmux talks to a local pool of embedded Claude Code processes.
 
-`run` is the one-shot CLI: `(model, effort, prompt) -> text + usage`. The
-caller names no resource. `pmuxd` must have been started with --pool-parent
-or every `run` is refused. `ping` and `doctor` start nothing and spend no
-tokens.
+`run` drives a Full Claude Code cell in `--cwd` (tools on). `ask` is the
+stateless minified one-shot: `(model, effort, prompt[, account]) -> text`.
+`pmuxd` needs --pool-parent; Full `run` also needs --stateful. `ping` and
+`doctor` start nothing and spend no tokens.
 
-Harnesses should use the Messages facade (`--messages-bind`)
-with `x-pmux-conversation`, not this CLI."
+Harnesses that own tools should use Messages (`--messages-bind`)
+with `x-pmux-conversation`, not `run`."
 )]
 pub struct Cli {
     /// Exact pmuxd Unix socket. No discovery or daemon startup is performed.
@@ -56,35 +56,49 @@ pub enum Command {
     /// Starts nothing, spends no tokens, and reaches only the accept loop. Use
     /// `pmux doctor` for anything behind it.
     Ping,
-    /// API: run one stateless turn against the embedded Claude Code pool.
+    /// API: drive a Full Claude Code cell (default tools) in `--cwd`.
     ///
-    /// Requires a `pmuxd` started with `--pool-parent`; without one every
-    /// `run` is refused with `unsupported_feature`.
-    ///
-    /// THE CALLER NAMES NO RESOURCE. There is no `--cwd`, no
-    /// `--config-isolation-root`, no `--claude`, no `--system-prompt`, no
-    /// session id and no generation on this subcommand, and their absence is
-    /// the product rather than an omission: the daemon mints every one of them
-    /// from its own configuration plus a slot identity.
-    ///
-    /// `(model, effort, prompt) -> text + usage`, and nothing else.
-    #[command(alias = "ask")]
+    /// Requires `pmuxd --stateful --pool-parent`. Unattended use must pass
+    /// `--permission-mode dangerously-skip-permissions`.
     Run {
-        /// Claude model alias or exact id, e.g. `opus`, `sonnet`,
-        /// `claude-opus-5`. Required: it is half the pool's class key, and an
-        /// absent model would partition the pool on whatever the daemon's
-        /// configuration happens to default to.
+        /// Claude model alias or exact id, e.g. `opus`, `sonnet`.
         #[arg(long)]
         model: String,
         /// Reasoning depth. Omit for the resolved model's own default.
-        /// Validated against the RESOLVED model by the daemon, never against
-        /// this list alone -- tiers are not uniform across Claude models.
         #[arg(long, value_enum)]
         effort: Option<EffortArg>,
+        /// `--pool-account` name. Omit for `default`. Never a filesystem path.
+        #[arg(long)]
+        account: Option<String>,
+        /// Absolute task directory. Required. Not a pool slot.
+        #[arg(long)]
+        cwd: PathBuf,
+        /// Unattended Full cells must skip the TUI permission prompt.
+        #[arg(long, value_enum)]
+        permission_mode: Option<PermissionArg>,
         #[command(flatten)]
         prompt: PromptArgs,
-        /// Absolute wall-clock deadline for the answer. Omit for daemon policy.
-        /// It may only SHORTEN pmux's wait; nothing here lengthens one.
+        /// Absolute wall-clock deadline. Omit for daemon policy.
+        #[arg(long)]
+        deadline_unix_ms: Option<u64>,
+    },
+    /// API: one stateless minified turn. The caller names no cwd.
+    ///
+    /// `(model, effort, prompt[, account]) -> text + usage`. Requires
+    /// `--pool-parent`.
+    Ask {
+        /// Claude model alias or exact id, e.g. `opus`, `sonnet`.
+        #[arg(long)]
+        model: String,
+        /// Reasoning depth. Omit for the resolved model's own default.
+        #[arg(long, value_enum)]
+        effort: Option<EffortArg>,
+        /// `--pool-account` name. Omit for `default`. Never a filesystem path.
+        #[arg(long)]
+        account: Option<String>,
+        #[command(flatten)]
+        prompt: PromptArgs,
+        /// Absolute wall-clock deadline. Omit for daemon policy.
         #[arg(long)]
         deadline_unix_ms: Option<u64>,
     },
@@ -98,7 +112,7 @@ pub enum Command {
     /// The health tree includes the daemon's own compatibility layer, which
     /// runs the Claude the stateless pool would launch and asks the same
     /// registry a mint asks. That is what stops a green `doctor` from being
-    /// followed by a `run` refused with `unsupported_claude_version`: the two
+    /// followed by an `ask` refused with `unsupported_claude_version`: the two
     /// answers now come from one comparison, made where both operands live.
     Doctor {
         /// Claude executable to validate. This is not the pool's `--pool-claude`.
@@ -121,6 +135,18 @@ pub struct PromptArgs {
     /// newline is dropped, so an ordinary text file works unchanged.
     #[arg(long, conflicts_with = "prompt")]
     pub prompt_file: Option<PathBuf>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub enum PermissionArg {
+    #[value(name = "dangerously-skip-permissions")]
+    DangerouslySkipPermissions,
+}
+
+impl From<PermissionArg> for pseudomux_protocol::v1::PermissionMode {
+    fn from(_: PermissionArg) -> Self {
+        Self::DangerouslySkipPermissions
+    }
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -325,7 +351,7 @@ mod tests {
     ///
     /// Derived over every subcommand rather than over a list, so a subcommand
     /// added later has to answer the question too. The published surface is
-    /// only ping/run/doctor, labelled API or Ops.
+    /// only ping/run/ask/doctor, labelled API or Ops.
     #[test]
     fn every_subcommand_says_which_surface_it_is_on() {
         let mut names = Vec::new();
@@ -338,8 +364,8 @@ mod tests {
                 .to_string();
             let expected = match name.as_str() {
                 "ping" | "doctor" => "Ops:",
-                "run" => "API:",
-                other => panic!("published surface is ping/run/doctor; found {other}"),
+                "run" | "ask" => "API:",
+                other => panic!("published surface is ping/run/ask/doctor; found {other}"),
             };
             assert!(
                 about.starts_with(expected),
@@ -347,7 +373,7 @@ mod tests {
             );
         }
         names.sort();
-        assert_eq!(names, ["doctor", "ping", "run"]);
+        assert_eq!(names, ["ask", "doctor", "ping", "run"]);
     }
 
     /// The provider CLI's product statement, held on the CLI the way
@@ -357,8 +383,8 @@ mod tests {
     /// Derived from clap's own argument ids for `run`, so a resource flag added
     /// to this subcommand later is red here rather than in a leak report.
     #[test]
-    fn the_run_subcommand_names_no_resource() {
-        let command = Cli::command().find_subcommand_mut("run").unwrap().clone();
+    fn the_ask_subcommand_names_no_resource() {
+        let command = Cli::command().find_subcommand_mut("ask").unwrap().clone();
         let offered: BTreeSet<String> = command
             .get_arguments()
             .map(|argument| argument.get_id().to_string())
@@ -369,14 +395,15 @@ mod tests {
         let admitted = BTreeSet::from([
             "model".to_owned(),
             "effort".to_owned(),
+            "account".to_owned(),
             "prompt".to_owned(),
             "prompt_file".to_owned(),
             "deadline_unix_ms".to_owned(),
         ]);
         assert_eq!(
             offered, admitted,
-            "`pmux run` gained or lost an argument; every addition here is a resource a \
-             caller could name, which is the one thing this subcommand promises it cannot do"
+            "`pmux ask` gained or lost an argument; model/effort/account are daemon-configured \
+             names, not filesystem resources"
         );
     }
 
@@ -415,7 +442,7 @@ mod tests {
     /// by a result record" under `pmux ping`.
     #[test]
     fn the_global_output_help_does_not_promise_turn_events_to_subcommands_that_have_none() {
-        for subcommand in ["ping", "run", "doctor"] {
+        for subcommand in ["ping", "run", "ask", "doctor"] {
             let help = rendered_help(subcommand);
             assert!(
                 help.contains("exactly one record"),
@@ -624,6 +651,38 @@ mod tests {
         ])
         .unwrap();
         assert_eq!(cli.output, OutputMode::Ndjson);
-        assert!(matches!(cli.command, Command::Run { .. }));
+        assert!(matches!(cli.command, Command::Ask { .. }));
+    }
+
+    #[test]
+    fn run_parses_as_full_cell_with_required_cwd() {
+        let cli = Cli::try_parse_from([
+            "pmux",
+            "--socket",
+            "/tmp/pmux.sock",
+            "run",
+            "--model",
+            "sonnet",
+            "--cwd",
+            "/tmp",
+            "--permission-mode",
+            "dangerously-skip-permissions",
+            "hello",
+        ])
+        .unwrap();
+        match cli.command {
+            Command::Run {
+                cwd,
+                permission_mode,
+                ..
+            } => {
+                assert_eq!(cwd, PathBuf::from("/tmp"));
+                assert_eq!(
+                    permission_mode,
+                    Some(PermissionArg::DangerouslySkipPermissions)
+                );
+            }
+            other => panic!("expected Command::Run, got {other:?}"),
+        }
     }
 }

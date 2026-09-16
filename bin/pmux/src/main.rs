@@ -10,8 +10,8 @@ use anyhow::{Result, bail};
 use clap::Parser;
 use pseudomux_client::{ClientError, PmuxClient};
 use pseudomux_protocol::v1::{
-    DaemonDiagnosis, EffortLevel, HealthLayerName, ProbeOutcome, RunStatelessRequest,
-    RuntimeFinding, SessionFinding,
+    DaemonDiagnosis, EffortLevel, HealthLayerName, PermissionMode, ProbeOutcome,
+    RunStatefulRequest, RunStatelessRequest, RuntimeFinding, SessionFinding,
 };
 use serde::Serialize;
 use serde_json::Value;
@@ -99,6 +99,50 @@ async fn execute(cli: Cli) -> Result<()> {
         Command::Run {
             model,
             effort,
+            account,
+            cwd,
+            permission_mode,
+            prompt,
+            deadline_unix_ms,
+        } => {
+            let prompt = read_prompt(&prompt)?;
+            if !cwd.is_absolute() {
+                bail!("--cwd must be an absolute path; got {}", cwd.display());
+            }
+            let result = client
+                .run_stateful(RunStatefulRequest {
+                    model,
+                    effort: effort.map(EffortLevel::from),
+                    prompt,
+                    cwd: cwd.to_string_lossy().into_owned(),
+                    account,
+                    permission_mode: permission_mode.map(PermissionMode::from),
+                    deadline_unix_ms,
+                })
+                .await?;
+            let text = format!(
+                "{}\n\nmodel={}{}\neffort={}\nclaude={}\ninput_tokens={} output_tokens={} \
+                 cache_creation_input_tokens={} cache_read_input_tokens={}",
+                result.text,
+                result.model,
+                result
+                    .reported_model
+                    .as_deref()
+                    .map(|reported| format!(" reported_model={reported}"))
+                    .unwrap_or_default(),
+                result.effort.map_or("-", EffortLevel::as_str),
+                result.claude_version,
+                result.usage.main.input_tokens,
+                result.usage.main.output_tokens,
+                result.usage.main.cache_creation_input_tokens,
+                result.usage.main.cache_read_input_tokens,
+            );
+            emit(mode, "stateful_result", &result, &text)
+        }
+        Command::Ask {
+            model,
+            effort,
+            account,
             prompt,
             deadline_unix_ms,
         } => {
@@ -109,9 +153,10 @@ async fn execute(cli: Cli) -> Result<()> {
                     effort: effort.map(EffortLevel::from),
                     prompt,
                     deadline_unix_ms,
+                    account,
                 })
                 .await?;
-            // The answer first, on its own, so `pmux run ... | head -1` is the
+            // The answer first, on its own, so `pmux ask ... | head -1` is the
             // text and nothing else. The accounting follows it, and
             // `cache_read_input_tokens` is on the same line as `input_tokens`
             // deliberately: a cached prompt reports almost all of its context

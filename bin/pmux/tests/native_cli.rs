@@ -170,7 +170,8 @@ fn session_subcommands_are_unknown() {
     }
 }
 
-/// `pmux run` names no resource. Session launch flags are unknown arguments.
+/// Session launch flags stay unknown. `ask` names no cwd; `run` names no
+/// Claude binary, tools, or isolation root.
 #[test]
 fn run_refuses_session_launch_flags() {
     let directory = tempfile::tempdir().unwrap();
@@ -178,9 +179,9 @@ fn run_refuses_session_launch_flags() {
     assert!(!socket.exists());
 
     let flags: &[&[&str]] = &[
-        &["run", "--model", "sonnet", "--cwd", "/tmp"],
+        &["ask", "--model", "sonnet", "--cwd", "/tmp"],
         &["run", "--model", "sonnet", "--claude", "/usr/bin/true"],
-        &["run", "--model", "sonnet", "--permission-mode", "dont-ask"],
+        &["ask", "--model", "sonnet", "--permission-mode", "dont-ask"],
         &["run", "--model", "sonnet", "--denied-tool", "*"],
         &["run", "--model", "sonnet", "--system-prompt", "x"],
         &["run", "--model", "sonnet", "--session-id", SESSION_ID],
@@ -222,4 +223,39 @@ fn run_refuses_session_launch_flags() {
         );
         assert!(!socket.exists(), "{args:?} created a socket");
     }
+}
+
+/// Full `run` is the only published command that names a cwd, and clap must
+/// require it before any socket is opened.
+#[test]
+fn run_requires_cwd() {
+    let directory = tempfile::tempdir().unwrap();
+    let socket = directory.path().join("pmuxd.sock");
+    assert!(!socket.exists());
+
+    let mut process = pmux_process();
+    process
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin")
+        .env("HOME", directory.path())
+        .arg("--socket")
+        .arg(&socket)
+        .args([
+            "run",
+            "--model",
+            "sonnet",
+            "--permission-mode",
+            "dangerously-skip-permissions",
+            "hi",
+        ]);
+    let output = run(process, None);
+    assert_eq!(output.status.code(), Some(2), "{}", output.stderr_text());
+    assert!(output.stdout.is_empty());
+    let stderr = output.stderr_text();
+    assert!(stderr.starts_with("error:"), "{stderr}");
+    assert!(
+        stderr.contains("--cwd"),
+        "missing --cwd must be named: {stderr}"
+    );
+    assert!(!socket.exists());
 }
