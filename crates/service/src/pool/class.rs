@@ -5,8 +5,12 @@
 //! and effort are caller inputs, and fungibility is per class:
 //!
 //! ```text
-//! InstanceClass = (canonical_model_argv, effort_argv)
+//! InstanceClass = (canonical_model_argv, effort_argv, account)
 //! ```
+//!
+//! `account` is an operator-configured pin name (`default`, `claude-1`), never
+//! a filesystem path. Two pins are two idle sets: a `claude-1` turn must not
+//! land on a cell minted under the unsuffixed store.
 //!
 //! Instances are fungible *within* a class and never across one. The pool is
 //! therefore keyed by class, not a single queue -- a single queue hands an
@@ -22,6 +26,8 @@ use std::fmt;
 
 use pseudomux_protocol::v1::{EffortLevel, ErrorBody, ErrorCode};
 use serde_json::json;
+
+use super::account::AccountName;
 
 /// One admitted effort tier, paired with the exact argv token it renders to.
 ///
@@ -203,13 +209,14 @@ fn admitted_model_list() -> String {
 
 /// The pool's fungibility key.
 ///
-/// Both halves are `&'static str` from [`MODEL_TABLE`], never a caller string,
-/// so a class is exactly the argv pair a process was launched with. Ordered so
-/// the pool's maps iterate deterministically and a test can name a class.
+/// Model and effort are `&'static str` from [`MODEL_TABLE`]. Account is a
+/// boot-validated [`AccountName`]. Ordered so the pool's maps iterate
+/// deterministically and a test can name a class.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InstanceClass {
     pub canonical_model: &'static str,
     pub effort_argv: Option<&'static str>,
+    pub account: AccountName,
 }
 
 impl InstanceClass {
@@ -222,7 +229,14 @@ impl InstanceClass {
         Some(Self {
             canonical_model: resolved.entry?.canonical,
             effort_argv: resolved.effort_arg,
+            account: AccountName::DEFAULT,
         })
+    }
+
+    /// Same model and effort, a different credential pin.
+    #[must_use]
+    pub fn with_account(self, account: AccountName) -> Self {
+        Self { account, ..self }
     }
 
     /// The typed effort tier this class renders, recovered from its argv token.
@@ -267,9 +281,13 @@ impl InstanceClass {
 impl fmt::Display for InstanceClass {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.effort_argv {
-            Some(effort) => write!(formatter, "{}/{effort}", self.canonical_model),
-            None => write!(formatter, "{}/-", self.canonical_model),
+            Some(effort) => write!(formatter, "{}/{effort}", self.canonical_model)?,
+            None => write!(formatter, "{}/-", self.canonical_model)?,
         }
+        if !self.account.is_default() {
+            write!(formatter, "@{}", self.account)?;
+        }
+        Ok(())
     }
 }
 
@@ -653,6 +671,16 @@ mod tests {
         assert!(resolve_model_effort(Some("claude-opus-4-6"), Some(EffortLevel::Max)).is_ok());
         assert!(resolve_model_effort(Some("claude-opus-5"), Some(EffortLevel::XHigh)).is_ok());
         assert!(resolve_model_effort(Some("claude-sonnet-5"), Some(EffortLevel::Max)).is_ok());
+    }
+
+    #[test]
+    fn a_named_account_is_a_distinct_class_and_omitted_from_default_display() {
+        let (class, _) =
+            resolve_pool_class("claude-opus-5", Some(EffortLevel::High)).expect("admitted");
+        assert_eq!(class.to_string(), "claude-opus-5/high");
+        let other = class.with_account(AccountName::parse("claude-1").unwrap());
+        assert_ne!(class, other);
+        assert_eq!(other.to_string(), "claude-opus-5/high@claude-1");
     }
 
     #[test]

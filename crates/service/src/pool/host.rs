@@ -39,6 +39,9 @@ pub struct MintSpec {
     pub cwd: PathBuf,
     /// Operator-configured, absolute.
     pub claude_executable: PathBuf,
+    /// The account pin (`--pool-securestorage-dir` for `default`, else
+    /// `--pool-account`). Empty = unsuffixed store.
+    pub securestorage_dir: String,
     /// pmux-owned daemon configuration, delivered as a replace-mode system
     /// prompt so it survives `/clear`.
     pub system_prompt: String,

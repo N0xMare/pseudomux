@@ -157,9 +157,10 @@ fn cargo_companion(name: &str) -> PathBuf {
     if test_built.is_file() {
         return test_built;
     }
-    Path::new(env!("CARGO_MANIFEST_DIR"))
+    let fallback = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/release")
-        .join(name)
+        .join(name);
+    fallback.canonicalize().unwrap_or(fallback)
 }
 
 fn candidates() -> &'static CandidateBinaries {
@@ -692,6 +693,18 @@ fn every_request_variant() -> Vec<(&'static str, Request)> {
                 }
             })),
         ),
+        (
+            "run_stateful",
+            request_from_json(json!({
+                "method": "run_stateful",
+                "params": {
+                    "model": "sonnet",
+                    "prompt": "hi",
+                    "cwd": "/tmp",
+                    "permission_mode": "dangerously_skip_permissions"
+                }
+            })),
+        ),
     ]
 }
 
@@ -713,6 +726,7 @@ fn request_method(request: &Request) -> &'static str {
         Request::GetAgent(_) => "get_agent",
         Request::ListAgents(_) => "list_agents",
         Request::UpdateAgent(_) => "update_agent",
+        Request::RunStateful(_) => "run_stateful",
     }
 }
 
@@ -737,8 +751,8 @@ fn public_session_methods_are_refused_on_the_real_socket() {
     let fixtures = every_request_variant();
     assert_eq!(
         fixtures.len(),
-        16,
-        "protocol v1 currently has 16 Request variants; add a fixture when one lands"
+        17,
+        "protocol v1 currently has 17 Request variants; add a fixture when one lands"
     );
     for (index, (name, request)) in fixtures.into_iter().enumerate() {
         assert_eq!(request_method(&request), name);
@@ -764,8 +778,19 @@ fn public_session_methods_are_refused_on_the_real_socket() {
                     "{name} must dispatch as living: {error:?}"
                 );
             }
+            ("run_stateful", ResponsePayload::Failure(error)) => {
+                assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
+                assert_eq!(
+                    error.details.get("violation").and_then(Value::as_str),
+                    Some("stateful_not_enabled"),
+                    "{name} must dispatch as living: {error:?}"
+                );
+            }
             (removed, ResponsePayload::Failure(error))
-                if !matches!(removed, "ping" | "diagnose" | "run_stateless") =>
+                if !matches!(
+                    removed,
+                    "ping" | "diagnose" | "run_stateless" | "run_stateful"
+                ) =>
             {
                 assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
                 assert_eq!(
@@ -927,6 +952,7 @@ fn expected_models_document() -> Value {
 fn expected_capabilities_document() -> Value {
     json!({
         "pin_headers": ["x-pmux-conversation", "x-session-id", "x-session-affinity"],
+        "account_header": "x-pmux-account",
         "release": "POST /v1/conversations/{id}/release",
         "stream": "post_commit",
         "images": false,

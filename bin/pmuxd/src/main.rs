@@ -24,7 +24,9 @@ use pseudomux_service::pool::config::{
     DEFAULT_INSTANCE_IDLE_TTL_MS, DEFAULT_POOL_SIZE, DEFAULT_RECYCLE_TURNS, DEFAULT_SYSTEM_PROMPT,
     RSS_CEILING_MB_PER_INSTANCE,
 };
-use pseudomux_service::pool::{PoolConfig, PoolSettings, WarmClassSetting};
+use pseudomux_service::pool::{
+    AccountName, AccountSetting, PoolConfig, PoolSettings, WarmClassSetting,
+};
 // The socket directory, the log directory and the Path B pool parent are all
 // held to one definition of "private", so the three cannot drift apart.
 use pseudomux_service::private_dir::create_private_dir_all;
@@ -52,9 +54,9 @@ struct Cli {
 enum Command {
     /// Bind the socket and serve protocol v1 until SIGINT or SIGTERM.
     ///
-    /// The stateless token engine that `pmux run` reaches is OFF unless
-    /// --pool-parent is given; every other pool / Messages flag is refused
-    /// without it. Interactive sessions are refused on the public wire.
+    /// The token engine that `pmux ask` / Messages reach is OFF unless
+    /// --pool-parent is given. Full-cell `pmux run` also needs --stateful.
+    /// Interactive Path A session methods stay refused on the public wire.
     ///
     /// Every refusal below happens before the socket is bound, so a rejected
     /// configuration leaves no socket, no runtime directory and no rmux
@@ -117,6 +119,30 @@ enum Command {
         #[arg(long = "pool-claude", value_name = "PATH", help_heading = PATH_B_HELP_HEADING)]
         path_b_claude: Option<PathBuf>,
 
+        /// Credential store pin delivered as `CLAUDE_SECURESTORAGE_CONFIG_DIR`.
+        /// `empty` (the default) is the unsuffixed store. An absolute path is
+        /// hashed by Claude as-typed; it is not canonicalized and is not the
+        /// isolated config root. Required to be `empty` or absolute when the
+        /// pool is on.
+        #[arg(
+            long = "pool-securestorage-dir",
+            value_name = "empty|DIR",
+            help_heading = PATH_B_HELP_HEADING
+        )]
+        path_b_securestorage_dir: Option<String>,
+
+        /// Named credential pin, `NAME=empty` or `NAME=/absolute/path`.
+        /// Repeatable. `default` is created from `--pool-securestorage-dir`
+        /// when omitted. The caller selects a name via `account` / `x-pmux-account`,
+        /// never a path.
+        #[arg(
+            long = "pool-account",
+            value_name = "NAME=empty|DIR",
+            action = clap::ArgAction::Append,
+            help_heading = PATH_B_HELP_HEADING
+        )]
+        path_b_accounts: Vec<String>,
+
         /// Live instances the pool may hold. Refused above the owner-set cap of
         /// 15, at boot.
         #[arg(long = "pool-size", default_value_t = DEFAULT_POOL_SIZE, help_heading = PATH_B_HELP_HEADING)]
@@ -126,19 +152,20 @@ enum Command {
         #[arg(long = "pool-recycle-turns", default_value_t = DEFAULT_RECYCLE_TURNS, help_heading = PATH_B_HELP_HEADING)]
         path_b_recycle_turns: u32,
 
-        /// One warm class to hold, as `MODEL[/EFFORT]=COUNT`, e.g.
-        /// `claude-sonnet-5/medium=2` or `haiku=1`. Repeatable, one class per
-        /// occurrence. The declared total may not exceed the pool size, and
+        /// One warm class to hold, as `MODEL[/EFFORT][@ACCOUNT]=COUNT`, e.g.
+        /// `claude-sonnet-5/medium=2`, `haiku=1`, or `haiku@claude-1=1`.
+        /// Repeatable, one class per occurrence. Omitted `@ACCOUNT` is
+        /// `default`. The declared total may not exceed the pool size, and
         /// each class is resolved through the SAME call a live request uses --
         /// a class the pool could never serve is refused at boot rather than
         /// discovered by an operator reading a mint failure.
-        #[arg(long = "pool-warm", value_name = "MODEL[/EFFORT]=COUNT", help_heading = PATH_B_HELP_HEADING)]
+        #[arg(long = "pool-warm", value_name = "MODEL[/EFFORT][@ACCOUNT]=COUNT", help_heading = PATH_B_HELP_HEADING)]
         path_b_warm: Vec<String>,
 
         /// REPLACE-mode launch prompt. Displaces Claude Code's default agent
         /// prompt so the same displacer survives `/clear`; it is not consumer
         /// policy. The typed user message is the entire instruction (Messages
-        /// flatten, or the `pmux run` prompt). Bounded at 512 bytes and refused
+        /// flatten, or the `pmux ask` prompt). Bounded at 512 bytes and refused
         /// if empty. A sentence counter is deliberately not enforced.
         #[arg(
             long = "pool-system-prompt",
@@ -207,21 +234,27 @@ enum Command {
         path_b_messages_bind: Option<String>,
 
         /// Allow POST /v1/messages without a conversation pin. The listener
-        /// then hashes the first user message, system, tools, and model into
-        /// an implicit id. You did not choose that id; release using the
-        /// `x-pmux-conversation` the response echoed. Two sessions that start
-        /// the same way share a cell. Harnesses should send
-        /// `x-pmux-conversation` instead.
+        /// then hashes the first user message, system, tools, model, effort,
+        /// and account into an implicit id. You did not choose that id;
+        /// release using the `x-pmux-conversation` the response echoed. Two
+        /// sessions that start the same way share a cell. Harnesses should
+        /// send `x-pmux-conversation` instead.
         /// Requires --messages-bind.
         #[arg(long = "messages-allow-implicit", help_heading = PATH_B_HELP_HEADING)]
         path_b_allow_implicit_conversation: bool,
+
+        /// Admit Full-cell `pmux run` / `run_stateful` (default Claude Code
+        /// tools in a caller-named cwd). Requires --pool-parent. Stateless
+        /// `pmux ask` / Messages stay minified.
+        #[arg(long = "stateful", help_heading = PATH_B_HELP_HEADING)]
+        stateful: bool,
     },
 }
 
 /// Groups every stateless-engine flag in `--help`, so the one thing an operator
 /// must know -- that `--pool-parent` is the enable switch -- is not buried
 /// among the leftover session flags.
-const PATH_B_HELP_HEADING: &str = "Stateless token engine (off unless --pool-parent)";
+const PATH_B_HELP_HEADING: &str = "Token engine (off unless --pool-parent)";
 
 /// CHOSEN: ten minutes, the same ceiling a Path A turn gets. A stateless turn
 /// is one model call with no tool surface, so it is far under this; the bound
@@ -240,12 +273,15 @@ struct ServeOptions {
     path_b: PathBOptions,
     path_b_messages_bind: Option<String>,
     path_b_allow_implicit_conversation: bool,
+    stateful: bool,
 }
 
 /// The stateless engine's flags, exactly as parsed. Nothing here is trusted yet.
 struct PathBOptions {
     parent: Option<PathBuf>,
     claude: Option<PathBuf>,
+    securestorage_dir: Option<String>,
+    accounts: Vec<String>,
     pool_size: u32,
     recycle_turns: u32,
     warm: Vec<String>,
@@ -294,11 +330,14 @@ fn resolve_path_b(
     };
 
     let Some(parent) = options.parent else {
-        let stray: Vec<String> = path_b_dependent_flag_ids()
+        let mut stray: Vec<String> = path_b_dependent_flag_ids()
             .into_iter()
             .filter(|name| typed(name))
             .map(|name| serve_flag_long(&name))
             .collect();
+        if typed("stateful") {
+            stray.push("--stateful".to_owned());
+        }
         if stray.is_empty() {
             return Ok(None);
         }
@@ -339,6 +378,12 @@ under) to enable it, or drop the flag",
     };
 
     let mut settings = PoolSettings::defaults(parent, claude);
+    settings.securestorage_dir = parse_securestorage_dir(options.securestorage_dir)?;
+    settings.accounts = options
+        .accounts
+        .iter()
+        .map(|declaration| parse_account(declaration))
+        .collect::<Result<Vec<_>>>()?;
     settings.pool_size = options.pool_size;
     settings.recycle_turns = options.recycle_turns;
     settings.system_prompt = system_prompt;
@@ -424,16 +469,28 @@ fn effort_tier_list() -> String {
         .join(", ")
 }
 
-/// `MODEL[/EFFORT]=COUNT`.
+fn parse_securestorage_dir(raw: Option<String>) -> Result<String> {
+    match raw.as_deref() {
+        None | Some("") | Some("empty") => Ok(String::new()),
+        Some(path) if path.starts_with('/') && !path.contains('\0') => Ok(path.to_owned()),
+        Some(other) => anyhow::bail!(
+            "--pool-securestorage-dir must be the word empty or an absolute path \
+             (not relative, not ~-expanded by pmuxd): {other:?}"
+        ),
+    }
+}
+
+/// `MODEL[/EFFORT][@ACCOUNT]=COUNT`.
 ///
 /// The effort is parsed through `EffortLevel`'s own wire spelling rather than a
 /// local table, so the word an operator types here is the same word the
-/// protocol uses and the same word that reaches `--effort`.
+/// protocol uses and the same word that reaches `--effort`. `@ACCOUNT` names a
+/// `--pool-account`; omitted is `default`.
 fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
     let (class, count) = declaration.rsplit_once('=').ok_or_else(|| {
         anyhow!(
-            "--pool-warm {declaration:?} has no `=`; write MODEL[/EFFORT]=COUNT, \
-             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku=1"
+            "--pool-warm {declaration:?} has no `=`; write MODEL[/EFFORT][@ACCOUNT]=COUNT, \
+             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku@claude-1=1"
         )
     })?;
     let count: u32 = count.parse().with_context(|| {
@@ -443,6 +500,10 @@ fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
              --pool-warm {class}=2"
         )
     })?;
+    let (class, account) = match class.rsplit_once('@') {
+        Some((class, account)) => (class, AccountName::parse(account)?),
+        None => (class, AccountName::DEFAULT),
+    };
     let (model, effort) = match class.split_once('/') {
         Some((model, effort)) => {
             let level = serde_json::from_value::<EffortLevel>(serde_json::Value::String(
@@ -461,15 +522,38 @@ fn parse_warm_class(declaration: &str) -> Result<WarmClassSetting> {
     };
     if model.is_empty() {
         bail!(
-            "--pool-warm {declaration:?} names an empty model; write MODEL[/EFFORT]=COUNT, \
-             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku=1"
+            "--pool-warm {declaration:?} names an empty model; write MODEL[/EFFORT][@ACCOUNT]=COUNT, \
+             e.g. --pool-warm claude-sonnet-5/medium=2 or --pool-warm haiku@claude-1=1"
         );
     }
     Ok(WarmClassSetting {
         model: model.to_owned(),
         effort,
+        account,
         count,
     })
+}
+
+fn parse_account(declaration: &str) -> Result<AccountSetting> {
+    let (name, pin) = declaration.split_once('=').ok_or_else(|| {
+        anyhow!(
+            "--pool-account {declaration:?} has no `=`; write NAME=empty or NAME=/absolute/path"
+        )
+    })?;
+    let name = AccountName::parse(name)?.to_string();
+    let pin = parse_account_pin(&name, pin)?;
+    Ok(AccountSetting { name, pin })
+}
+
+fn parse_account_pin(name: &str, pin: &str) -> Result<String> {
+    match pin {
+        "" | "empty" => Ok(String::new()),
+        path if path.starts_with('/') && !path.contains('\0') => Ok(path.to_owned()),
+        other => anyhow::bail!(
+            "--pool-account {name}={other:?} must be the word empty or an absolute path \
+             (not relative, not ~-expanded by pmuxd)"
+        ),
+    }
 }
 
 #[tokio::main]
@@ -499,6 +583,8 @@ async fn main() -> Result<()> {
             untested_transcript_drain_ms,
             path_b_parent,
             path_b_claude,
+            path_b_securestorage_dir,
+            path_b_accounts,
             path_b_pool_size,
             path_b_recycle_turns,
             path_b_warm,
@@ -512,6 +598,7 @@ async fn main() -> Result<()> {
             path_b_no_evidence,
             path_b_messages_bind,
             path_b_allow_implicit_conversation,
+            stateful,
         } => {
             run_server(
                 ServeOptions {
@@ -526,6 +613,8 @@ async fn main() -> Result<()> {
                     path_b: PathBOptions {
                         parent: path_b_parent,
                         claude: path_b_claude,
+                        securestorage_dir: path_b_securestorage_dir,
+                        accounts: path_b_accounts,
                         pool_size: path_b_pool_size,
                         recycle_turns: path_b_recycle_turns,
                         warm: path_b_warm,
@@ -540,6 +629,7 @@ async fn main() -> Result<()> {
                     },
                     path_b_messages_bind,
                     path_b_allow_implicit_conversation,
+                    stateful,
                 },
                 &matches,
             )
@@ -604,11 +694,17 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
     let tested_claude_profiles = parse_tested_profiles(options.tested_claude_profiles)?;
     validate_transcript_drain_ms(options.untested_transcript_drain_ms)
         .context("invalid --untested-transcript-drain-ms")?;
+    if options.stateful && pool.is_none() {
+        anyhow::bail!(
+            "--stateful requires --pool-parent (Full cells share the daemon Claude binary and pins)"
+        );
+    }
     let service_config = NativeServiceConfig {
         hybrid_hook_client: Some(hybrid_hook_client),
         tested_claude_profiles,
         untested_transcript_drain_ms: options.untested_transcript_drain_ms,
         pool,
+        stateful: options.stateful,
         ..NativeServiceConfig::default()
     };
     // BEFORE `NativeService::start`, and that is the whole point of the line.
@@ -1246,6 +1342,29 @@ mod tests {
         assert!(error.to_string().contains("absolute"));
     }
 
+    #[test]
+    fn pool_securestorage_dir_is_empty_or_an_absolute_path() {
+        assert_eq!(parse_securestorage_dir(None).unwrap(), "");
+        assert_eq!(parse_securestorage_dir(Some(String::new())).unwrap(), "");
+        assert_eq!(
+            parse_securestorage_dir(Some("empty".to_owned())).unwrap(),
+            ""
+        );
+        assert_eq!(
+            parse_securestorage_dir(Some("/Users/me/.claude-1".to_owned())).unwrap(),
+            "/Users/me/.claude-1"
+        );
+        for refused in ["~/.claude-1", "Users/me/.claude-1", "empty/", "/tmp\0x"] {
+            let error = parse_securestorage_dir(Some(refused.to_owned()))
+                .unwrap_err()
+                .to_string();
+            assert!(
+                error.contains("--pool-securestorage-dir"),
+                "{refused}: {error}"
+            );
+        }
+    }
+
     /// The one thing an operator meets first: `pmuxd serve --help`.
     ///
     /// Derived over clap's own argument list rather than over a list of flags
@@ -1288,6 +1407,8 @@ mod tests {
             let flag = match id {
                 "path_b_parent" => "--pool-parent".to_owned(),
                 "path_b_claude" => "--pool-claude".to_owned(),
+                "path_b_securestorage_dir" => "--pool-securestorage-dir".to_owned(),
+                "path_b_accounts" => "--pool-account".to_owned(),
                 "path_b_pool_size" => "--pool-size".to_owned(),
                 "path_b_recycle_turns" => "--pool-recycle-turns".to_owned(),
                 "path_b_warm" => "--pool-warm".to_owned(),
@@ -1305,6 +1426,8 @@ mod tests {
             };
             match id {
                 "path_b_claude" => vec![flag, "/bin/sh".to_owned()],
+                "path_b_securestorage_dir" => vec![flag, "empty".to_owned()],
+                "path_b_accounts" => vec![flag, "claude-1=/Users/me/.claude-1".to_owned()],
                 "path_b_pool_size" | "path_b_recycle_turns" => vec![flag, "2".to_owned()],
                 "path_b_warm" => vec![flag, "sonnet=1".to_owned()],
                 "path_b_system_prompt" => vec![flag, "be brief".to_owned()],
@@ -1359,6 +1482,8 @@ mod tests {
                 PathBOptions {
                     parent: path_b_parent,
                     claude: path_b_claude,
+                    securestorage_dir: None,
+                    accounts: Vec::new(),
                     pool_size: path_b_pool_size,
                     recycle_turns: path_b_recycle_turns,
                     warm: path_b_warm,
@@ -1393,6 +1518,51 @@ mod tests {
             );
         }
 
+        let stateful_argv = ["pmuxd", "serve", "--socket", "/tmp/pmux.sock", "--stateful"];
+        let stateful_matches =
+            <Cli as clap::CommandFactory>::command().get_matches_from(stateful_argv);
+        let Command::Serve {
+            path_b_pool_size,
+            path_b_recycle_turns,
+            path_b_system_prompt,
+            path_b_instance_idle_ttl_ms,
+            path_b_turn_timeout_ms,
+            stateful,
+            ..
+        } = Cli::try_parse_from(stateful_argv).unwrap().command;
+        assert!(stateful);
+        let stateful_error = resolve_path_b(
+            PathBOptions {
+                parent: None,
+                claude: None,
+                securestorage_dir: None,
+                accounts: Vec::new(),
+                pool_size: path_b_pool_size,
+                recycle_turns: path_b_recycle_turns,
+                warm: Vec::new(),
+                system_prompt: path_b_system_prompt,
+                system_prompt_file: None,
+                instance_idle_ttl_ms: path_b_instance_idle_ttl_ms,
+                turn_timeout_ms: path_b_turn_timeout_ms,
+                retain_dir: None,
+                rss_budget_mb: None,
+                evidence_dir: None,
+                no_evidence: false,
+            },
+            &stateful_matches,
+            Path::new("/tmp/pmux.sock"),
+        )
+        .expect_err("typed --stateful must not boot with the engine off")
+        .to_string();
+        assert!(
+            stateful_error.contains("--stateful"),
+            "typed --stateful without --pool-parent was not refused by name: {stateful_error}"
+        );
+        assert!(
+            stateful_error.contains("--pool-parent DIR"),
+            "the --stateful refusal does not say what would be right: {stateful_error}"
+        );
+
         // And the guard stays silent when nothing Path B was typed, or Path A
         // could never boot.
         let argv = ["pmuxd", "serve", "--socket", "/tmp/pmux.sock"];
@@ -1410,6 +1580,8 @@ mod tests {
                 PathBOptions {
                     parent: None,
                     claude: None,
+                    securestorage_dir: None,
+                    accounts: Vec::new(),
                     pool_size: path_b_pool_size,
                     recycle_turns: path_b_recycle_turns,
                     warm: Vec::new(),
@@ -1456,6 +1628,8 @@ mod tests {
             PathBOptions {
                 parent: path_b_parent,
                 claude: None,
+                securestorage_dir: None,
+                accounts: Vec::new(),
                 pool_size: path_b_pool_size,
                 recycle_turns: path_b_recycle_turns,
                 warm: Vec::new(),
@@ -1518,6 +1692,36 @@ mod tests {
             !error.contains("  "),
             "the refusal carries a run of source indentation: {error}"
         );
+    }
+
+    #[test]
+    fn pool_warm_names_an_account() {
+        let warm = parse_warm_class("haiku@claude-1=1").unwrap();
+        assert_eq!(warm.model, "haiku");
+        assert_eq!(warm.effort, None);
+        assert_eq!(warm.account, AccountName::parse("claude-1").unwrap());
+        assert_eq!(warm.count, 1);
+        let warm = parse_warm_class("claude-sonnet-5/medium@claude-1=2").unwrap();
+        assert_eq!(warm.effort, Some(EffortLevel::Medium));
+        assert_eq!(warm.account, AccountName::parse("claude-1").unwrap());
+        assert_eq!(warm.count, 2);
+        let omitted = parse_warm_class("haiku=1").unwrap();
+        assert_eq!(omitted.account, AccountName::DEFAULT);
+    }
+
+    #[test]
+    fn pool_account_pin_names_the_account_flag() {
+        let error = parse_account("claude-1=~/.claude-1")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("--pool-account claude-1="), "{error}");
+        assert!(!error.contains("--pool-securestorage-dir"), "{error}");
+        let ok = parse_account("claude-1=/Users/me/.claude-1").unwrap();
+        assert_eq!(ok.name, "claude-1");
+        assert_eq!(ok.pin, "/Users/me/.claude-1");
+        let empty = parse_account("work=empty").unwrap();
+        assert_eq!(empty.name, "work");
+        assert_eq!(empty.pin, "");
     }
 
     #[test]

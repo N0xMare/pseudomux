@@ -13,14 +13,8 @@ use pseudomux_rmux::{EnvironmentSnapshot, LaunchSpec};
 
 // ---------------------------------------------------------------------------
 // The launch-environment policy itself lives in
-// `pseudomux_protocol::v1::launch_environment`, and this module is its one
+// `pseudomux_protocol::v1::launch_environment`. This module is its one
 // enforcement point.
-//
-// This used to live here so `pmux probe` and the client's `require_env` check
-// could both predict the same answer without contacting a daemon. Three
-// hand-kept copies used to satisfy that need, pinned only by source-text-parsing
-// drift fences; there is now one definition and no fence to keep honest. The
-// remaining reader of this module is the daemon launch path.
 //
 // `inherits` is imported under this module's own vocabulary
 // (`inherited_from_snapshot`), which `docs/spec.md` §4 names as the
@@ -335,9 +329,9 @@ fn validate_start(request: &StartSessionRequest) -> Result<()> {
 /// The config root a request would resolve to with no isolation applied.
 ///
 /// Mirrors `native.rs::effective_config_root`, but reads the *pre-allowlist*
-/// view through [`patched_value`] rather than the delivered map, because that
-/// is the view the pin has to reproduce and because step 6 has by then already
-/// overwritten the delivered one.
+/// view through [`patched_value`] rather than the delivered map, because step 6
+/// has by then already overwritten the delivered `CLAUDE_CONFIG_DIR`. Used to
+/// refuse an isolation root that is the same directory.
 fn pre_isolation_config_root(spec: &EnvironmentSpec) -> Option<PathBuf> {
     patched_value(spec, "CLAUDE_CONFIG_DIR")
         .map(PathBuf::from)
@@ -461,10 +455,9 @@ fn validate_config_isolation(request: &StartSessionRequest) -> Result<()> {
     // principle `validate_environment` already applies to team markers.
     //
     // `snapshot` and `unset` are deliberately NOT conflicts. The snapshot is
-    // ambient rather than asked for, and its `CLAUDE_CONFIG_DIR` is the *input*
-    // to the securestorage pin; refusing it would make isolation unusable for
-    // exactly the operators who already run under a custom config root, which
-    // is the population that needs the pin most.
+    // ambient rather than asked for. The pin is `ConfigIsolation.securestorage_dir`,
+    // not snapshot `CLAUDE_CONFIG_DIR`. Refusing an ambient config dir would
+    // lock out operators who already run under a custom root.
     for key in ["CLAUDE_CONFIG_DIR", "CLAUDE_SECURESTORAGE_CONFIG_DIR"] {
         if request.environment.set.contains_key(key) {
             bail!("config isolation and an explicit {key} are mutually exclusive");
@@ -887,10 +880,9 @@ fn push_value(args: &mut Vec<String>, flag: &str, value: &str) -> Result<()> {
 ///    ([`transparent_profile_removes`]), the tmux-shim `PATH` prune, and
 ///    `TERM=xterm-256color`.
 /// 6. **+ config_isolation** — `CLAUDE_CONFIG_DIR` is replaced by the private
-///    root and `CLAUDE_SECURESTORAGE_CONFIG_DIR` is pinned to the root the
-///    request would have resolved *without* isolation, read through
-///    [`patched_value`] from the pre-allowlist view — the same sentence pattern
-///    step 5 already uses for `TMUX_PROGRAM`.
+///    root and `CLAUDE_SECURESTORAGE_CONFIG_DIR` is [`ConfigIsolation::securestorage_dir`]
+///    byte-for-byte (empty = unsuffixed store). Never derived from `root` or
+///    from snapshot `CLAUDE_CONFIG_DIR`.
 /// 7. **+ cell** — [`MINIFIED_CELL_ENVIRONMENT`] for `cell: minified` only.
 ///
 /// `removed` describes the delivered environment: it carries every name the
@@ -968,17 +960,15 @@ fn build_environment(
     // The two values are treated differently on purpose. The ROOT is delivered
     // canonicalized, because it must name the same directory pmux seeds and the
     // transcript locator walks. The PIN is delivered byte-for-byte, because
-    // Claude hashes it (`sha256(NFC(value))[0..8]`) to name a keychain item and
-    // the isolated child must land on exactly the item the operator's own
-    // un-isolated session uses. Normalizing or canonicalizing the pin would
-    // hash to a different service name and produce "Not logged in".
+    // Claude hashes it (`sha256(NFC(value))[0..8]`) to name a keychain item.
+    // Normalizing or canonicalizing the pin would hash to a different service
+    // name and produce "Not logged in".
     //
-    // An ABSENT pre-isolation root pins the empty string, which is a
-    // first-class value to Claude and not an accident: its own env filter reads
-    // `if (r === "" && t !== "CLAUDE_SECURESTORAGE_CONFIG_DIR") continue;`, i.e.
-    // every other name drops an empty value and this one is preserved. Empty
-    // selects the default, unsuffixed credential store -- which is exactly what
-    // a caller with no `CLAUDE_CONFIG_DIR` would have used.
+    // The pin is `isolation.securestorage_dir` (`--pool-securestorage-dir`),
+    // never the isolated config root and never a fallback to `CLAUDE_CONFIG_DIR`.
+    // Empty is first-class: Claude's env filter keeps it (`if (r === "" && t !==
+    // "CLAUDE_SECURESTORAGE_CONFIG_DIR") continue`) and it names the unsuffixed
+    // store.
     if let Some(isolation) = config_isolation {
         let root = canonical_absolute(
             Path::new(&isolation.root),
@@ -986,9 +976,7 @@ fn build_environment(
             RequiredPathKind::Directory,
         )?;
         let root = canonical_utf8(&root, "config isolation root")?.to_owned();
-        let pin = patched_value(spec, "CLAUDE_CONFIG_DIR")
-            .unwrap_or_default()
-            .to_owned();
+        let pin = isolation.securestorage_dir.clone();
         variables.insert("CLAUDE_CONFIG_DIR".into(), root);
         variables.insert("CLAUDE_SECURESTORAGE_CONFIG_DIR".into(), pin);
     }
@@ -1128,7 +1116,7 @@ impl DirectoryIdentity {
     /// about what an answer is worth belongs to the caller, because the two
     /// callers want different things from the same `Vacant`: admission must
     /// treat it as proof that no live cell holds the path, while the
-    /// securestorage-pin comparison in `validate_config_isolation` is
+    /// isolation-root vs inherited-root check in `validate_config_isolation` is
     /// deliberately permissive about it.
     pub(crate) fn of(path: &Path) -> Self {
         match std::fs::metadata(path) {
@@ -1203,8 +1191,7 @@ pub(crate) fn traverses_a_parent_component(path: &Path) -> bool {
 ///   session to a directory must first pass the applicant through
 ///   `native::require_establishable_identity`, which refuses exactly that
 ///   spelling. This predicate is not the place for the rule: its other caller,
-///   the securestorage-pin comparison, wants the permissive answer and
-///   `the_pin_is_byte_exact_while_the_root_is_canonical` pins that.
+///   the isolation-root vs inherited-root check, wants the permissive answer.
 /// * Anything unresolved: pmux cannot prove the two are different, so it treats
 ///   them as the same. A wrong "same" costs a refusal; a wrong "different"
 ///   costs the leak. Callers that must not merely narrow the applicant --
@@ -3028,13 +3015,14 @@ mod tests {
         let mut request = request(root);
         request.config_isolation = Some(ConfigIsolation {
             root: private.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         request
     }
 
     #[cfg(unix)]
     #[test]
-    fn config_isolation_overrides_a_snapshot_config_dir_and_pins_the_original_store() {
+    fn config_isolation_does_not_pin_a_snapshot_config_dir() {
         let cwd = owner_only_directory();
         let private = owner_only_directory();
         let mut request = isolated(cwd.path(), private.path());
@@ -3052,8 +3040,8 @@ mod tests {
         );
         assert_eq!(
             variables.get("CLAUDE_SECURESTORAGE_CONFIG_DIR"),
-            Some(&"/operator/root".to_owned()),
-            "the credential store must stay pinned to the root this request would have used"
+            Some(&String::new()),
+            "a snapshot CLAUDE_CONFIG_DIR must not become the keychain pin"
         );
     }
 
@@ -3135,11 +3123,8 @@ mod tests {
         let mut request = request(cwd.path());
         request.config_isolation = Some(ConfigIsolation {
             root: uncanonical.to_string_lossy().into_owned(),
+            securestorage_dir: "/operator/root/../root/.".into(),
         });
-        request.environment.snapshot.insert(
-            "CLAUDE_CONFIG_DIR".into(),
-            "/operator/root/../root/.".into(),
-        );
 
         let launch = resolve_claude_launch(&request).unwrap();
         let variables = &launch.process.environment.variables;
@@ -3171,10 +3156,8 @@ mod tests {
             );
         }
 
-        // The ambient snapshot and an explicit `unset` are NOT conflicts: the
-        // caller asked for nothing, and the snapshot value is the input to the
-        // pin. Refusing here would lock out every operator who already runs
-        // under a custom config root.
+        // Ambient CLAUDE_CONFIG_DIR is not a conflict with isolation. The pin
+        // is securestorage_dir (empty on this request), not that snapshot value.
         let mut ambient = isolated(cwd.path(), private.path());
         ambient
             .environment
@@ -3192,7 +3175,70 @@ mod tests {
                 .variables
                 .get("CLAUDE_SECURESTORAGE_CONFIG_DIR"),
             Some(&String::new()),
-            "`unset` removes the value the pin is computed from, so the pin is empty"
+            "pin is isolation.securestorage_dir, empty on this request"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn config_isolation_delivers_an_explicit_pin_byte_for_byte() {
+        let cwd = owner_only_directory();
+        let private = owner_only_directory();
+        let mut request = isolated(cwd.path(), private.path());
+        request.config_isolation.as_mut().unwrap().securestorage_dir = "/Users/me/.claude-1".into();
+        let launch = resolve_claude_launch(&request).unwrap();
+        assert_eq!(
+            launch
+                .process
+                .environment
+                .variables
+                .get("CLAUDE_SECURESTORAGE_CONFIG_DIR"),
+            Some(&"/Users/me/.claude-1".to_owned())
+        );
+        assert_eq!(
+            launch
+                .process
+                .environment
+                .variables
+                .get("CLAUDE_CONFIG_DIR")
+                .map(String::as_str),
+            private.path().canonicalize().unwrap().to_str()
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn config_isolation_pins_an_explicit_empty_securestorage_dir_not_the_config_dir() {
+        let cwd = owner_only_directory();
+        let private = owner_only_directory();
+        let mut request = isolated(cwd.path(), private.path());
+        request
+            .environment
+            .snapshot
+            .insert("CLAUDE_CONFIG_DIR".into(), "/operator/profile".into());
+        request
+            .environment
+            .snapshot
+            .insert("CLAUDE_SECURESTORAGE_CONFIG_DIR".into(), String::new());
+
+        let launch = resolve_claude_launch(&request).unwrap();
+        assert_eq!(
+            launch
+                .process
+                .environment
+                .variables
+                .get("CLAUDE_SECURESTORAGE_CONFIG_DIR"),
+            Some(&String::new()),
+            "an empty securestorage pin is the unsuffixed store, not a hash of CLAUDE_CONFIG_DIR"
+        );
+        assert_eq!(
+            launch
+                .process
+                .environment
+                .variables
+                .get("CLAUDE_CONFIG_DIR")
+                .map(String::as_str),
+            private.path().canonicalize().unwrap().to_str()
         );
     }
 
@@ -3227,6 +3273,7 @@ mod tests {
         let mut same_home = request(cwd.path());
         same_home.config_isolation = Some(ConfigIsolation {
             root: dot_claude.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         same_home
             .environment
@@ -3297,6 +3344,7 @@ mod tests {
         let mut root_inside_cwd = request(outer.path());
         root_inside_cwd.config_isolation = Some(ConfigIsolation {
             root: inner.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&root_inside_cwd)
@@ -3308,6 +3356,7 @@ mod tests {
         let mut cwd_inside_root = request(&inner);
         cwd_inside_root.config_isolation = Some(ConfigIsolation {
             root: outer.path().to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&cwd_inside_root)
@@ -3319,6 +3368,7 @@ mod tests {
         let mut same = request(outer.path());
         same.config_isolation = Some(ConfigIsolation {
             root: outer.path().to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&same)
@@ -3546,6 +3596,7 @@ mod tests {
         let mut request = request(&firmlink);
         request.config_isolation = Some(ConfigIsolation {
             root: inside.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         let error = resolve_claude_launch(&request).unwrap_err().to_string();
         assert!(
@@ -3775,6 +3826,7 @@ mod tests {
                 .join("never-created")
                 .to_string_lossy()
                 .into_owned(),
+            securestorage_dir: String::new(),
         });
         let error = resolve_claude_launch(&missing).unwrap_err().to_string();
         assert!(
@@ -3787,6 +3839,7 @@ mod tests {
         let mut wrong_kind = request(cwd.path());
         wrong_kind.config_isolation = Some(ConfigIsolation {
             root: file.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&wrong_kind)
@@ -3798,6 +3851,7 @@ mod tests {
         let mut relative = request(cwd.path());
         relative.config_isolation = Some(ConfigIsolation {
             root: "relative/root".into(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&relative)
@@ -3809,6 +3863,7 @@ mod tests {
         let mut empty = request(cwd.path());
         empty.config_isolation = Some(ConfigIsolation {
             root: String::new(),
+            securestorage_dir: String::new(),
         });
         assert!(
             resolve_claude_launch(&empty)

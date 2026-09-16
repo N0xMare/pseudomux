@@ -414,12 +414,12 @@ pub fn session_surface_removed() -> ErrorBody {
     ErrorBody::new(
         ErrorCode::UnsupportedFeature,
         "interactive sessions are not part of this product: send POST /v1/messages with \
-         x-pmux-conversation, or call pmux run / run_stateless",
+         x-pmux-conversation, or call pmux ask / run_stateless",
     )
     .with_details(json!({"violation": "session_surface_removed"}))
     .advising(
         "start pmuxd with --pool-parent, --pool-claude, and --messages-bind for harnesses, \
-         or use pmux run / run_stateless",
+         or use pmux ask / run_stateless",
     )
 }
 
@@ -1156,7 +1156,7 @@ mod tests {
             .recommendation()
             .expect("session_surface_removed must name the remaining surfaces");
         assert!(
-            advice.contains("--messages-bind") && advice.contains("pmux run"),
+            advice.contains("--messages-bind") && advice.contains("pmux ask"),
             "{advice}"
         );
     }

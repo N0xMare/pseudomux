@@ -25,8 +25,8 @@ use pseudomux_protocol::v1::{
 use pseudomux_service::driver_io::AssertEmptyRefusal;
 use pseudomux_service::pool::config as pool_config;
 use pseudomux_service::pool::{
-    ClearFailure, Destroyed, HostFailure, HostTurn, InstanceHandle, InstanceHost, MintSpec, Pool,
-    PoolSettings, Spawner, WarmClassSetting, resolve_pool_class,
+    AccountName, AccountSetting, ClearFailure, Destroyed, HostFailure, HostTurn, InstanceHandle,
+    InstanceHost, MintSpec, Pool, PoolSettings, Spawner, WarmClassSetting, resolve_pool_class,
 };
 use pseudomux_service::v1::Clock;
 use tokio::sync::Mutex;
@@ -461,6 +461,7 @@ fn ask(prompt: &str) -> RunStatelessRequest {
         effort: Some(EffortLevel::High),
         prompt: prompt.to_owned(),
         deadline_unix_ms: None,
+        account: None,
     }
 }
 
@@ -630,6 +631,7 @@ async fn an_instance_of_another_class_is_never_handed_an_opus_call() {
             effort: None,
             prompt: "cheap".to_owned(),
             deadline_unix_ms: None,
+            account: None,
         })
         .await
         .expect("haiku answers");
@@ -651,6 +653,47 @@ async fn an_instance_of_another_class_is_never_handed_an_opus_call() {
     assert_eq!(journal.mints[0].class.effort_argv, None);
     assert_eq!(journal.mints[1].class.canonical_model, "claude-opus-5");
     assert_eq!(journal.mints[1].class.effort_argv, Some("high"));
+    assert_invariants(&harness).await;
+}
+
+#[tokio::test]
+async fn an_idle_instance_is_not_served_to_a_different_account() {
+    let harness = build(|settings| {
+        settings.pool_size = 2;
+        settings.rss_budget_mb = 2 * 1024;
+        settings.accounts = vec![AccountSetting {
+            name: "claude-1".into(),
+            pin: "/Users/me/.claude-1".into(),
+        }];
+    });
+    harness
+        .pool
+        .run(ask("default account"))
+        .await
+        .expect("default answers");
+    harness.spawner.drain().await;
+
+    let named = RunStatelessRequest {
+        model: "claude-opus-5".to_owned(),
+        effort: Some(EffortLevel::High),
+        prompt: "named account".to_owned(),
+        deadline_unix_ms: None,
+        account: Some("claude-1".to_owned()),
+    };
+    harness.pool.run(named).await.expect("claude-1 answers");
+    let journal = harness.host.journal().await;
+    assert_eq!(
+        journal.mints.len(),
+        2,
+        "fungibility is per account: an idle default process cannot serve claude-1"
+    );
+    assert_eq!(journal.mints[0].class.account, AccountName::DEFAULT);
+    assert_eq!(journal.mints[0].securestorage_dir, "");
+    assert_eq!(
+        journal.mints[1].class.account,
+        AccountName::parse("claude-1").unwrap()
+    );
+    assert_eq!(journal.mints[1].securestorage_dir, "/Users/me/.claude-1");
     assert_invariants(&harness).await;
 }
 
@@ -833,6 +876,7 @@ async fn the_wait_ends_at_the_callers_deadline_when_that_comes_first() {
             // The harness clock starts at 0, so this is 50 ms of the pool's own
             // time, and nothing but `TestClock::advance` moves it.
             deadline_unix_ms: Some(50),
+            account: None,
         })
         .await
     });
@@ -1017,6 +1061,7 @@ async fn a_cold_swap_takes_another_classes_idle_instance_rather_than_starving_it
             effort: None,
             prompt: "cheap".to_owned(),
             deadline_unix_ms: None,
+            account: None,
         })
         .await
         .expect("haiku answers");
@@ -1076,6 +1121,7 @@ async fn a_cold_swap_waits_for_a_clearing_slot_before_destroying_a_warm_one() {
         effort: None,
         prompt: "cheap".to_owned(),
         deadline_unix_ms: None,
+        account: None,
     };
 
     // Slot 0: an IDLE haiku instance -- the cold swap's only possible victim.
@@ -1152,6 +1198,7 @@ async fn a_deferred_cold_swap_fires_when_the_wait_runs_out_rather_than_refusing(
             effort: None,
             prompt: "cheap".to_owned(),
             deadline_unix_ms: None,
+            account: None,
         })
         .await
         .expect("haiku answers");
@@ -1878,6 +1925,7 @@ async fn the_operator_declared_warm_set_is_minted_at_boot() {
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 2,
         }];
     });
@@ -1914,6 +1962,7 @@ async fn a_refused_epoch_tree_is_erased_by_the_start_that_refused_it() {
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -1983,6 +2032,7 @@ async fn a_partly_minted_warm_set_is_still_the_pools_to_drain() {
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 3,
         }];
     });
@@ -2032,6 +2082,7 @@ async fn emptying_a_classes_idle_set_mints_a_replacement_immediately() {
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -2065,6 +2116,7 @@ async fn the_idle_ttl_returns_a_cold_classs_slot_but_never_below_the_warm_floor(
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -2134,6 +2186,7 @@ async fn a_refused_request_touches_no_instance() {
                 effort: Some(EffortLevel::High),
                 prompt: String::new(),
                 deadline_unix_ms: None,
+                account: None,
             },
             ErrorCode::InvalidConfig,
             "an empty prompt",
@@ -2144,6 +2197,7 @@ async fn a_refused_request_touches_no_instance() {
                 effort: Some(EffortLevel::High),
                 prompt: "/clear".to_owned(),
                 deadline_unix_ms: None,
+                account: None,
             },
             ErrorCode::UnsupportedFeature,
             "a caller slash command",
@@ -2154,6 +2208,7 @@ async fn a_refused_request_touches_no_instance() {
                 effort: Some(EffortLevel::High),
                 prompt: "hello".to_owned(),
                 deadline_unix_ms: None,
+                account: None,
             },
             ErrorCode::InvalidConfig,
             "a tier the model does not take",
@@ -2164,6 +2219,7 @@ async fn a_refused_request_touches_no_instance() {
                 effort: None,
                 prompt: "hello".to_owned(),
                 deadline_unix_ms: None,
+                account: None,
             },
             ErrorCode::InvalidConfig,
             "a model with no class key",
@@ -2491,6 +2547,7 @@ async fn an_instance_leaves_the_idle_set_at_the_instant_it_stops_being_idle() {
                 effort,
                 prompt: "hello".to_owned(),
                 deadline_unix_ms: None,
+                account: None,
             })
             .await
             .expect("answers");
@@ -2565,6 +2622,7 @@ async fn every_invariant_holds_across_a_long_mixed_sequence() {
                 effort,
                 prompt: format!("step {step}"),
                 deadline_unix_ms: None,
+                account: None,
             })
             .await;
         *codes
@@ -2632,6 +2690,7 @@ async fn a_re_warm_is_queued_only_when_a_checkout_leaves_the_class_dry_beside_a_
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -2659,6 +2718,7 @@ async fn a_re_warm_is_queued_only_when_a_checkout_leaves_the_class_dry_beside_a_
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -2682,6 +2742,7 @@ async fn a_re_warm_is_queued_only_when_a_checkout_leaves_the_class_dry_beside_a_
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 2,
         }];
     });
@@ -2726,6 +2787,7 @@ async fn a_queued_re_warm_that_lands_after_the_pool_stopped_minting_mints_nothin
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });
@@ -2756,6 +2818,7 @@ async fn a_queued_re_warm_that_lands_after_the_pool_stopped_minting_mints_nothin
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 2,
         }];
     });
@@ -3337,6 +3400,7 @@ async fn leased_ttl_recycle_remints_down_to_the_warm_floor() {
         settings.warm_set = vec![WarmClassSetting {
             model: "claude-opus-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
     });

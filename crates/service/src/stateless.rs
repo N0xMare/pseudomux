@@ -141,7 +141,7 @@ impl NativeInstanceHost {
 ///
 /// The daemon's own `std::env::vars_os`, converted exactly. Every name in it is
 /// still filtered by `build_environment`'s allowlist before it reaches a child.
-fn daemon_environment_snapshot() -> Result<EnvironmentSpec, ErrorBody> {
+pub(crate) fn daemon_environment_snapshot() -> Result<EnvironmentSpec, ErrorBody> {
     let mut snapshot = std::collections::BTreeMap::new();
     for (key, value) in std::env::vars_os() {
         let key = key.into_string().map_err(|_| {
@@ -232,6 +232,7 @@ pub fn launch_request_for(spec: &MintSpec, environment: &EnvironmentSpec) -> Sta
         auth_policy: AuthPolicy::Subscription,
         config_isolation: Some(ConfigIsolation {
             root: spec.root.to_string_lossy().into_owned(),
+            securestorage_dir: spec.securestorage_dir.clone(),
         }),
         terminal: POOL_TERMINAL,
         lifecycle: LifecycleMode::Transcript,
@@ -487,6 +488,7 @@ mod tests {
             root: paths.root,
             cwd: paths.cwd,
             claude_executable: PathBuf::from("/usr/local/bin/claude"),
+            securestorage_dir: String::new(),
             system_prompt: "Answer directly.".to_owned(),
             instance_idle_ttl_ms: 300_000,
         }
@@ -517,6 +519,7 @@ mod tests {
             root: paths.root,
             cwd: paths.cwd,
             claude_executable: PathBuf::from("/bin/sh"),
+            securestorage_dir: String::new(),
             system_prompt: "Answer directly.".to_owned(),
             instance_idle_ttl_ms: 300_000,
         }
@@ -547,13 +550,22 @@ mod tests {
     /// the spec entirely would also have no caller string in it.
     #[test]
     fn a_mint_names_only_what_the_pool_minted() {
-        let spec = spec();
+        let mut spec = spec();
+        spec.securestorage_dir = "/Users/me/.claude-1".to_owned();
         let request = launch_request_for(&spec, &daemon_environment());
 
         assert_eq!(request.cwd, "/pool/3/7/cwd");
         assert_eq!(
             request.config_isolation.as_ref().map(|c| c.root.as_str()),
             Some("/pool/3/7/root")
+        );
+        assert_eq!(
+            request
+                .config_isolation
+                .as_ref()
+                .map(|c| c.securestorage_dir.as_str()),
+            Some("/Users/me/.claude-1"),
+            "dropping spec.securestorage_dir still compiles and stays green if this is unasserted"
         );
         assert_eq!(
             request.claude.as_ref().expect("inline launch").executable,
@@ -733,6 +745,7 @@ mod tests {
                 effort: None,
                 prompt: "hello".to_owned(),
                 deadline_unix_ms: None,
+                account: None,
             },
         )
         .await

@@ -25,6 +25,7 @@
 //!   answer.** An instance that cannot be proven clean is destroyed, not reused.
 //! - **Refuse and name the budget at the cap.** No queue.
 
+pub mod account;
 pub mod class;
 pub mod config;
 pub mod evidence;
@@ -46,13 +47,49 @@ use crate::driver_io::validate_prompt;
 use crate::private_dir::{create_private_dir_all, seal_owner_only};
 use crate::v1::{Clock, DriverFailure};
 
+pub use account::{AccountName, ConfiguredAccount, DEFAULT_ACCOUNT};
 pub use class::{InstanceClass, ModelEffortRefusal, resolve_model_effort, resolve_pool_class};
-pub use config::{ConfigField, PoolConfig, PoolSettings, WarmClassSetting};
+pub use config::{AccountSetting, ConfigField, PoolConfig, PoolSettings, WarmClassSetting};
 pub use host::{
     ClearFailure, Destroyed, HostFailure, HostTurn, InstanceHandle, InstanceHost, MintSpec,
     Spawner, TrackedSpawner,
 };
 pub use instance::{Epoch, Instance, SlotId, SlotPaths};
+
+fn account_from_request(
+    request: &RunStatelessRequest,
+    config: &PoolConfig,
+) -> Result<AccountName, ErrorBody> {
+    let name = match request.account.as_deref() {
+        None | Some("") => AccountName::DEFAULT,
+        Some(raw) => AccountName::parse(raw).map_err(|error| {
+            ErrorBody::new(ErrorCode::InvalidConfig, error.to_string())
+                .with_details(json!({"violation": "invalid_account_name"}))
+        })?,
+    };
+    if config.has_account(name) {
+        Ok(name)
+    } else {
+        let known = config
+            .accounts
+            .iter()
+            .map(|account| account.name.to_string())
+            .collect::<Vec<_>>();
+        Err(ErrorBody::new(
+            ErrorCode::InvalidConfig,
+            format!(
+                "account {:?} is not configured on this daemon; configured accounts: {}",
+                name.as_str(),
+                known.join(", ")
+            ),
+        )
+        .with_details(json!({
+            "violation": "unknown_account",
+            "account": name.as_str(),
+            "configured": known,
+        })))
+    }
+}
 pub use machine::{InstanceState, Transition};
 pub use refusal::path_b_not_enabled;
 
@@ -348,7 +385,7 @@ impl Pool {
         Ok(())
     }
 
-    /// One stateless turn: `(model, effort, prompt) -> tokens`.
+    /// One stateless turn: `(model, effort, prompt[, account]) -> tokens`.
     ///
     /// # Errors
     ///
@@ -366,6 +403,7 @@ impl Pool {
         // one function with one set of inputs, so they cannot drift.
         let (class, resolved) = resolve_pool_class(&request.model, request.effort)
             .map_err(ModelEffortRefusal::into_error_body)?;
+        let class = class.with_account(account_from_request(&request, &self.config)?);
 
         // Resolved BEFORE admission, and used by both. It is one absolute
         // instant, so admission's bounded wait spends the caller's own budget
@@ -452,6 +490,7 @@ impl Pool {
         let prompt = validate_prompt(&request.prompt).map_err(DriverFailure::into_protocol)?;
         let (class, resolved) = resolve_pool_class(&request.model, request.effort)
             .map_err(ModelEffortRefusal::into_error_body)?;
+        let class = class.with_account(account_from_request(&request, &self.config)?);
         let deadline = self
             .config
             .effective_deadline_ms(self.clock.now_ms(), request.deadline_unix_ms);
@@ -1241,6 +1280,11 @@ impl Pool {
                     root: instance.paths.root.clone(),
                     cwd: instance.paths.cwd.clone(),
                     claude_executable: self.config.claude_executable.clone(),
+                    securestorage_dir: self
+                        .config
+                        .pin_for(instance.class.account)
+                        .expect("every live class account was admitted at boot")
+                        .to_owned(),
                     system_prompt: self.config.system_prompt.clone(),
                     instance_idle_ttl_ms: self.config.instance_idle_ttl_ms,
                 },
@@ -2233,6 +2277,63 @@ mod tests {
     use super::*;
 
     #[test]
+    fn account_from_request_omits_to_default_and_refuses_unknown() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let mut settings = PoolSettings::defaults(
+            temp.path().join("pool"),
+            std::path::PathBuf::from("/usr/bin/claude"),
+        );
+        settings.accounts = vec![AccountSetting {
+            name: "claude-1".into(),
+            pin: "/Users/me/.claude-1".into(),
+        }];
+        let config = settings.validate().expect("two pins");
+        let omitted = RunStatelessRequest {
+            model: "opus".into(),
+            effort: None,
+            prompt: "x".into(),
+            deadline_unix_ms: None,
+            account: None,
+        };
+        assert_eq!(
+            account_from_request(&omitted, &config).unwrap(),
+            AccountName::DEFAULT
+        );
+        let named = RunStatelessRequest {
+            account: Some("claude-1".into()),
+            ..omitted.clone()
+        };
+        assert_eq!(
+            account_from_request(&named, &config).unwrap().as_str(),
+            "claude-1"
+        );
+        let unknown = RunStatelessRequest {
+            account: Some("work".into()),
+            ..omitted.clone()
+        };
+        let error = account_from_request(&unknown, &config).unwrap_err();
+        assert_eq!(
+            error
+                .details
+                .get("violation")
+                .and_then(|value| value.as_str()),
+            Some("unknown_account")
+        );
+        let invalid = RunStatelessRequest {
+            account: Some("/Users/me/.claude-1".into()),
+            ..omitted
+        };
+        let error = account_from_request(&invalid, &config).unwrap_err();
+        assert_eq!(
+            error
+                .details
+                .get("violation")
+                .and_then(|value| value.as_str()),
+            Some("invalid_account_name")
+        );
+    }
+
+    #[test]
     fn erasing_refuses_a_tree_outside_the_pool_parent() {
         let outside = SlotPaths::new(Path::new("/somewhere/else"), 0, 0);
         let error = erase_tree(Path::new("/pool"), &outside, None)
@@ -2525,6 +2626,16 @@ mod tests {
                 }
                 .to_string(),
                 "idle",
+            ),
+            (
+                "AccountName",
+                AccountName::parse("claude-1").expect("legal").to_string(),
+                "claude-1",
+            ),
+            (
+                "AccountNameError",
+                crate::pool::account::AccountNameError::Invalid("/x".to_owned()).to_string(),
+                "/x",
             ),
         ];
 

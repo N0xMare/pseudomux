@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 
 use pseudomux_protocol::v1::EffortLevel;
 
+use super::account::{AccountName, AccountNameError, ConfiguredAccount};
 use super::class::{InstanceClass, ModelEffortRefusal, resolve_pool_class};
 
 /// Owner-set upper limit on live instances. `--pool-size` is refused
@@ -103,11 +104,20 @@ pub const ADMISSION_POLL_MS: u64 = 5;
 /// runtime; it is a boot assertion about how the host was sized.
 pub const RSS_CEILING_MB_PER_INSTANCE: u64 = 1024;
 
+/// One `--pool-account NAME=empty|DIR` as parsed, before boot validation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AccountSetting {
+    pub name: String,
+    pub pin: String,
+}
+
 /// One operator-declared warm class and how many instances to hold.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WarmClassSetting {
     pub model: String,
     pub effort: Option<EffortLevel>,
+    /// `default` when the declaration omitted `@name`.
+    pub account: AccountName,
     pub count: u32,
 }
 
@@ -128,6 +138,13 @@ pub struct PoolSettings {
     pub turn_timeout_ms: u64,
     pub parent_dir: PathBuf,
     pub claude_executable: PathBuf,
+    /// Byte-exact `CLAUDE_SECURESTORAGE_CONFIG_DIR` for the `default` account.
+    /// Empty is the unsuffixed store. Never derived from the isolated config
+    /// root, and never canonicalized: Claude hashes these bytes.
+    pub securestorage_dir: String,
+    /// Named pins (`--pool-account`). `default` may appear; if it does, its
+    /// pin must equal `securestorage_dir`.
+    pub accounts: Vec<AccountSetting>,
     pub retain_dir: Option<PathBuf>,
     /// Where the redacted Path B evidence corpus is written, or `None` to
     /// retain nothing.
@@ -154,6 +171,8 @@ impl PoolSettings {
             turn_timeout_ms: 600_000,
             parent_dir,
             claude_executable,
+            securestorage_dir: String::new(),
+            accounts: Vec::new(),
             retain_dir: None,
             // `None` HERE and on by default at the daemon: this constructor
             // takes only the two paths that have no default, and the evidence
@@ -190,6 +209,15 @@ impl PoolSettings {
         validate_system_prompt(&self.system_prompt)?;
         require_absolute(&self.parent_dir, ConfigField::ParentDir)?;
         require_absolute(&self.claude_executable, ConfigField::ClaudeExecutable)?;
+        if !self.securestorage_dir.is_empty()
+            && (!self.securestorage_dir.starts_with('/') || self.securestorage_dir.contains('\0'))
+        {
+            return Err(ConfigRefusal::RelativePath {
+                field: ConfigField::SecurestorageDir,
+                path: PathBuf::from(&self.securestorage_dir),
+            });
+        }
+        let accounts = resolve_accounts(&self.accounts, &self.securestorage_dir)?;
         // ONE rule, applied to both directories that must outlive the tree
         // they are taken from. It was written once for `--path-b-retain-dir`
         // and the reason it gives -- "evidence must outlive the tree it is
@@ -231,7 +259,7 @@ impl PoolSettings {
             });
         }
 
-        let warm_set = resolve_warm_set(&self.warm_set, self.pool_size)?;
+        let warm_set = resolve_warm_set(&self.warm_set, self.pool_size, &accounts)?;
 
         Ok(PoolConfig {
             pool_size: self.pool_size,
@@ -242,6 +270,8 @@ impl PoolSettings {
             turn_timeout_ms: self.turn_timeout_ms,
             parent_dir: self.parent_dir,
             claude_executable: self.claude_executable,
+            securestorage_dir: self.securestorage_dir,
+            accounts,
             retain_dir: self.retain_dir,
             evidence_dir: self.evidence_dir,
             warm_set,
@@ -249,9 +279,73 @@ impl PoolSettings {
     }
 }
 
+fn resolve_accounts(
+    declared: &[AccountSetting],
+    default_pin: &str,
+) -> Result<Vec<ConfiguredAccount>, ConfigRefusal> {
+    let mut accounts = Vec::new();
+    let mut names = std::collections::BTreeSet::new();
+    let mut pins = std::collections::BTreeSet::new();
+    let mut has_default = false;
+    for setting in declared {
+        let name = AccountName::parse(&setting.name).map_err(ConfigRefusal::from)?;
+        let pin = validate_account_pin(name, &setting.pin)?;
+        if !names.insert(name) {
+            return Err(ConfigRefusal::DuplicateAccountName {
+                name: name.to_string(),
+            });
+        }
+        if !pins.insert(pin.clone()) {
+            return Err(ConfigRefusal::DuplicateAccountPin {
+                name: name.to_string(),
+            });
+        }
+        if name.is_default() {
+            has_default = true;
+            if pin != default_pin {
+                return Err(ConfigRefusal::DefaultAccountPinConflict {
+                    account_pin: pin,
+                    securestorage_dir: default_pin.to_owned(),
+                });
+            }
+        }
+        accounts.push(ConfiguredAccount { name, pin });
+    }
+    if !has_default {
+        let pin = default_pin.to_owned();
+        if pins.contains(&pin) {
+            return Err(ConfigRefusal::DuplicateAccountPin {
+                name: AccountName::DEFAULT.to_string(),
+            });
+        }
+        accounts.insert(
+            0,
+            ConfiguredAccount {
+                name: AccountName::DEFAULT,
+                pin,
+            },
+        );
+    }
+    Ok(accounts)
+}
+
+fn validate_account_pin(name: AccountName, pin: &str) -> Result<String, ConfigRefusal> {
+    if pin.is_empty() {
+        return Ok(String::new());
+    }
+    if !pin.starts_with('/') || pin.contains('\0') {
+        return Err(ConfigRefusal::RelativeAccountPin {
+            name: name.to_string(),
+            path: PathBuf::from(pin),
+        });
+    }
+    Ok(pin.to_owned())
+}
+
 fn resolve_warm_set(
     declared: &[WarmClassSetting],
     pool_size: u32,
+    accounts: &[ConfiguredAccount],
 ) -> Result<Vec<WarmClass>, ConfigRefusal> {
     let mut resolved: Vec<WarmClass> = Vec::with_capacity(declared.len());
     let mut total: u32 = 0;
@@ -259,6 +353,14 @@ fn resolve_warm_set(
         if setting.count == 0 {
             return Err(ConfigRefusal::ZeroWarmCount {
                 model: setting.model.clone(),
+            });
+        }
+        if !accounts
+            .iter()
+            .any(|account| account.name == setting.account)
+        {
+            return Err(ConfigRefusal::UnknownWarmAccount {
+                name: setting.account.to_string(),
             });
         }
         // Resolved through the SAME call the pool uses for a live request, so a
@@ -270,6 +372,7 @@ fn resolve_warm_set(
                 refusal,
             }
         })?;
+        let class = class.with_account(setting.account);
         if resolved.iter().any(|warm| warm.class == class) {
             return Err(ConfigRefusal::DuplicateWarmClass {
                 class: class.to_string(),
@@ -353,6 +456,7 @@ pub fn fingerprint(prompt: &str) -> u64 {
 pub enum ConfigField {
     ParentDir,
     ClaudeExecutable,
+    SecurestorageDir,
     RetainDir,
     EvidenceDir,
 }
@@ -362,6 +466,7 @@ impl std::fmt::Display for ConfigField {
         let name = match self {
             Self::ParentDir => "--pool-parent",
             Self::ClaudeExecutable => "--pool-claude",
+            Self::SecurestorageDir => "--pool-securestorage-dir",
             Self::RetainDir => "--pool-retain-dir",
             Self::EvidenceDir => "--pool-evidence-dir",
         };
@@ -417,6 +522,26 @@ pub enum ConfigRefusal {
         pool_size: u32,
         required_mb: u64,
         budget_mb: u64,
+    },
+    DuplicateAccountName {
+        name: String,
+    },
+    DuplicateAccountPin {
+        name: String,
+    },
+    DefaultAccountPinConflict {
+        account_pin: String,
+        securestorage_dir: String,
+    },
+    UnknownWarmAccount {
+        name: String,
+    },
+    InvalidAccountName {
+        name: String,
+    },
+    RelativeAccountPin {
+        name: String,
+        path: PathBuf,
     },
 }
 
@@ -475,7 +600,7 @@ impl std::fmt::Display for ConfigRefusal {
             ),
             Self::DuplicateWarmClass { class } => write!(
                 formatter,
-                "the warm set declares class {class} twice; state each MODEL[/EFFORT] in exactly one --pool-warm and add the counts together"
+                "the warm set declares class {class} twice; state each MODEL[/EFFORT][@ACCOUNT] in exactly one --pool-warm and add the counts together"
             ),
             Self::WarmSetExceedsPool {
                 declared,
@@ -493,6 +618,42 @@ impl std::fmt::Display for ConfigRefusal {
                 "a pool of {pool_size} needs {required_mb} MB at the {RSS_CEILING_MB_PER_INSTANCE} MB per-instance ceiling, over the {budget_mb} MB budget; raise --pool-rss-budget-mb to at least {required_mb} on a host that has it, or lower --pool-size to {}",
                 budget_mb / RSS_CEILING_MB_PER_INSTANCE
             ),
+            Self::DuplicateAccountName { name } => write!(
+                formatter,
+                "--pool-account names {name} twice; each account name is one pin"
+            ),
+            Self::DuplicateAccountPin { name } => write!(
+                formatter,
+                "--pool-account {name} repeats a pin already used by another account; two names for one keychain slot is the false picker"
+            ),
+            Self::DefaultAccountPinConflict {
+                account_pin,
+                securestorage_dir,
+            } => write!(
+                formatter,
+                "--pool-account default= and --pool-securestorage-dir disagree ({account_pin:?} vs {securestorage_dir:?})"
+            ),
+            Self::UnknownWarmAccount { name } => write!(
+                formatter,
+                "--pool-warm names @{name}, which is not a --pool-account (or default)"
+            ),
+            Self::InvalidAccountName { name } => write!(
+                formatter,
+                "account name {name:?} is not a letter followed by letters, digits, `_` or `-`"
+            ),
+            Self::RelativeAccountPin { name, path } => write!(
+                formatter,
+                "--pool-account {name}={} must be the word empty or an absolute path",
+                path.display()
+            ),
+        }
+    }
+}
+
+impl From<AccountNameError> for ConfigRefusal {
+    fn from(error: AccountNameError) -> Self {
+        match error {
+            AccountNameError::Invalid(name) => Self::InvalidAccountName { name },
         }
     }
 }
@@ -514,6 +675,9 @@ pub struct PoolConfig {
     pub turn_timeout_ms: u64,
     pub parent_dir: PathBuf,
     pub claude_executable: PathBuf,
+    /// See [`PoolSettings::securestorage_dir`]. Alias of the `default` account pin.
+    pub securestorage_dir: String,
+    pub accounts: Vec<ConfiguredAccount>,
     pub retain_dir: Option<PathBuf>,
     /// See [`PoolSettings::evidence_dir`].
     pub evidence_dir: Option<PathBuf>,
@@ -521,6 +685,19 @@ pub struct PoolConfig {
 }
 
 impl PoolConfig {
+    #[must_use]
+    pub fn pin_for(&self, account: AccountName) -> Option<&str> {
+        self.accounts
+            .iter()
+            .find(|configured| configured.name == account)
+            .map(|configured| configured.pin.as_str())
+    }
+
+    #[must_use]
+    pub fn has_account(&self, account: AccountName) -> bool {
+        self.pin_for(account).is_some()
+    }
+
     /// The declared floor for one class, or zero when the operator declared
     /// none. The TTL sweep never evicts below this; cold swap may take from it
     /// only when nothing else is idle.
@@ -580,6 +757,10 @@ mod tests {
     #[test]
     fn the_owner_defaults_validate() {
         let config = settings().validate().expect("defaults must boot");
+        assert_eq!(config.securestorage_dir, "");
+        assert_eq!(config.accounts.len(), 1);
+        assert!(config.accounts[0].name.is_default());
+        assert_eq!(config.accounts[0].pin, "");
         assert_eq!(config.pool_size, 15);
         assert_eq!(config.recycle_turns, 50);
         assert_eq!(
@@ -726,6 +907,115 @@ mod tests {
                 ..
             })
         ));
+
+        let mut raw = settings();
+        raw.securestorage_dir = "~/.claude-1".to_owned();
+        assert!(matches!(
+            raw.validate(),
+            Err(ConfigRefusal::RelativePath {
+                field: ConfigField::SecurestorageDir,
+                ..
+            })
+        ));
+        let mut raw = settings();
+        raw.accounts = vec![AccountSetting {
+            name: "claude-1".into(),
+            pin: "~/.claude-1".into(),
+        }];
+        let error = raw.validate().expect_err("relative --pool-account pin");
+        assert!(
+            matches!(
+                error,
+                ConfigRefusal::RelativeAccountPin { ref name, .. } if name == "claude-1"
+            ),
+            "{error}"
+        );
+        assert!(
+            error.to_string().contains("--pool-account claude-1="),
+            "{error}"
+        );
+        assert!(
+            !error.to_string().contains("--pool-securestorage-dir"),
+            "{error}"
+        );
+        let mut raw = settings();
+        raw.securestorage_dir = "/Users/me/.claude-1".to_owned();
+        let config = raw.validate().expect("absolute pin must boot");
+        assert_eq!(config.securestorage_dir, "/Users/me/.claude-1");
+        assert_eq!(
+            config.pin_for(AccountName::DEFAULT),
+            Some("/Users/me/.claude-1")
+        );
+    }
+
+    #[test]
+    fn two_named_accounts_are_distinct_pins() {
+        let mut raw = settings();
+        raw.accounts = vec![AccountSetting {
+            name: "claude-1".into(),
+            pin: "/Users/me/.claude-1".into(),
+        }];
+        let config = raw.validate().expect("default empty plus claude-1");
+        assert_eq!(config.pin_for(AccountName::DEFAULT), Some(""));
+        assert_eq!(
+            config.pin_for(AccountName::parse("claude-1").unwrap()),
+            Some("/Users/me/.claude-1")
+        );
+
+        let mut raw = settings();
+        raw.accounts = vec![
+            AccountSetting {
+                name: "claude-1".into(),
+                pin: "/Users/me/.claude-1".into(),
+            },
+            AccountSetting {
+                name: "work".into(),
+                pin: "/Users/me/.claude-1".into(),
+            },
+        ];
+        assert!(matches!(
+            raw.validate(),
+            Err(ConfigRefusal::DuplicateAccountPin { .. })
+        ));
+
+        let mut raw = settings();
+        raw.warm_set = vec![WarmClassSetting {
+            model: "sonnet".into(),
+            effort: None,
+            account: AccountName::parse("claude-1").unwrap(),
+            count: 1,
+        }];
+        assert!(matches!(
+            raw.validate(),
+            Err(ConfigRefusal::UnknownWarmAccount { .. })
+        ));
+
+        let mut raw = settings();
+        raw.accounts = vec![
+            AccountSetting {
+                name: "claude-1".into(),
+                pin: "/Users/me/.claude-1".into(),
+            },
+            AccountSetting {
+                name: "claude-1".into(),
+                pin: "/Users/me/.claude-2".into(),
+            },
+        ];
+        assert!(matches!(
+            raw.validate(),
+            Err(ConfigRefusal::DuplicateAccountName { .. })
+        ));
+
+        let mut raw = settings();
+        raw.securestorage_dir = "/Users/me/.claude".into();
+        raw.accounts = vec![AccountSetting {
+            name: "default".into(),
+            pin: "/Users/me/.claude-1".into(),
+        }];
+        assert!(matches!(
+            raw.validate(),
+            Err(ConfigRefusal::DefaultAccountPinConflict { .. })
+        ));
     }
 
     #[test]
@@ -768,11 +1058,13 @@ mod tests {
             WarmClassSetting {
                 model: "opus".to_owned(),
                 effort: Some(EffortLevel::High),
+                account: AccountName::DEFAULT,
                 count: 2,
             },
             WarmClassSetting {
                 model: "claude-haiku-4-5".to_owned(),
                 effort: None,
+                account: AccountName::DEFAULT,
                 count: 3,
             },
         ];
@@ -808,6 +1100,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "claude-haiku-4-5".to_owned(),
             effort: Some(EffortLevel::High),
+            account: AccountName::DEFAULT,
             count: 1,
         }];
         assert!(matches!(
@@ -819,6 +1112,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "claude-invented-9".to_owned(),
             effort: None,
+            account: AccountName::DEFAULT,
             count: 1,
         }];
         assert!(matches!(
@@ -835,6 +1129,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "opus".to_owned(),
             effort: None,
+            account: AccountName::DEFAULT,
             count: 3,
         }];
         assert_eq!(
@@ -867,6 +1162,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "opus".to_owned(),
             effort: None,
+            account: AccountName::DEFAULT,
             count: 2,
         }];
         let filled = raw
@@ -886,6 +1182,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "opus".to_owned(),
             effort: None,
+            account: AccountName::DEFAULT,
             count: 3,
         }];
         assert_eq!(
@@ -905,11 +1202,13 @@ mod tests {
             WarmClassSetting {
                 model: "opus".to_owned(),
                 effort: Some(EffortLevel::High),
+                account: AccountName::DEFAULT,
                 count: 1,
             },
             WarmClassSetting {
                 model: "claude-opus-5".to_owned(),
                 effort: Some(EffortLevel::High),
+                account: AccountName::DEFAULT,
                 count: 1,
             },
         ];
@@ -925,6 +1224,7 @@ mod tests {
         raw.warm_set = vec![WarmClassSetting {
             model: "opus".to_owned(),
             effort: None,
+            account: AccountName::DEFAULT,
             count: 0,
         }];
         assert!(matches!(

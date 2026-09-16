@@ -99,6 +99,8 @@ pub struct NativeServiceConfig {
     /// re-check a bound. The `Option` is the enable switch and nothing else; a
     /// present-but-invalid configuration is not representable.
     pub pool: Option<PoolConfig>,
+    /// Admits Full-cell `run_stateful`. Off unless `pmuxd --stateful`.
+    pub stateful: bool,
 }
 
 impl Default for NativeServiceConfig {
@@ -116,6 +118,7 @@ impl Default for NativeServiceConfig {
             // built would mint instances -- real Claude processes, real
             // directories -- on every embedder that never asked for one.
             pool: None,
+            stateful: false,
         }
     }
 }
@@ -869,6 +872,16 @@ impl NativeService {
         self.pool.get()
     }
 
+    #[must_use]
+    pub(crate) fn stateful_enabled(&self) -> bool {
+        self.config.stateful
+    }
+
+    #[must_use]
+    pub(crate) fn pool_config(&self) -> Option<&PoolConfig> {
+        self.config.pool.as_ref()
+    }
+
     fn from_runtime(runtime: Arc<dyn SessionRuntime>, config: NativeServiceConfig) -> Self {
         // One counter covers every detached task this service is responsible
         // for, whichever layer spawns it: terminal creation that outlived its
@@ -1111,7 +1124,7 @@ impl NativeService {
     pub async fn dispatch(self: &Arc<Self>, request: Request) -> Result<ResponseResult, ErrorBody> {
         if !matches!(
             request,
-            Request::Ping | Request::Diagnose | Request::RunStateless(_)
+            Request::Ping | Request::Diagnose | Request::RunStateless(_) | Request::RunStateful(_)
         ) {
             return Err(crate::pool::refusal::session_surface_removed());
         }
@@ -1132,6 +1145,9 @@ impl NativeService {
             Request::RunStateless(request) => crate::stateless::run_stateless(self.pool(), request)
                 .await
                 .map(|result| ResponseResult::StatelessResult(Box::new(result))),
+            Request::RunStateful(request) => crate::stateful::run_stateful(self, request)
+                .await
+                .map(|result| ResponseResult::StatefulResult(Box::new(result))),
             Request::StartSession(_)
             | Request::RunTurn(_)
             | Request::CancelTurn(_)
@@ -1962,11 +1978,40 @@ impl NativeService {
                     });
                 }
             };
-        Some(admit_claude_version(
+        let admission = admit_claude_version(
             &self.config.tested_claude_profiles,
             version,
             self.config.untested_transcript_drain_ms,
-        ))
+        );
+        let PoolClaudeAdmission::Admitted { version } = admission else {
+            return Some(admission);
+        };
+        let mut logged_in = Vec::new();
+        let mut logged_out = Vec::new();
+        let mut probe_error = None;
+        for account in &pool.config().accounts {
+            match claude_auth_logged_in(&executable, &account.pin, self.config.version_timeout)
+                .await
+            {
+                Ok(true) => logged_in.push(account.name.to_string()),
+                Ok(false) => logged_out.push(account.clone()),
+                Err(error) => {
+                    probe_error
+                        .get_or_insert_with(|| format!("auth status: ({}) {error}", account.name));
+                }
+            }
+        }
+        if !logged_in.is_empty() {
+            Some(PoolClaudeAdmission::Admitted { version })
+        } else if let Some(error) = probe_error {
+            Some(PoolClaudeAdmission::Unreadable { executable, error })
+        } else {
+            let pin = logged_out
+                .first()
+                .map(|account| account.pin.clone())
+                .unwrap_or_default();
+            Some(PoolClaudeAdmission::NeedsLogin { version, pin })
+        }
     }
 
     /// Configuration is EXERCISED, not merely present: the daemon is running on
@@ -2657,24 +2702,48 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
                  cell can be minted"
             ),
         ),
+        Some(PoolClaudeAdmission::NeedsLogin { version, pin }) => (
+            LayerFinding::Faulted,
+            format!(
+                "the stateless engine's Claude Code {version} is admitted, but no configured \
+                 account pin is logged in (`claude auth status` with an isolated CLAUDE_CONFIG_DIR \
+                 and CLAUDE_SECURESTORAGE_CONFIG_DIR={}), so every mint would NeedsLogin; log into \
+                 --pool-securestorage-dir (empty or an absolute path) and each --pool-account \
+                 NAME= pin with that exact spelling",
+                if pin.is_empty() {
+                    "empty".to_owned()
+                } else {
+                    "the configured pin".to_owned()
+                }
+            ),
+        ),
         Some(PoolClaudeAdmission::Refused { version, refusal }) => (
             LayerFinding::Faulted,
             format!(
                 "the stateless engine would launch Claude Code {version}, which none of the \
                  {admitted} Claude compatibility cell(s) matching this platform admits, so every \
-                 `pmux run` is refused with unsupported_claude_version ({refusal}); measure this \
+                 `pmux ask` is refused with unsupported_claude_version ({refusal}); measure this \
                  version and admit it with `pmuxd --tested-claude-profile`, or run a version pmux \
                  has already promoted"
             ),
         ),
         Some(PoolClaudeAdmission::Unreadable { executable, error }) => (
             LayerFinding::NotEstablished,
-            format!(
-                "the stateless engine's Claude executable {} could not be asked its version, so \
-                 whether any of the {admitted} compatibility cell(s) matching this platform \
-                 admits it is unknown: {error}",
-                executable.display()
-            ),
+            if error.starts_with("auth status:") {
+                format!(
+                    "the stateless engine's Claude executable {} was version-admitted, but \
+                     isolated-shape `claude auth status` could not be read, so whether a mint \
+                     would NeedsLogin is unknown: {error}",
+                    executable.display()
+                )
+            } else {
+                format!(
+                    "the stateless engine's Claude executable {} could not be asked its version, so \
+                     whether any of the {admitted} compatibility cell(s) matching this platform \
+                     admits it is unknown: {error}",
+                    executable.display()
+                )
+            },
         ),
     };
     HealthLayer::new(
@@ -2687,7 +2756,8 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
             "pool_claude_version": match pool_claude {
                 Some(
                     PoolClaudeAdmission::Admitted { version }
-                    | PoolClaudeAdmission::Refused { version, .. },
+                    | PoolClaudeAdmission::Refused { version, .. }
+                    | PoolClaudeAdmission::NeedsLogin { version, .. },
                 ) => Some(version.clone()),
                 Some(PoolClaudeAdmission::Unreadable { .. }) | None => None,
             },
@@ -2698,15 +2768,16 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
 /// What the daemon established about the Claude its stateless pool would
 /// launch, by running that executable and asking its own registry.
 ///
-/// Three states and not a `bool`, for the reason `LayerFinding` has four: "this
-/// version is refused" and "the version could not be read" are different
-/// operator problems, and folding the second into the first reports a fault
-/// nobody can act on while folding it into the third reports health nobody
-/// measured.
+/// Four states and not a `bool`, for the reason `LayerFinding` has four: "this
+/// version is refused", "the version could not be read", and "admitted but not
+/// logged in under the configured pin" are different operator problems, and
+/// folding any of them into health reports a mint nobody measured.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum PoolClaudeAdmission {
     /// The registry admits this version under the policy a mint uses.
     Admitted { version: String },
+    /// Version is admitted but isolated-shape `auth status` is not logged in.
+    NeedsLogin { version: String, pin: String },
     /// The registry refuses it, and the refusal is the one a mint would get.
     Refused { version: String, refusal: String },
     /// The executable could not be asked. Nothing is claimed either way.
@@ -3652,8 +3723,8 @@ fn require_isolation_root_is_the_effective_root(
 /// unidentifiable root would otherwise fall out as `None` incumbent and be
 /// handed `SeedDisposition::Write`. That is also why the rule is here rather
 /// than inside `DirectoryIdentity::of`: `must_treat_as_same_directory`'s other
-/// caller compares the securestorage PIN, which is a keychain-service input
-/// rather than a directory pmux binds, and wants the permissive answer.
+/// caller is the isolation-root vs inherited-root check, which wants the
+/// permissive answer on a vacant spelling.
 ///
 /// Applied to BOTH bound resources, so it holds for any future entry path that
 /// computes a configuration root or a working directory some other way. Today
@@ -4105,6 +4176,38 @@ async fn claude_version_of(
     })
 }
 
+async fn claude_auth_logged_in(
+    executable: &Path,
+    pin: &str,
+    timeout: Duration,
+) -> Result<bool, String> {
+    let scratch = tempfile::tempdir().map_err(|error| error.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(scratch.path(), std::fs::Permissions::from_mode(0o700))
+            .map_err(|error| error.to_string())?;
+    }
+    let mut command = Command::new(executable);
+    command
+        .args(["auth", "status"])
+        .current_dir(scratch.path())
+        .env("CLAUDE_CONFIG_DIR", scratch.path())
+        .env("CLAUDE_SECURESTORAGE_CONFIG_DIR", pin)
+        .kill_on_drop(true);
+    let output = tokio::time::timeout(timeout, command.output())
+        .await
+        .map_err(|_| "timed out while querying Claude auth status".to_owned())?
+        .map_err(|error| error.to_string())?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(stdout.trim())
+        .map_err(|error| format!("auth status was not JSON ({error}): {}", stdout.trim()))?;
+    parsed
+        .get("loggedIn")
+        .and_then(serde_json::Value::as_bool)
+        .ok_or_else(|| "auth status JSON had no boolean loggedIn".to_owned())
+}
+
 fn normalize_claude_version(output: &str) -> Option<String> {
     output
         .split_whitespace()
@@ -4296,8 +4399,8 @@ mod tests {
     /// and a test that only checked its endpoints would not notice a
     /// containment predicate that admits nothing between them. The
     /// zero-promoted-cells case is asserted as well: on a platform pmux has
-    /// promoted nothing for -- Linux today -- the loop below is empty and a
-    /// vacuous pass is exactly what this file keeps finding.
+    /// promoted nothing for, the loop below is empty and a vacuous pass is
+    /// exactly what this file keeps finding.
     #[test]
     fn a_version_no_promoted_cell_names_is_refused_and_the_refusal_says_what_to_do() {
         let registry = CompatibilityProfileRegistry::default();
@@ -4386,7 +4489,7 @@ mod tests {
         );
     }
 
-    /// The three answers `NativeService::admit_pool_claude` can return.
+    /// The four answers `NativeService::admit_pool_claude` can return.
     ///
     /// Both the admitted and the refused one are DERIVED from the promoted
     /// range and then produced by `admit_claude_version` itself, not written
@@ -4397,10 +4500,9 @@ mod tests {
     /// naming the old answer is a health test asserting against a refusal the
     /// daemon no longer issues.
     ///
-    /// On a platform with nothing promoted -- Linux today -- there is no
-    /// admitted version to derive, so the fixture falls back to a version that
-    /// is refused there too and the tests that use it still describe a real
-    /// answer.
+    /// On a platform with nothing promoted there is no admitted version to
+    /// derive, so the fixture falls back to a version that is refused there too
+    /// and the tests that use it still describe a real answer.
     fn promoted_here_for_fixtures() -> Option<&'static crate::compatibility::PromotedProfile> {
         crate::compatibility::PROMOTED_PROFILES
             .iter()
@@ -4436,6 +4538,35 @@ mod tests {
         PoolClaudeAdmission::Unreadable {
             executable: PathBuf::from("/usr/local/bin/claude"),
             error: "timed out while querying Claude Code version".to_owned(),
+        }
+    }
+
+    fn unreadable_auth_pool_claude() -> PoolClaudeAdmission {
+        PoolClaudeAdmission::Unreadable {
+            executable: PathBuf::from("/usr/local/bin/claude"),
+            error: "auth status: (default) timed out while querying Claude auth status".to_owned(),
+        }
+    }
+
+    fn needs_login_pool_claude() -> PoolClaudeAdmission {
+        let version = promoted_here_for_fixtures().map_or_else(
+            || "2.1.220".to_owned(),
+            |promoted| promoted.claude_version_floor.to_owned(),
+        );
+        PoolClaudeAdmission::NeedsLogin {
+            version,
+            pin: String::new(),
+        }
+    }
+
+    fn needs_login_pool_claude_with_pin() -> PoolClaudeAdmission {
+        let version = promoted_here_for_fixtures().map_or_else(
+            || "2.1.220".to_owned(),
+            |promoted| promoted.claude_version_floor.to_owned(),
+        );
+        PoolClaudeAdmission::NeedsLogin {
+            version,
+            pin: "/Users/me/.claude-1".to_owned(),
         }
     }
 
@@ -5687,6 +5818,7 @@ mod tests {
             auth_policy: pseudomux_protocol::v1::AuthPolicy::Subscription,
             config_isolation: Some(pseudomux_protocol::v1::ConfigIsolation {
                 root: private.path().to_string_lossy().into_owned(),
+                securestorage_dir: String::new(),
             }),
             terminal: pseudomux_protocol::v1::TerminalSpec::default(),
             lifecycle: pseudomux_protocol::v1::LifecycleMode::Transcript,
@@ -6649,6 +6781,7 @@ mod tests {
         std::os::unix::fs::symlink(&delivered, &alias).unwrap();
         let isolation = |root: &Path| ConfigIsolation {
             root: root.to_string_lossy().into_owned(),
+            securestorage_dir: String::new(),
         };
 
         require_isolation_root_is_the_effective_root(Some(&isolation(&alias)), &delivered).unwrap();
@@ -7721,6 +7854,57 @@ mod tests {
             "an unreadable executable must be NAMED, or nobody knows which one: {}",
             unreadable.detail
         );
+        assert!(
+            unreadable.detail.contains("could not be asked its version"),
+            "a version-query failure must say version, not auth: {}",
+            unreadable.detail
+        );
+
+        let unreadable_auth = compatibility_layer(1, Some(&unreadable_auth_pool_claude()));
+        assert_eq!(unreadable_auth.finding, LayerFinding::NotEstablished);
+        assert!(
+            unreadable_auth.detail.contains("auth status"),
+            "{}",
+            unreadable_auth.detail
+        );
+        assert!(
+            !unreadable_auth
+                .detail
+                .contains("could not be asked its version"),
+            "an auth-status failure is not a version-query failure: {}",
+            unreadable_auth.detail
+        );
+
+        let logged_out = compatibility_layer(1, Some(&needs_login_pool_claude()));
+        assert_eq!(logged_out.finding, LayerFinding::Faulted);
+        assert_eq!(logged_out.outcome, ProbeOutcome::Fail);
+        assert!(
+            logged_out
+                .detail
+                .contains("CLAUDE_SECURESTORAGE_CONFIG_DIR=empty")
+                && logged_out.detail.contains("NeedsLogin"),
+            "empty pin must be named as empty, not as a path: {}",
+            logged_out.detail
+        );
+        assert!(
+            !logged_out.detail.contains("/Users/me/.claude-1"),
+            "the empty-pin arm must not interpolate a path: {}",
+            logged_out.detail
+        );
+        let logged_out_pin = compatibility_layer(1, Some(&needs_login_pool_claude_with_pin()));
+        assert_eq!(logged_out_pin.finding, LayerFinding::Faulted);
+        assert!(
+            logged_out_pin
+                .detail
+                .contains("CLAUDE_SECURESTORAGE_CONFIG_DIR=the configured pin"),
+            "{}",
+            logged_out_pin.detail
+        );
+        assert!(
+            !logged_out_pin.detail.contains("/Users/me/.claude-1"),
+            "NeedsLogin must not publish the pin path: {}",
+            logged_out_pin.detail
+        );
 
         // A pool instance the sidecar does not report is a fault, and the
         // report names no instance while saying so.
@@ -8375,6 +8559,9 @@ mod tests {
             compatibility_layer(0, Some(&refused_pool_claude())),
             compatibility_layer(3, Some(&admitted_pool_claude())),
             compatibility_layer(3, Some(&unreadable_pool_claude())),
+            compatibility_layer(3, Some(&unreadable_auth_pool_claude())),
+            compatibility_layer(3, Some(&needs_login_pool_claude())),
+            compatibility_layer(3, Some(&needs_login_pool_claude_with_pin())),
             pool_layer(None, &[], None),
             pool_layer(Some(&halted), &["pmux-pool-0".to_owned()], Some(&live)),
             pool_layer(Some(&drained(0)), &[], Some(&live)),
@@ -8432,6 +8619,9 @@ mod tests {
             compatibility_layer(0, Some(&refused_pool_claude())),
             compatibility_layer(1, Some(&admitted_pool_claude())),
             compatibility_layer(1, Some(&unreadable_pool_claude())),
+            compatibility_layer(1, Some(&unreadable_auth_pool_claude())),
+            compatibility_layer(1, Some(&needs_login_pool_claude())),
+            compatibility_layer(1, Some(&needs_login_pool_claude_with_pin())),
             pool_layer(None, &[], None),
             pool_layer(Some(&pool(0, 1)), &["pmux-pool-0".to_owned()], Some(&live)),
             pool_layer(Some(&pool(0, 0)), &[], Some(&live)),
@@ -8868,6 +9058,7 @@ mod tests {
                 root: root.to_path_buf(),
                 cwd: cwd.to_path_buf(),
                 claude_executable: PathBuf::from("/bin/sh"),
+                securestorage_dir: String::new(),
                 system_prompt: "differential".to_owned(),
                 instance_idle_ttl_ms: 600_000,
             },

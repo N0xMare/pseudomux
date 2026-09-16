@@ -749,6 +749,7 @@ async fn wave_with(
                 effort: caller.class.effort,
                 prompt,
                 deadline_unix_ms: None,
+                account: None,
             };
             barrier.wait().await;
             let started = Instant::now();
@@ -3154,6 +3155,7 @@ async fn the_context_a_cleared_instance_carries_is_constant_across_clears() {
                 effort: CLASSES[0].effort,
                 prompt: prompt.clone(),
                 deadline_unix_ms: None,
+                account: None,
             })
             .await
             .unwrap_or_else(|error| panic!("{label} was not served: {error:?}"));

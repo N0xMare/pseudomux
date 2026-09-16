@@ -1233,6 +1233,7 @@ async fn start_one_cell(seam: &Seam, cell: SessionCell) -> ErrorBody {
                 // point, so neither is allowed to fail for a different reason.
                 config_isolation: Some(pseudomux_protocol::v1::ConfigIsolation {
                     root: config_root.to_string_lossy().into_owned(),
+                    securestorage_dir: String::new(),
                 }),
                 terminal: TerminalSpec::default(),
                 lifecycle: LifecycleMode::Transcript,
@@ -1539,6 +1540,18 @@ fn every_request_variant() -> Vec<(&'static str, Request)> {
                 }
             })),
         ),
+        (
+            "run_stateful",
+            request_from_json(json!({
+                "method": "run_stateful",
+                "params": {
+                    "model": "sonnet",
+                    "prompt": "hi",
+                    "cwd": "/tmp",
+                    "permission_mode": "dangerously_skip_permissions"
+                }
+            })),
+        ),
     ]
 }
 
@@ -1560,6 +1573,7 @@ fn request_method(request: &Request) -> &'static str {
         Request::GetAgent(_) => "get_agent",
         Request::ListAgents(_) => "list_agents",
         Request::UpdateAgent(_) => "update_agent",
+        Request::RunStateful(_) => "run_stateful",
     }
 }
 
@@ -1678,8 +1692,8 @@ async fn dispatch_refuses_every_non_living_request_and_keeps_the_living_allowlis
     let fixtures = every_request_variant();
     assert_eq!(
         fixtures.len(),
-        16,
-        "protocol v1 currently has 16 Request variants; add a fixture when one lands"
+        17,
+        "protocol v1 currently has 17 Request variants; add a fixture when one lands"
     );
 
     for (name, request) in fixtures {
@@ -1698,7 +1712,20 @@ async fn dispatch_refuses_every_non_living_request_and_keeps_the_living_allowlis
                     "{name} must dispatch as living: {error:?}"
                 );
             }
-            Err(error) if !matches!(name, "ping" | "diagnose" | "run_stateless") => {
+            Err(error) if name == "run_stateful" => {
+                assert_eq!(error.code, ErrorCode::UnsupportedFeature, "{name}");
+                assert_eq!(
+                    error
+                        .details
+                        .get("violation")
+                        .and_then(|value| value.as_str()),
+                    Some("stateful_not_enabled"),
+                    "{name} must dispatch as living: {error:?}"
+                );
+            }
+            Err(error)
+                if !matches!(name, "ping" | "diagnose" | "run_stateless" | "run_stateful") =>
+            {
                 assert_session_surface_removed(name, &error);
             }
             other => panic!("{name}: unexpected dispatch outcome: {other:?}"),

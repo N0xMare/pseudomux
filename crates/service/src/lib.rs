@@ -15,6 +15,7 @@ pub mod screen_corpus;
 mod sensitive_launch;
 #[cfg(test)]
 mod source_scan;
+pub mod stateful;
 pub mod stateless;
 pub mod tasks;
 mod tombstones;

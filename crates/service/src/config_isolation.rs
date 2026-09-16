@@ -146,7 +146,7 @@ pub(crate) enum SeedOutcome {
 }
 
 /// The exact state one session needs a private root to be in.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct ConfigRootSeed<'a> {
     /// Owner-only directory pmux owns, already canonicalized and validated by
     /// `claude_launch::validate_config_isolation`.
@@ -871,9 +871,8 @@ mod tests {
     /// as the spawn failing.
     ///
     /// `CLAUDE_SECURESTORAGE_CONFIG_DIR` is pinned to the empty string, which is
-    /// exactly what `build_environment` step 6 delivers for a caller with no
-    /// `CLAUDE_CONFIG_DIR` of its own: it selects the default credential store,
-    /// so the isolated root does not look logged-out.
+    /// `--pool-securestorage-dir empty`: the unsuffixed store. It is not derived
+    /// from the isolated root or from snapshot `CLAUDE_CONFIG_DIR`.
     #[test]
     #[ignore = "runs the operator's real `claude` binary once against a private config root; no credentials are written and no turn is required"]
     fn a_real_claude_launch_leaves_the_seed_already_satisfied() {

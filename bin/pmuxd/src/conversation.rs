@@ -22,7 +22,8 @@
 //! An implicit hash of the first user message is off unless the operator
 //! starts the listener with `--messages-allow-implicit`. You did
 //! not choose that id; release using the `x-pmux-conversation` the response
-//! echoed. Two sessions that start the same way share a cell.
+//! echoed. The hash includes model, effort, and account, so two implicit
+//! sessions that differ only in `x-pmux-account` do not share a cell.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -32,9 +33,9 @@ use pseudomux_protocol::v1::{
     EffortLevel, ErrorBody, ErrorCode, RunStatelessRequest, StatelessResult,
 };
 use pseudomux_service::driver_io::validate_prompt;
-use pseudomux_service::pool::{ModelEffortRefusal, Pool, resolve_pool_class};
+use pseudomux_service::pool::{AccountName, ModelEffortRefusal, Pool, resolve_pool_class};
 use pseudomux_service::v1::DriverFailure;
-use serde_json::Value;
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
@@ -43,6 +44,7 @@ use crate::messages_http::{
 };
 
 const CONVERSATION_HEADER: &str = "x-pmux-conversation";
+const ACCOUNT_HEADER: &str = "x-pmux-account";
 
 /// Operator knobs for the lease book. The pool owns the cells and the idle TTL.
 #[derive(Clone, Debug)]
@@ -97,6 +99,7 @@ pub struct LeaseTurn {
 pub struct ConversationFingerprint {
     pub model: String,
     pub effort: Option<EffortLevel>,
+    pub account: String,
     pub system_tools: String,
     pub messages: Vec<String>,
 }
@@ -134,18 +137,50 @@ pub fn classify_prefix(
 
 fn pool_class_changed(previous: &ConversationFingerprint, next: &ConversationFingerprint) -> bool {
     match (
-        resolve_pool_class(&previous.model, previous.effort),
-        resolve_pool_class(&next.model, next.effort),
+        resolve_pool_class(&previous.model, previous.effort).map(|(class, _)| {
+            class
+                .with_account(AccountName::parse(&previous.account).unwrap_or(AccountName::DEFAULT))
+        }),
+        resolve_pool_class(&next.model, next.effort).map(|(class, _)| {
+            class.with_account(AccountName::parse(&next.account).unwrap_or(AccountName::DEFAULT))
+        }),
     ) {
-        (Ok((left, _)), Ok((right, _))) => left != right,
-        _ => previous.model != next.model || previous.effort != next.effort,
+        (Ok(left), Ok(right)) => left != right,
+        _ => {
+            previous.model != next.model
+                || previous.effort != next.effort
+                || previous.account != next.account
+        }
     }
 }
 
+fn account_from_headers(headers: &[(String, String)]) -> Result<AccountName, ErrorBody> {
+    let raw = headers.iter().find_map(|(name, value)| {
+        (name.eq_ignore_ascii_case(ACCOUNT_HEADER)).then_some(value.as_str())
+    });
+    match raw {
+        None | Some("") => Ok(AccountName::DEFAULT),
+        Some(name) => AccountName::parse(name).map_err(|error| {
+            ErrorBody::new(ErrorCode::InvalidConfig, error.to_string())
+                .with_details(json!({"violation": "invalid_account_name"}))
+        }),
+    }
+}
+
+#[cfg(test)]
 pub fn fingerprint_body(
     body: &Value,
     model: &str,
     effort: Option<EffortLevel>,
+) -> ConversationFingerprint {
+    fingerprint_body_on(body, model, effort, AccountName::DEFAULT)
+}
+
+fn fingerprint_body_on(
+    body: &Value,
+    model: &str,
+    effort: Option<EffortLevel>,
+    account: AccountName,
 ) -> ConversationFingerprint {
     let system = system_text(body.get("system"));
     let tools = body
@@ -177,6 +212,7 @@ pub fn fingerprint_body(
     ConversationFingerprint {
         model: model.to_owned(),
         effort,
+        account: account.to_string(),
         system_tools,
         messages,
     }
@@ -223,13 +259,14 @@ pub fn conversation_id_from(
     body: &Value,
     model: &str,
     effort: Option<EffortLevel>,
+    account: AccountName,
     allow_implicit: bool,
 ) -> Result<String, ErrorBody> {
     if let Some(explicit) = explicit_conversation_id(headers) {
         return require_path_safe_conversation_id(&explicit);
     }
     if allow_implicit {
-        return Ok(implicit_conversation_id(body, model, effort));
+        return Ok(implicit_conversation_id(body, model, effort, account));
     }
     Err(missing_conversation_header())
 }
@@ -244,7 +281,12 @@ pub fn missing_conversation_header() -> ErrorBody {
     )
 }
 
-pub fn implicit_conversation_id(body: &Value, model: &str, effort: Option<EffortLevel>) -> String {
+pub fn implicit_conversation_id(
+    body: &Value,
+    model: &str,
+    effort: Option<EffortLevel>,
+    account: AccountName,
+) -> String {
     let first = body
         .get("messages")
         .and_then(Value::as_array)
@@ -267,7 +309,8 @@ pub fn implicit_conversation_id(body: &Value, model: &str, effort: Option<Effort
         .unwrap_or_default();
     let effort_token = effort.map(EffortLevel::as_str).unwrap_or("-");
     sha_hex(&format!(
-        "{model}\n{effort_token}\n{system}\n{tools}\n{first}"
+        "{model}\n{effort_token}\n{}\n{system}\n{tools}\n{first}",
+        account.as_str()
     ))
 }
 
@@ -373,12 +416,42 @@ impl ConversationBook {
         let effort = effort_from_id.or(effort_from_body(body)?);
         let (class, resolved) =
             resolve_pool_class(&model, effort).map_err(ModelEffortRefusal::into_error_body)?;
+        let account = account_from_headers(headers)?;
+        if !self.pool.config().has_account(account) {
+            let known = self
+                .pool
+                .config()
+                .accounts
+                .iter()
+                .map(|configured| configured.name.to_string())
+                .collect::<Vec<_>>();
+            return Err(ErrorBody::new(
+                ErrorCode::InvalidConfig,
+                format!(
+                    "account {:?} is not configured on this daemon; configured accounts: {}",
+                    account.as_str(),
+                    known.join(", ")
+                ),
+            )
+            .with_details(json!({
+                "violation": "unknown_account",
+                "account": account.as_str(),
+                "configured": known,
+            })));
+        }
+        let class = class.with_account(account);
         let requested_model = raw_model.to_owned();
         let model = class.canonical_model.to_owned();
         let effort = resolved.effort_level;
-        let conversation_id =
-            conversation_id_from(headers, body, &model, effort, self.config.allow_implicit)?;
-        let next = fingerprint_body(body, &model, effort);
+        let conversation_id = conversation_id_from(
+            headers,
+            body,
+            &model,
+            effort,
+            account,
+            self.config.allow_implicit,
+        )?;
+        let next = fingerprint_body_on(body, &model, effort, account);
         // Flatten for Prime / Reprime / SessionNotFound fallback. Continue
         // validates only the suffix; Replay types nothing.
         let primer = sanitize_prompt(
@@ -431,6 +504,7 @@ impl ConversationBook {
                             model: model.clone(),
                             requested_model: requested_model.clone(),
                             effort,
+                            account,
                             next: next.clone(),
                             kind: PlannedKind::Continue { from },
                         });
@@ -444,6 +518,7 @@ impl ConversationBook {
                             model: model.clone(),
                             requested_model: requested_model.clone(),
                             effort,
+                            account,
                             next: next.clone(),
                             kind: PlannedKind::Reprime,
                         });
@@ -464,6 +539,7 @@ impl ConversationBook {
                     model: model.clone(),
                     requested_model: requested_model.clone(),
                     effort,
+                    account,
                     next,
                     kind: PlannedKind::Prime,
                 }
@@ -557,6 +633,7 @@ impl ConversationBook {
             effort: planned.effort,
             prompt,
             deadline_unix_ms: None,
+            account: (!planned.account.is_default()).then(|| planned.account.to_string()),
         };
 
         let (kind, turn) = match planned.kind {
@@ -633,6 +710,7 @@ struct Planned {
     model: String,
     requested_model: String,
     effort: Option<EffortLevel>,
+    account: AccountName,
     next: ConversationFingerprint,
     kind: PlannedKind,
 }
@@ -739,9 +817,37 @@ mod tests {
         ]);
         let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
         assert_eq!(
-            implicit_conversation_id(&first, &model, effort),
-            implicit_conversation_id(&second, &model, effort)
+            implicit_conversation_id(&first, &model, effort, AccountName::DEFAULT),
+            implicit_conversation_id(&second, &model, effort, AccountName::DEFAULT)
         );
+    }
+
+    #[test]
+    fn an_invalid_account_header_is_invalid_account_name() {
+        let err = account_from_headers(&[(
+            "x-pmux-account".to_owned(),
+            "/Users/me/.claude-1".to_owned(),
+        )])
+        .unwrap_err();
+        assert_eq!(err.code, ErrorCode::InvalidConfig);
+        assert_eq!(
+            err.details.get("violation").and_then(Value::as_str),
+            Some("invalid_account_name")
+        );
+    }
+
+    #[test]
+    fn implicit_id_splits_on_account() {
+        let body = body(vec![json!({"role":"user","content":"hello"})]);
+        let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
+        let default = implicit_conversation_id(&body, &model, effort, AccountName::DEFAULT);
+        let named = implicit_conversation_id(
+            &body,
+            &model,
+            effort,
+            AccountName::parse("claude-1").unwrap(),
+        );
+        assert_ne!(default, named);
     }
 
     #[test]
@@ -818,6 +924,26 @@ mod tests {
     }
 
     #[test]
+    fn account_change_reprimes() {
+        let default = fingerprint_body(
+            &body(vec![json!({"role":"user","content":"hello"})]),
+            "claude-sonnet-5",
+            Some(EffortLevel::Low),
+        );
+        let named = fingerprint_body_on(
+            &body(vec![
+                json!({"role":"user","content":"hello"}),
+                json!({"role":"assistant","content":"hi"}),
+                json!({"role":"user","content":"more"}),
+            ]),
+            "claude-sonnet-5",
+            Some(EffortLevel::Low),
+            AccountName::parse("claude-1").unwrap(),
+        );
+        assert_eq!(classify_prefix(&default, &named), PrefixDecision::Reprime);
+    }
+
+    #[test]
     fn continuation_prompt_is_only_the_suffix() {
         let body = body(vec![
             json!({"role":"user","content":"hello"}),
@@ -839,6 +965,7 @@ mod tests {
             &body,
             &model,
             effort,
+            AccountName::DEFAULT,
             false,
         )
         .unwrap();
@@ -855,6 +982,7 @@ mod tests {
                 &body,
                 &model,
                 effort,
+                AccountName::DEFAULT,
                 false,
             )
             .unwrap_err();
@@ -867,11 +995,16 @@ mod tests {
     fn a_missing_pin_is_refused_unless_implicit_is_allowed() {
         let body = body(vec![json!({"role":"user","content":"hello"})]);
         let (model, effort) = split_model_and_effort("claude-sonnet-5-low");
-        let refused = conversation_id_from(&[], &body, &model, effort, false).unwrap_err();
+        let refused = conversation_id_from(&[], &body, &model, effort, AccountName::DEFAULT, false)
+            .unwrap_err();
         assert_eq!(refused.code, ErrorCode::InvalidConfig);
         assert!(refused.message.contains("x-pmux-conversation"));
-        let implicit = conversation_id_from(&[], &body, &model, effort, true).unwrap();
-        assert_eq!(implicit, implicit_conversation_id(&body, &model, effort));
+        let implicit =
+            conversation_id_from(&[], &body, &model, effort, AccountName::DEFAULT, true).unwrap();
+        assert_eq!(
+            implicit,
+            implicit_conversation_id(&body, &model, effort, AccountName::DEFAULT)
+        );
     }
 
     #[test]
@@ -905,8 +1038,7 @@ mod tests {
     fn opus_aliases_continue_at_the_same_effort() {
         let first = fingerprint_body(
             &json!({
-                "model": "opus",
-                "messages": [{"role":"user","content":"hello"}]
+                "model": "opus", "messages": [{"role":"user", "content":"hello"}]
             }),
             "opus",
             Some(EffortLevel::High),
@@ -976,8 +1108,8 @@ mod tests {
     use async_trait::async_trait;
     use pseudomux_protocol::v1::{SessionGenerationId, SessionId, UsageBreakdown};
     use pseudomux_service::pool::{
-        Destroyed, HostFailure, HostTurn, InstanceHandle, InstanceHost, MintSpec, PoolSettings,
-        Spawner,
+        AccountSetting, Destroyed, HostFailure, HostTurn, InstanceHandle, InstanceHost, MintSpec,
+        PoolSettings, Spawner,
     };
     use pseudomux_service::v1::Clock;
 
@@ -1077,12 +1209,21 @@ mod tests {
     }
 
     fn book_harness(pool_size: u32, ttl_ms: u64) -> BookHarness {
+        book_harness_with(pool_size, ttl_ms, |_| {})
+    }
+
+    fn book_harness_with(
+        pool_size: u32,
+        ttl_ms: u64,
+        mutate: impl FnOnce(&mut PoolSettings),
+    ) -> BookHarness {
         let temp = tempfile::tempdir().expect("tempdir");
         let parent = temp.path().join("pool");
         let mut settings = PoolSettings::defaults(parent, PathBuf::from("/usr/bin/claude"));
         settings.pool_size = pool_size;
         settings.rss_budget_mb = u64::from(pool_size) * 1024;
         settings.instance_idle_ttl_ms = ttl_ms;
+        mutate(&mut settings);
         let config = settings.validate().expect("test settings must validate");
         let clock = std::sync::Arc::new(TestClock {
             now_ms: AtomicU64::new(1_000),
@@ -1282,5 +1423,92 @@ mod tests {
             .await
             .expect("the book row and cell must still be there");
         assert_eq!(replayed.kind, LeaseKind::Replayed);
+    }
+
+    #[tokio::test]
+    async fn an_unknown_account_is_refused_before_reprime() {
+        let harness = book_harness(2, 60_000);
+        let first = turn(
+            "claude-sonnet-5-low",
+            vec![json!({"role":"user","content":"hello"})],
+        );
+        harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("prime");
+        harness.spawner.drain().await;
+        assert_eq!(harness.pool.census().await.leased, 1);
+
+        let mut headers = pin("sess-a");
+        headers.push(("x-pmux-account".to_owned(), "claude-1".to_owned()));
+        let continued = turn(
+            "claude-sonnet-5-low",
+            vec![
+                json!({"role":"user","content":"hello"}),
+                json!({"role":"assistant","content":"hi"}),
+                json!({"role":"user","content":"more"}),
+            ],
+        );
+        let error = match harness.book.complete(&headers, &continued).await {
+            Ok(_) => panic!("unconfigured account must be InvalidConfig"),
+            Err(error) => error,
+        };
+        assert_eq!(error.code, ErrorCode::InvalidConfig);
+        assert_eq!(
+            error.details.get("violation").and_then(Value::as_str),
+            Some("unknown_account")
+        );
+        harness.spawner.drain().await;
+        assert_eq!(
+            harness.pool.census().await.leased,
+            1,
+            "an unknown account must not release the live cell"
+        );
+        let replayed = harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("the original lease must still replay");
+        assert_eq!(replayed.kind, LeaseKind::Replayed);
+    }
+
+    #[tokio::test]
+    async fn a_configured_account_change_reprimes() {
+        let harness = book_harness_with(2, 60_000, |settings| {
+            settings.accounts = vec![AccountSetting {
+                name: "claude-1".into(),
+                pin: "/tmp/claude-1".into(),
+            }];
+        });
+        let first = turn(
+            "claude-sonnet-5-low",
+            vec![json!({"role":"user","content":"hello"})],
+        );
+        let primed = harness
+            .book
+            .complete(&pin("sess-a"), &first)
+            .await
+            .expect("prime default");
+        harness.spawner.drain().await;
+        let mut headers = pin("sess-a");
+        headers.push(("x-pmux-account".to_owned(), "claude-1".to_owned()));
+        let continued = turn(
+            "claude-sonnet-5-low",
+            vec![
+                json!({"role":"user","content":"hello"}),
+                json!({"role":"assistant","content":"hi"}),
+                json!({"role":"user","content":"more"}),
+            ],
+        );
+        let reprimed = harness
+            .book
+            .complete(&headers, &continued)
+            .await
+            .expect("configured account change");
+        assert_eq!(reprimed.kind, LeaseKind::Reprimed);
+        assert_ne!(reprimed.cell, primed.cell);
+        harness.spawner.drain().await;
+        assert_eq!(harness.pool.census().await.leased, 1);
     }
 }

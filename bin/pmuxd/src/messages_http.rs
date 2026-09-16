@@ -876,6 +876,7 @@ fn models_document() -> Value {
 fn capabilities_document(allow_implicit: bool) -> Value {
     json!({
         "pin_headers": ["x-pmux-conversation", "x-session-id", "x-session-affinity"],
+        "account_header": "x-pmux-account",
         "release": "POST /v1/conversations/{id}/release",
         "stream": "post_commit",
         "images": false,
@@ -1254,13 +1255,13 @@ mod tests {
         assert_eq!(caps["stream"], "post_commit");
         assert_eq!(caps["implicit_conversation"], false);
         assert_eq!(caps["release"], "POST /v1/conversations/{id}/release");
+        let pins = caps["pin_headers"].as_array().unwrap();
+        assert!(pins.iter().any(|header| header == "x-pmux-conversation"));
         assert!(
-            caps["pin_headers"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|header| header == "x-pmux-conversation")
+            !pins.iter().any(|header| header == "x-pmux-account"),
+            "account is a class selector, not a conversation pin: {caps}"
         );
+        assert_eq!(caps["account_header"], "x-pmux-account");
         assert!(capabilities_document(true)["implicit_conversation"] == true);
         let sources = caps["effort_sources"].as_array().expect("effort_sources");
         assert!(
