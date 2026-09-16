@@ -513,13 +513,20 @@ fn graph_mutation_rows(prompt: &str, depth: usize, mutation: u8, text: &str) -> 
     // Every name here is admitted by `is_supported_attachment_type`, so the
     // chain this builds is one Claude could really write.
     // `remote_session_change` joined the set at 2.1.257 (MEASURED linux/x86_64,
-    // `SessionCell::Minified`) and rides an arbitrary-depth chain here for the
-    // same reason the others do.
-    const ATTACHMENTS: [&str; 6] = [
+    // `SessionCell::Minified`). The 2.1.272 prompt-chain five (`date`,
+    // `environment`, `model`, `prompt_snapshot`, `session_context`) were
+    // MEASURED on macos/aarch64 and linux/x86_64 minified cells.
+    const ATTACHMENTS: [&str; 12] = [
         "agent_listing_delta",
+        "date",
         "deferred_tools_delta",
+        "environment",
         "file",
+        "instructions",
+        "model",
+        "prompt_snapshot",
         "remote_session_change",
+        "session_context",
         "skill_listing",
         "task_reminder",
     ];

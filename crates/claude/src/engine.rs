@@ -355,16 +355,30 @@ impl TranscriptEngine {
             }
         }
 
-        let mut uuid_to_index = HashMap::new();
         let mut graph_children: HashMap<&str, Vec<usize>> = HashMap::new();
         for index in &graph_rows {
             record_work::<RECORD_WORK>(work, 1);
             let stored = &self.rows[*index];
-            if let Some(uuid) = stored.row.common.uuid.as_deref() {
-                uuid_to_index.insert(uuid, *index);
-            }
             if let Some(parent_uuid) = stored.row.common.parent_uuid.as_deref() {
                 graph_children.entry(parent_uuid).or_default().push(*index);
+            }
+        }
+        // MEASURED on Claude Code 2.1.272 macos/aarch64, SessionCell::Minified:
+        // launch attachments (`session_context`/`date`/`prompt_snapshot`) are
+        // written BEFORE the typed user and the assistant's parentUuid is that
+        // pre-prompt snapshot, while those snapshots parent forward at a
+        // post-prompt `total_tokens_reminder`. Child-BFS from the ack never
+        // reaches the assistant; walking parents through the full main-scope
+        // UUID index does. Parent resolution uses this full index; child-BFS
+        // still starts at the ack.
+        let mut all_uuid_to_index = HashMap::new();
+        for (index, stored) in self.rows.iter().enumerate() {
+            record_work::<RECORD_WORK>(work, 1);
+            if stored.row.common.scope == RowScope::Main
+                && !matches!(stored.row.kind, RowKind::Metadata { .. })
+                && let Some(uuid) = stored.row.common.uuid.as_deref()
+            {
+                all_uuid_to_index.insert(uuid, index);
             }
         }
 
@@ -384,11 +398,50 @@ impl TranscriptEngine {
             }
         }
 
-        let mut reachable = Vec::with_capacity(reachable_indices.len());
         for index in &graph_rows {
             record_work::<RECORD_WORK>(work, 1);
-            if reachable_indices.contains(index) {
-                reachable.push(*index);
+            if *index == ack_index || reachable_indices.contains(index) {
+                continue;
+            }
+            if is_live_semantic_row(&self.rows[*index].row.kind)
+                && let Some(ancestors) = ancestor_path_to_ack::<RECORD_WORK>(
+                    &self.rows,
+                    *index,
+                    ack_index,
+                    &all_uuid_to_index,
+                    work,
+                )
+            {
+                reachable_indices.insert(*index);
+                reachable_indices.extend(ancestors);
+            }
+        }
+        let mut pending: Vec<&str> = reachable_indices
+            .iter()
+            .filter_map(|index| self.rows[*index].row.common.uuid.as_deref())
+            .collect();
+        while let Some(parent_uuid) = pending.pop() {
+            let Some(children) = graph_children.get(parent_uuid) else {
+                continue;
+            };
+            for index in children {
+                record_work::<RECORD_WORK>(work, 1);
+                if reachable_indices.insert(*index)
+                    && let Some(uuid) = self.rows[*index].row.common.uuid.as_deref()
+                {
+                    pending.push(uuid);
+                }
+            }
+        }
+
+        let mut reachable = Vec::with_capacity(reachable_indices.len());
+        for (index, stored) in self.rows.iter().enumerate() {
+            record_work::<RECORD_WORK>(work, 1);
+            if reachable_indices.contains(&index)
+                && stored.row.common.scope == RowScope::Main
+                && !matches!(stored.row.kind, RowKind::Metadata { .. })
+            {
+                reachable.push(index);
             }
         }
         for index in &reachable {
@@ -413,7 +466,7 @@ impl TranscriptEngine {
                     message: "active main-chain row requires a parent UUID".to_owned(),
                 }
             })?;
-            let parent_index = uuid_to_index
+            let parent_index = all_uuid_to_index
                 .get(parent_uuid.as_str())
                 .copied()
                 .ok_or_else(|| TranscriptError::SchemaDrift {
@@ -421,7 +474,9 @@ impl TranscriptEngine {
                     path: "$.parentUuid".to_owned(),
                     message: "active main-chain row has no resolvable parent".to_owned(),
                 })?;
-            if self.rows[parent_index].ordinal >= stored.ordinal {
+            if stored.ordinal >= acknowledgement.ordinal
+                && self.rows[parent_index].ordinal >= stored.ordinal
+            {
                 return Err(TranscriptError::ParentAppendOrder {
                     row_uuid: uuid.clone(),
                     parent_uuid: parent_uuid.clone(),
@@ -1041,6 +1096,31 @@ struct ActiveIndices {
     path: Vec<usize>,
     included: Vec<usize>,
     leaf_index: usize,
+}
+
+fn ancestor_path_to_ack<const RECORD_WORK: bool>(
+    rows: &[StoredRow],
+    start: usize,
+    ack_index: usize,
+    uuid_to_index: &HashMap<&str, usize>,
+    work: &mut TranscriptAnalysisWork,
+) -> Option<Vec<usize>> {
+    let mut seen = HashSet::from([start]);
+    let mut current = start;
+    let mut path = Vec::new();
+    loop {
+        record_work::<RECORD_WORK>(work, 1);
+        let parent_uuid = rows[current].row.common.parent_uuid.as_deref()?;
+        let &parent = uuid_to_index.get(parent_uuid)?;
+        path.push(parent);
+        if parent == ack_index {
+            return Some(path);
+        }
+        if !seen.insert(parent) {
+            return None;
+        }
+        current = parent;
+    }
 }
 
 fn is_live_semantic_row(kind: &RowKind) -> bool {

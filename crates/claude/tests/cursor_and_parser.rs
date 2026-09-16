@@ -715,10 +715,90 @@ fn measured_2_1_257_records_are_typed_metadata_and_attachment() {
     assert_eq!(parsed.raw["attachment"]["sendUserFileHint"], false);
 }
 
+/// MEASURED on Claude Code 2.1.272 macos/aarch64 and linux/x86_64,
+/// `SessionCell::Minified`: the five `attachment.type` names that failed every
+/// `pmux run` as SchemaDrift at `$.attachment.type`. Real field shapes, with
+/// the operator email replaced by a placeholder. Strict mode must type all
+/// five from the name alone -- no field is read. `date` is not `date_change`.
+#[test]
+fn measured_2_1_272_prompt_attachments_are_typed_by_name() {
+    let parser = JsonlParser::new(ParseMode::Strict);
+
+    let rows: [(&[u8], &str); 5] = [
+        (
+            br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"ctx","attachment":{"type":"session_context","context":{"userEmail":"PLACEHOLDER"}}}"#,
+            "session_context",
+        ),
+        (
+            br#"{"parentUuid":"ctx","sessionId":"s","type":"attachment","uuid":"day","attachment":{"type":"date","date":"2026-09-15"}}"#,
+            "date",
+        ),
+        (
+            br#"{"parentUuid":"day","sessionId":"s","type":"attachment","uuid":"snap","attachment":{"type":"prompt_snapshot","systemPrompt":["The user message is the entire instruction."]}}"#,
+            "prompt_snapshot",
+        ),
+        (
+            br#"{"parentUuid":"snap","sessionId":"s","type":"attachment","uuid":"env","attachment":{"type":"environment","snapshot":{"workingDirectory":"/tmp/cwd","isWorktree":false,"isGitRepo":false,"additionalWorkingDirectories":[],"platform":"darwin","shell":"zsh","osVersion":"Darwin 24.6.0","scratchpadDirectory":"/tmp/scratch"}}}"#,
+            "environment",
+        ),
+        (
+            br#"{"parentUuid":"env","sessionId":"s","type":"attachment","uuid":"mdl","attachment":{"type":"model","identity":{"modelId":"claude-sonnet-5","marketingName":"Sonnet 5","knowledgeCutoff":"January 2026"},"text":"You are powered by the model named Sonnet 5. The exact model ID is claude-sonnet-5. Assistant knowledge cutoff is January 2026."}}"#,
+            "model",
+        ),
+    ];
+
+    for (raw, expected) in rows {
+        let parsed = parser.parse(&line(raw)).unwrap();
+        assert!(
+            matches!(
+                parsed.kind,
+                RowKind::Attachment {
+                    ref attachment_type
+                } if attachment_type == expected
+            ),
+            "{expected} must parse as attachment: {:?}",
+            parsed.kind
+        );
+    }
+
+    let instructions = line(
+        br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"ins","attachment":{"type":"instructions","files":[{"path":"/tmp/task/CLAUDE.md","type":"UserCLAUDEMd"}]}}"#,
+    );
+    let parsed = parser.parse(&instructions).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "instructions"
+    ));
+    assert_eq!(parsed.raw["attachment"]["files"][0]["type"], "UserCLAUDEMd");
+
+    // `date` and `date_change` are distinct names; both remain admitted.
+    let date_change = line(
+        br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"dc","attachment":{"type":"date_change"}}"#,
+    );
+    let parsed = parser.parse(&date_change).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "date_change"
+    ));
+
+    // Still fail-closed on an unmeasured neighbour.
+    let isolation = line(
+        br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"a","attachment":{"type":"isolation-latch"}}"#,
+    );
+    assert!(matches!(
+        parser.parse(&isolation),
+        Err(TranscriptError::SchemaDrift { ref path, .. }) if path == "$.attachment.type"
+    ));
+}
+
 /// The other names a `strings` scan of the 2.1.257 binary turned up. None of
 /// them was OBSERVED on a minified pool cell, so strict mode still refuses
 /// them: an unobserved kind must fail closed until it is measured, which is the
-/// only reason the three above could be admitted with confidence.
+/// only reason a measured name can be admitted with confidence.
 #[test]
 fn unobserved_2_1_257_kinds_are_still_refused() {
     let parser = JsonlParser::new(ParseMode::Strict);

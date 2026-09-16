@@ -125,7 +125,7 @@ impl JsonlParser {
             return Err(schema(
                 row_uuid,
                 "$.attachment.type",
-                "unsupported attachment type",
+                &format!("unsupported attachment type {attachment_type:?}"),
             ));
         }
         Ok(RowKind::Attachment { attachment_type })
@@ -715,6 +715,26 @@ fn is_supported_attachment_type(attachment_type: &str) -> bool {
             // the SchemaDrift that failed every pmux turn. This match admits the
             // type name only; it does not read attachment.url or attachment.pr.
             | "remote_session_change"
+            // MEASURED on Claude Code 2.1.272 macos/aarch64 and linux/x86_64,
+            // SessionCell::Minified: these five sit on the typed-prompt chain
+            // with `total_tokens_reminder`. Their arrival was the SchemaDrift
+            // that failed every `pmux run` at 2.1.272. `date` is not
+            // `date_change`. This match admits the type name only; it does not
+            // read attachment.context, .date, .snapshot, .identity, .text or
+            // .systemPrompt.
+            | "date"
+            | "environment"
+            | "model"
+            | "prompt_snapshot"
+            | "session_context"
+            // MEASURED on Claude Code 2.1.272 macos/aarch64 and linux/x86_64,
+            // SessionCell::Full (`pmux run` with a cwd that has CLAUDE.md).
+            // The typed-prompt chain emits attachment.type "instructions"
+            // (payload `files`: CLAUDE.md / AutoMem). Write-only turns in an
+            // empty cwd never produced it, which is why hello.txt living
+            // tests passed and Read/Bash/Edit did not. Admit the type name
+            // only; do not read attachment.files.
+            | "instructions"
     )
 }
 

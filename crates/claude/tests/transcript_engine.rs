@@ -393,6 +393,180 @@ fn measured_2_1_257_remote_session_change_rides_the_chain_without_closing_the_tu
     assert_eq!(analysis.warnings, []);
 }
 
+/// The 2.1.272 turn shape, MEASURED on macos/aarch64 and linux/x86_64 in a
+/// `SessionCell::Minified` pool cell: the typed prompt is followed by five new
+/// attachment types plus `total_tokens_reminder` before the assistant answers.
+/// All sit ON the active parent chain. The proof is the same as 2.1.257's
+/// `remote_session_change`: they neither close the logical message nor leak
+/// into the answer text. Payloads are the measured shapes with a placeholder
+/// email.
+#[test]
+fn measured_2_1_272_prompt_attachments_ride_the_chain_without_closing_the_turn() {
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    engine.arm_turn("go").unwrap();
+    engine.ingest(parse(user(None, "u", "go"))).unwrap();
+    for (uuid, parent, body) in [
+        (
+            "ctx",
+            "u",
+            r#"{"type":"session_context","context":{"userEmail":"PLACEHOLDER"}}"#,
+        ),
+        ("day", "ctx", r#"{"type":"date","date":"2026-09-15"}"#),
+        (
+            "snap",
+            "day",
+            r#"{"type":"prompt_snapshot","systemPrompt":["The user message is the entire instruction."]}"#,
+        ),
+        (
+            "env",
+            "snap",
+            r#"{"type":"environment","snapshot":{"workingDirectory":"/tmp/cwd","isWorktree":false,"isGitRepo":false,"additionalWorkingDirectories":[],"platform":"linux","shell":"bash","osVersion":"Linux 7.0.0-30-generic","scratchpadDirectory":"/tmp/scratch"}}"#,
+        ),
+        (
+            "mdl",
+            "env",
+            r#"{"type":"model","identity":{"modelId":"claude-sonnet-5","marketingName":"Sonnet 5","knowledgeCutoff":"January 2026"},"text":"You are powered by the model named Sonnet 5."}"#,
+        ),
+        (
+            "reminder",
+            "mdl",
+            r#"{"type":"total_tokens_reminder","text":"<total_tokens>15000000 tokens left</total_tokens>"}"#,
+        ),
+    ] {
+        engine
+            .ingest(parse(format!(
+                r#"{{"parentUuid":"{parent}","sessionId":"s","type":"attachment","uuid":"{uuid}","attachment":{body}}}"#
+            )))
+            .unwrap();
+    }
+    engine
+        .ingest(parse(assistant(
+            "reminder",
+            "answer",
+            Some("message"),
+            None,
+            text("done"),
+            Some("end_turn"),
+            3,
+            1,
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"answer","sessionId":"s","type":"system","subtype":"turn_duration","uuid":"duration","durationMs":2712}"#,
+        ))
+        .unwrap();
+
+    let analysis = engine.analyze().unwrap();
+    let TurnStatus::Terminal(final_turn) = &analysis.status else {
+        panic!("expected terminal result: {analysis:#?}");
+    };
+    assert_eq!(final_turn.outcome, TerminalOutcome::Completed);
+    assert_eq!(final_turn.final_text, "done");
+    assert!(!final_turn.final_text.contains("PLACEHOLDER"));
+    assert!(
+        !final_turn
+            .final_text
+            .contains("The user message is the entire instruction.")
+    );
+    assert!(!final_turn.final_text.contains("powered by the model"));
+    assert!(!final_turn.final_text.contains("15000000"));
+    assert_eq!(analysis.messages.len(), 1);
+    assert_eq!(analysis.usage.model_calls_with_usage, 1);
+    assert_eq!(analysis.usage.tokens.input_tokens, 3);
+    assert_eq!(analysis.usage.tokens.output_tokens, 1);
+    assert!(analysis.turn_duration_seen);
+    assert_eq!(analysis.warnings, []);
+}
+
+/// MEASURED on Claude Code 2.1.272 macos/aarch64, SessionCell::Minified:
+/// launch `session_context`/`date`/`prompt_snapshot` sit BEFORE the typed user
+/// and parent forward at the post-prompt `total_tokens_reminder`. The assistant
+/// parents the pre-prompt snapshot, so child-BFS from the ack never reaches it.
+#[test]
+fn measured_2_1_272_macos_assistant_parented_through_pre_prompt_snapshot() {
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    for row in [
+        r#"{"type":"last-prompt"}"#,
+        r#"{"type":"mode"}"#,
+        r#"{"type":"permission-mode"}"#,
+        r#"{"type":"atis-latch","atis":"","sessionId":"s"}"#,
+        r#"{"type":"atis-latch","atis":"","sessionId":"s"}"#,
+    ] {
+        engine.ingest(parse(row)).unwrap();
+    }
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"reminder","sessionId":"s","type":"attachment","uuid":"pre-ctx","attachment":{"type":"session_context","context":{"userEmail":"PLACEHOLDER"}}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"pre-ctx","sessionId":"s","type":"attachment","uuid":"pre-day","attachment":{"type":"date","date":"2026-09-15"}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"pre-day","sessionId":"s","type":"attachment","uuid":"pre-snap","attachment":{"type":"prompt_snapshot","systemPrompt":["The user message is the entire instruction."]}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(r#"{"type":"file-history-snapshot"}"#))
+        .unwrap();
+    engine.arm_turn("go").unwrap();
+    engine.ingest(parse(user(None, "u", "go"))).unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"env","attachment":{"type":"environment","snapshot":{}}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"env","sessionId":"s","type":"attachment","uuid":"mdl","attachment":{"type":"model","identity":{"modelId":"claude-sonnet-5"}}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"mdl","sessionId":"s","type":"attachment","uuid":"reminder","attachment":{"type":"total_tokens_reminder","text":"<total_tokens>1</total_tokens>"}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(r#"{"type":"ai-title","sessionId":"s"}"#))
+        .unwrap();
+    engine
+        .ingest(parse(assistant(
+            "pre-snap",
+            "answer",
+            Some("message"),
+            None,
+            text("done"),
+            Some("end_turn"),
+            3,
+            1,
+        )))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"answer","sessionId":"s","type":"attachment","uuid":"post-snap","attachment":{"type":"prompt_snapshot","systemPrompt":["The user message is the entire instruction."]}}"#,
+        ))
+        .unwrap();
+    engine
+        .ingest(parse(
+            r#"{"parentUuid":"post-snap","sessionId":"s","type":"system","subtype":"turn_duration","uuid":"duration","durationMs":12}"#,
+        ))
+        .unwrap();
+
+    let analysis = engine.analyze().unwrap();
+    let TurnStatus::Terminal(final_turn) = &analysis.status else {
+        panic!("expected terminal result: {analysis:#?}");
+    };
+    assert_eq!(final_turn.outcome, TerminalOutcome::Completed);
+    assert_eq!(final_turn.final_text, "done");
+    assert!(!final_turn.final_text.contains("PLACEHOLDER"));
+    assert_eq!(analysis.messages.len(), 1);
+    assert!(analysis.turn_duration_seen);
+}
+
 /// The whole 2.1.257 file shape MEASURED on linux/x86_64 in a
 /// `SessionCell::Minified` pool cell: a five-row launch preamble (`atis-latch`
 /// is the row 2.1.236 did not write), one turn, and a trailing
