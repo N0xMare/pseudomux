@@ -104,6 +104,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "evidence_common"))
 
 import portable_paths  # noqa: E402 -- tools/evidence_common, resolved above
+import unpromoted  # noqa: E402 -- tools/evidence_common, resolved above
 from measure_transcript_drain import MINIFIED_LAUNCH_FLAGS  # noqa: E402
 from measure_turn_latency import (  # noqa: E402
     Daemon,
@@ -531,7 +532,16 @@ class Run:
             raise CheckFailed(
                 f"`pmux doctor` printed no JSON:\n{done.stdout}\n{done.stderr}"
             )
-        return json.loads(payloads[-1])
+        report = json.loads(payloads[-1])
+        # The drop-flag engine widens `PROMOTED_PROFILES`. A daemon started with
+        # `--allow-unpromoted-claude` admitted its cell without measuring it, so
+        # promoting from one would launder the opt-in into the shipped table --
+        # the exact outcome that flag's label exists to prevent.
+        try:
+            unpromoted.refuse_unpromoted_daemon(report)
+        except unpromoted.UnpromotedArtifact as refusal:
+            raise CheckFailed(str(refusal)) from refusal
+        return report
 
     def layer(self, name: str) -> dict[str, Any]:
         report = self.doctor()

@@ -196,6 +196,7 @@ impl Fixture {
                     terminal_profile: TerminalProfile::Transparent,
                     input_transport: InputTransport::Sdk,
                     tested: true,
+                    unpromoted: false,
                     transcript_drain_ms: 1,
                 },
                 dangerous_permission_bypass: false,

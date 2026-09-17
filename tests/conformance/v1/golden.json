@@ -78,6 +78,7 @@
               "terminal_profile": "transparent",
               "input_transport": "sdk",
               "tested": true,
+              "unpromoted": false,
               "transcript_drain_ms": 750
             },
             "created_at_ms": 100,
@@ -178,6 +179,7 @@
               "terminal_profile": "transparent",
               "input_transport": "sdk",
               "tested": true,
+              "unpromoted": false,
               "transcript_drain_ms": 750
             },
             "created_at_ms": 100,
@@ -377,6 +379,7 @@
               "terminal_profile": "transparent",
               "input_transport": "sdk",
               "tested": true,
+              "unpromoted": false,
               "transcript_drain_ms": 750
             },
             "completion": {
@@ -1050,7 +1053,7 @@
           },
           "timings": {"submitted_at_ms": 100, "completed_at_ms": 200},
           "claude_version": "2.1.207",
-          "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+          "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "unpromoted": false, "transcript_drain_ms": 750},
           "completion": {"authority": "transcript", "prompt_acknowledged": true, "terminal_message_observed": true, "terminal_prompt_observed": true, "terminal_quiet_observed": true, "transcript_drained": true, "lifecycle_hook_observed": false},
           "final_sequence": 9
         }}
@@ -1085,7 +1088,7 @@
           "requested_after": 1, "oldest_available": 5, "next_sequence": 11,
           "snapshot": {
             "session_id": "00000000-0000-4000-8000-000000000022", "generation_id": "00000000-0000-4000-8000-000000000044", "transcript_session_id": "00000000-0000-4000-8000-000000000022", "cell": "full", "state": "ready", "cwd": "/work/project",
-            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "transcript_drain_ms": 750},
+            "compatibility": {"claude_version": "2.1.207", "os": "macos", "arch": "aarch64", "terminal_profile": "transparent", "input_transport": "sdk", "tested": true, "unpromoted": false, "transcript_drain_ms": 750},
             "created_at_ms": 100, "updated_at_ms": 200, "resumable": true, "last_sequence": 10
           }
         }}

@@ -101,6 +101,28 @@ enum Command {
         #[arg(long, default_value_t = DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS)]
         untested_transcript_drain_ms: u64,
 
+        /// EXPLORATORY ONLY. Admit a Claude cell nothing has measured.
+        ///
+        /// Off by default, and off means today's behaviour exactly: a
+        /// (version, os, arch, terminal profile, transport) tuple that no
+        /// promoted or operator cell covers is refused with
+        /// `unsupported_claude_version`. On, that tuple is admitted for this
+        /// daemon on the conservative `--untested-transcript-drain-ms`
+        /// fallback, the daemon warns at startup and on every cell launch, and
+        /// EVERY artifact it emits carries `unpromoted: true` -- the
+        /// compatibility report on each session, the turn warning, the retained
+        /// evidence directory's marker, and `pmux doctor`. Nothing produced
+        /// under it may be promoted, and `tools/promotion` refuses it.
+        ///
+        /// CHOSEN policy, not a measurement. The supported route is to measure
+        /// this OS/arch (`tools/dev/drain_n50.py`, `operator_eval.py`,
+        /// `living_pmux_run.py`) and promote it (`tools/dev/promote.py`).
+        ///
+        /// Refused together with --tested-claude-profile: one admits a cell you
+        /// measured, the other admits one nobody did.
+        #[arg(long = "allow-unpromoted-claude")]
+        allow_unpromoted_claude: bool,
+
         /// ENABLES THE STATELESS TOKEN ENGINE. Absolute parent directory for
         /// the pool's per-slot trees; pmux creates `<parent>/<slot>/<epoch>/`
         /// itself, 0700 and empty, and erases each one when its instance is
@@ -270,6 +292,7 @@ struct ServeOptions {
     runtime_parent: Option<PathBuf>,
     tested_claude_profiles: Vec<String>,
     untested_transcript_drain_ms: u64,
+    allow_unpromoted_claude: bool,
     path_b: PathBOptions,
     path_b_messages_bind: Option<String>,
     path_b_allow_implicit_conversation: bool,
@@ -581,6 +604,7 @@ async fn main() -> Result<()> {
             runtime_parent,
             tested_claude_profiles,
             untested_transcript_drain_ms,
+            allow_unpromoted_claude,
             path_b_parent,
             path_b_claude,
             path_b_securestorage_dir,
@@ -610,6 +634,7 @@ async fn main() -> Result<()> {
                     runtime_parent,
                     tested_claude_profiles,
                     untested_transcript_drain_ms,
+                    allow_unpromoted_claude,
                     path_b: PathBOptions {
                         parent: path_b_parent,
                         claude: path_b_claude,
@@ -691,9 +716,24 @@ async fn run_server(options: ServeOptions, matches: &clap::ArgMatches) -> Result
         apply_companion_overrides(&mut runtime_config, options.rmuxd, options.launcher)?;
     runtime_config.runtime_parent = options.runtime_parent;
 
-    let tested_claude_profiles = parse_tested_profiles(options.tested_claude_profiles)?;
+    let tested_claude_profiles = parse_tested_profiles(options.tested_claude_profiles)?
+        .allow_unpromoted(options.allow_unpromoted_claude)?;
     validate_transcript_drain_ms(options.untested_transcript_drain_ms)
         .context("invalid --untested-transcript-drain-ms")?;
+    // Once at startup, beside the per-launch warning in the service. The
+    // operator who started this daemon sees the line that says what they asked
+    // for, in the log they are already tailing while it boots.
+    if options.allow_unpromoted_claude {
+        warn!(
+            os = std::env::consts::OS,
+            arch = std::env::consts::ARCH,
+            untested_transcript_drain_ms = options.untested_transcript_drain_ms,
+            "--allow-unpromoted-claude is ON: this daemon admits Claude cells NOTHING has \
+             measured, on the conservative untested drain. Every artifact it emits is labelled \
+             unpromoted and none of it may be promoted. Measure and promote this OS/arch with \
+             tools/dev (see tools/dev/README.md) for a supported daemon."
+        );
+    }
     if options.stateful && pool.is_none() {
         anyhow::bail!(
             "--stateful requires --pool-parent (Full cells share the daemon Claude binary and pins)"
@@ -2026,6 +2066,73 @@ mod tests {
                 "2.1.207",
             ])
             .is_err()
+        );
+    }
+
+    /// The exploratory opt-in is off unless typed, and is refused beside a
+    /// measurement.
+    ///
+    /// The combination is refused by the registry and not by a check in this
+    /// file, so this asserts the composition `run_server` performs -- the order
+    /// argv happens to carry the two flags in cannot change the answer.
+    #[test]
+    fn the_unpromoted_opt_in_is_off_by_default_and_refuses_a_measured_cell_beside_it() {
+        let parsed = Cli::try_parse_from(["pmuxd", "serve", "--socket", "/tmp/pmux.sock"]).unwrap();
+        let Command::Serve {
+            allow_unpromoted_claude,
+            ..
+        } = parsed.command;
+        assert!(
+            !allow_unpromoted_claude,
+            "an operator who typed nothing asked for nothing"
+        );
+        assert!(
+            !parse_tested_profiles(Vec::new())
+                .unwrap()
+                .allow_unpromoted(false)
+                .unwrap()
+                .unpromoted_opt_in()
+        );
+
+        let parsed = Cli::try_parse_from([
+            "pmuxd",
+            "serve",
+            "--socket",
+            "/tmp/pmux.sock",
+            "--allow-unpromoted-claude",
+        ])
+        .unwrap();
+        let Command::Serve {
+            allow_unpromoted_claude,
+            ..
+        } = parsed.command;
+        assert!(allow_unpromoted_claude);
+        assert!(
+            parse_tested_profiles(Vec::new())
+                .unwrap()
+                .allow_unpromoted(true)
+                .unwrap()
+                .unpromoted_opt_in()
+        );
+
+        let profile = serde_json::json!({
+            "claude_version": "2.1.207",
+            "os": std::env::consts::OS,
+            "arch": std::env::consts::ARCH,
+            "terminal_profile": "transparent",
+            "input_transport": "sdk",
+            "transcript_drain_ms": 875,
+        })
+        .to_string();
+        let error = parse_tested_profiles(vec![profile])
+            .unwrap()
+            .allow_unpromoted(true)
+            .expect_err("a measured cell and the absence of one cannot both be claimed")
+            .to_string();
+        assert!(
+            error.contains("--allow-unpromoted-claude")
+                && error.contains("--tested-claude-profile"),
+            "the refusal must name both flags: {error}"
         );
     }
 

@@ -129,6 +129,38 @@ pub fn retained_row(line: &str) -> Option<String> {
     serde_json::to_string(&Value::Object(kept)).ok()
 }
 
+/// The file that says every mirror in this directory came off a daemon started
+/// with `pmuxd --allow-unpromoted-claude`.
+///
+/// It exists so the retained corpus cannot be laundered. The mirrors themselves
+/// are pruned to [`RETAINED_ROW_FIELDS`], which is exactly what
+/// `tools/promotion/measure_transcript_drain.py` reads -- so a marker written
+/// INTO the rows would either be dropped by the prune or would widen the field
+/// set the measurement tool is bound to. A sibling file is neither: the
+/// measurement tool reads the directory, finds this, and refuses.
+pub const UNPROMOTED_MARKER: &str = "pmux-unpromoted.json";
+
+/// Stamp `into` as an unpromoted daemon's evidence directory.
+///
+/// Written at daemon start rather than at the first teardown, so the marker is
+/// present before any mirror is, and a reader that races a teardown still sees
+/// it. Rewritten on every start, which is idempotent.
+///
+/// # Errors
+///
+/// The directory could not be created, or the marker could not be written.
+pub fn mark_unpromoted(into: &Path) -> io::Result<()> {
+    create_private_dir_all(into)?;
+    let marker = serde_json::json!({
+        "unpromoted": true,
+        "os": std::env::consts::OS,
+        "arch": std::env::consts::ARCH,
+        "why": "this daemon was started with pmuxd --allow-unpromoted-claude; the Claude cell                 behind these mirrors matched no promoted or operator compatibility profile and                 no measurement backs it",
+        "promotion": "this corpus MUST NOT be promoted. tools/promotion/measure_transcript_drain.py                       refuses a corpus containing this file",
+    });
+    write_private(&into.join(UNPROMOTED_MARKER), &format!("{marker}\n"))
+}
+
 /// Mirror every transcript under one instance's config root into `into`.
 ///
 /// Called from the pool's teardown AFTER the process is proven reaped and
@@ -227,6 +259,15 @@ fn prune(into: &Path, budget: u64) -> usize {
     let mut files: Vec<(std::time::SystemTime, u64, PathBuf)> = Vec::new();
     let mut total = 0_u64;
     for entry in entries.flatten() {
+        // NEVER the marker. Pruning is oldest-first and the marker is written
+        // at boot, so it is the oldest file in the directory by construction --
+        // which makes it the first thing a full directory would delete, and a
+        // corpus that loses its own label is exactly the laundering this file
+        // exists to prevent. It is one small object and is not counted against
+        // the budget either.
+        if entry.file_name() == UNPROMOTED_MARKER {
+            continue;
+        }
         let Ok(metadata) = entry.metadata() else {
             continue;
         };
@@ -353,6 +394,88 @@ mod tests {
             declared.len() >= 4,
             "the tool claims to read {} field(s), which is not enough to find a turn at all",
             declared.len()
+        );
+    }
+
+    /// **The marker name is DERIVED from the tool that refuses it.**
+    ///
+    /// Same idiom, same reason as the field set above: a label only works if
+    /// the reader looks for the name the writer wrote. A rename on either side
+    /// would otherwise leave an unpromoted corpus that every promotion tool
+    /// happily measures.
+    #[test]
+    fn the_unpromoted_marker_is_the_name_the_promotion_tools_refuse() {
+        let module = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/evidence_common/unpromoted.py")
+            .canonicalize()
+            .expect("the refusal module is part of the repository");
+        let source = std::fs::read_to_string(&module).expect("the module is readable");
+        let (_, after) = source
+            .split_once("UNPROMOTED_MARKER = \"")
+            .expect("the module publishes the marker name it refuses");
+        let (declared, _) = after
+            .split_once('"')
+            .expect("UNPROMOTED_MARKER is a quoted string");
+        assert_eq!(
+            declared,
+            UNPROMOTED_MARKER,
+            "{} refuses a marker pmux does not write",
+            module.display()
+        );
+    }
+
+    /// The marker lands, says what it is, and is not a transcript.
+    #[test]
+    fn an_unpromoted_daemon_labels_its_evidence_directory() {
+        let temp = tempfile::tempdir().unwrap();
+        let into = temp.path().join("pool-evidence");
+        mark_unpromoted(&into).unwrap();
+        let marker: Value =
+            serde_json::from_str(&std::fs::read_to_string(into.join(UNPROMOTED_MARKER)).unwrap())
+                .unwrap();
+        assert_eq!(marker["unpromoted"], serde_json::json!(true));
+        assert_eq!(marker["os"], serde_json::json!(std::env::consts::OS));
+        assert_eq!(marker["arch"], serde_json::json!(std::env::consts::ARCH));
+        assert!(
+            marker["why"]
+                .as_str()
+                .unwrap()
+                .contains("--allow-unpromoted-claude"),
+            "the marker must name the flag that produced it"
+        );
+
+        // Written again on the next start, and still exactly one file.
+        mark_unpromoted(&into).unwrap();
+        let names: Vec<String> = std::fs::read_dir(&into)
+            .unwrap()
+            .flatten()
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(names, vec![UNPROMOTED_MARKER.to_owned()]);
+    }
+
+    /// The budget may never delete the label.
+    ///
+    /// Pruning is oldest-first and the marker is written at daemon start, so it
+    /// is the oldest file in the directory by construction -- which makes it
+    /// the FIRST candidate a full directory would delete, and a corpus that
+    /// lost its own label would read as an ordinary promotable one.
+    #[test]
+    fn pruning_a_full_directory_never_deletes_the_unpromoted_marker() {
+        let temp = tempfile::tempdir().unwrap();
+        let into = temp.path().join("pool-evidence");
+        mark_unpromoted(&into).unwrap();
+        set_mtime_seconds(&into.join(UNPROMOTED_MARKER), 1);
+        for index in 0..4 {
+            let path = into.join(format!("{index}.jsonl"));
+            write_private(&path, &"x".repeat(1024)).unwrap();
+            set_mtime_seconds(&path, 100 + i64::from(index));
+        }
+        let pruned = prune(&into, 2048);
+        assert!(pruned > 0, "the budget must have bound");
+        assert!(
+            into.join(UNPROMOTED_MARKER).is_file(),
+            "the label outlives every mirror it labels"
         );
     }
 

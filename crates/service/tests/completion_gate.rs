@@ -388,6 +388,7 @@ async fn register(
                 terminal_profile: TerminalProfile::Transparent,
                 input_transport: InputTransport::Sdk,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: 10,
             },
             dangerous_permission_bypass: false,

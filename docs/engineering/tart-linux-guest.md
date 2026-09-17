@@ -52,7 +52,7 @@ personal Mac it was free either way.
 ## 2. Mapping to pseudomux
 
 **How pmux decides the cell.** `os`/`arch` come from `std::env::consts::OS` / `ARCH`
-(`crates/service/src/compatibility.rs:715-716,759-760,921-922`) — **compile-time
+(`crates/service/src/compatibility.rs:755-756,759-760,921-922`) — **compile-time
 constants of the daemon binary**, which the repo already identified as a hazard in
 defect 74 (`docs/defect-log.md:5080-5115`): a macOS-built daemon supervising a Linux
 child "reports `os: "macos"` ... `tested: true` is published, and a

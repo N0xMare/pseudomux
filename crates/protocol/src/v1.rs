@@ -2301,8 +2301,17 @@ pub enum CompatibilityPolicy {
 /// Exact runtime compatibility cell selected for one Claude process.
 ///
 /// `tested == true` means the daemon matched every field against an admitted
-/// evidence profile. `false` is only possible for an explicit
-/// `allow_untested` request and uses the daemon's conservative fallback drain.
+/// evidence profile. `false` is either an explicit `allow_untested` request or
+/// an operator `--allow-unpromoted-claude` admission, both of which run on the
+/// daemon's conservative fallback drain.
+///
+/// `unpromoted == true` is the second of those, and it is the LABEL: this cell
+/// runs the promoted route with nothing measured behind it. The two flags are
+/// deliberately separate. A consumer that already asks `tested` keeps the
+/// answer it always had -- an unmeasured cell is not tested -- and a consumer
+/// that wants to know WHY reads `unpromoted`. No artifact carrying this report
+/// can be mistaken for a measurement, because the measurement bit is still
+/// `false`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CompatibilityReport {
     pub claude_version: String,
@@ -2315,6 +2324,14 @@ pub struct CompatibilityReport {
     )]
     pub input_transport: InputTransport,
     pub tested: bool,
+    /// CHOSEN by an operator, never measured. See the type's own documentation.
+    ///
+    /// `#[serde(default)]` so a peer written before the flag existed still
+    /// decodes, and NOT `skip_serializing_if`: every report pmux emits states
+    /// the bit explicitly, because a marker that is absent when false and
+    /// absent when the writer is old is not a marker.
+    #[serde(default)]
+    pub unpromoted: bool,
     #[serde(
         serialize_with = "serialize_transcript_drain_ms",
         deserialize_with = "deserialize_transcript_drain_ms"

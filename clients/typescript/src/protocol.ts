@@ -130,6 +130,12 @@ export interface CompatibilityReport {
   /** `auto` is resolved before admission; attached-stream is not enabled in v1. */
   input_transport: "sdk";
   tested: boolean;
+  /**
+   * The daemon was started with `--allow-unpromoted-claude` and NOTHING
+   * measured this cell. Optional because a daemon older than the flag never
+   * writes it; absent and `false` mean the same thing.
+   */
+  unpromoted?: boolean;
   transcript_drain_ms: number;
 }
 

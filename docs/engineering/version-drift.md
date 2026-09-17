@@ -79,7 +79,7 @@ They land *after* the answer in file order because the JSONL append order does n
 All 98 `api_error` rows in this corpus live in files that also hold `queue-operation` rows. A
 minified cell has no queue. So the entry is:
 
-`tools/promotion/measure_transcript_drain.py:152` — `("system", "api_error")`, `reachable: False`,
+`tools/promotion/measure_transcript_drain.py:157` — `("system", "api_error")`, `reachable: False`,
 `retrospective: True`, with the reason above written out in full.
 
 The case a retry *does* produce a further answer is already guarded, and by the right entry:
@@ -90,16 +90,16 @@ one retracts any measured value taken without it"*. None was observed.
 
 An argument in a comment is the house bug class. `retrospective` is therefore a column the tool
 **tests**: `post_answer_arrivals` now also returns each row's offset from the terminal candidate
-(`measure_transcript_drain.py:432`), and `main` fails the run — new exit code **3**, distinct from
+(`measure_transcript_drain.py:443`), and `main` fails the run — new exit code **3**, distinct from
 the unclassified-kind exit 2 — if any row of a `retrospective` kind is ever stamped after the
-candidate. The premise is counted at `measure_transcript_drain.py:540` (`since_candidate > 0` on a `retrospective` row) and returned as
-`EXIT_RETROSPECTIVE_PREMISE_BROKEN` at `measure_transcript_drain.py:309`.
+candidate. The premise is counted at `measure_transcript_drain.py:551` (`since_candidate > 0` on a `retrospective` row) and returned as
+`EXIT_RETROSPECTIVE_PREMISE_BROKEN` at `measure_transcript_drain.py:314`.
 
 Proven able to fail: flipping the predicate `since_candidate > 0` at
-`measure_transcript_drain.py:540` to
+`measure_transcript_drain.py:551` to
 `< 0` turns 2.1.223 red with `{"system/api_error": 9}` and exit 3; restoring it returns exit 0. The
 receipt also publishes `timestamp_is_retrospective` per bucket
-(`measure_transcript_drain.py:501`), because a negative `min_ms`
+(`measure_transcript_drain.py:512`), because a negative `min_ms`
 in a table of arrivals otherwise has no explanation.
 
 **The refusal was not weakened for anything else.** `pr-link/None` (101), `system/compact_boundary`
@@ -279,7 +279,7 @@ truncates answers.
 
 ### 3.6 Q3 — which fields are version-sensitive
 
-The profile has seven fields (`TestedCompatibilityProfile`, `compatibility.rs:537`):
+The profile has seven fields (`TestedCompatibilityProfile`, `compatibility.rs:558`):
 `claude_version`, `claude_version_tested_through`, `os`, `arch`, `terminal_profile`,
 `input_transport`, `transcript_drain_ms`. **It had six when this section was written**; the seventh
 is the range ceiling P2 below added, and the count is corrected here rather than left as the kind of
@@ -314,7 +314,7 @@ profile, and §3.3 shows it barely moves. Meanwhile pmux carries a dozen constan
   post-`/clear` transcripts"*
 - `crates/rmux/src/backend.rs:172-173` — *"MEASURED on Claude Code 2.1.220, that menu marks its
   selected row with a foreground colour change"*
-- `crates/service/src/claude_launch.rs:1332-1334` — the `--effort` level vocabulary, *"MEASURED against
+- `crates/service/src/claude_launch.rs:1334-1336` — the `--effort` level vocabulary, *"MEASURED against
   Claude Code 2.1.220 (aarch64 macOS), 2026-08-04, three ways that agree"*
 
 **The version gate protects the quantity that is stable and does not protect the ones a UI change
@@ -702,7 +702,7 @@ remain are the ones where it holds nothing.
   write-time measurement.
 - **Nothing here covers Linux or any non-aarch64 host.**
 - **A defect found and not fixed:** `read_transcript`'s docstring
-  (`tools/promotion/measure_transcript_drain.py:400-402`) says a file whose rows disagree on version is
+  (`tools/promotion/measure_transcript_drain.py:411-413`) says a file whose rows disagree on version is
   *"reported by the caller, not silently mixed in"* — and nothing in `main` reports it. Three such
   files exist here, one of 18,118 rows spanning four versions, and it is silently mixed into all
   four. That is the house bug class, it is why §3 re-attributes turns by their own candidate, and it

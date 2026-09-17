@@ -91,6 +91,7 @@ fn compatibility_report() -> CompatibilityReport {
         terminal_profile: TerminalProfile::Transparent,
         input_transport: InputTransport::Sdk,
         tested: true,
+        unpromoted: false,
         transcript_drain_ms: 750,
     }
 }

@@ -56,6 +56,12 @@ inside both linux cells. A version above either ceiling still needs the flag:
   '{"claude_version":"<version above the ceiling>","os":"linux","arch":"x86_64","terminal_profile":"transparent","input_transport":"sdk","transcript_drain_ms":250}'
 ```
 
+For exploratory use only, and clearly subordinate to measuring and promoting
+the cell, `--allow-unpromoted-claude` admits an unmeasured tuple on the
+conservative untested drain and labels every artifact it produces `unpromoted`,
+which `tools/promotion` then refuses (see
+[docs/spec/02-operator.md](docs/spec/02-operator.md)).
+
 Check the daemon (starts nothing, spends no tokens):
 
 ```bash

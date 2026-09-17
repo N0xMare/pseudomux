@@ -1102,6 +1102,7 @@ mod protocol_properties {
             terminal_profile: TerminalProfile::Transparent,
             input_transport: InputTransport::Sdk,
             tested: false,
+            unpromoted: false,
             transcript_drain_ms: 1,
         }
     }

@@ -3379,6 +3379,7 @@ async fn idle_deadline_safe_integer_boundary_is_inclusive_and_one_past_rejects_p
                 terminal_profile: TerminalProfile::Transparent,
                 input_transport: InputTransport::Sdk,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: 10,
             },
             dangerous_permission_bypass: false,
@@ -3434,6 +3435,7 @@ async fn out_of_domain_clock_rejects_registration_without_panicking_or_publishin
                 terminal_profile: TerminalProfile::Transparent,
                 input_transport: InputTransport::Sdk,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: 10,
             },
             dangerous_permission_bypass: false,
@@ -3744,6 +3746,7 @@ fn compatibility_with_drain(transcript_drain_ms: u64) -> CompatibilityReport {
         terminal_profile: TerminalProfile::Transparent,
         input_transport: InputTransport::Sdk,
         tested: true,
+        unpromoted: false,
         transcript_drain_ms,
     }
 }
@@ -3798,6 +3801,7 @@ async fn register_with_generation(
                 terminal_profile: TerminalProfile::Transparent,
                 input_transport: InputTransport::Sdk,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: 10,
             },
             dangerous_permission_bypass: false,

@@ -152,10 +152,17 @@ pub enum WritableAttachCompletion {
 /// An untested cell reached admission by an explicit `allow_untested` request
 /// and runs on the conservative fallback drain; it has no evidence behind it
 /// that the minified calibration could rest on.
+///
+/// The one exception is the operator's `--allow-unpromoted-claude` opt-in,
+/// which is an untested cell the operator asked for BY NAME at boot, for the
+/// whole daemon, and which every artifact then carries `unpromoted: true` on.
+/// A per-request `allow_untested` is still refused here: the difference is not
+/// how much evidence there is -- there is none either way -- but who chose, and
+/// whether the choice is labelled.
 pub(crate) fn require_tested_for_minified_cell(
     compatibility: &CompatibilityReport,
 ) -> Result<(), ErrorBody> {
-    if compatibility.tested {
+    if compatibility.tested || compatibility.unpromoted {
         return Ok(());
     }
     Err(ErrorBody::new(
@@ -3997,9 +4004,24 @@ fn compatibility_warnings(report: &CompatibilityReport) -> Vec<ProtocolWarning> 
     if report.tested {
         return Vec::new();
     }
+    // Two ways to be untested, and they are different operator facts: a caller
+    // passed `allow_untested` on ONE request, or the daemon was started with
+    // `--allow-unpromoted-claude` and every turn it serves is unmeasured. The
+    // second gets its own code so a harvested turn cannot be read as the first.
+    let (code, message) = if report.unpromoted {
+        (
+            "unpromoted_compatibility_profile",
+            "this daemon runs --allow-unpromoted-claude: no measurement backs this cell",
+        )
+    } else {
+        (
+            "untested_compatibility_profile",
+            "this turn used an explicit allow_untested compatibility override",
+        )
+    };
     vec![ProtocolWarning {
-        code: "untested_compatibility_profile".to_owned(),
-        message: "this turn used an explicit allow_untested compatibility override".to_owned(),
+        code: code.to_owned(),
+        message: message.to_owned(),
         details: json!({
             "claude_version": report.claude_version,
             "os": report.os,
@@ -4007,6 +4029,7 @@ fn compatibility_warnings(report: &CompatibilityReport) -> Vec<ProtocolWarning> 
             "terminal_profile": report.terminal_profile,
             "input_transport": report.input_transport,
             "tested": false,
+            "unpromoted": report.unpromoted,
             "transcript_drain_ms": report.transcript_drain_ms,
         }),
     }]
@@ -4377,6 +4400,7 @@ mod compatibility_tests {
             terminal_profile: TerminalProfile::Transparent,
             input_transport: InputTransport::Sdk,
             tested: false,
+            unpromoted: false,
             transcript_drain_ms: 2_000,
         };
         let warnings = compatibility_warnings(&report);
@@ -4388,6 +4412,49 @@ mod compatibility_tests {
         let mut tested = report;
         tested.tested = true;
         assert!(compatibility_warnings(&tested).is_empty());
+    }
+
+    fn unpromoted_report() -> CompatibilityReport {
+        CompatibilityReport {
+            claude_version: "999.999.999".to_owned(),
+            os: "linux".to_owned(),
+            arch: "x86_64".to_owned(),
+            terminal_profile: TerminalProfile::Transparent,
+            input_transport: InputTransport::Sdk,
+            tested: false,
+            unpromoted: true,
+            transcript_drain_ms: 2_000,
+        }
+    }
+
+    /// An unpromoted turn warns under its OWN code.
+    ///
+    /// A harvested turn from a `--allow-unpromoted-claude` daemon and one from
+    /// a caller's per-request `allow_untested` are different operator facts,
+    /// and a reader who saw the same code on both would have no way to tell a
+    /// deliberate probe from a whole daemon running unmeasured.
+    #[test]
+    fn an_unpromoted_cell_warns_under_its_own_code_and_carries_the_marker() {
+        let warnings = compatibility_warnings(&unpromoted_report());
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].code, "unpromoted_compatibility_profile");
+        assert_eq!(warnings[0].details["unpromoted"], true);
+        assert_eq!(warnings[0].details["tested"], false);
+        assert_eq!(warnings[0].details["claude_version"], "999.999.999");
+    }
+
+    /// The minified gate accepts the operator's labelled opt-in and nothing
+    /// else that is untested.
+    #[test]
+    fn the_minified_gate_accepts_the_opt_in_and_still_refuses_a_bare_allow_untested() {
+        require_tested_for_minified_cell(&unpromoted_report())
+            .expect("an explicitly opted-in, labelled cell is admitted");
+
+        let mut bare = unpromoted_report();
+        bare.unpromoted = false;
+        let error = require_tested_for_minified_cell(&bare)
+            .expect_err("a per-request allow_untested cell is still refused");
+        assert_eq!(error.code, ErrorCode::UnsupportedClaudeVersion);
     }
 }
 
@@ -4430,6 +4497,7 @@ mod permission_bypass_tests {
             terminal_profile: TerminalProfile::Transparent,
             input_transport: InputTransport::Sdk,
             tested: true,
+            unpromoted: false,
             transcript_drain_ms: 1,
         };
         build_turn_result(
@@ -4527,6 +4595,7 @@ mod stop_hook_summary_tests {
             terminal_profile: TerminalProfile::Transparent,
             input_transport: InputTransport::Sdk,
             tested: true,
+            unpromoted: false,
             transcript_drain_ms: 1,
         };
         build_turn_result(
@@ -4756,6 +4825,7 @@ mod arrival_order_tests {
             terminal_profile: TerminalProfile::Transparent,
             input_transport: InputTransport::Sdk,
             tested: true,
+            unpromoted: false,
             transcript_drain_ms: 1,
         };
         build_turn_result(

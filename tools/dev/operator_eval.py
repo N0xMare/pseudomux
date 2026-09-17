@@ -36,6 +36,7 @@ from measure_turn_latency import (  # noqa: E402
     resolve_binaries,
     run_client,
 )
+import unpromoted  # noqa: E402 -- tools/evidence_common, resolved above
 from promote_claude_version import (  # noqa: E402
     GRADES,
     PROBE_SENTINEL,
@@ -240,7 +241,16 @@ def doctor(
     payloads = [line for line in done.stdout.splitlines() if line.startswith("{")]
     if not payloads:
         raise MeasurementError(f"doctor printed no JSON:\n{done.stdout}\n{done.stderr}")
-    return json.loads(payloads[-1])
+    report = json.loads(payloads[-1])
+    # An operator pin is a claim that THIS Claude works on THIS host. A daemon
+    # started with `--allow-unpromoted-claude` admits its Claude without
+    # establishing anything, so a green receipt measured through one would be
+    # attesting the flag rather than the binary.
+    try:
+        unpromoted.refuse_unpromoted_daemon(report)
+    except unpromoted.UnpromotedArtifact as refusal:
+        raise MeasurementError(str(refusal)) from refusal
+    return report
 
 
 def layer(report: dict[str, Any], name: str) -> dict[str, Any]:

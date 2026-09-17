@@ -806,6 +806,29 @@ impl NativeService {
             .map_err(|error| ErrorBody::new(ErrorCode::RmuxUnavailable, error.to_string()))?;
         let service = Arc::new(Self::from_runtime(Arc::new(runtime), service_config));
         service.start_idle_reaper();
+        // The retained drain corpus is the one artifact this daemon leaves for
+        // a FUTURE promotion to read, so an unpromoted daemon labels it before
+        // it can write a single mirror into it. Best effort and never fatal:
+        // the directory is created lazily by the first teardown anyway, and a
+        // daemon that refused to boot over an evidence label would be trading
+        // the product for the bookkeeping.
+        if service.config.tested_claude_profiles.unpromoted_opt_in() {
+            if let Some(evidence_dir) = service
+                .config
+                .pool
+                .as_ref()
+                .and_then(|pool| pool.evidence_dir.as_ref())
+            {
+                if let Err(error) = crate::pool::evidence::mark_unpromoted(evidence_dir) {
+                    tracing::warn!(
+                        operation = "unpromoted_evidence_marker",
+                        directory = %evidence_dir.display(),
+                        %error,
+                        "could not label the retained evidence directory as unpromoted"
+                    );
+                }
+            }
+        }
         if let Some(pool_config) = pool_config {
             if let Err(error) = service.start_pool(pool_config).await {
                 // A FAILED START OWNS WHAT IT MINTED, and this is the arm that
@@ -1388,6 +1411,22 @@ impl NativeService {
         // already running and had to be torn down.
         if request.cell == SessionCell::Minified {
             require_tested_for_minified_cell(&compatibility)?;
+        }
+        // LOUD, once per cell launch, on the daemon log the operator reads.
+        // Not once at boot only: a daemon that has been up for a week is
+        // exactly the one whose operator has forgotten which flags started it.
+        if compatibility.unpromoted {
+            tracing::warn!(
+                claude_version = %compatibility.claude_version,
+                os = %compatibility.os,
+                arch = %compatibility.arch,
+                terminal_profile = ?compatibility.terminal_profile,
+                input_transport = ?compatibility.input_transport,
+                transcript_drain_ms = compatibility.transcript_drain_ms,
+                "UNPROMOTED Claude cell admitted by --allow-unpromoted-claude: no measurement \
+                 backs this tuple, the drain is the conservative untested fallback, and every \
+                 artifact from this session is labelled unpromoted"
+            );
         }
 
         let transcript = Arc::new(
@@ -1985,7 +2024,11 @@ impl NativeService {
             version,
             self.config.untested_transcript_drain_ms,
         );
-        let PoolClaudeAdmission::Admitted { version } = admission else {
+        let PoolClaudeAdmission::Admitted {
+            version,
+            unpromoted,
+        } = admission
+        else {
             return Some(admission);
         };
         let mut logged_in = Vec::new();
@@ -2004,7 +2047,10 @@ impl NativeService {
             }
         }
         if !logged_in.is_empty() {
-            Some(PoolClaudeAdmission::Admitted { version })
+            Some(PoolClaudeAdmission::Admitted {
+                version,
+                unpromoted,
+            })
         } else if let Some(error) = probe_error {
             Some(PoolClaudeAdmission::Unreadable { executable, error })
         } else {
@@ -2032,6 +2078,12 @@ impl NativeService {
                 // operator measured one are different deployments, and an
                 // operator debugging a refusal needs to know which they have.
                 "tested_claude_profiles": self.config.tested_claude_profiles.len(),
+                // The identity marker, on the report an operator and every
+                // promotion tool reads first. `false` on every ordinary
+                // daemon, and stated rather than omitted for the reason
+                // `CompatibilityReport::unpromoted` gives.
+                "unpromoted_claude_opt_in":
+                    self.config.tested_claude_profiles.unpromoted_opt_in(),
                 "promoted_cells_for_this_platform":
                     crate::compatibility::CompatibilityProfileRegistry::promoted_here(),
                 "compatibility_cells_matching_this_platform":
@@ -2696,12 +2748,32 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
                  no profile"
             ),
         ),
-        Some(PoolClaudeAdmission::Admitted { version }) => (
+        Some(PoolClaudeAdmission::Admitted {
+            version,
+            unpromoted: false,
+        }) => (
             LayerFinding::Exercised,
             format!(
                 "the stateless engine's Claude Code {version} is admitted by one of the \
                  {admitted} Claude compatibility cell(s) matching this platform, so a minified \
                  cell can be minted"
+            ),
+        ),
+        // `exercised`, because a mint really would succeed -- and it says in
+        // its first clause that nothing measured the cell, because the only
+        // thing worse than a daemon running an unmeasured Claude is a health
+        // report that reads identically to one running a measured one.
+        Some(PoolClaudeAdmission::Admitted {
+            version,
+            unpromoted: true,
+        }) => (
+            LayerFinding::Exercised,
+            format!(
+                "UNPROMOTED: this daemon was started with --allow-unpromoted-claude, so the \
+                 stateless engine's Claude Code {version} is admitted although none of the \
+                 {admitted} Claude compatibility cell(s) matching this platform covers it and no \
+                 measurement backs it; every artifact this daemon emits is labelled \
+                 unpromoted, and nothing it produces may be promoted"
             ),
         ),
         Some(PoolClaudeAdmission::NeedsLogin { version, pin }) => (
@@ -2757,12 +2829,22 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
             "path_b_enabled": pool_claude.is_some(),
             "pool_claude_version": match pool_claude {
                 Some(
-                    PoolClaudeAdmission::Admitted { version }
+                    PoolClaudeAdmission::Admitted { version, .. }
                     | PoolClaudeAdmission::Refused { version, .. }
                     | PoolClaudeAdmission::NeedsLogin { version, .. },
                 ) => Some(version.clone()),
                 Some(PoolClaudeAdmission::Unreadable { .. }) | None => None,
             },
+            // The identity marker on the layer that answers "can this daemon
+            // mint?", beside the version it would mint. `false` unless the
+            // daemon really is running an unmeasured cell.
+            "pool_claude_unpromoted": matches!(
+                pool_claude,
+                Some(PoolClaudeAdmission::Admitted {
+                    unpromoted: true,
+                    ..
+                })
+            ),
         }),
     )
 }
@@ -2777,7 +2859,12 @@ fn compatibility_layer(admitted: usize, pool_claude: Option<&PoolClaudeAdmission
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum PoolClaudeAdmission {
     /// The registry admits this version under the policy a mint uses.
-    Admitted { version: String },
+    ///
+    /// `unpromoted` is the operator's `--allow-unpromoted-claude` admission:
+    /// admitted, and nothing measured it. Carried here rather than reported
+    /// separately so `pmux doctor` cannot say `exercised` without saying which
+    /// of the two admissions it exercised.
+    Admitted { version: String, unpromoted: bool },
     /// Version is admitted but isolated-shape `auth status` is not logged in.
     NeedsLogin { version: String, pin: String },
     /// The registry refuses it, and the refusal is the one a mint would get.
@@ -2807,7 +2894,7 @@ fn admit_claude_version(
     version: String,
     untested_transcript_drain_ms: u64,
 ) -> PoolClaudeAdmission {
-    let refusal = registry
+    let admission = registry
         .resolve(
             crate::stateless::POOL_COMPATIBILITY,
             &version,
@@ -2819,15 +2906,17 @@ fn admit_claude_version(
             if crate::stateless::POOL_CELL == SessionCell::Minified {
                 require_tested_for_minified_cell(&report)?;
             }
-            Ok(())
-        })
-        .err();
-    match refusal {
-        Some(refusal) => PoolClaudeAdmission::Refused {
+            Ok(report.unpromoted)
+        });
+    match admission {
+        Err(refusal) => PoolClaudeAdmission::Refused {
             version,
             refusal: refusal.message,
         },
-        None => PoolClaudeAdmission::Admitted { version },
+        Ok(unpromoted) => PoolClaudeAdmission::Admitted {
+            version,
+            unpromoted,
+        },
     }
 }
 
@@ -4432,6 +4521,7 @@ mod tests {
                     admit_claude_version(&registry, inside.clone(), 2_000),
                     PoolClaudeAdmission::Admitted {
                         version: inside.clone(),
+                        unpromoted: false,
                     },
                     "a promoted range must admit {inside}, which is inside {range}"
                 );
@@ -4486,9 +4576,56 @@ mod tests {
             admit_claude_version(&operator, "9.9.9".to_owned(), 2_000),
             PoolClaudeAdmission::Admitted {
                 version: "9.9.9".to_owned(),
+                unpromoted: false,
             },
             "`--tested-claude-profile` is the escape hatch the refusal names, so it has to work"
         );
+    }
+
+    /// `pmux doctor` says which of the two admissions it exercised.
+    ///
+    /// The mint route and the health route share `admit_claude_version`, so an
+    /// opted-in daemon reaches the SAME answer a `pmux ask` would -- admitted,
+    /// and labelled. A doctor report that looked identical to a promoted
+    /// daemon's is the whole failure this marker exists to prevent, so the
+    /// label is asserted on the value the layer reads.
+    #[test]
+    fn an_opted_in_daemon_is_admitted_and_labelled_on_the_doctor_route() {
+        let registry = CompatibilityProfileRegistry::default()
+            .allow_unpromoted(true)
+            .expect("the opt-in alone is admissible");
+        assert_eq!(
+            admit_claude_version(&registry, "999.999.999".to_owned(), 2_000),
+            PoolClaudeAdmission::Admitted {
+                version: "999.999.999".to_owned(),
+                unpromoted: true,
+            },
+            "the opt-in admits, and doctor must be told it was the unmeasured admission"
+        );
+
+        let layer = compatibility_layer(
+            registry.admissible_here(),
+            Some(&PoolClaudeAdmission::Admitted {
+                version: "999.999.999".to_owned(),
+                unpromoted: true,
+            }),
+        );
+        assert_eq!(layer.evidence["pool_claude_unpromoted"], json!(true));
+        assert!(
+            layer.detail.contains("UNPROMOTED")
+                && layer.detail.contains("--allow-unpromoted-claude"),
+            "the layer must say so in prose an operator reads: {}",
+            layer.detail
+        );
+
+        let promoted = compatibility_layer(
+            0,
+            Some(&PoolClaudeAdmission::Admitted {
+                version: "999.999.999".to_owned(),
+                unpromoted: false,
+            }),
+        );
+        assert_eq!(promoted.evidence["pool_claude_unpromoted"], json!(false));
     }
 
     /// The four answers `NativeService::admit_pool_claude` can return.
@@ -4518,7 +4655,10 @@ mod tests {
             || "2.1.220".to_owned(),
             |promoted| promoted.claude_version_floor.to_owned(),
         );
-        PoolClaudeAdmission::Admitted { version }
+        PoolClaudeAdmission::Admitted {
+            version,
+            unpromoted: false,
+        }
     }
 
     fn refused_pool_claude() -> PoolClaudeAdmission {
@@ -4720,6 +4860,7 @@ mod tests {
                 terminal_profile: TerminalProfile::Transparent,
                 input_transport: InputTransport::Sdk,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: 1,
             },
             dangerous_permission_bypass: false,

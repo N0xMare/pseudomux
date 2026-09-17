@@ -321,10 +321,10 @@ this CLI advertises are refused or ignored by the daemon, and the help said none
 `[possible values: ...]` was the only thing a caller had and it was an advertisement:
 `--terminal-profile rmux-standard` and `--input-transport attached-stream` are reserved
 (`compatibility.rs:375/:381`); `--retention one-shot` is refused on every CLI path and OVERWRITTEN by
-`run_once` (`native.rs:3049/:1475`); `--on-disconnect cancel-turn|close-session` and
-`--heartbeat-timeout-ms` want a leased connection API that does not exist (`native.rs:2371`);
+`run_once` (`native.rs:3140/:1475`); `--on-disconnect cancel-turn|close-session` and
+`--heartbeat-timeout-ms` want a leased connection API that does not exist (`native.rs:2425`);
 `attach --read-only` is refused on every session, which with the minified cell's writable refusal
-means a minified cell cannot be attached AT ALL (`native.rs:1725`); and `close --policy` is accepted
+means a minified cell cannot be attached AT ALL (`native.rs:1766`); and `close --policy` is accepted
 by both values and changes nothing, because every `TerminalControl::close` in the tree takes
 `_policy` and discards it (`driver_io.rs:1690`). Nothing is withdrawn from the wire -- the daemon
 owns the verdict and `pmux probe` must keep building the exact DTO -- but every one now says so.
@@ -1789,7 +1789,7 @@ version the same file says ships supported two paragraphs earlier, the version
 the promoted range ends at, and the version installed on this host. The first
 thing a newcomer read was the product refusing what it supports. It names 2.1.228
 now, which is genuinely past the tested ceiling, and the message is still the one
-`crates/service/src/compatibility.rs:747` formats.
+`crates/service/src/compatibility.rs:787` formats.
 
 `docs/2.1.226-compatibility.md` §4.1 carried `sha256("<a literal home path>")
 [0:8] = <DIGEST>`, where the input IS the evidence: rendered to a placeholder the
@@ -4891,7 +4891,7 @@ first-party code changed.
 
 THE SURFACE IS NOT THE MESSAGES API. That API is stateless with CLIENT-HELD history -- the caller
 resends `messages[]` every call. Path B is stateless with NO history: `/clear` runs between turns and
-the whole isolation argument depends on the transcript being abandoned (`v1.rs:2431-2436`). Path A's
+the whole isolation argument depends on the transcript being abandoned (`v1.rs:2448-2453`). Path A's
 history lives in a real TUI and its append-only JSONL, which is the sole completion authority and
 cannot be reconstructed from an array. A `messages[]` parameter would promise continuity neither path
 can honour -- the bug class at the API layer. The surface that DOES match is Managed Agents: a
@@ -4910,7 +4910,7 @@ an owner decision, not an edit I made.
 
 THE ONE RULE EVERY FIELD CLASSIFIES UNDER: an agent may NARROW what a session may name; it may never
 NAME a resource on the session's behalf. So `cwd` stays per-session -- `LiveResourceClaim::directories`
-(`native.rs:3393-3399`) enumerates it as one of exactly two directories a session BINDS, and leak 7's
+(`native.rs:3484-3490`) enumerates it as one of exactly two directories a session BINDS, and leak 7's
 third shape was an intruder cwd standing on a live cell's config root -- but an agent may carry
 `containment.workspace_root`, which bounds the cwd and never supplies one, is composed with AND
 against `admit_bound_resources` so no value of it can widen admission, and is tested with
@@ -4923,7 +4923,7 @@ must-be-empty, because that note is the bug class.
 NO NEW ERROR CODE, AND NO MERGE SURFACE. Both shipped clients hard-reject unknown codes
 (`client.ts:309`, `client.py:1074`), so a new one is a three-language lockstep release; `InvalidConfig`
 is honest for a missing agent and `IdConflict` already means exactly "your fence does not match"
-(`actor.rs:1097`). The update fence is REQUIRED, not optional as in CMA, for the reason
+(`actor.rs:1106`). The update fence is REQUIRED, not optional as in CMA, for the reason
 `ClearSessionRequest::expected_transcript_session_id` gives verbatim. Inline and agent-reference are
 mutually exclusive and the conflicting-field set is DERIVED by intersecting serialized leaf paths --
 CMA ships an `agent_with_overrides` whose `effort` is accepted and silently ignored, which is instance
@@ -8928,18 +8928,18 @@ planted state, and `PoolState` and `Pool::state` are private to `crate::pool`.
 OF THE ENUM DECLARATION, and a well-formed pool closes the test so it cannot be satisfied by a
 checker that refuses everything.
 
-FOUR ARE EQUIVALENT, WITH THE PREMISE WRITTEN AS A TEST RATHER THAN AN ARGUMENT. `mod.rs:702 <->=`,
-`mod.rs:903 <->=` and `mod.rs:903`'s guard `-> true` all widen a capacity test conjoined with
+FOUR ARE EQUIVALENT, WITH THE PREMISE WRITTEN AS A TEST RATHER THAN AN ARGUMENT. `mod.rs:703 <->=`,
+`mod.rs:904 <->=` and `mod.rs:904`'s guard `-> true` all widen a capacity test conjoined with
 `free_slot(..).is_some()`, and `free_slot` skips exactly the slots `capacity` subtracts.
 `a_free_slot_is_never_offered_while_the_pool_is_at_its_budget` enumerates every pool state for
-`pool_size` 1..4, so the day the implication stops holding those three become real. `mod.rs:1308
+`pool_size` 1..4, so the day the implication stops holding those three become real. `mod.rs:1309
 &&->||` needs an `Idle -> Idle` edge; `the_machine_has_no_edge_from_idle_back_to_idle` is that half
 written out. Both say in their own docs that they close NO mutant.
 
 EVERY CLOSURE PROVEN BY RUNNING THE MUTANT. 75 mutants over every site ever recorded as surviving:
 all 15 CAUGHT, and all 18 of the previous pass's pool closure claims CAUGHT too -- checked site by
 site against `caught.txt`, because the first draft of that sentence said "seventeen of the eighteen"
-after attributing `mod.rs:1130` to a claim nobody had made.
+after attributing `mod.rs:1131` to a claim nobody had made.
 
 "ANY TEST THAT GOES FLAKY UNDER LOAD" WAS AS FAR AS ANYBODY HAD LOOKED. Three mutants flipped
 between runs that were all quiet, and opening the log of the run that said CAUGHT names the cause in
@@ -9046,7 +9046,7 @@ prints "nothing to print", so it is dev-only. `syn` 2.0.117 beside 3.0.0 (via `a
 in the normal graph but only as a proc-macro build input, so it costs a compile and links
 nothing. Features were read too: `clap`'s `env` is used at 15 `#[arg(env = ...)]` sites,
 `uuid`'s `v4` and `serde` both, `tracing-subscriber`'s `env-filter` and `json` both at
-`pmuxd/src/main.rs:916,921`, and `tokio`'s `full` is not over-broad -- `io-std` (`pmux-mcp`
+`pmuxd/src/main.rs:956,921`, and `tokio`'s `full` is not over-broad -- `io-std` (`pmux-mcp`
 stdio), `process`, `signal`, `fs` and `net` are all reached, leaving only `parking_lot`, which
 is tokio's own locking choice and not ours to pick.
 
@@ -9063,7 +9063,7 @@ WHAT WAS NOT DELETED, so the next agent does not re-derive it:
     still compiles where the `cfg(not(unix))` fallbacks elsewhere in this file compile." There
     is no such place. MEASURED, by regating `pub mod attach` in `crates/service/src/lib.rs` to
     a predicate false on this host and compiling: `pseudomux-service` fails with four
-    `error[E0433]: failed to resolve` at `native.rs:2024, :2051, :2054, :4330`, all four
+    `error[E0433]: failed to resolve` at `native.rs:2072, :2051, :2054, :4330`, all four
     ungated references to `crate::attach`, which `lib.rs:4` gates on `unix`. Restored
     byte-exact. So the configuration those 14 service fallbacks serve cannot build, and the
     5 in `pmuxd` inherit that through its dependency. The 2 in `pmux-launcher` are NOT covered
@@ -9071,14 +9071,14 @@ WHAT WAS NOT DELETED, so the next agent does not re-derive it:
     reaches `libc::waitpid/kill/getsid` from an ungated module, which is an argument and not a
     compilation. Deleting them is a portability-posture decision with a live citation in
     `docs/current-state.md`, and it would move the mutant enumeration; it is not this pass's.
-  * **`MessageBlock::ToolResult` (`v1.rs:2487`), the one wire variant with no producer.**
-    `map_message_block` (`actor.rs:3828`) is exhaustive over `ClaudeBlock`, which has no
+  * **`MessageBlock::ToolResult` (`v1.rs:2504`), the one wire variant with no producer.**
+    `map_message_block` (`actor.rs:3837`) is exhaustive over `ClaudeBlock`, which has no
     tool-result arm, so the daemon can never emit it. It is still not dead: §9.5 row 42 already
     VETOED deleting seven producerless `ErrorCode` variants on the fact that a closed
     deserialize union in three languages makes removing a variant exactly as breaking as adding
     one, and `MessageBlock` is the same shape -- `clients/typescript/src/client.ts:391`
     hard-codes all four `kind` values in a runtime `requireEnumField`, and
-    `clients/python/pmux_client/protocol.py:398` mirrors the union.
+    `clients/python/pmux_client/protocol.py:402` mirrors the union.
   * **The `serialize_struct` field accumulator.** Thirteen of this run's 22 survivors are its
     arithmetic, whose only consumer is a length HINT `serde_json` discards. Unobservable, but
     `serialize_struct` requires the argument, so there is nothing to delete.
@@ -9109,7 +9109,7 @@ BOTH GATES RE-RUN ON THE COMMITTED TREE, detached, quiet machine:
 
 THE FIVE-SURVIVOR DELTA IS NOISE, AND ONE OF THE FIVE PROVES IT. All five are in §9.23's
 documented flip set: three accumulator lines, `agent.rs:1432 sync_parent_directory -> ()`, and
-`claude_launch.rs:964 resource_key -> Default::default()`. That last one is the
+`claude_launch.rs:966 resource_key -> Default::default()`. That last one is the
 `#[cfg(not(unix))]` twin: it is not compiled on this host, its mutant is byte-identical to the
 baseline, and it came back CAUGHT. A mutant that provably changes nothing cannot be detected,
 so that verdict is a flaky test attributed to a mutant -- which is exactly the one-directional

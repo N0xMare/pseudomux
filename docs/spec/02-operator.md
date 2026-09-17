@@ -66,6 +66,46 @@ profile.
 `allow_untested` is for deliberate probes and MUST be reported as untested.
 It does not skip transcript validation.
 
+### `--allow-unpromoted-claude`
+
+CHOSEN policy, not a measurement, and EXPLORATORY ONLY.
+
+| flag | default | what it does |
+| --- | --- | --- |
+| `--allow-unpromoted-claude` | off | Admit a (version, os, arch, terminal profile, transport) tuple no cell covers, labelled. |
+
+Off MUST be today's behaviour exactly: an uncovered tuple is refused with
+`unsupported_claude_version`.
+
+On, the observed tuple is admitted for this daemon on the same runtime path
+`--tested-claude-profile` takes, and:
+
+- the drain is `--untested-transcript-drain-ms` (default 2000 ms), the
+  conservative shipped floor an `allow_untested` probe already falls back to.
+  A promoted cell's 250 ms MUST NOT be borrowed: that number is what a
+  promotion exists to produce.
+- `CompatibilityReport.tested` stays `false` and `CompatibilityReport.unpromoted`
+  is `true`. Every artifact carrying identity MUST state `unpromoted`: the
+  compatibility report on each session, the per-turn
+  `unpromoted_compatibility_profile` warning, the retained evidence directory's
+  `pmux-unpromoted.json` marker, and `pmux doctor`
+  (`configuration.unpromoted_claude_opt_in`,
+  `compatibility_profile.pool_claude_unpromoted`).
+- pmuxd MUST warn once at startup and once per cell launch, naming the tuple
+  and that no measurement backs it.
+- it MUST NOT widen `PROMOTED_PROFILES` and MUST NOT write a receipt under
+  `evidence/`.
+- it MUST be refused together with `--tested-claude-profile`: one admits a cell
+  the operator measured, the other admits one nobody did.
+
+`tools/promotion` MUST refuse anything produced under it: a corpus carrying
+`pmux-unpromoted.json`, and a `pmux doctor` report whose configuration layer
+says `unpromoted_claude_opt_in`.
+
+The supported route is measurement: `tools/dev/drain_n50.py`,
+`tools/dev/operator_eval.py`, `tools/dev/living_pmux_run.py`, then
+`tools/dev/promote.py` ([tools/dev/README.md](../../tools/dev/README.md)).
+
 ## Accounts
 
 `--pool-securestorage-dir empty` (default) pins the unsuffixed credential

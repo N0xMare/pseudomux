@@ -935,10 +935,10 @@ as rotted**, every one invisible until it carried its path:
 ```
 docs/2.1.226-acceptance.md      the `pmuxd protocol v1 listening` record  then-line 648
 docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  then-line 1153
-docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1340
+docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1342
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:835
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2325
-docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:576
+docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:587
 ```
 
 **Graded citations went from 39 to 53.** The 14 that joined are the ones the guard's name had always

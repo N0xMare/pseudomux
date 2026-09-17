@@ -58,6 +58,7 @@ fails if one of them stops appearing in it.
     2  an unclassified post-answer row kind        -> TRIGGER_UNCLASSIFIED_ROW_KIND
     3  a `retrospective` premise no longer holds   -> TRIGGER_UNCLASSIFIED_ROW_KIND
     4  a reachable arrival above `--bound-ms`      -> TRIGGER_ARRIVAL_ABOVE_THE_BOUND
+    6  the corpus came off an unpromoted daemon    -> refused, not a trigger
     5  `--bound-ms` was given and there was NOTHING TO CHECK
 
 Exit 5 exists because exit 0 on an empty corpus is the failure mode this tool
@@ -91,6 +92,10 @@ import platform
 import sys
 from datetime import datetime
 from typing import Any, Iterable
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "evidence_common"))
+
+import unpromoted  # noqa: E402 -- tools/evidence_common, resolved above
 
 # Every argument a Path B mint's child receives, and the whole of it.
 #
@@ -309,6 +314,12 @@ EXIT_UNCLASSIFIED_ROW_KIND = 2
 EXIT_RETROSPECTIVE_PREMISE_BROKEN = 3
 EXIT_ARRIVAL_ABOVE_THE_BOUND = 4
 EXIT_NOTHING_TO_CHECK = 5
+# A corpus root carries `pmux-unpromoted.json`, so a pmuxd started with
+# `--allow-unpromoted-claude` wrote some of it. Not a re-promotion trigger: it
+# is not a fact about Claude Code at all, it is a refusal to measure a daemon
+# whose compatibility cell nobody established. It exits before any measurement
+# so no partial receipt is produced.
+EXIT_UNPROMOTED_CORPUS = 6
 
 # EVERY row field this tool reads, and the whole of it.
 #
@@ -640,6 +651,14 @@ def main() -> int:
     arguments = parser.parse_args()
 
     corpora = arguments.corpus or [pathlib.Path.home() / ".claude" / "projects"]
+    # BEFORE a single file is read. A corpus that a `--allow-unpromoted-claude`
+    # daemon contributed to cannot back a promotion, and the cheapest way to be
+    # sure no number from it escapes is to produce no numbers.
+    try:
+        unpromoted.refuse_unpromoted_corpus(corpora)
+    except unpromoted.UnpromotedArtifact as refusal:
+        print(f"refused: {refusal}", file=sys.stderr)
+        return EXIT_UNPROMOTED_CORPUS
     versions = sorted(set(arguments.versions), key=version_key)
 
     files = sorted({path for root in corpora for path in root.rglob("*.jsonl")})

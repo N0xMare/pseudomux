@@ -816,6 +816,7 @@ async fn turn_phase_diagnostic() -> Vec<TurnPhaseSample> {
                     terminal_profile: TerminalProfile::Transparent,
                     input_transport: InputTransport::Sdk,
                     tested: true,
+                    unpromoted: false,
                     transcript_drain_ms: TURN_PHASE_DRAIN_MS,
                 },
                 dangerous_permission_bypass: false,

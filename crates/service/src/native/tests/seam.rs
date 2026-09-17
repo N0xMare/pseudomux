@@ -166,6 +166,7 @@ fn seam_compatibility() -> CompatibilityReport {
         terminal_profile: TerminalProfile::Transparent,
         input_transport: InputTransport::Sdk,
         tested: true,
+        unpromoted: false,
         transcript_drain_ms: 1,
     }
 }

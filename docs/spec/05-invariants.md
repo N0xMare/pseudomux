@@ -10,6 +10,9 @@
 - `/clear` only at minified lease end (or TTL), never after every HTTP
   request.
 - Promoted profiles require the receipt triad. Do not invent one.
+- An unmeasured tuple refuses, unless the operator explicitly opts in with
+  `--allow-unpromoted-claude`, and then every artifact carrying identity is
+  labelled `unpromoted` and nothing produced under it may be promoted.
 - Do not delete `start_session_owned_with_retention` or
   `start_session_owned`. Public `start_session` is not the mint.
 - MCP MUST NOT advertise `run_stateful`.

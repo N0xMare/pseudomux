@@ -648,9 +648,44 @@ impl TestedCompatibilityProfile {
 #[derive(Clone, Debug, Default)]
 pub struct CompatibilityProfileRegistry {
     profiles: Vec<TestedCompatibilityProfile>,
+    /// CHOSEN policy, not a measurement: `pmuxd --allow-unpromoted-claude`.
+    ///
+    /// It lives on the registry rather than beside it because it is the same
+    /// question every other field here answers -- "does this daemon admit a
+    /// cell nothing measured?" -- and because it is MUTUALLY EXCLUSIVE with
+    /// [`Self::insert`]. An operator who measured a cell admits it; an operator
+    /// who measured nothing opts in; an operator who claims both is refused by
+    /// the one function that could otherwise hold both, rather than by a check
+    /// somewhere in `bin/pmuxd` that a second caller could miss.
+    unpromoted_opt_in: bool,
 }
 
 impl CompatibilityProfileRegistry {
+    /// Turns the exploratory opt-in on for this daemon.
+    ///
+    /// # Errors
+    ///
+    /// The registry already holds an operator profile. `--tested-claude-profile`
+    /// is a measurement and `--allow-unpromoted-claude` is the absence of one;
+    /// a daemon that carried both would answer one refusal with the other's
+    /// provenance.
+    pub fn allow_unpromoted(mut self, value: bool) -> Result<Self> {
+        ensure!(
+            !value || self.profiles.is_empty(),
+            "--allow-unpromoted-claude cannot be combined with --tested-claude-profile: one \
+             admits a cell you measured, the other admits one nobody did"
+        );
+        self.unpromoted_opt_in = value;
+        Ok(self)
+    }
+
+    /// Whether this daemon admits an unmeasured cell. Reported by `pmux doctor`
+    /// and stamped onto every report [`Self::resolve`] produces under it.
+    #[must_use]
+    pub const fn unpromoted_opt_in(&self) -> bool {
+        self.unpromoted_opt_in
+    }
+
     pub fn try_from_profiles(
         profiles: impl IntoIterator<Item = TestedCompatibilityProfile>,
     ) -> Result<Self> {
@@ -662,6 +697,11 @@ impl CompatibilityProfileRegistry {
     }
 
     pub fn insert(&mut self, mut profile: TestedCompatibilityProfile) -> Result<()> {
+        ensure!(
+            !self.unpromoted_opt_in,
+            "--tested-claude-profile cannot be combined with --allow-unpromoted-claude: one \
+             admits a cell you measured, the other admits one nobody did"
+        );
         profile.input_transport = resolved_input_transport(profile.input_transport);
         profile.validate()?;
         ensure!(
@@ -779,7 +819,34 @@ impl CompatibilityProfileRegistry {
                 terminal_profile,
                 input_transport,
                 tested: true,
+                unpromoted: false,
                 transcript_drain_ms: profile.transcript_drain_ms,
+            });
+        }
+
+        // The operator's explicit, labelled admission of a cell nobody
+        // measured. It runs the SAME route a matched cell runs -- the minified
+        // gate accepts it, so `pmux ask` works -- and it carries neither a
+        // measurement (`tested` stays false) nor a measured cell's drain: the
+        // value is `untested_transcript_drain_ms`, the conservative shipped
+        // floor an `allow_untested` probe already falls back to
+        // (`DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS`, 2000 ms, which is 8x the
+        // widest promoted bound). Borrowing a promoted cell's 250 ms here would
+        // be fabricating the one number a promotion exists to produce.
+        //
+        // Placed BEFORE the policy branch so it is the same answer under
+        // `RequireTested` and `AllowUntested`: an opted-in daemon has one
+        // admission rule, not two.
+        if self.unpromoted_opt_in {
+            return Ok(CompatibilityReport {
+                claude_version: claude_version.to_owned(),
+                os: os.to_owned(),
+                arch: arch.to_owned(),
+                terminal_profile,
+                input_transport,
+                tested: false,
+                unpromoted: true,
+                transcript_drain_ms: untested_transcript_drain_ms,
             });
         }
 
@@ -832,6 +899,7 @@ impl CompatibilityProfileRegistry {
             terminal_profile,
             input_transport,
             tested: false,
+            unpromoted: false,
             transcript_drain_ms: untested_transcript_drain_ms,
         })
     }
@@ -982,6 +1050,130 @@ mod tests {
             )
             .unwrap_err();
         assert_eq!(error.code, ErrorCode::UnsupportedFeature);
+    }
+
+    /// A version nothing covers, on the daemon every operator gets by default.
+    ///
+    /// The BASELINE the opt-in is measured against: `--allow-unpromoted-claude`
+    /// off has to be today's behaviour exactly, and "exactly" is a refusal with
+    /// this code and nothing admitted.
+    #[test]
+    fn an_unmeasured_tuple_refuses_when_the_opt_in_is_off() {
+        let registry = CompatibilityProfileRegistry::default();
+        assert!(!registry.unpromoted_opt_in());
+        let error = registry
+            .resolve(
+                CompatibilityPolicy::RequireTested,
+                "999.999.999",
+                TerminalProfile::Transparent,
+                InputTransport::Sdk,
+                DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS,
+            )
+            .unwrap_err();
+        assert_eq!(error.code, ErrorCode::UnsupportedClaudeVersion);
+    }
+
+    /// The opt-in admits the tuple ACTUALLY OBSERVED, labels it, and charges
+    /// the conservative untested drain.
+    ///
+    /// The drain assertion is the load-bearing one. Admitting the cell on a
+    /// promoted profile's 250 ms would be inventing the single number a
+    /// promotion campaign exists to produce, and it would do it silently.
+    #[test]
+    fn the_opt_in_admits_an_unmeasured_tuple_labelled_and_on_the_untested_drain() {
+        let registry = CompatibilityProfileRegistry::default()
+            .allow_unpromoted(true)
+            .unwrap();
+        let report = registry
+            .resolve(
+                CompatibilityPolicy::RequireTested,
+                "999.999.999",
+                TerminalProfile::Transparent,
+                InputTransport::Sdk,
+                DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS,
+            )
+            .unwrap();
+        assert!(report.unpromoted, "the admission must carry its label");
+        assert!(
+            !report.tested,
+            "nothing measured this cell, so `tested` must stay false"
+        );
+        assert_eq!(report.claude_version, "999.999.999");
+        assert_eq!(report.os, std::env::consts::OS);
+        assert_eq!(report.arch, std::env::consts::ARCH);
+        assert_eq!(
+            report.transcript_drain_ms,
+            DEFAULT_UNTESTED_TRANSCRIPT_DRAIN_MS
+        );
+    }
+
+    /// The opt-in is an ADMISSION and never a promotion.
+    ///
+    /// `PROMOTED_PROFILES` is what pmux ships and `candidates` is what a mint
+    /// searches; neither may notice the flag. A daemon that widened either
+    /// would be shipping an unmeasured cell to the next reader of the table.
+    #[test]
+    fn the_opt_in_never_widens_the_promoted_set() {
+        let before = CompatibilityProfileRegistry::default();
+        let after = CompatibilityProfileRegistry::default()
+            .allow_unpromoted(true)
+            .unwrap();
+        assert_eq!(after.candidates().count(), before.candidates().count());
+        assert_eq!(after.admissible_here(), before.admissible_here());
+        assert_eq!(after.len(), 0, "the opt-in admits no operator cell");
+        assert_eq!(
+            CompatibilityProfileRegistry::promoted_here(),
+            before.admissible_here(),
+            "the promoted count is a property of PROMOTED_PROFILES, not of a flag"
+        );
+    }
+
+    /// A measurement and the absence of one cannot be claimed together.
+    ///
+    /// Refused in BOTH orders, because the daemon's argv has no order: the
+    /// invariant belongs to the registry, not to the sequence `bin/pmuxd`
+    /// happens to call it in.
+    #[test]
+    fn the_opt_in_and_an_operator_profile_refuse_each_other_in_either_order() {
+        let opted_in = CompatibilityProfileRegistry::default()
+            .allow_unpromoted(true)
+            .unwrap();
+        let mut opted_in = opted_in;
+        let error = opted_in
+            .insert(current_profile(InputTransport::Sdk, 250))
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("--tested-claude-profile")
+                && error.contains("--allow-unpromoted-claude"),
+            "the refusal must name both flags: {error}"
+        );
+
+        let measured = CompatibilityProfileRegistry::try_from_profiles([current_profile(
+            InputTransport::Sdk,
+            250,
+        )])
+        .unwrap();
+        let error = measured.allow_unpromoted(true).unwrap_err().to_string();
+        assert!(
+            error.contains("--allow-unpromoted-claude")
+                && error.contains("--tested-claude-profile"),
+            "the refusal must name both flags: {error}"
+        );
+    }
+
+    /// `allow_unpromoted(false)` is not a second way to say yes.
+    #[test]
+    fn turning_the_opt_in_off_beside_an_operator_profile_is_allowed() {
+        let registry = CompatibilityProfileRegistry::try_from_profiles([current_profile(
+            InputTransport::Sdk,
+            250,
+        )])
+        .unwrap()
+        .allow_unpromoted(false)
+        .unwrap();
+        assert!(!registry.unpromoted_opt_in());
+        assert_eq!(registry.len(), 1);
     }
 
     #[test]
