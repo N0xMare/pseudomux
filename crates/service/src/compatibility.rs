@@ -796,7 +796,10 @@ impl CompatibilityProfileRegistry {
                 "arch": arch,
                 "terminal_profile": terminal_profile,
                 "input_transport": input_transport,
-                "recommendation": "run and review the guarded pmux Phase 0 cell, then admit its structured compatibility profile with --tested-claude-profile",
+                "recommendation": "measure this os/arch with tools/dev/drain_n50.py, \
+                 tools/dev/operator_eval.py and tools/dev/living_pmux_run.py, then promote \
+                 it with tools/dev/promote.py (tools/dev/README.md), or admit the cell you \
+                 measured with --tested-claude-profile",
                 // Every version RANGE that WOULD have matched on this platform,
                 // so a refused caller can see how far off they are without
                 // reading the daemon's argv. Named for what it contains --

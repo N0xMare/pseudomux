@@ -77,8 +77,10 @@ pub struct NativeServiceConfig {
     pub idle_reaper_interval: Duration,
     /// Absolute companion binary used only when Hybrid lifecycle is requested.
     pub hybrid_hook_client: Option<PathBuf>,
-    /// Exact evidence cells admitted by `RequireTested`. This is intentionally
-    /// empty until Phase 0 evidence promotes a version/platform/profile cell.
+    /// Exact evidence cells the OPERATOR admitted for `RequireTested`. Empty
+    /// unless `pmuxd --tested-claude-profile` named one; pmux's own promoted
+    /// cells live in `compatibility::PROMOTED_PROFILES` and are searched after
+    /// these, so an empty registry still admits a promoted host.
     pub tested_claude_profiles: CompatibilityProfileRegistry,
     /// Conservative drain for explicit `AllowUntested` cells that do not match
     /// an admitted profile. It never promotes the cell to tested status.

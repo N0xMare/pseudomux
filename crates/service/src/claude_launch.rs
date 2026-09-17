@@ -944,7 +944,9 @@ fn build_environment(
             variables.insert("TERM".into(), "xterm-256color".into());
         }
         TerminalProfile::RmuxStandard => {
-            bail!("rmux-standard terminal identity has not passed the Phase 0 release gate");
+            bail!(
+                "rmux-standard terminal identity is reserved and is not implemented in protocol v1"
+            );
         }
     }
 

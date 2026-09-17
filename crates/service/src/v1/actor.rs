@@ -166,7 +166,9 @@ pub(crate) fn require_tested_for_minified_cell(
         "claude_version": compatibility.claude_version,
         "os": compatibility.os,
         "arch": compatibility.arch,
-        "recommendation": "run and review the guarded pmux Phase 0 cell, then admit its structured compatibility profile",
+        "recommendation": "measure this os/arch with tools/dev/drain_n50.py, \
+         tools/dev/operator_eval.py and tools/dev/living_pmux_run.py, then promote it with \
+         tools/dev/promote.py (tools/dev/README.md)",
     })))
 }
 
