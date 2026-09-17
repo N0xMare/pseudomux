@@ -392,7 +392,15 @@ class LivingDocs(unittest.TestCase):
             (ROOT / "tools" / "evidence_common" / "portable_paths.py").is_file()
         )
         self.assertTrue((ROOT / "tools" / "promotion").is_dir())
-        self.assertFalse((ROOT / ".dockerignore").is_file())
+        # `.dockerignore` is BACK, and not as a freeze artifact: a Harbor
+        # FrozenPmux build copies this checkout into a linux/amd64 rustc, so
+        # the root `target` and the vendored rmux `target` dirs -- gigabytes
+        # of the wrong triple -- must not enter the build context. Pinned
+        # here so it cannot drift back into the removed linux-docker lane.
+        patterns = (ROOT / ".dockerignore").read_text(encoding="utf-8").split("\n")
+        self.assertNotIn("linux-docker", patterns)
+        for pattern in ("target", "vendor/*/target", ".git", "evidence"):
+            self.assertIn(pattern, patterns)
         portable = (
             ROOT / "tools" / "evidence_common" / "portable_paths.py"
         ).read_text(encoding="utf-8")

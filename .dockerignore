@@ -1,0 +1,10 @@
+# Harbor FrozenPmux linux/amd64 builds copy this checkout into rustc.
+# Native target/ is Darwin or a different triple; never send it to the cell builder.
+target
+.git
+evidence
+
+# The vendored rmux crates carry their own multi-GB target/ dirs. `target`
+# above only matches the root one, so name them too: nothing in the cell
+# builder reads a prebuilt vendor artifact.
+vendor/*/target

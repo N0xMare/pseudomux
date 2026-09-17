@@ -516,13 +516,20 @@ fn graph_mutation_rows(prompt: &str, depth: usize, mutation: u8, text: &str) -> 
     // `SessionCell::Minified`). The 2.1.272 prompt-chain five (`date`,
     // `environment`, `model`, `prompt_snapshot`, `session_context`) were
     // MEASURED on macos/aarch64 and linux/x86_64 minified cells.
-    const ATTACHMENTS: [&str; 12] = [
+    // `instructions`, `mcp_instructions_delta` and `deferred_tools_record`
+    // were MEASURED on 2.1.272 `SessionCell::Full` cells only -- the first
+    // from a cwd with a CLAUDE.md, the other two from a Harbor
+    // Terminal-Bench A/B -- and a Full cell writes them onto the same
+    // prompt chain, so they belong in this set.
+    const ATTACHMENTS: [&str; 14] = [
         "agent_listing_delta",
         "date",
         "deferred_tools_delta",
+        "deferred_tools_record",
         "environment",
         "file",
         "instructions",
+        "mcp_instructions_delta",
         "model",
         "prompt_snapshot",
         "remote_session_change",

@@ -125,6 +125,9 @@ pub async fn run_stateful(
             "could not force-close stateful session"
         );
     }
+    // IsolationTree Drop erases the uuid dir. Copy JSONL out first so a
+    // Harbor wrap can collect it after Force-close.
+    harvest_stateful_transcripts(&isolation_root, &pool_config.parent_dir.join("transcripts"));
     let result = turn_result?;
     if result.outcome != TurnOutcome::Completed {
         return Err(ErrorBody::new(
@@ -201,6 +204,54 @@ pub(crate) fn validate_stateful_cwd(cwd: &str, pool_parent: &Path) -> Result<Pat
         .with_details(json!({"violation": "cwd_inside_pool_parent"})));
     }
     Ok(canonical)
+}
+
+/// Copy each `root/projects/<slug>/*.jsonl` to `{dest}/{slug}__{file}` so
+/// Force-close erase does not take the only copy. Best-effort: a harvest
+/// miss must not change the turn's error.
+fn harvest_stateful_transcripts(isolation_root: &Path, dest: &Path) {
+    let projects = isolation_root.join("projects");
+    let Ok(entries) = fs::read_dir(&projects) else {
+        return;
+    };
+    if let Err(error) = create_private_dir_all(dest) {
+        tracing::warn!(
+            path = %dest.display(),
+            error = %error,
+            "could not create stateful transcript harvest directory"
+        );
+        return;
+    }
+    for entry in entries.flatten() {
+        let project = entry.path();
+        if !project.is_dir() {
+            continue;
+        }
+        let Ok(files) = fs::read_dir(&project) else {
+            continue;
+        };
+        let slug = entry.file_name();
+        for file in files.flatten() {
+            let path = file.path();
+            if !path.is_file()
+                || !path
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("jsonl"))
+            {
+                continue;
+            }
+            let mut name = slug.clone();
+            name.push("__");
+            name.push(file.file_name());
+            if let Err(error) = fs::copy(&path, dest.join(&name)) {
+                tracing::warn!(
+                    from = %path.display(),
+                    error = %error,
+                    "could not harvest stateful transcript"
+                );
+            }
+        }
+    }
 }
 
 struct IsolationTree(PathBuf);
@@ -399,6 +450,27 @@ mod tests {
         );
         assert_eq!(request.auth_policy, AuthPolicy::Subscription);
         assert_eq!(request.lifecycle, LifecycleMode::Transcript);
+    }
+
+    #[test]
+    fn harvest_copies_project_jsonl_out_of_isolation() {
+        let parent = tempfile::tempdir().unwrap();
+        let isolation = parent.path().join("stateful").join("deadbeef").join("root");
+        let project = isolation.join("projects").join("-app-repo");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("session.jsonl"), b"{\"type\":\"assistant\"}\n").unwrap();
+        let dest = parent.path().join("transcripts");
+        harvest_stateful_transcripts(&isolation, &dest);
+        let harvested = dest.join("-app-repo__session.jsonl");
+        assert_eq!(
+            fs::read_to_string(&harvested).unwrap(),
+            "{\"type\":\"assistant\"}\n"
+        );
+        {
+            let _guard = IsolationTree(isolation.parent().unwrap().to_path_buf());
+        }
+        assert!(!isolation.exists());
+        assert!(harvested.exists());
     }
 
     #[test]

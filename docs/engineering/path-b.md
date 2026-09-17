@@ -784,8 +784,8 @@ Rebind is how an instance stops reading the abandoned file and starts reading th
 **The seam already exists.** `trait TranscriptSource` already takes `session_id` as a **per-call**
 parameter on both methods (`crates/service/src/v1/backend.rs:452-459` — `arm_at_eof(&self,
 session_id)` and `poll(&self, session_id, position)`). `FileTranscriptSource` takes it on both
-(`arm_at_eof` forwards to `arm_sync` at `driver_io.rs:3309`.
-`poll` forwards to `poll_sync` at `driver_io.rs:3317`.
+(`arm_at_eof` forwards to `arm_sync` at `driver_io.rs:3336`.
+`poll` forwards to `poll_sync` at `driver_io.rs:3344`.
 The `expected_session_id` field is at `driver_io.rs:2894`.
 A `TranscriptLocator` is bound at construction at `driver_io.rs:2325`). Rebinding is therefore a
 **wiring** change, not a new abstraction.

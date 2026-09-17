@@ -13,7 +13,10 @@
 - Do not delete `start_session_owned_with_retention` or
   `start_session_owned`. Public `start_session` is not the mint.
 - MCP MUST NOT advertise `run_stateful`.
-- Unmeasured JSONL attachment types fail closed.
+- Unmeasured JSONL attachment types fail closed. Measured prompt-chain
+  attachments may omit top-level `cwd`; their `sessionId` is still bound.
+  A semantic `cwd` that appears MUST be the task cwd or a descendant of it.
+  A mismatch names a relation class, never the path.
 
 ## Workspace (product)
 

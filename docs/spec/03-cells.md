@@ -20,7 +20,11 @@ ships them. Not a pool slot.
 - **cwd.** Absolute, existing directory. MUST NOT lie under `--pool-parent`
   (inode walk, including symlink). The task files live here.
 - **Isolation.** `{pool-parent}/stateful/{uuid}/root` is the private config
-  root. Erased after Force-close (including mint failure).
+  root. Erased after Force-close (including mint failure). Transcript
+  `root/projects/<slug>/*.jsonl` is copied to
+  `{pool-parent}/transcripts/<slug>__<file>` first so a wrap can collect
+  it after erase. Harvest is best-effort and does not change the turn
+  result.
 - **Owner.** `SessionOwner::Caller`. Not stealable by `pmux ask`.
 - **Permissions.** Unattended use MUST pass
   `permission_mode=dangerously_skip_permissions`. Otherwise the TUI blocks
@@ -32,7 +36,19 @@ ships them. Not a pool slot.
 
 A Full turn that emits an unmeasured transcript `attachment.type` MUST fail
 closed (`SchemaDrift`) until that name is admitted. Measured on 2.1.272 Full
-cells with a cwd that has CLAUDE.md: `instructions`.
+cells with a cwd that has CLAUDE.md: `instructions`. Measured on 2.1.272 Full
+cells driven through a Harbor Terminal-Bench A/B: `mcp_instructions_delta`
+(openssl-selfsigned-cert, log-summary) and `deferred_tools_record`
+(openssl-selfsigned-cert). The same A/B measured the metadata record
+`file-history-delta`, which lands mid-turn after a file edit and carries no
+`sessionId`.
+
+Prompt-chain attachments carry `sessionId`, and the measured ones may omit a
+top-level `cwd`. When a `cwd` appears on those attachments, or on typed user,
+assistant, and tool-result rows, it MUST be the task cwd or a descendant of
+it (measured Harbor A/B `fix-git`: assistant rows stamped a subdirectory of
+`--cwd /app`). Isolation-root, home, and unrelated paths stay `SchemaDrift`,
+and the refusal names the relation class rather than the path.
 
 ## Drain (product)
 

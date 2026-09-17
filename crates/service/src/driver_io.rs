@@ -2916,8 +2916,13 @@ impl FileTranscriptSource {
             if !Path::new(cwd).is_absolute() {
                 return Err(identity_failure(row, "metadata", "cwd", "not_absolute"));
             }
-            if normalize_candidate_cwd(cwd) != self.expected_cwd {
-                return Err(identity_failure(row, "metadata", "cwd", "mismatch"));
+            if !cwd_matches_task(&self.expected_cwd, cwd) {
+                return Err(identity_cwd_mismatch(
+                    row,
+                    "metadata",
+                    cwd,
+                    &self.expected_cwd,
+                ));
             }
         }
         Ok(())
@@ -2944,18 +2949,40 @@ impl FileTranscriptSource {
             return Err(identity_failure(row, row_kind, "session_id", "mismatch"));
         }
 
-        let cwd = row
-            .raw
-            .get("cwd")
-            .ok_or_else(|| identity_failure(row, row_kind, "cwd", "missing"))?;
+        let cwd_required = !matches!(
+            &row.kind,
+            pseudomux_claude::RowKind::Attachment { attachment_type }
+                if prompt_chain_attachment_omits_top_level_cwd(attachment_type)
+        );
+        self.validate_semantic_cwd(row, row_kind, cwd_required)
+    }
+
+    fn validate_semantic_cwd(
+        &self,
+        row: &pseudomux_claude::ParsedRow,
+        row_kind: &'static str,
+        required: bool,
+    ) -> DriverResult<()> {
+        let Some(cwd) = row.raw.get("cwd") else {
+            return if required {
+                Err(identity_failure(row, row_kind, "cwd", "missing"))
+            } else {
+                Ok(())
+            };
+        };
         let cwd = cwd
             .as_str()
             .ok_or_else(|| identity_failure(row, row_kind, "cwd", "invalid_type"))?;
         if !Path::new(cwd).is_absolute() {
             return Err(identity_failure(row, row_kind, "cwd", "not_absolute"));
         }
-        if normalize_candidate_cwd(cwd) != self.expected_cwd {
-            return Err(identity_failure(row, row_kind, "cwd", "mismatch"));
+        if !cwd_matches_task(&self.expected_cwd, cwd) {
+            return Err(identity_cwd_mismatch(
+                row,
+                row_kind,
+                cwd,
+                &self.expected_cwd,
+            ));
         }
         Ok(())
     }
@@ -4035,6 +4062,43 @@ fn preamble_metadata_disposition(record_type: &str) -> Option<MetadataIdentity> 
     }
 }
 
+/// MEASURED on Claude Code 2.1.272: typed-prompt chain attachments carry
+/// `sessionId` and omit top-level `cwd` (cwd-like data, when present, lives in
+/// payload fields such as `attachment.snapshot.workingDirectory`).
+///
+/// Individually MEASURED to omit it: the prompt-chain five (`session_context`,
+/// `date`, `prompt_snapshot`, `environment`, `model`), plus `instructions` on a
+/// Full cell whose cwd has a CLAUDE.md and `mcp_instructions_delta` on a Full
+/// cell driven through a Harbor Terminal-Bench A/B.
+///
+/// ADMITTED BY CHAIN POSITION, not by their own `cwd` measurement:
+/// `total_tokens_reminder` and `remote_session_change` sit on the same
+/// typed-prompt chain as the five; `deferred_tools_record` sits on the user
+/// tool-turn chain beside `deferred_tools_delta`, which is NOT on this list
+/// because it was measured carrying a `cwd`. This is the permissive
+/// direction, so it is named here rather than left to be inferred from the
+/// list: a name here can no longer fail closed for a missing `cwd`, and only
+/// for that field.
+///
+/// Other identity-bound attachments (for example `skill_listing`) still require
+/// top-level `cwd`. A `cwd` that appears anyway is held to the semantic rule,
+/// and `sessionId` is required on every name here.
+fn prompt_chain_attachment_omits_top_level_cwd(attachment_type: &str) -> bool {
+    matches!(
+        attachment_type,
+        "session_context"
+            | "date"
+            | "prompt_snapshot"
+            | "environment"
+            | "model"
+            | "total_tokens_reminder"
+            | "remote_session_change"
+            | "instructions"
+            | "mcp_instructions_delta"
+            | "deferred_tools_record"
+    )
+}
+
 fn identity_bound_row_kind(kind: &pseudomux_claude::RowKind) -> Option<&'static str> {
     match kind {
         pseudomux_claude::RowKind::TypedUser { .. } => Some("typed_user"),
@@ -4056,13 +4120,72 @@ fn identity_failure(
 ) -> DriverFailure {
     DriverFailure::new(
         ErrorCode::SchemaDrift,
-        "semantic transcript row identity validation failed",
+        format!(
+            "semantic transcript row identity validation failed ({row_kind}.{field}={violation} line={})",
+            row.source.line
+        ),
     )
     .with_details(json!({
         "field": field,
         "violation": violation,
         "row_kind": row_kind,
         "line": diagnostic_u64(row.source.line),
+    }))
+}
+
+/// Classifies a cwd mismatch without putting the path in the public
+/// message. FrozenPmux CLI strips details; Harbor only keeps stderr.
+fn cwd_relation_class(expected: &str, actual: &str) -> &'static str {
+    let actual_n = normalize_candidate_cwd(actual);
+    if actual_n == expected {
+        return "task";
+    }
+    let actual_path = Path::new(&actual_n);
+    let expected_path = Path::new(expected);
+    if actual_path.starts_with(expected_path) {
+        return "descendant";
+    }
+    if expected_path.starts_with(actual_path) {
+        return "ancestor";
+    }
+    // Separator-normalized, not lowercased: these two are substring probes
+    // for a shape, and the classes they name are diagnostic only -- every
+    // one of them, "task" and "descendant" aside, is a refusal.
+    let slashed = actual_n.replace('\\', "/");
+    if slashed.contains("/stateful/") || slashed.contains("/tmp/pmux") {
+        return "isolation";
+    }
+    if slashed.starts_with("/home/") {
+        return "home";
+    }
+    "other"
+}
+
+fn cwd_matches_task(expected: &str, actual: &str) -> bool {
+    matches!(cwd_relation_class(expected, actual), "task" | "descendant")
+}
+
+fn identity_cwd_mismatch(
+    row: &pseudomux_claude::ParsedRow,
+    row_kind: &'static str,
+    actual: &str,
+    expected: &str,
+) -> DriverFailure {
+    let actual_class = cwd_relation_class(expected, actual);
+    DriverFailure::new(
+        ErrorCode::SchemaDrift,
+        format!(
+            "semantic transcript row identity validation failed ({row_kind}.cwd=mismatch line={} actual={actual_class} expected=task)",
+            row.source.line
+        ),
+    )
+    .with_details(json!({
+        "field": "cwd",
+        "violation": "mismatch",
+        "row_kind": row_kind,
+        "line": diagnostic_u64(row.source.line),
+        "actual_class": actual_class,
+        "expected_class": "task",
     }))
 }
 
@@ -4624,6 +4747,13 @@ mod tests {
             "native.rs::diagnose",
             FrameRead::NotAFrame(
                 "`SessionActorHandle::snapshot` -- an actor STATE read, not a terminal capture",
+            ),
+        ),
+        (
+            "stateful.rs::run_stateful",
+            FrameRead::NotAFrame(
+                "`SessionActorHandle::snapshot`, read for the cell's `transcript_drain_ms` \
+                 exactly as `stateless.rs::run_pool_turn` reads it",
             ),
         ),
         (
@@ -7933,7 +8063,66 @@ mod tests {
             });
             let error = poll_fixture(&fixture).await.unwrap_err();
             assert_identity_error(&error, row_kind, "cwd", "mismatch");
+            assert!(
+                error.message.contains("actual=") && error.message.contains("expected=task"),
+                "{}",
+                error.message
+            );
+            assert_eq!(error.details["expected_class"], "task");
+            assert_eq!(error.details["actual_class"], "other");
+            assert!(error.message.contains("actual=other"), "{}", error.message);
             assert_redacted(&error, &[&private_wrong_cwd]);
+        }
+    }
+
+    /// Every class the cwd relation can take, which of them a turn admits,
+    /// and -- because the class is what the refusal SAYS in place of the path
+    /// -- that the admitted pair is exactly `task` and `descendant`.
+    #[test]
+    fn cwd_relation_classes_name_the_shape_and_only_two_are_admitted() {
+        // None of these paths exists here, so `normalize_candidate_cwd`
+        // cannot canonicalize any of them and the classification is the same
+        // on both promoted platforms.
+        for (expected, actual, class) in [
+            ("/pmux-task-cwd", "/pmux-task-cwd", "task"),
+            ("/pmux-task-cwd", "/pmux-task-cwd/nested/work", "descendant"),
+            ("/pmux-task-cwd/nested", "/pmux-task-cwd", "ancestor"),
+            (
+                "/pmux-task-cwd",
+                "/pmux-pool/stateful/a-uuid/root",
+                "isolation",
+            ),
+            (
+                "/pmux-task-cwd",
+                "/tmp/pmux-pool-parent/slot-0",
+                "isolation",
+            ),
+            ("/pmux-task-cwd", "/home/operator", "home"),
+            ("/pmux-task-cwd", "/var/somewhere-else", "other"),
+        ] {
+            assert_eq!(cwd_relation_class(expected, actual), class, "{actual}");
+            assert_eq!(
+                cwd_matches_task(expected, actual),
+                matches!(class, "task" | "descendant"),
+                "{actual}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn semantic_cwd_may_be_a_descendant_of_the_task_cwd() {
+        for row_kind in ["typed_user", "assistant", "user_tool_results"] {
+            let fixture = transcript_fixture(|session_id, cwd| {
+                let nested = cwd.join("nested-work");
+                std::fs::create_dir(&nested).unwrap();
+                vec![semantic_row(
+                    row_kind,
+                    Some(json!(session_id)),
+                    Some(json!(nested.canonicalize().unwrap())),
+                )]
+            });
+            let batch = poll_fixture(&fixture).await.unwrap();
+            assert_eq!(batch.rows.len(), 1, "{row_kind}");
         }
     }
 
@@ -7976,6 +8165,54 @@ mod tests {
         let error = poll_fixture(&relative).await.unwrap_err();
         assert_identity_error(&error, "assistant", "cwd", "not_absolute");
         assert_redacted(&error, &[private_relative_cwd]);
+    }
+
+    #[tokio::test]
+    async fn measured_prompt_chain_attachments_may_omit_top_level_cwd() {
+        // Every name `prompt_chain_attachment_omits_top_level_cwd` admits,
+        // including the three it admits by chain position rather than by
+        // their own measurement -- the code is permissive for all ten, so
+        // the test says all ten.
+        for attachment_type in [
+            "session_context",
+            "date",
+            "prompt_snapshot",
+            "environment",
+            "model",
+            "total_tokens_reminder",
+            "remote_session_change",
+            "instructions",
+            "mcp_instructions_delta",
+            "deferred_tools_record",
+        ] {
+            let fixture = transcript_fixture(|session_id, _| {
+                vec![json!({
+                    "type": "attachment",
+                    "uuid": "prompt-chain",
+                    "parentUuid": "typed-user-row",
+                    "sessionId": session_id,
+                    "attachment": {"type": attachment_type},
+                })]
+            });
+            let batch = poll_fixture(&fixture)
+                .await
+                .unwrap_or_else(|error| panic!("{attachment_type}: {error:?}"));
+            assert_eq!(batch.rows.len(), 1, "{attachment_type}");
+        }
+    }
+
+    #[tokio::test]
+    async fn measured_prompt_chain_attachments_still_require_session_identity() {
+        let missing = transcript_fixture(|_, _| {
+            vec![json!({
+                "type": "attachment",
+                "uuid": "mcp",
+                "parentUuid": "ins",
+                "attachment": {"type": "mcp_instructions_delta"},
+            })]
+        });
+        let error = poll_fixture(&missing).await.unwrap_err();
+        assert_identity_error(&error, "attachment", "session_id", "missing");
     }
 
     #[tokio::test]
@@ -8613,9 +8850,19 @@ mod tests {
 
     fn assert_identity_error(error: &DriverFailure, row_kind: &str, field: &str, violation: &str) {
         assert_eq!(error.code, ErrorCode::SchemaDrift);
-        assert_eq!(
-            error.message,
-            "semantic transcript row identity validation failed"
+        assert!(
+            error
+                .message
+                .starts_with("semantic transcript row identity validation failed"),
+            "{}",
+            error.message
+        );
+        assert!(
+            error
+                .message
+                .contains(&format!("{row_kind}.{field}={violation}")),
+            "{}",
+            error.message
         );
         assert_eq!(error.details["row_kind"], row_kind);
         assert_eq!(error.details["field"], field);

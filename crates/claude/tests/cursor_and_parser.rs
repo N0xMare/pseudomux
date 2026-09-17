@@ -653,6 +653,8 @@ fn current_session_control_rows_are_typed_metadata() {
         "ai-title",
         "atis-latch",
         "cost-state",
+        "file-history-snapshot",
+        "file-history-delta",
     ] {
         let row = line(format!(r#"{{"type":"{record_type}","sessionId":"s"}}"#).as_bytes());
         let parsed = parser.parse(&row).unwrap();
@@ -772,6 +774,28 @@ fn measured_2_1_272_prompt_attachments_are_typed_by_name() {
         } if attachment_type == "instructions"
     ));
     assert_eq!(parsed.raw["attachment"]["files"][0]["type"], "UserCLAUDEMd");
+
+    let mcp_instructions = line(
+        br#"{"parentUuid":"ins","sessionId":"s","type":"attachment","uuid":"mcp","attachment":{"type":"mcp_instructions_delta"}}"#,
+    );
+    let parsed = parser.parse(&mcp_instructions).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "mcp_instructions_delta"
+    ));
+
+    let deferred_tools_record = line(
+        br#"{"parentUuid":"u","sessionId":"s","type":"attachment","uuid":"dtr","attachment":{"type":"deferred_tools_record"}}"#,
+    );
+    let parsed = parser.parse(&deferred_tools_record).unwrap();
+    assert!(matches!(
+        parsed.kind,
+        RowKind::Attachment {
+            ref attachment_type
+        } if attachment_type == "deferred_tools_record"
+    ));
 
     // `date` and `date_change` are distinct names; both remain admitted.
     let date_change = line(

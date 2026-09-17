@@ -664,6 +664,11 @@ fn is_metadata_record(record_type: &str) -> bool {
             | "permission-mode"
             | "progress"
             | "file-history-snapshot"
+            // MEASURED on Claude Code 2.1.272 linux/amd64, SessionCell::Full
+            // (`pmux run` Harbor A/B openssl-selfsigned-cert). Lands mid-turn
+            // after a file edit, with `backup` / `trackingPath` and no
+            // `sessionId`. Admit the type name only; do not read the payload.
+            | "file-history-delta"
             | "queue-operation"
             | "summary"
             | "last-prompt"
@@ -695,6 +700,11 @@ fn is_supported_attachment_type(attachment_type: &str) -> bool {
             | "compact_file_reference"
             | "date_change"
             | "deferred_tools_delta"
+            // MEASURED on Claude Code 2.1.272 linux/amd64, SessionCell::Full
+            // (`pmux run` Harbor A/B openssl-selfsigned-cert). Lands after a
+            // user tool turn on the same chain as `deferred_tools_delta`.
+            // Admit the type name only; do not read the payload.
+            | "deferred_tools_record"
             | "edited_text_file"
             | "file"
             | "invoked_skills"
@@ -735,6 +745,12 @@ fn is_supported_attachment_type(attachment_type: &str) -> bool {
             // tests passed and Read/Bash/Edit did not. Admit the type name
             // only; do not read attachment.files.
             | "instructions"
+            // MEASURED on Claude Code 2.1.272 linux/amd64, SessionCell::Full
+            // (`pmux run` Harbor A/B: openssl-selfsigned-cert, log-summary).
+            // Write-only plumbing in an empty cwd never produced it, which is
+            // why those trials passed and TB tasks that load MCP instructions
+            // did not. Admit the type name only; do not read the payload.
+            | "mcp_instructions_delta"
     )
 }
 
