@@ -222,7 +222,7 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 | --- | --- | --- | --- |
 | 2.1.258 through 2.1.272 | macos / aarch64 | transparent / sdk | 250 |
 | 2.1.227 through 2.1.272 | linux / x86_64 | transparent / sdk | 250 |
-| 2.1.272 only | linux / aarch64 | transparent / sdk | 250 |
+| 2.1.272 only | linux / aarch64 | transparent / sdk | 500 |
 
 A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.
@@ -232,7 +232,10 @@ Darwin host, which is that arch's own silicon and not a translation; the lane
 is [`tools/dev/linux-arm64/`](tools/dev/linux-arm64/README.md) and its README
 says what that does and does not establish. It is one version wide because a
 pooled bound needs two versions measured and a promoted range only widens
-forward from a floor that has its own receipt.
+forward from a floor that has its own receipt. Its drain is 500 ms rather than
+250 because every minified turn at 2.1.272 on that cell emits a post-answer
+`attachment` row -- max 165 ms -- which the other two cells' corpora do not
+contain.
 
 ## The command surface
 

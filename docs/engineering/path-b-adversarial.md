@@ -938,7 +938,7 @@ docs/2.1.226-acceptance.md      `pseudomux_service=warn`                  then-l
 docs/2.1.226-compatibility.md   `Unknown --effort value`                :1232 -> claude_launch.rs:1342
 docs/2.1.226-compatibility.md   `MINIFIED_CELL_FLAGS` appended            :841 -> claude_launch.rs:835
 docs/path-b.md                  the `TranscriptLocator` construction      :934 -> driver_io.rs:2325
-docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:587
+docs/version-drift.md           `timestamp_is_retrospective`              :332 -> measure_transcript_drain.py:603
 ```
 
 **Graded citations went from 39 to 53.** The 14 that joined are the ones the guard's name had always

@@ -74,9 +74,9 @@
       "p90_ms": 70,
       "p95_ms": 87,
       "p99_ms": 165,
-      "reachable_on_a_minified_cell": false,
+      "reachable_on_a_minified_cell": true,
       "timestamp_is_retrospective": false,
-      "why": "Post-answer attachment rows in the linux host corpus are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days). A minified 2.1.232 Path B cell on this host emits type=attachment (total_tokens_reminder) only BEFORE the assistant, on mint and again after /clear. Sizing the drain to the interactive tail would be sizing it against hooks and files the minified cell does not have"
+      "why": "RE-OPENED 2026-09-17, and the row this table's own model_refusal_fallback entry warns about. It was classified unreachable on a 2026-08-14 linux/x86_64 HOST corpus, where post-answer attachment rows are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days), against the premise that a minified 2.1.232 Path B cell emits type=attachment (total_tokens_reminder) only BEFORE the assistant. That premise does not hold at 2.1.272. The linux/aarch64 drain_n50 corpus -- a minified Path B corpus by construction, 50 campaign turns at 2.1.272 -- has a post-answer attachment row in 50 of 50 turns, every one of them between the final assistant row and system/turn_duration, consecutive gap median 25 ms, p95 87 ms, max 165 ms. Zero in the 50 turns at 2.1.258 on the same cell, so the kind is new to the minified cell at 2.1.272 rather than something the older classification merely missed. A minified cell demonstrably produces it, so it sizes the drain. Consequence, stated rather than hidden: over an operator's own interactive corpus this bucket now carries that harness tail too, and the recommendation it produces will be large. That is the fail-closed direction, and the way to a narrow bound is a minified corpus (drain_n50.py --corpus-out), not a classification that contradicts its own measurement. Measured in evidence/pooled-transcript-drain-linux-aarch64.json"
      },
      "system/turn_duration": {
       "count": 50,
@@ -92,25 +92,17 @@
      }
     },
     "reachable_on_a_minified_cell": {
-     "count": 50,
-     "max_ms": 76,
-     "median_ms": 10,
-     "min_ms": 3,
-     "p90_ms": 19,
-     "p95_ms": 44,
-     "p99_ms": 76
-    },
-    "unreachable_on_a_minified_cell": {
-     "count": 50,
+     "count": 100,
      "max_ms": 165,
-     "median_ms": 25,
-     "min_ms": 5,
-     "p90_ms": 70,
-     "p95_ms": 87,
-     "p99_ms": 165
-    }
+     "median_ms": 19,
+     "min_ms": 3,
+     "p90_ms": 61,
+     "p95_ms": 72,
+     "p99_ms": 89
+    },
+    "unreachable_on_a_minified_cell": null
    },
-   "recommended_transcript_drain_ms": 250,
+   "recommended_transcript_drain_ms": 500,
    "turns": 50
   }
  },
@@ -139,7 +131,7 @@
  "partition_balances": true,
  "per_version_recommendations_not_to_be_shipped": {
   "2.1.258": 250,
-  "2.1.272": 250
+  "2.1.272": 500
  },
  "post_answer_arrivals": {
   "all": {
@@ -160,9 +152,9 @@
     "p90_ms": 70,
     "p95_ms": 87,
     "p99_ms": 165,
-    "reachable_on_a_minified_cell": false,
+    "reachable_on_a_minified_cell": true,
     "timestamp_is_retrospective": false,
-    "why": "Post-answer attachment rows in the linux host corpus are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days). A minified 2.1.232 Path B cell on this host emits type=attachment (total_tokens_reminder) only BEFORE the assistant, on mint and again after /clear. Sizing the drain to the interactive tail would be sizing it against hooks and files the minified cell does not have"
+    "why": "RE-OPENED 2026-09-17, and the row this table's own model_refusal_fallback entry warns about. It was classified unreachable on a 2026-08-14 linux/x86_64 HOST corpus, where post-answer attachment rows are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days), against the premise that a minified 2.1.232 Path B cell emits type=attachment (total_tokens_reminder) only BEFORE the assistant. That premise does not hold at 2.1.272. The linux/aarch64 drain_n50 corpus -- a minified Path B corpus by construction, 50 campaign turns at 2.1.272 -- has a post-answer attachment row in 50 of 50 turns, every one of them between the final assistant row and system/turn_duration, consecutive gap median 25 ms, p95 87 ms, max 165 ms. Zero in the 50 turns at 2.1.258 on the same cell, so the kind is new to the minified cell at 2.1.272 rather than something the older classification merely missed. A minified cell demonstrably produces it, so it sizes the drain. Consequence, stated rather than hidden: over an operator's own interactive corpus this bucket now carries that harness tail too, and the recommendation it produces will be large. That is the fail-closed direction, and the way to a narrow bound is a minified corpus (drain_n50.py --corpus-out), not a classification that contradicts its own measurement. Measured in evidence/pooled-transcript-drain-linux-aarch64.json"
    },
    "system/turn_duration": {
     "count": 100,
@@ -178,23 +170,15 @@
    }
   },
   "reachable_on_a_minified_cell": {
-   "count": 100,
-   "max_ms": 76,
-   "median_ms": 15,
-   "min_ms": 3,
-   "p90_ms": 31,
-   "p95_ms": 35,
-   "p99_ms": 72
-  },
-  "unreachable_on_a_minified_cell": {
-   "count": 50,
+   "count": 150,
    "max_ms": 165,
-   "median_ms": 25,
-   "min_ms": 5,
-   "p90_ms": 70,
-   "p95_ms": 87,
-   "p99_ms": 165
-  }
+   "median_ms": 18,
+   "min_ms": 3,
+   "p90_ms": 40,
+   "p95_ms": 70,
+   "p99_ms": 89
+  },
+  "unreachable_on_a_minified_cell": null
  },
  "recommendation_basis": {
   "margin": 2.0,
@@ -205,7 +189,7 @@
   "rounded_up_to_ms": 250,
   "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"
  },
- "recommended_transcript_drain_ms": 250,
+ "recommended_transcript_drain_ms": 500,
  "repromotion_triggers_this_tool_detects": {
   "reachable_arrival_above_the_bound": "exit 4 when --bound-ms is given and a reachable arrival exceeds it; exit 5 when there was nothing to check",
   "unclassified_transcript_row_kind": "exit 2 on a post-answer row kind absent from ROW_KINDS, exit 3 on a `retrospective` kind stamped after the terminal candidate"

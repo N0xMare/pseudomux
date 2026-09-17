@@ -55,8 +55,9 @@ and the refusal names the relation class rather than the path.
 After the final assistant JSONL row, pmux waits until the transcript is
 quiet. Marked turns (`system/turn_duration` already landed) wait
 `TURN_DURATION_DRAIN_FLOOR_MS` (250 ms). Unmarked turns wait the promoted
-`transcript_drain_ms` (250 ms on all three shipped cells). Estimator math and
-campaign receipts are engineering, not this contract.
+`transcript_drain_ms` (250 ms on macos/aarch64 and linux/x86_64, 500 ms on
+linux/aarch64). Estimator math and campaign receipts are engineering, not this
+contract.
 
 ## `/clear`
 

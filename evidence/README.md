@@ -873,7 +873,7 @@ billed `input_tokens: 498` with the Remote Control bridge auto-started
 
 ## Linux 2026-09-17 first aarch64 cell (`aarch64`)
 
-The first promoted `linux`/`aarch64` cell, `2.1.272..=2.1.272`, drain 250 ms.
+The first promoted `linux`/`aarch64` cell, `2.1.272..=2.1.272`, drain 500 ms.
 Every receipt here was taken in a **native** linux/arm64 container on a Darwin
 host -- `tools/dev/linux-arm64/`, whose README says what that does and does not
 establish. Nothing was emulated: the Docker daemon is a native `arm64` daemon,
@@ -882,10 +882,10 @@ refuses any other daemon arch.
 
 | File | What it is |
 | --- | --- |
-| `pooled-transcript-drain-linux-aarch64.json` | The bound the cell ships. POOLED over 2.1.258 and 2.1.272, 100 reachable arrivals in 102 transcripts, max 76 ms, x2.0 rounded up to the 250 ms step = 250 ms. Every turn carried its own `turn_duration` marker, so the full drain binds on 0 of 100 cli turns. Both per-version fits are also 250 ms because 76x2.0 = 152 sits inside the rounding quantum -- the saturation case `every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit` admits, not a one-version fit. |
-| `promoted-profile-2.1.272-linux-aarch64.json` | The floor's own single-version receipt, read for identity by `every_promoted_drain_is_the_one_its_receipt_recommends`. 50 arrivals, max 76 ms, recommends 250 ms. |
-| `promotion-2.1.272-linux-aarch64.json` | The promotion. Verdict promotable, floor 2.1.272, tested through 2.1.272, all nine checks passed; 5 minified-cell turns through `pmux ask` at sonnet-5 low and high, 5 reachable arrivals max 16 ms against the pooled bound. It GENERATED the `range_provenance` the shipped cell carries. |
-| `linux-drain-n50-2.1.272-aarch64.json` | The n=50 campaign at 2.1.272 behind the pool. 50/50 answered, 50 arrivals, max 76 ms, median 10 ms. |
+| `pooled-transcript-drain-linux-aarch64.json` | The bound the cell ships. POOLED over 2.1.258 and 2.1.272, 150 reachable arrivals in 102 transcripts, max 165 ms, x2.0 rounded up to the 250 ms step = 500 ms. Every turn carried its own `turn_duration` marker, so the full drain binds on 0 of 100 cli turns. The maximum is a post-answer `attachment` row: 50 of the 50 turns at 2.1.272 emit one between the answer and the `turn_duration` marker, none of the 50 at 2.1.258 do. The per-version fits are 250 ms (2.1.258) and 500 ms (2.1.272), published to be read and not shipped. |
+| `promoted-profile-2.1.272-linux-aarch64.json` | The floor's own single-version receipt, read for identity by `every_promoted_drain_is_the_one_its_receipt_recommends`. 100 arrivals, max 165 ms, recommends 500 ms. |
+| `promotion-2.1.272-linux-aarch64.json` | The promotion. Verdict promotable, floor 2.1.272, tested through 2.1.272, all nine checks passed; 5 minified-cell turns through `pmux ask` at sonnet-5 low and high, 10 reachable arrivals max 86 ms against the pooled 500 ms bound. It GENERATED the `range_provenance` the shipped cell carries. Re-taken 2026-09-17 after the `attachment` row kind was re-classified reachable and the bound moved from 250 ms to 500 ms. |
+| `linux-drain-n50-2.1.272-aarch64.json` | The n=50 campaign at 2.1.272 behind the pool. 50/50 answered, 50 arrivals, max 76 ms, median 10 ms. Those numbers are the campaign's own, taken when `attachment` was still classified unreachable; the pooled and floor receipts above re-measure the same kept corpus under the corrected classification. |
 | `linux-drain-n50-2.1.258-aarch64.json` | The n=50 campaign at 2.1.258. 50/50 answered, 50 arrivals, max 38 ms, median 18 ms. It exists because a pooled bound needs a second version: a pool naming one version is refused as a per-version fit. |
 | `linux-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` pin confirmation on this cell: grades exact at sonnet-5 low and high, Messages sticky on the same cell with a cache hit. Does not edit `PROMOTED_PROFILES`. |
 | `linux-living-pmux-run-2.1.272-aarch64.json` | `GREEN` Full-cell `pmux run` ladder, first attempt: 3/3 first mints, tools (read/bash/edit/CLAUDE.md), skip-permissions, accounts, concurrency, the failure matrix and the coding task, zero isolation leaks. Gates nothing. |

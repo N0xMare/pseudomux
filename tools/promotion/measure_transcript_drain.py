@@ -199,15 +199,31 @@ ROW_KINDS: dict[tuple[str, str | None], dict[str, Any]] = {
     # Reachable is whether a SessionCell::Minified Path B cell can emit the kind
     # AFTER the turn's final assistant row, not whether the kind exists at all.
     ("attachment", None): {
-        "reachable": False,
+        "reachable": True,
         "why": (
-            "Post-answer attachment rows in the linux host corpus are an "
-            "interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 "
-            "326 s, max days). A minified 2.1.232 Path B cell on this host "
-            "emits type=attachment (total_tokens_reminder) only BEFORE the "
-            "assistant, on mint and again after /clear. Sizing the drain to "
-            "the interactive tail would be sizing it against hooks and files "
-            "the minified cell does not have"
+            "RE-OPENED 2026-09-17, and the row this table's own "
+            "model_refusal_fallback entry warns about. It was classified "
+            "unreachable on a 2026-08-14 linux/x86_64 HOST corpus, where "
+            "post-answer attachment rows are an interactive harness "
+            "(entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days), "
+            "against the premise that a minified 2.1.232 Path B cell emits "
+            "type=attachment (total_tokens_reminder) only BEFORE the "
+            "assistant. That premise does not hold at 2.1.272. The "
+            "linux/aarch64 drain_n50 corpus -- a minified Path B corpus by "
+            "construction, 50 campaign turns at 2.1.272 -- has a post-answer "
+            "attachment row in 50 of 50 turns, every one of them between the "
+            "final assistant row and system/turn_duration, consecutive gap "
+            "median 25 ms, p95 87 ms, max 165 ms. Zero in the 50 turns at "
+            "2.1.258 on the same cell, so the kind is new to the minified "
+            "cell at 2.1.272 rather than something the older classification "
+            "merely missed. A minified cell demonstrably produces it, so it "
+            "sizes the drain. Consequence, stated rather than hidden: over an "
+            "operator's own interactive corpus this bucket now carries that "
+            "harness tail too, and the recommendation it produces will be "
+            "large. That is the fail-closed direction, and the way to a "
+            "narrow bound is a minified corpus (drain_n50.py --corpus-out), "
+            "not a classification that contradicts its own measurement. "
+            "Measured in evidence/pooled-transcript-drain-linux-aarch64.json"
         ),
     },
     ("file-history-delta", None): {

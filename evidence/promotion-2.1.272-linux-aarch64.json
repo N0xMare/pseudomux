@@ -29,7 +29,7 @@
      "--system-prompt-file": "accepted"
     }
    },
-   "elapsed_ms": 958,
+   "elapsed_ms": 929,
    "exercises": [
     "launch_bundle_rejected"
    ],
@@ -62,7 +62,7 @@
     ],
     "finding": "exercised"
    },
-   "elapsed_ms": 865,
+   "elapsed_ms": 1536,
    "exercises": [
     "launch_bundle_rejected",
     "clear_screen_or_preamble_mismatch"
@@ -97,7 +97,7 @@
       40
      ],
      [
-      310
+      317
      ]
     ],
     "pids_before": [
@@ -112,7 +112,7 @@
     "suite_effort": "low",
     "turns": 5
    },
-   "elapsed_ms": 18486,
+   "elapsed_ms": 19128,
    "exercises": [],
    "id": "grades_answer",
    "outcome": "passed"
@@ -127,7 +127,7 @@
     "pids_after_nonce_turn": [
      40
     ],
-    "prior_nonce": "A62W",
+    "prior_nonce": "U66B",
     "probe_answered": "NONE"
    },
    "elapsed_ms": 0,
@@ -156,7 +156,7 @@
     "leaked": 0,
     "recycles_survived": 5
    },
-   "elapsed_ms": 221,
+   "elapsed_ms": 215,
    "exercises": [
     "clear_screen_or_preamble_mismatch"
    ],
@@ -169,11 +169,11 @@
     "argv": [
      "/src/tools/promotion/measure_transcript_drain.py",
      "--corpus",
-     "/tmp/qv4-turn-latency-85af47dc/pool-evidence",
+     "/tmp/qv4-turn-latency-2_nxtd4q/pool-evidence",
      "--version",
      "2.1.272",
      "--bound-ms",
-     "250",
+     "500",
      "--json"
     ],
     "files_at_this_version": 7,
@@ -186,20 +186,20 @@
     "per_version_recommendations_not_to_be_shipped": {
      "2.1.272": 250
     },
-    "pooled_bound_ms": 250,
+    "pooled_bound_ms": 500,
     "pooled_bound_receipt": "evidence/pooled-transcript-drain-linux-aarch64.json",
     "reachable_post_answer_arrivals": {
-     "count": 5,
-     "max_ms": 16,
-     "median_ms": 9,
+     "count": 10,
+     "max_ms": 86,
+     "median_ms": 21,
      "min_ms": 4,
-     "p90_ms": 16,
-     "p95_ms": 16,
-     "p99_ms": 16
+     "p90_ms": 63,
+     "p95_ms": 86,
+     "p99_ms": 86
     },
     "transcript_turns_in_the_mirror": 5
    },
-   "elapsed_ms": 584,
+   "elapsed_ms": 509,
    "exercises": [
     "reachable_arrival_above_the_bound",
     "unclassified_transcript_row_kind"
@@ -213,7 +213,7 @@
     "pool_parent_epoch_trees": 0,
     "surviving_processes": 0
    },
-   "elapsed_ms": 3,
+   "elapsed_ms": 4,
    "exercises": [],
    "id": "nothing_survived",
    "outcome": "passed"
@@ -228,7 +228,7 @@
    "input_transport": "sdk",
    "os": "linux",
    "terminal_profile": "transparent",
-   "transcript_drain_ms": 250
+   "transcript_drain_ms": 500
   },
   "efforts": [
    "low",
@@ -238,16 +238,16 @@
   "model": "claude-sonnet-5",
   "pre_existing_pids_of_this_executable": []
  },
- "elapsed_ms": 21176,
+ "elapsed_ms": 22377,
  "failed_check": null,
  "host": {
   "arch": "aarch64",
   "cpu_count": 10,
-  "load_average_1m": 0.4814453125,
+  "load_average_1m": 0.50390625,
   "os": "linux",
   "release": "7.0.12-linuxkit"
  },
- "measured_at": "2026-09-17T19:37:01Z",
+ "measured_at": "2026-09-17T20:50:52Z",
  "profile": {
   "arch": "aarch64",
   "claude_version": "2.1.272",
@@ -255,9 +255,9 @@
   "input_transport": "sdk",
   "os": "linux",
   "terminal_profile": "transparent",
-  "transcript_drain_ms": 250
+  "transcript_drain_ms": 500
  },
- "range_provenance": "floor 2.1.272: first promoted cell on linux/aarch64; the version with a drain receipt on this OS. Not macos Gate B, not another OS's floor. Tested through 2.1.272: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 5 reachable post-answer arrival(s) at this version, max 16 ms against the pooled 250 ms bound. NOT measured at 2.1.272: anything outside a minified cell on linux/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
+ "range_provenance": "floor 2.1.272: first promoted cell on linux/aarch64; the version with a drain receipt on this OS. Not macos Gate B, not another OS's floor. Tested through 2.1.272: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 10 reachable post-answer arrival(s) at this version, max 86 ms against the pooled 500 ms bound. NOT measured at 2.1.272: anything outside a minified cell on linux/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
  "real_claude_turns": {
   "count": 5,
   "reserved_ledger_ordinals": 0,
@@ -275,12 +275,12 @@
   {
    "answered": true,
    "claude_version": "2.1.272",
-   "client_wall_ms": 2781.5,
+   "client_wall_ms": 3173.0,
    "effort": "low",
-   "expected": "A62W-81",
+   "expected": "U66B-61",
    "grade": "01-arithmetic-nonce",
    "model": "claude-sonnet-5",
-   "nonce": "A62W",
+   "nonce": "U66B",
    "pids_after": [
     40
    ],
@@ -288,18 +288,18 @@
    "stop_reason": {
     "kind": "end_turn"
    },
-   "text": "A62W-81",
+   "text": "U66B-61",
    "usage": {
     "combined": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 727,
+     "input_tokens": 733,
      "output_tokens": 7
     },
     "main": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 727,
+     "input_tokens": 733,
      "output_tokens": 7
     },
     "sidechain": {
@@ -313,12 +313,12 @@
   {
    "answered": true,
    "claude_version": "2.1.272",
-   "client_wall_ms": 3090.4,
+   "client_wall_ms": 3291.7,
    "effort": "low",
    "expected": "NONE",
    "grade": "02-context-is-empty-after-clear",
    "model": "claude-sonnet-5",
-   "nonce": "5WTF",
+   "nonce": "CS5X",
    "pids_after": [
     40
    ],
@@ -331,13 +331,13 @@
     "combined": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 874,
+     "input_tokens": 886,
      "output_tokens": 5
     },
     "main": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 874,
+     "input_tokens": 886,
      "output_tokens": 5
     },
     "sidechain": {
@@ -351,12 +351,12 @@
   {
    "answered": true,
    "claude_version": "2.1.272",
-   "client_wall_ms": 3813.1,
+   "client_wall_ms": 3159.1,
    "effort": "low",
-   "expected": "3D4T caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+   "expected": "4K8F caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
    "grade": "03-unicode-echo",
    "model": "claude-sonnet-5",
-   "nonce": "3D4T",
+   "nonce": "4K8F",
    "pids_after": [
     40
    ],
@@ -364,18 +364,18 @@
    "stop_reason": {
     "kind": "end_turn"
    },
-   "text": "3D4T caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+   "text": "4K8F caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
    "usage": {
     "combined": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 841,
+     "input_tokens": 853,
      "output_tokens": 16
     },
     "main": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 841,
+     "input_tokens": 853,
      "output_tokens": 16
     },
     "sidechain": {
@@ -389,12 +389,12 @@
   {
    "answered": true,
    "claude_version": "2.1.272",
-   "client_wall_ms": 3217.4,
+   "client_wall_ms": 3662.9,
    "effort": "low",
-   "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 COV0",
+   "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 2L65",
    "grade": "04-ordered-long-reply",
    "model": "claude-sonnet-5",
-   "nonce": "COV0",
+   "nonce": "2L65",
    "pids_after": [
     40
    ],
@@ -402,18 +402,18 @@
    "stop_reason": {
     "kind": "end_turn"
    },
-   "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 COV0",
+   "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 2L65",
    "usage": {
     "combined": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 862,
+     "input_tokens": 870,
      "output_tokens": 45
     },
     "main": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 862,
+     "input_tokens": 870,
      "output_tokens": 45
     },
     "sidechain": {
@@ -427,31 +427,31 @@
   {
    "answered": true,
    "claude_version": "2.1.272",
-   "client_wall_ms": 5340.4,
+   "client_wall_ms": 5552.5,
    "effort": "high",
-   "expected": "G6QT-87",
+   "expected": "4B4M-80",
    "grade": "01-arithmetic-nonce",
    "model": "claude-sonnet-5",
-   "nonce": "G6QT",
+   "nonce": "4B4M",
    "pids_after": [
-    310
+    317
    ],
    "reported_model": "claude-sonnet-5",
    "stop_reason": {
     "kind": "end_turn"
    },
-   "text": "G6QT-87",
+   "text": "4B4M-80",
    "usage": {
     "combined": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 727,
+     "input_tokens": 736,
      "output_tokens": 8
     },
     "main": {
      "cache_creation_input_tokens": 0,
      "cache_read_input_tokens": 0,
-     "input_tokens": 727,
+     "input_tokens": 736,
      "output_tokens": 8
     },
     "sidechain": {

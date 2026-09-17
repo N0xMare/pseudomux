@@ -4,7 +4,7 @@
 #   tools/dev/linux-arm64/run.sh build
 #   tools/dev/linux-arm64/run.sh versions
 #   tools/dev/linux-arm64/run.sh drain 2.1.272
-#   tools/dev/linux-arm64/run.sh pool 250 2.1.258 2.1.272
+#   tools/dev/linux-arm64/run.sh pool 500 2.1.258 2.1.272
 #   tools/dev/linux-arm64/run.sh floor-receipt 2.1.272
 #   tools/dev/linux-arm64/run.sh operator-eval 2.1.272
 #   tools/dev/linux-arm64/run.sh living-run 2.1.272

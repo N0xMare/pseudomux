@@ -1147,6 +1147,18 @@ FLOOR_PROVENANCE = {
         "pooled with 2.1.232/2.1.233 in evidence/pooled-transcript-drain-linux-x86_64.json; "
         "below it linux minified cells were not measured as a promotion floor."
     ),
+    # Written down, word for word, from the sentence the FIRST promotion of
+    # this cell GENERATED through FIRST_FLOOR_PROVENANCE below. Once a cell is
+    # in PROMOTED_PROFILES it is no longer a first promotion, so a re-promotion
+    # of the same floor -- which is what a corrected drain bound forces -- has
+    # no generated sentence to fall back to and is refused without this entry.
+    # Copying the generated sentence rather than writing a new one is the whole
+    # point: the range's first half must keep saying what the run that measured
+    # it said.
+    ("linux", "aarch64", "2.1.272"): (
+        "floor 2.1.272: first promoted cell on linux/aarch64; the version with a "
+        "drain receipt on this OS. Not macos Gate B, not another OS's floor."
+    ),
 }
 
 

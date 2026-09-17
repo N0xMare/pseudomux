@@ -52,9 +52,9 @@ personal Mac it was free either way.
 ## 2. Mapping to pseudomux
 
 **How pmux decides the cell.** `os`/`arch` come from `std::env::consts::OS` / `ARCH`
-(`crates/service/src/compatibility.rs:755-756,759-760,921-922`) — **compile-time
+(`crates/service/src/compatibility.rs:768-769` and `:812-813`) — **compile-time
 constants of the daemon binary**, which the repo already identified as a hazard in
-defect 74 (`docs/defect-log.md:5080-5115`): a macOS-built daemon supervising a Linux
+defect 74 (`docs/engineering/defect-log.md:5080-5115`): a macOS-built daemon supervising a Linux
 child "reports `os: "macos"` ... `tested: true` is published, and a
 `transcript_drain_ms` measured [on] macos/aarch64 is applied to a cell nobody has
 measured."
@@ -66,9 +66,9 @@ without it, and a first promotion on a new OS/arch needs `--floor` — "Do not p
 another OS's floor" (`tools/dev/promote.py:8-9`, `tools/dev/README.md`).
 
 **SUPERSEDED, 2026-09-17.** That receipt now exists and `PROMOTED_PROFILES` ships a
-third cell, `2.1.272 / linux / aarch64 / transparent / sdk`, drain 250 ms. It was NOT
+third cell, `2.1.272 / linux / aarch64 / transparent / sdk`, drain 500 ms. It was NOT
 measured in a Tart guest: it was measured in a native linux/arm64 **container**
-(`tools/dev/linux-arm64/`), pooled over 2.1.258 and 2.1.272, 100 arrivals, max 76 ms.
+(`tools/dev/linux-arm64/`), pooled over 2.1.258 and 2.1.272, 150 arrivals, max 165 ms.
 Everything §2 says about the identity being real and about the flag still holds; what
 changed is that the identity now has its own corpus, its own floor and its own
 receipts. §4's last bullet was the recommendation against doing this, and it records
