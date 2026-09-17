@@ -823,6 +823,16 @@ cell's ceiling from 2.1.257 to 2.1.272. Parser admits five new
 | `linux-operator-eval-2.1.272-x86_64.json` | `GREEN_OPERATOR` pin confirmation for the 2.1.272 binary on this OS: grades all exact at sonnet-5 low and high, Messages sticky on the same cell `s0e0`, cache write 2328 / read 2328. Does not edit `PROMOTED_PROFILES`. |
 | `linux-operator-eval-2.1.272-x86_64-recheck.json` | Recheck on tars0 against the multi-account daemon with the empty (unsuffixed) pin: `GREEN_OPERATOR`, Messages sticky `s0e0`, cache write 2324 / read 2324. |
 
+`promotion-2.1.272-linux-x86_64.json` PREDATES the generator's current
+wording: `7ccf5c3` changed `promote_claude_version.py` from `pmux run` to
+`pmux ask` on 2026-09-15 and regenerated the macos receipt that day, but not
+this one, so the shipped linux/x86_64 `range_provenance` is a sentence the
+committed tool will no longer emit. The row and its receipt agree, which is
+the rule; the x86_64 and aarch64 rows describe the same procedure with
+different verbs because they were written by two versions of the same
+generator. Re-running the x86_64 promotion costs five real turns and is the
+only thing that would fix it; the receipt is not to be hand-edited.
+
 The pinned 2.1.272 binary is `~/.local/share/pmux/claude/2.1.272/claude`
 (bundled linux-x64 ELF), sha256
 `d81396a668eb76fbddb49a2a5841f1b5d7af96b4c1f6500ced92f2c988f5bcd4`.
