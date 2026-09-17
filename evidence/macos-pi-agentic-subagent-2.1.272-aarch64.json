@@ -23,7 +23,7 @@
     "warm": "claude-opus-5/medium=3, claude-opus-5/xhigh=2",
     "messages": "http://127.0.0.1:8766",
     "securestorage_dir": "configured",
-    "pin": "/Users/cmace/.claude-1",
+    "pin": "<HOME>/.claude-1",
     "tested_claude_profile_flag": true
   },
   "setup": {

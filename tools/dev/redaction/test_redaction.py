@@ -14,12 +14,12 @@ stale. Nothing in this file spells an identifier -- that is not a style choice.
 A list of identifiers to look for is composed on the host that has already been
 searched, so it is complete there and nowhere else, and it passes on the next
 host for the same reason it passed on this one. It is also why
-`docs/defect-log.md`'s map table describes its inputs instead of spelling them:
+`docs/engineering/defect-log.md`'s map table describes its inputs instead of spelling them:
 a table that spelled them would be the one live instance of the shape this
 refuses, sitting inside the paragraph that declares it.
 
 SCOPE is `git ls-files` -- every tracked file. The classes below that name
-`docs/defect-log.md` and `evidence/` remain because each asserts something
+`docs/engineering/defect-log.md` and `evidence/` remain because each asserts something
 about its own subject that the tree-wide check does not: that the log was
 generated rather than edited, and that the receipts carry a placeholder at all.
 
@@ -36,7 +36,7 @@ import sys
 import unittest
 
 WORKSPACE = pathlib.Path(__file__).resolve().parents[3]
-DEFECT_LOG = WORKSPACE / "docs" / "defect-log.md"
+DEFECT_LOG = WORKSPACE / "docs" / "engineering" / "defect-log.md"
 
 sys.path.insert(0, str(WORKSPACE / "tools" / "evidence_common"))
 
@@ -185,7 +185,7 @@ class RedactionTest(unittest.TestCase):
         self.assertEqual(
             [],
             found,
-            "docs/defect-log.md names this machine; re-run "
+            "docs/engineering/defect-log.md names this machine; re-run "
             "tools/defect-log/generate.py rather than editing the lines by "
             "hand:\n" + "\n".join(found),
         )
