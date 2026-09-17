@@ -9046,7 +9046,7 @@ prints "nothing to print", so it is dev-only. `syn` 2.0.117 beside 3.0.0 (via `a
 in the normal graph but only as a proc-macro build input, so it costs a compile and links
 nothing. Features were read too: `clap`'s `env` is used at 15 `#[arg(env = ...)]` sites,
 `uuid`'s `v4` and `serde` both, `tracing-subscriber`'s `env-filter` and `json` both at
-`pmuxd/src/main.rs:956,921`, and `tokio`'s `full` is not over-broad -- `io-std` (`pmux-mcp`
+`pmuxd/src/main.rs:1288` and `pmuxd/src/main.rs:1293`, and `tokio`'s `full` is not over-broad -- `io-std` (`pmux-mcp`
 stdio), `process`, `signal`, `fs` and `net` are all reached, leaving only `parking_lot`, which
 is tokio's own locking choice and not ours to pick.
 
@@ -9063,9 +9063,12 @@ WHAT WAS NOT DELETED, so the next agent does not re-derive it:
     still compiles where the `cfg(not(unix))` fallbacks elsewhere in this file compile." There
     is no such place. MEASURED, by regating `pub mod attach` in `crates/service/src/lib.rs` to
     a predicate false on this host and compiling: `pseudomux-service` fails with four
-    `error[E0433]: failed to resolve` at `native.rs:2072, :2051, :2054, :4330`, all four
-    ungated references to `crate::attach`, which `lib.rs:4` gates on `unix`. Restored
-    byte-exact. So the configuration those 14 service fallbacks serve cannot build, and the
+    `error[E0433]: failed to resolve`, one for each of the four ungated references to
+    `crate::attach` in `crates/service/src/native.rs`, which `crates/service/src/lib.rs`
+    gated on `unix`. Restored byte-exact. **The four line numbers this paragraph carried
+    are dropped rather than shifted (2026-09-17): `crate::attach` and its module no longer
+    exist anywhere in `pseudomux-service`, so there is no line to shift them to and a
+    shifted number would have pointed at unrelated code.** So the configuration those 14 service fallbacks serve cannot build, and the
     5 in `pmuxd` inherit that through its dependency. The 2 in `pmux-launcher` are NOT covered
     by that proof -- `pseudomux-rmux` has no ungated `attach` use -- though `process_boundary.rs`
     reaches `libc::waitpid/kill/getsid` from an ungated module, which is an argument and not a
