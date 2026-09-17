@@ -72,7 +72,6 @@ build() {
 in_container() {
     docker run --rm --platform linux/arm64 \
         --init \
-        --network host \
         --mount "type=bind,src=$REPO,dst=/src" \
         --mount "type=bind,src=$STORE,dst=/home/pmux/.claude" \
         --mount "type=bind,src=$CORPUS,dst=/corpus" \
