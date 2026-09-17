@@ -65,6 +65,14 @@ requires, because it refuses a pool naming fewer than two -- cannot be
 measured at all. The corpus is host-local and never committed; it carries real
 prompts.
 
+The receipt records where they went in `corpus_kept`: `root` is the
+destination **as the tool saw it**, plus `jsonl_files`, the number of
+transcripts copied. In the container lane that root is `/corpus/<version>`, a
+path inside the container, not a host path; the same is true of the
+`corpus.roots` a pooled receipt taken there records. `tools/dev/tests/
+test_drain_corpus.py` pins what the copy preserves: every `*.jsonl` under the
+source, at the same relative path, and nothing else.
+
 macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.258, tested through 2.1.272, drain 250 ms; linux floor is 2.1.227, tested through 2.1.272, drain 250 ms. A first promotion on an OS with no shipped cell needs `--floor`.
 
 ## model-matrix
