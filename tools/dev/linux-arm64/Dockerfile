@@ -58,20 +58,28 @@ RUN /fetch/install-claude.sh 2.1.272 \
 FROM debian:bookworm-slim AS runtime
 # python3 -- every tool in tools/dev and tools/promotion is stdlib-only Python.
 # procps -- promote_claude_version.py observes the pool with `pgrep -f`.
-# sudo -- the last step of a run hands /src/evidence back to the host uid.
+# No sudo: nothing in this image runs as root after `USER pmux` below, so
+# there is nothing to hand back and no reason to carry a privilege-escalation
+# binary in a cell that runs Claude with --dangerously-skip-permissions.
 # No tmux: the transparent terminal profile prunes the tmux shim from PATH and
 # no tool in this lane shells out to it.
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python3 procps sudo ca-certificates \
+        python3 procps ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Claude Code refuses --dangerously-skip-permissions as root, and a Full cell
-# in living_pmux_run.py needs it, so the whole lane runs unprivileged.
+# in living_pmux_run.py needs it, so the whole lane runs unprivileged. That is
+# a containment property, not a convenience: the model inside that cell has
+# bash and skip-permissions, and /src is the bind-mounted checkout, so this
+# user must not be able to become root or re-own anything.
 #
-# `run.sh build` passes the host user's uid/gid. Docker Desktop's virtiofs
-# passes bind mounts through numerically, so a receipt this container writes
-# into /src/evidence already belongs to the host user; the entrypoint still
-# chowns at the end for the group and for anything created as root.
+# `run.sh build` passes the host user's uid/gid and `run.sh` runs the
+# container under the same pair. Docker Desktop's virtiofs passes bind mounts
+# through numerically, so every file this container writes into /src/evidence
+# or /corpus already belongs to the host user and NOTHING has to be chowned
+# back afterwards. An earlier revision granted `pmux` passwordless
+# `/bin/chown` for that hand-back; it was unscoped, unnecessary, and reachable
+# from inside the Full cell, and it is gone.
 #
 # The group is created only if that gid is free. On a Darwin host `id -g` is
 # 20 (`staff`), and 20 is `dialout` in a Debian base image, so an
@@ -81,9 +89,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 RUN if ! getent group "${HOST_GID}" >/dev/null; then groupadd -g "${HOST_GID}" pmux; fi \
-    && useradd -m -u "${HOST_UID}" -g "${HOST_GID}" -s /bin/bash pmux \
-    && echo 'pmux ALL=(ALL) NOPASSWD: /bin/chown' > /etc/sudoers.d/pmux-chown \
-    && chmod 0440 /etc/sudoers.d/pmux-chown
+    && useradd -m -u "${HOST_UID}" -g "${HOST_GID}" -s /bin/bash pmux
 
 COPY --from=build /src/target/release/pmux          /opt/pmux/release/pmux
 COPY --from=build /src/target/release/pmuxd         /opt/pmux/release/pmuxd

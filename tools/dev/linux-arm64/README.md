@@ -126,9 +126,18 @@ The receipt is the durable artifact, exactly as
 
 `pool` and `floor-receipt` are redirected on the **host**, so the receipt is
 created by the host user in the host's tree. Everything else writes into
-`/src/evidence` through the bind mount as the host user's uid (passed in by
-`run.sh` at build and run time), and the container chowns that directory back
-to the host uid and gid as it exits.
+`/src/evidence` through the bind mount as the host user's uid, which
+`run.sh build` passes in as `HOST_UID`/`HOST_GID`. Nothing is chowned back
+afterwards and nothing needs to be: virtiofs passes bind-mount ownership
+through numerically, so those files already belong to the host user.
+
+**The cell is unprivileged.** Every step runs as `pmux`, the image installs no
+`sudo`, and there is no sudoers rule, so the Full cell that `living-run`
+mints -- a real Claude Code with bash and `--dangerously-skip-permissions`,
+looking at the bind-mounted checkout at `/src` -- cannot become root and
+cannot re-own anything. An earlier revision of this lane granted `pmux`
+passwordless `/bin/chown` to hand `/src/evidence` back; the grant was
+unscoped, it was reachable from inside that cell, and it was never needed.
 
 `promote` does not edit `crates/service/src/compatibility.rs`: the engine
 reads that file (to find the shipped floor and to check that every

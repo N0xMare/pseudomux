@@ -23,11 +23,11 @@ claude_for() {
     printf '%s' "$path"
 }
 
-hand_back() {
-    # Anything this run wrote into the tracked tree belongs to the host user.
-    sudo /bin/chown -R "${HOST_UID:-$(id -u)}:${HOST_GID:-$(id -g)}" /src/evidence 2>/dev/null || true
-}
-trap hand_back EXIT
+# Nothing hands ownership back. The container runs as the host uid and gid
+# (run.sh passes both at build and at run), and virtiofs passes bind-mount
+# ownership through numerically, so every receipt under /src/evidence and
+# every transcript under /corpus is already the host user's. No step here
+# runs as root, so nothing root-owned can appear.
 
 subcommand="${1:-shell}"
 shift || true
