@@ -28,6 +28,14 @@ and MUST be absolute.
 | `--pool-evidence-dir DIR` | `pool-evidence/` beside the socket | Redacted drain evidence. |
 | `--pool-no-evidence` | off | Retain no pool evidence. |
 
+With `--stateful`, every Full turn copies its transcripts to
+`{pool-parent}/transcripts/` before the isolation tree is erased, so a wrap
+can collect them. Those files are FULL transcripts and hold prompts and
+completions, unlike the redacted `--pool-evidence-dir` mirror. There is no
+flag: the directory is bounded at 256 MiB and pruned oldest-first after each
+turn. An operator who does not want conversation content on that disk should
+not enable `--stateful`.
+
 Fifteen is an owner-set cap. `--pool-size 16` MUST be refused at boot,
 before the socket is bound.
 

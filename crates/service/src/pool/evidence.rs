@@ -252,7 +252,7 @@ fn write_private(path: &Path, contents: &str) -> io::Result<()> {
 /// Oldest by MODIFICATION TIME and not by name: the file name is a session
 /// uuid, which carries no order at all, and a name-ordered prune would delete
 /// an arbitrary file rather than the least useful one.
-fn prune(into: &Path, budget: u64) -> usize {
+pub(crate) fn prune(into: &Path, budget: u64) -> usize {
     let Ok(entries) = std::fs::read_dir(into) else {
         return 0;
     };

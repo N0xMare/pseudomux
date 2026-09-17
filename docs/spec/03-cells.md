@@ -25,6 +25,12 @@ ships them. Not a pool slot.
   `{pool-parent}/transcripts/<slug>__<file>` first so a wrap can collect
   it after erase. Harvest is best-effort and does not change the turn
   result.
+- **Harvest retention.** Those copies are FULL transcripts: the caller's
+  prompts and the model's completions, not the Path B evidence mirror's
+  content-free field set. The harvest is on and has no flag. The directory
+  is bounded at 256 MiB, pruned oldest-first after each turn, so the turn
+  that just ran always finds its own files and an earlier trial's age out.
+  A wrap that needs them beyond that MUST copy them out.
 - **Owner.** `SessionOwner::Caller`. Not stealable by `pmux ask`.
 - **Permissions.** Unattended use MUST pass
   `permission_mode=dangerously_skip_permissions`. Otherwise the TUI blocks

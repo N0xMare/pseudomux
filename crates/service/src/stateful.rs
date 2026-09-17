@@ -206,10 +206,38 @@ pub(crate) fn validate_stateful_cwd(cwd: &str, pool_parent: &Path) -> Result<Pat
     Ok(canonical)
 }
 
+/// The size budget for the whole harvest directory.
+///
+/// Unlike the Path B evidence mirror next door, what lands here is the FULL
+/// transcript -- the caller's prompts and the model's completions, not a
+/// mirror pruned to eight content-free fields -- so an unbounded directory
+/// under the pool parent is a growing pile of conversation content that
+/// nothing ever deletes. It is bounded the way
+/// [`crate::pool::evidence::prune`] bounds that mirror, with the same
+/// oldest-first rule, and for the same reason.
+///
+/// Four times [`crate::pool::evidence::MAX_EVIDENCE_BYTES`], because these
+/// files carry content and that one's do not. A Harbor A/B wrap copies this
+/// directory out per trial, which is why the harvest is on by default and
+/// why the budget is generous rather than tight: the ceiling is there so an
+/// unattended daemon cannot fill a disk, not to keep the directory small.
+pub const MAX_HARVEST_BYTES: u64 = 256 * 1024 * 1024;
+
 /// Copy each `root/projects/<slug>/*.jsonl` to `{dest}/{slug}__{file}` so
 /// Force-close erase does not take the only copy. Best-effort: a harvest
 /// miss must not change the turn's error.
+///
+/// After each harvest the directory is pruned to [`MAX_HARVEST_BYTES`],
+/// oldest-first. This turn's own files are the newest in it, so a wrap
+/// collecting them after the turn still finds them; what ages out is an
+/// earlier trial's.
 fn harvest_stateful_transcripts(isolation_root: &Path, dest: &Path) {
+    harvest_stateful_transcripts_to_budget(isolation_root, dest, MAX_HARVEST_BYTES);
+}
+
+/// [`harvest_stateful_transcripts`] with the budget named, so a test can state
+/// the oldest-first rule without writing 256 MiB to prove it.
+fn harvest_stateful_transcripts_to_budget(isolation_root: &Path, dest: &Path, budget: u64) {
     let projects = isolation_root.join("projects");
     let Ok(entries) = fs::read_dir(&projects) else {
         return;
@@ -251,6 +279,15 @@ fn harvest_stateful_transcripts(isolation_root: &Path, dest: &Path) {
                 );
             }
         }
+    }
+    let pruned = crate::pool::evidence::prune(dest, budget);
+    if pruned > 0 {
+        tracing::info!(
+            path = %dest.display(),
+            pruned,
+            budget_bytes = budget,
+            "pruned harvested Full-cell transcripts to stay under the budget"
+        );
     }
 }
 
@@ -486,5 +523,65 @@ mod tests {
         }
         assert!(!session_dir.exists());
         assert!(parent.path().join("stateful").exists());
+    }
+
+    /// The harvest is bounded, and the bound takes the OLDEST file.
+    ///
+    /// The directory holds full transcripts and a Harbor wrap collects it per
+    /// trial, so the property that matters is not "it is small" but "the turn
+    /// that just ran still finds its own files". Written against a tiny
+    /// budget rather than [`MAX_HARVEST_BYTES`] so the test states the rule
+    /// instead of the constant.
+    /// Set one file's mtime to an exact second, so the test can state which
+    /// file is older instead of hoping. Same idiom as `pool::evidence`'s own
+    /// prune tests.
+    fn set_mtime_seconds(path: &Path, seconds: i64) {
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+        let raw = CString::new(path.as_os_str().as_bytes()).unwrap();
+        let times = [
+            libc::timespec {
+                tv_sec: seconds as libc::time_t,
+                tv_nsec: 0,
+            },
+            libc::timespec {
+                tv_sec: seconds as libc::time_t,
+                tv_nsec: 0,
+            },
+        ];
+        // SAFETY: `raw` is a NUL-terminated path this test just created and
+        // `times` is a two-element array of the shape utimensat expects.
+        #[allow(unsafe_code)]
+        let result = unsafe { libc::utimensat(libc::AT_FDCWD, raw.as_ptr(), times.as_ptr(), 0) };
+        assert_eq!(result, 0, "could not set the mtime of {}", path.display());
+    }
+
+    #[test]
+    fn the_harvest_prunes_oldest_first_and_keeps_this_turn() {
+        let root = tempfile::tempdir().unwrap();
+        let dest = root.path().join("transcripts");
+        fs::create_dir_all(&dest).unwrap();
+
+        let old = dest.join("old__a.jsonl");
+        fs::write(&old, vec![b'x'; 4096]).unwrap();
+        // An mtime far enough back that "oldest" is a fact and not a race.
+        set_mtime_seconds(&old, 1_000);
+
+        let isolation = root.path().join("isolation");
+        let project = isolation.join("projects").join("slug");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("turn.jsonl"), vec![b'y'; 1024]).unwrap();
+
+        harvest_stateful_transcripts_to_budget(&isolation, &dest, 2048);
+
+        assert!(
+            dest.join("slug__turn.jsonl").exists(),
+            "this turn's transcript was harvested"
+        );
+        assert!(
+            !old.exists(),
+            "the older file was pruned, because the two together are over a \
+             budget this small"
+        );
     }
 }
