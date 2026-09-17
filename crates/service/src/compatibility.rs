@@ -529,6 +529,27 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        2.1.272: anything outside a minified cell on linux/x86_64, and the per-version \
                        fit of 250 ms, which is published to be read and NOT shipped.",
     },
+    PromotedProfile {
+        claude_version_floor: "2.1.272",
+        claude_version_tested_through: "2.1.272",
+        os: "linux",
+        arch: "aarch64",
+        terminal_profile: TerminalProfile::Transparent,
+        input_transport: InputTransport::Sdk,
+        transcript_drain_ms: 250,
+        drain_provenance: "POOLED conservative bound, not a per-version fit: max reachable \
+                       post-answer transcript arrival 76 ms over 100 arrivals in 102 \
+                       linux/aarch64 transcripts spanning Claude Code 2.1.258/2.1.272, x2.0 and \
+                       rounded up to a 250 ms step = 250 ms. Every named version's own fit is \
+                       also 250 ms because 76x2.0=152 sits inside the 250 ms rounding quantum, \
+                       not because the corpus is one version. Priced: the full drain binds on 0 \
+                       of 100 cli turns (every turn carried a turn_duration marker). MEASURED IN \
+                       A NATIVE linux/arm64 CONTAINER on a Darwin host, which is this arch's own \
+                       silicon and not a translation -- tools/dev/linux-arm64/README.md. \
+                       evidence/pooled-transcript-drain-linux-aarch64.json, \
+                       tools/promotion/measure_transcript_drain.py",
+        range_provenance: "floor 2.1.272: first promoted cell on linux/aarch64; the version with a drain receipt on this OS. Not macos Gate B, not another OS's floor. Tested through 2.1.272: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 5 reachable post-answer arrival(s) at this version, max 16 ms against the pooled 250 ms bound. NOT measured at 2.1.272: anything outside a minified cell on linux/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
+    },
 ];
 
 /// One empirically promoted compatibility cell.

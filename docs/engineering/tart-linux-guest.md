@@ -60,14 +60,19 @@ child "reports `os: "macos"` ... `tested: true` is published, and a
 measured."
 
 **Consequence A — an honest arm64 guest is a new cell.** Build pmuxd inside an arm64
-Ubuntu guest and it reports `linux`/`aarch64`. `PROMOTED_PROFILES`
-(`compatibility.rs:483-541`) holds exactly two cells: macos/aarch64 2.1.258..=2.1.272
-and linux/x86_64 2.1.227..=2.1.272. Nothing admits linux/aarch64, so every `pmux run`
-is refused unless you pass `--tested-claude-profile`. Dropping the flag needs
-`evidence/pooled-transcript-drain-linux-aarch64.json`, which does not exist;
-`tools/dev/promote.py` exits 2 without it, and a first promotion on a new OS/arch needs
-`--floor` — "Do not pass another OS's floor" (`tools/dev/promote.py:8-9`,
-`tools/dev/README.md:51-53`).
+Ubuntu guest and it reports `linux`/`aarch64`. Dropping the flag on that identity needs
+`evidence/pooled-transcript-drain-linux-aarch64.json`; `tools/dev/promote.py` exits 2
+without it, and a first promotion on a new OS/arch needs `--floor` — "Do not pass
+another OS's floor" (`tools/dev/promote.py:8-9`, `tools/dev/README.md`).
+
+**SUPERSEDED, 2026-09-17.** That receipt now exists and `PROMOTED_PROFILES` ships a
+third cell, `2.1.272 / linux / aarch64 / transparent / sdk`, drain 250 ms. It was NOT
+measured in a Tart guest: it was measured in a native linux/arm64 **container**
+(`tools/dev/linux-arm64/`), pooled over 2.1.258 and 2.1.272, 100 arrivals, max 76 ms.
+Everything §2 says about the identity being real and about the flag still holds; what
+changed is that the identity now has its own corpus, its own floor and its own
+receipts. §4's last bullet was the recommendation against doing this, and it records
+what that decision cost.
 
 **Consequence B — Rosetta would make pmux lie.** An `x86_64-unknown-linux-gnu` build of
 pmuxd running under Rosetta inside that guest reports `linux`/`x86_64` and **matches the
@@ -140,3 +145,15 @@ receipt under those rules; it is admissible only as a smoke test. Turn latency a
   Code version bump — for an architecture nobody is asking pmux to serve. Run the guest
   with `--tested-claude-profile` when a turn is needed, and leave `PROMOTED_PROFILES` at
   two cells.
+
+  **OVERRULED, 2026-09-17, by the maintainer.** linux/aarch64 is promoted, at
+  `2.1.272..=2.1.272`. The recommendation above is kept verbatim because its argument is
+  unchanged and is now a bill rather than a warning: the cell has one version in it, so
+  the next Claude Code bump on that arch needs a fresh 50-turn campaign and a fresh
+  promotion run, and the pooled corpus behind it is two versions deep where macos is two
+  and linux/x86_64 is three. The one claim in it that was wrong is the implicit one —
+  that a container could not take the measurement. A **native** arm64 container on an
+  arm64 daemon is not a translation and reports the arch it runs on, which is exactly
+  the property §2's Rosetta argument turns on. What remains refused is the thing §2
+  actually describes: an x86_64 build under Rosetta claiming the shipped linux/x86_64
+  cell.

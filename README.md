@@ -49,7 +49,7 @@ is `CLAUDE_CONFIG_DIR=~/.claude-1 claude`, not a second Mach-O). Callers
 select `NAME` via `run_stateless.account` or `x-pmux-account`; omitted is
 `default`. Isolated cells never hash the private config root.
 macos PATH `claude` 2.1.272 is inside the macos cell; linux PATH 2.1.272 is
-inside the linux cell. A version above either ceiling still needs the flag:
+inside both linux cells. A version above either ceiling still needs the flag:
 
 ```bash
 --tested-claude-profile \
@@ -216,9 +216,17 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 | --- | --- | --- | --- |
 | 2.1.258 through 2.1.272 | macos / aarch64 | transparent / sdk | 250 |
 | 2.1.227 through 2.1.272 | linux / x86_64 | transparent / sdk | 250 |
+| 2.1.272 only | linux / aarch64 | transparent / sdk | 250 |
 
 A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.
+
+The linux/aarch64 cell was measured in a **native** linux/arm64 container on a
+Darwin host, which is that arch's own silicon and not a translation; the lane
+is [`tools/dev/linux-arm64/`](tools/dev/linux-arm64/README.md) and its README
+says what that does and does not establish. It is one version wide because a
+pooled bound needs two versions measured and a promoted range only widens
+forward from a floor that has its own receipt.
 
 ## The command surface
 

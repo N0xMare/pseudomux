@@ -871,6 +871,40 @@ billed `input_tokens: 498` with the Remote Control bridge auto-started
 `disableRemoteControl:true`, both read from the `pmux run --output json`
 `usage.main` block on 2026-09-01. No file here carries those two raw results.
 
+## Linux 2026-09-17 first aarch64 cell (`aarch64`)
+
+The first promoted `linux`/`aarch64` cell, `2.1.272..=2.1.272`, drain 250 ms.
+Every receipt here was taken in a **native** linux/arm64 container on a Darwin
+host -- `tools/dev/linux-arm64/`, whose README says what that does and does not
+establish. Nothing was emulated: the Docker daemon is a native `arm64` daemon,
+so `pmuxd` reports the arch it actually ran on, and the lane's `preflight`
+refuses any other daemon arch.
+
+| File | What it is |
+| --- | --- |
+| `pooled-transcript-drain-linux-aarch64.json` | The bound the cell ships. POOLED over 2.1.258 and 2.1.272, 100 reachable arrivals in 102 transcripts, max 76 ms, x2.0 rounded up to the 250 ms step = 250 ms. Every turn carried its own `turn_duration` marker, so the full drain binds on 0 of 100 cli turns. Both per-version fits are also 250 ms because 76x2.0 = 152 sits inside the rounding quantum -- the saturation case `every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit` admits, not a one-version fit. |
+| `promoted-profile-2.1.272-linux-aarch64.json` | The floor's own single-version receipt, read for identity by `every_promoted_drain_is_the_one_its_receipt_recommends`. 50 arrivals, max 76 ms, recommends 250 ms. |
+| `promotion-2.1.272-linux-aarch64.json` | The promotion. Verdict promotable, floor 2.1.272, tested through 2.1.272, all nine checks passed; 5 minified-cell turns through `pmux ask` at sonnet-5 low and high, 5 reachable arrivals max 16 ms against the pooled bound. It GENERATED the `range_provenance` the shipped cell carries. |
+| `linux-drain-n50-2.1.272-aarch64.json` | The n=50 campaign at 2.1.272 behind the pool. 50/50 answered, 50 arrivals, max 76 ms, median 10 ms. |
+| `linux-drain-n50-2.1.258-aarch64.json` | The n=50 campaign at 2.1.258. 50/50 answered, 50 arrivals, max 38 ms, median 18 ms. It exists because a pooled bound needs a second version: a pool naming one version is refused as a per-version fit. |
+| `linux-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` pin confirmation on this cell: grades exact at sonnet-5 low and high, Messages sticky on the same cell with a cache hit. Does not edit `PROMOTED_PROFILES`. |
+| `linux-living-pmux-run-2.1.272-aarch64.json` | `GREEN` Full-cell `pmux run` ladder, first attempt: 3/3 first mints, tools (read/bash/edit/CLAUDE.md), skip-permissions, accounts, concurrency, the failure matrix and the coding task, zero isolation leaks. Gates nothing. |
+
+The two Claude Code binaries are the official linux-arm64 (glibc) npm platform
+builds, installed and digest-verified by the lane's Dockerfile: 2.1.272 sha256
+`214a90efdd16ee0ea81132ffecced588dba394d178cc494f285ba04b5288c8de`, 2.1.258
+sha256 `43dc490af55262edcb3e9b1cb315de22cc09ccb08bd52a4c39bc5eabaa63100f`.
+
+The corpus behind the two pooled receipts is host-local and is NOT committed:
+it is real prompts, kept by `drain_n50.py --corpus-out` only so one
+`measure_transcript_drain.py` run could span both versions. The receipts are
+the durable artifacts.
+
+`docs/engineering/tart-linux-guest.md` sec.4 recommended against a third
+promoted cell. That recommendation is kept verbatim there, marked overruled,
+with the bill it now carries: one version in the range means the next Claude
+Code bump on this arch needs a fresh campaign.
+
 Phase 0 has been removed. `model-attempt-ledger.ndjson` is a frozen historical
 ledger. Do not reseal it. Do not run `phase0.py budget`. Living pin confirmation
 is `tools/dev/operator_eval.py`. Drop-flag promotion is `tools/dev/promote.py`.

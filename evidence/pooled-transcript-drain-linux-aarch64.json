@@ -1,0 +1,219 @@
+{
+ "arch": "aarch64",
+ "by_version": {
+  "2.1.258": {
+   "files_at_this_version": 51,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 50,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 50,
+     "max_ms": 38,
+     "median_ms": 18,
+     "min_ms": 6,
+     "p90_ms": 33,
+     "p95_ms": 35,
+     "p99_ms": 38
+    },
+    "by_kind": {
+     "system/turn_duration": {
+      "count": 50,
+      "max_ms": 38,
+      "median_ms": 18,
+      "min_ms": 6,
+      "p90_ms": 33,
+      "p95_ms": 35,
+      "p99_ms": 38,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 50,
+     "max_ms": 38,
+     "median_ms": 18,
+     "min_ms": 6,
+     "p90_ms": 33,
+     "p95_ms": 35,
+     "p99_ms": 38
+    },
+    "unreachable_on_a_minified_cell": null
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 50
+  },
+  "2.1.272": {
+   "files_at_this_version": 51,
+   "full_drain_binds_on": {
+    "cli_turns_with_a_terminal_candidate": 50,
+    "fraction": 0.0,
+    "without_a_turn_duration_marker": 0
+   },
+   "partition_balances": true,
+   "post_answer_arrivals": {
+    "all": {
+     "count": 100,
+     "max_ms": 165,
+     "median_ms": 19,
+     "min_ms": 3,
+     "p90_ms": 61,
+     "p95_ms": 72,
+     "p99_ms": 89
+    },
+    "by_kind": {
+     "attachment/None": {
+      "count": 50,
+      "max_ms": 165,
+      "median_ms": 25,
+      "min_ms": 5,
+      "p90_ms": 70,
+      "p95_ms": 87,
+      "p99_ms": 165,
+      "reachable_on_a_minified_cell": false,
+      "timestamp_is_retrospective": false,
+      "why": "Post-answer attachment rows in the linux host corpus are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days). A minified 2.1.232 Path B cell on this host emits type=attachment (total_tokens_reminder) only BEFORE the assistant, on mint and again after /clear. Sizing the drain to the interactive tail would be sizing it against hooks and files the minified cell does not have"
+     },
+     "system/turn_duration": {
+      "count": 50,
+      "max_ms": 76,
+      "median_ms": 10,
+      "min_ms": 3,
+      "p90_ms": 19,
+      "p95_ms": 44,
+      "p99_ms": 76,
+      "reachable_on_a_minified_cell": true,
+      "timestamp_is_retrospective": false,
+      "why": "the end-of-turn marker Claude Code writes for every turn"
+     }
+    },
+    "reachable_on_a_minified_cell": {
+     "count": 50,
+     "max_ms": 76,
+     "median_ms": 10,
+     "min_ms": 3,
+     "p90_ms": 19,
+     "p95_ms": 44,
+     "p99_ms": 76
+    },
+    "unreachable_on_a_minified_cell": {
+     "count": 50,
+     "max_ms": 165,
+     "median_ms": 25,
+     "min_ms": 5,
+     "p90_ms": 70,
+     "p95_ms": 87,
+     "p99_ms": 165
+    }
+   },
+   "recommended_transcript_drain_ms": 250,
+   "turns": 50
+  }
+ },
+ "claude_version": "2.1.258",
+ "claude_versions": [
+  "2.1.258",
+  "2.1.272"
+ ],
+ "corpus": {
+  "files_at_these_versions": 102,
+  "files_scanned": 102,
+  "note": "Host-local operator transcripts. Not committed: they contain prompts. The receipt is the durable artifact; re-run the tool to regenerate it.",
+  "roots": [
+   "/corpus/2.1.258",
+   "/corpus/2.1.272"
+  ],
+  "tracked": false,
+  "turns": 100
+ },
+ "full_drain_binds_on": {
+  "cli_turns_with_a_terminal_candidate": 100,
+  "fraction": 0.0,
+  "without_a_turn_duration_marker": 0
+ },
+ "os": "linux",
+ "partition_balances": true,
+ "per_version_recommendations_not_to_be_shipped": {
+  "2.1.258": 250,
+  "2.1.272": 250
+ },
+ "post_answer_arrivals": {
+  "all": {
+   "count": 150,
+   "max_ms": 165,
+   "median_ms": 18,
+   "min_ms": 3,
+   "p90_ms": 40,
+   "p95_ms": 70,
+   "p99_ms": 89
+  },
+  "by_kind": {
+   "attachment/None": {
+    "count": 50,
+    "max_ms": 165,
+    "median_ms": 25,
+    "min_ms": 5,
+    "p90_ms": 70,
+    "p95_ms": 87,
+    "p99_ms": 165,
+    "reachable_on_a_minified_cell": false,
+    "timestamp_is_retrospective": false,
+    "why": "Post-answer attachment rows in the linux host corpus are an interactive harness (entrypoint cli or sdk-cli; p50 74 ms, p95 326 s, max days). A minified 2.1.232 Path B cell on this host emits type=attachment (total_tokens_reminder) only BEFORE the assistant, on mint and again after /clear. Sizing the drain to the interactive tail would be sizing it against hooks and files the minified cell does not have"
+   },
+   "system/turn_duration": {
+    "count": 100,
+    "max_ms": 76,
+    "median_ms": 15,
+    "min_ms": 3,
+    "p90_ms": 31,
+    "p95_ms": 35,
+    "p99_ms": 72,
+    "reachable_on_a_minified_cell": true,
+    "timestamp_is_retrospective": false,
+    "why": "the end-of-turn marker Claude Code writes for every turn"
+   }
+  },
+  "reachable_on_a_minified_cell": {
+   "count": 100,
+   "max_ms": 76,
+   "median_ms": 15,
+   "min_ms": 3,
+   "p90_ms": 31,
+   "p95_ms": 35,
+   "p99_ms": 72
+  },
+  "unreachable_on_a_minified_cell": {
+   "count": 50,
+   "max_ms": 165,
+   "median_ms": 25,
+   "min_ms": 5,
+   "p90_ms": 70,
+   "p95_ms": 87,
+   "p99_ms": 165
+  }
+ },
+ "recommendation_basis": {
+  "margin": 2.0,
+  "pooled_over_versions": [
+   "2.1.258",
+   "2.1.272"
+  ],
+  "rounded_up_to_ms": 250,
+  "statistic": "max of every post-answer arrival a minified cell can produce, POOLED over every version measured"
+ },
+ "recommended_transcript_drain_ms": 250,
+ "repromotion_triggers_this_tool_detects": {
+  "reachable_arrival_above_the_bound": "exit 4 when --bound-ms is given and a reachable arrival exceeds it; exit 5 when there was nothing to check",
+  "unclassified_transcript_row_kind": "exit 2 on a post-answer row kind absent from ROW_KINDS, exit 3 on a `retrospective` kind stamped after the terminal candidate"
+ },
+ "what_would_invalidate_it": [
+  "an assistant row arriving after a turn's final assistant row -- see ROW_KINDS",
+  "any reachable arrival above the recommended value",
+  "a different os or arch, or a claude_version outside the promoted range",
+  "a minified cell acquiring a harness able to inject rows (a hook, a queue, an MCP server)"
+ ]
+}
