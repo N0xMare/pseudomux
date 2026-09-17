@@ -7,8 +7,8 @@
   "asks": "evidence/macos-two-account-ask-2.1.272-aarch64.json",
   "full": "evidence/macos-stateful-hello-2.1.272-aarch64.json",
   "accounts": {
-    "default": "unsuffixed pin (cjmace@proton.me)",
-    "claude-1": "<HOME>/.claude-1 (dev@a4a2ceea22.online)"
+    "default": "unsuffixed pin (<ACCOUNT-EMAIL>)",
+    "claude-1": "<HOME>/.claude-1 (<ACCOUNT-EMAIL>)"
   },
   "notes": "Two-account minified asks and Full hello.txt were run on the same host and Claude 2.1.272 with --tested-claude-profile. Asks: DEFAULT-29ED3BB3 and CLAUDE-1-FAD21DEA, both end_turn, ~680 input / 0 cache. Full: hello.txt == hi, ~40k cache (tools on)."
 }
