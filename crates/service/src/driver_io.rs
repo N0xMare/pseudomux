@@ -4155,7 +4155,13 @@ fn cwd_relation_class(expected: &str, actual: &str) -> &'static str {
     if slashed.contains("/stateful/") || slashed.contains("/tmp/pmux") {
         return "isolation";
     }
-    if slashed.starts_with("/home/") {
+    // BOTH promoted platforms' home roots. `home` used to mean `/home/`
+    // alone, so a macos `/Users/someone/...` cwd -- on the arch two of the
+    // three shipped cells run -- classified as `other`, and the refusal an
+    // operator read named a shape it had not checked for. The class is
+    // diagnostic and never admits, so the old answer was safe and wrong,
+    // which is the pair worth fixing before somebody trusts it.
+    if slashed.starts_with("/home/") || slashed.starts_with("/Users/") {
         return "home";
     }
     "other"
@@ -8098,6 +8104,9 @@ mod tests {
                 "isolation",
             ),
             ("/pmux-task-cwd", "/home/operator", "home"),
+            // macos. Two of the three promoted cells run on this arch, and
+            // this is the spelling their operators' homes have.
+            ("/pmux-task-cwd", "/Users/operator", "home"),
             ("/pmux-task-cwd", "/var/somewhere-else", "other"),
         ] {
             assert_eq!(cwd_relation_class(expected, actual), class, "{actual}");
