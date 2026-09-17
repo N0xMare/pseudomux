@@ -25,7 +25,7 @@ claude_for() {
 
 hand_back() {
     # Anything this run wrote into the tracked tree belongs to the host user.
-    sudo /bin/chown -R 501:20 /src/evidence 2>/dev/null || true
+    sudo /bin/chown -R "${HOST_UID:-$(id -u)}:${HOST_GID:-$(id -g)}" /src/evidence 2>/dev/null || true
 }
 trap hand_back EXIT
 

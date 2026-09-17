@@ -126,8 +126,9 @@ The receipt is the durable artifact, exactly as
 
 `pool` and `floor-receipt` are redirected on the **host**, so the receipt is
 created by the host user in the host's tree. Everything else writes into
-`/src/evidence` through the bind mount as uid 501, and the container chowns
-that directory back to `501:20` as it exits.
+`/src/evidence` through the bind mount as the host user's uid (passed in by
+`run.sh` at build and run time), and the container chowns that directory back
+to the host uid and gid as it exits.
 
 `promote` does not edit `crates/service/src/compatibility.rs`: the engine
 reads that file (to find the shipped floor and to check that every

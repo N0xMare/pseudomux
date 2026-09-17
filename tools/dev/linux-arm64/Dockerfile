@@ -68,12 +68,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # Claude Code refuses --dangerously-skip-permissions as root, and a Full cell
 # in living_pmux_run.py needs it, so the whole lane runs unprivileged.
 #
-# uid/gid 501 is the Darwin host user. Docker Desktop's virtiofs passes bind
-# mounts through numerically, so a receipt this container writes into
-# /src/evidence already belongs to the host user; `run.sh` still chowns at the
-# end for the group and for anything created as root.
-ARG HOST_UID=501
-ARG HOST_GID=501
+# `run.sh build` passes the host user's uid/gid. Docker Desktop's virtiofs
+# passes bind mounts through numerically, so a receipt this container writes
+# into /src/evidence already belongs to the host user; the entrypoint still
+# chowns at the end for the group and for anything created as root.
+ARG HOST_UID=1000
+ARG HOST_GID=1000
 RUN groupadd -g "${HOST_GID}" pmux \
     && useradd -m -u "${HOST_UID}" -g "${HOST_GID}" -s /bin/bash pmux \
     && echo 'pmux ALL=(ALL) NOPASSWD: /bin/chown' > /etc/sudoers.d/pmux-chown \

@@ -839,7 +839,7 @@ max 20 ms). Floor is 2.1.258; 2.1.220..=2.1.257 need `--tested-claude-profile`.
 | `macos-drain-n50-2.1.272-aarch64.json` | n=50 minified drain campaign 1: max 11 ms, 0 unmarked, recommended 250 ms. |
 | `macos-drain-n50-2.1.272-aarch64-2.json` | n=50 minified drain campaign 2: max 20 ms, 0 unmarked, recommended 250 ms. |
 | `promoted-profile-2.1.258-macos-aarch64.json` | Floor receipt for the 250 ms cell. |
-| `macos-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` on macos/aarch64 with the configured `/Users/cmace/.claude-1` pin (the usage-bearing Max org). Grades exact, `/clear` → `NONE`, Messages sticky `s0e0`, cache 2315/2315. |
+| `macos-operator-eval-2.1.272-aarch64.json` | `GREEN_OPERATOR` on macos/aarch64 with the configured `~/.claude-1` pin (the usage-bearing Max org). Grades exact, `/clear` → `NONE`, Messages sticky `s0e0`, cache 2315/2315. |
 | `macos-pi-agentic-subagent-2.1.272-aarch64.json` | Pi 0.85.1 + pi-subagents 0.68.0 through `examples/pi/pmux.ts` on 2.1.272 with the usage-bearing pin: agentic (read/write/bash) `AGENTIC_OK`, one sequential reviewer `MULTI_OK`, two parallel reviewers + `bg_wait` `PARALLEL_OK`. Children `pmux/claude-opus-5-xhigh` exit 0. Pool returned to idle 5 / leased 0. First child attempt without required `pmux` extension 400'd missing `x-pmux-conversation` (0.68 disables ambient extensions on foreground children); the adapter now registers itself. |
 
 ## Linux 2026-09 Path B receipts (`x86_64`)

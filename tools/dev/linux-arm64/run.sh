@@ -63,6 +63,8 @@ preflight() {
 build() {
     docker build --platform linux/arm64 \
         -f "$REPO/tools/dev/linux-arm64/Dockerfile" \
+        --build-arg "HOST_UID=$(id -u)" \
+        --build-arg "HOST_GID=$(id -g)" \
         -t "$IMAGE" \
         "$REPO"
 }
@@ -70,6 +72,8 @@ build() {
 in_container() {
     docker run --rm --platform linux/arm64 \
         --init \
+        -e "HOST_UID=$(id -u)" \
+        -e "HOST_GID=$(id -g)" \
         --network host \
         --mount "type=bind,src=$REPO,dst=/src" \
         --mount "type=bind,src=$STORE,dst=/home/pmux/.claude" \
