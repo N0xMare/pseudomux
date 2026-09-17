@@ -521,7 +521,7 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        pooled with 2.1.232/2.1.233 in \
                        evidence/pooled-transcript-drain-linux-x86_64.json; below it linux minified \
                        cells were not measured as a promotion floor. Tested through 2.1.272: \
-                       promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at \
+                       promote_claude_version.py drove 5 minified-cell turns through `pmux run` at \
                        claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite \
                        answered across a `/clear` per turn, sidechain and cache zero on every result, \
                        the pool never halted -- and measured 5 reachable post-answer arrival(s) at \
