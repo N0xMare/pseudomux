@@ -31,14 +31,16 @@ IMAGE="${PMUX_LANE_IMAGE:-pmux-linux-arm64:dev}"
 # `--pool-securestorage-dir empty` default that every tool in tools/dev uses
 # (docs/spec/02-operator.md). Only three tools expose a pin at all, so the
 # unsuffixed location is the one mount that serves the whole chain.
-# Derived from the checkout's own location rather than written out, so no
-# host's home directory is spelled in a tracked file. Override with
-# PMUX_LANE_STORE anywhere the sibling layout differs.
-STORE="${PMUX_LANE_STORE:-$(dirname "$REPO")/plak/.plak/harbor/claude-linux-securestorage}"
+# The default is pseudomux's own, beside the corpus default below, and it is
+# never created here: `preflight` refuses when it holds no .credentials.json,
+# because an empty store is a run that burns turns and comes back logged out.
+# See this directory's README for how to fill it. PMUX_LANE_STORE points the
+# lane at a Linux file store that already exists somewhere else.
+STORE="${PMUX_LANE_STORE:-${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-store}"
 
 # The transcript corpus a pooled bound is measured over. Host-local, never
 # committed, and deliberately OUTSIDE the checkout: these are real prompts.
-CORPUS="${PMUX_LANE_CORPUS_HOST:-$HOME/.local/state/pmux-linux-arm64-corpus}"
+CORPUS="${PMUX_LANE_CORPUS_HOST:-${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-corpus}"
 
 subcommand="${1:?usage: run.sh <build|preflight|versions|drain|pool|floor-receipt|operator-eval|living-run|promote|shell> ...}"
 shift || true
@@ -52,8 +54,10 @@ preflight() {
         exit 2
     fi
     if [ ! -r "$STORE/.credentials.json" ]; then
-        echo "no credential store at ${STORE}" >&2
-        echo "Set PMUX_LANE_STORE, or see this directory's README on rotating the pin." >&2
+        echo "no Claude Code credential store at ${STORE}" >&2
+        echo "This lane needs a LINUX file store (a macOS keychain login cannot be reused)." >&2
+        echo "Fill it with a \`CLAUDE_CONFIG_DIR=<store> claude auth login\` on Linux, or set" >&2
+        echo "PMUX_LANE_STORE to one you already have. See this directory's README." >&2
         exit 2
     fi
     mkdir -p "$CORPUS"

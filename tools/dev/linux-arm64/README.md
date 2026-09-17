@@ -61,17 +61,35 @@ raise the bound, which is the conservative direction.
 
 ## Credentials
 
-The pool authenticates from the Claude Code file credential store on the host,
-bind-mounted **read-write** at `/home/pmux/.claude` inside the container. Its
-host path is derived from the checkout's own location,
+The pool authenticates from a Claude Code **file** credential store on the
+host, bind-mounted **read-write** at `/home/pmux/.claude` inside the
+container. Its default host path is the lane's own, beside the corpus:
 
-    <parent of this checkout>/plak/.plak/harbor/claude-linux-securestorage
+    ${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-store
 
-and `PMUX_LANE_STORE` overrides it. The container path is the unsuffixed store — the `--pool-securestorage-dir empty`
-default (`docs/spec/02-operator.md`) — which matters because `drain_n50.py` and
-`living_pmux_run.py` expose no pin, so the unsuffixed location is the one
-mount that serves the whole chain. It is read-write because a refreshed OAuth
-token has to be written back or the next run starts logged out.
+and `PMUX_LANE_STORE` overrides it, for an operator who already keeps a Linux
+store somewhere else. The container path is the unsuffixed store — the
+`--pool-securestorage-dir empty` default (`docs/spec/02-operator.md`) — which
+matters because `drain_n50.py` and `living_pmux_run.py` expose no pin, so the
+unsuffixed location is the one mount that serves the whole chain. It is
+read-write because a refreshed OAuth token has to be written back or the next
+run starts logged out.
+
+**Filling it.** `run.sh preflight` refuses when the store holds no
+`.credentials.json`, and it does not create one: an empty store is a run that
+spends real turns and comes back at a login screen. The store must be written
+by a **Linux** Claude Code, because on Linux the credential lives in a file
+and on macOS it lives in the login keychain, so a macOS login cannot be
+reused. Two ways to get one:
+
+    # On any Linux box, or in this lane's own shell:
+    mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-store"
+    CLAUDE_CONFIG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-store" \
+        claude auth login
+
+or point `PMUX_LANE_STORE` at a Linux store you already have. Nothing in this
+repository provisions one for you, and nothing here should be committed: the
+store holds a live OAuth token.
 
 It is a bind mount and nothing else. It is never copied into the image, never
 baked into a layer, never passed on argv, never printed, and never written to
@@ -80,12 +98,9 @@ with its own private isolation root inside the run's sandbox, and only the
 credential file is read from the store.
 
 **Rotating the pin.** If the store expires (`pmux doctor` reports
-`needs_login`, or a turn comes back with a login screen), log in again on a
-Linux host with `CLAUDE_CONFIG_DIR` pointed at a scratch directory and copy
-the resulting `.credentials.json` into the store directory above, or re-run
-whatever provisioned it. A macOS login cannot be reused: on Darwin the
-credential lives in the login keychain, not in a file. Do not commit anything
-from that directory and do not move it inside the checkout.
+`needs_login`, or a turn comes back with a login screen), run the same
+`CLAUDE_CONFIG_DIR` login above against the store directory again. Do not
+commit anything from that directory and do not move it inside the checkout.
 
 ## The corpus
 
@@ -150,5 +165,5 @@ generated `range_provenance` and from the pooled receipt's own numbers.
 | variable | default |
 | -------- | ------- |
 | `PMUX_LANE_IMAGE` | `pmux-linux-arm64:dev` |
-| `PMUX_LANE_STORE` | the harbor Linux credential store above |
-| `PMUX_LANE_CORPUS_HOST` | `~/.local/state/pmux-linux-arm64-corpus` |
+| `PMUX_LANE_STORE` | `${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-store` |
+| `PMUX_LANE_CORPUS_HOST` | `${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-corpus` |
