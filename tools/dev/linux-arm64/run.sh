@@ -31,7 +31,10 @@ IMAGE="${PMUX_LANE_IMAGE:-pmux-linux-arm64:dev}"
 # `--pool-securestorage-dir empty` default that every tool in tools/dev uses
 # (docs/spec/02-operator.md). Only three tools expose a pin at all, so the
 # unsuffixed location is the one mount that serves the whole chain.
-STORE="${PMUX_LANE_STORE:-/Users/cmace/dev/ai/harnussy/plak/.plak/harbor/claude-linux-securestorage}"
+# Derived from the checkout's own location rather than written out, so no
+# host's home directory is spelled in a tracked file. Override with
+# PMUX_LANE_STORE anywhere the sibling layout differs.
+STORE="${PMUX_LANE_STORE:-$(dirname "$REPO")/plak/.plak/harbor/claude-linux-securestorage}"
 
 # The transcript corpus a pooled bound is measured over. Host-local, never
 # committed, and deliberately OUTSIDE the checkout: these are real prompts.

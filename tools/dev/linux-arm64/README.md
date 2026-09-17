@@ -62,11 +62,12 @@ raise the bound, which is the conservative direction.
 ## Credentials
 
 The pool authenticates from the Claude Code file credential store on the host,
-bind-mounted **read-write** at `/home/pmux/.claude` inside the container:
+bind-mounted **read-write** at `/home/pmux/.claude` inside the container. Its
+host path is derived from the checkout's own location,
 
-    /Users/cmace/dev/ai/harnussy/plak/.plak/harbor/claude-linux-securestorage
+    <parent of this checkout>/plak/.plak/harbor/claude-linux-securestorage
 
-That path is the unsuffixed store — the `--pool-securestorage-dir empty`
+and `PMUX_LANE_STORE` overrides it. The container path is the unsuffixed store — the `--pool-securestorage-dir empty`
 default (`docs/spec/02-operator.md`) — which matters because `drain_n50.py` and
 `living_pmux_run.py` expose no pin, so the unsuffixed location is the one
 mount that serves the whole chain. It is read-write because a refreshed OAuth
