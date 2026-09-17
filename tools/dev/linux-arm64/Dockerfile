@@ -72,9 +72,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # passes bind mounts through numerically, so a receipt this container writes
 # into /src/evidence already belongs to the host user; the entrypoint still
 # chowns at the end for the group and for anything created as root.
+#
+# The group is created only if that gid is free. On a Darwin host `id -g` is
+# 20 (`staff`), and 20 is `dialout` in a Debian base image, so an
+# unconditional `groupadd -g 20` fails the build with exit 4. Joining the
+# existing group is the right answer anyway: what has to match the host is the
+# NUMERIC gid on the files, not the name in /etc/group.
 ARG HOST_UID=1000
 ARG HOST_GID=1000
-RUN groupadd -g "${HOST_GID}" pmux \
+RUN if ! getent group "${HOST_GID}" >/dev/null; then groupadd -g "${HOST_GID}" pmux; fi \
     && useradd -m -u "${HOST_UID}" -g "${HOST_GID}" -s /bin/bash pmux \
     && echo 'pmux ALL=(ALL) NOPASSWD: /bin/chown' > /etc/sudoers.d/pmux-chown \
     && chmod 0440 /etc/sudoers.d/pmux-chown
