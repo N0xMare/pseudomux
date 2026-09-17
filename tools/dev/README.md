@@ -11,6 +11,7 @@ pool's model table and gates nothing.
 | `tools/dev/operator_eval.py` | Before changing the operator Claude pin | This Claude works on **this** OS with this pmux. |
 | `tools/dev/model_matrix.py` | Before pinning `MODEL_TABLE` to a Claude version | Every `(model, effort)` cell the table admits answers through a real pooled cell on **this** OS. |
 | `tools/dev/promote.py` | Only to drop `--tested-claude-profile` | This OS already has a pooled drain receipt; widen `PROMOTED_PROFILES` for **that os/arch only**. |
+| `tools/dev/linux-arm64/run.sh` | To measure or promote the linux/aarch64 cell from a Darwin host | The same tools, run inside a **native** linux/arm64 container. [Its README](linux-arm64/README.md) says why a container is admissible for that cell and not for linux/x86_64. |
 
 `tools/promotion/` is the drop-flag engine (`promote.py` wraps it). Gate A, Phase 0, linux-docker, and package-smoke have been removed.
 
@@ -47,9 +48,22 @@ python3 tools/dev/promote.py \
 ```
 
 On macos the pinned binary is `$HOME/.local/share/claude/versions/2.1.272` and the output is `evidence/promotion-2.1.272-macos-aarch64.json`.
+On linux/aarch64 both the binary and the whole chain live in the container lane
+(`tools/dev/linux-arm64/`): `run.sh drain`, `run.sh pool`, `run.sh floor-receipt`,
+`run.sh operator-eval`, `run.sh living-run`, `run.sh promote`.
+
 `--pool-securestorage-dir empty` is the `default` account pin (unsuffixed store). A second Anthropic account is `--pool-account NAME=/absolute/pin` on the same `--pool-claude`, then `pmux ask --account NAME` / Messages `x-pmux-account: NAME`. `CLAUDE_CONFIG_DIR` is not an account picker.
 
 If `evidence/pooled-transcript-drain-<os>-<arch>.json` is missing, the tool exits 2 and says you cannot **drop the flag** on that OS. Use `operator_eval.py` to pin the binary instead.
+
+`tools/dev/drain_n50.py` is the repeatable n=50 minified campaign a pooled
+receipt is measured over. Pass `--corpus-out DIR` to copy the campaign's
+`*.jsonl` out before the sandbox is removed: without it the corpus dies with
+the run, and a bound POOLED over two versions -- which
+`compatibility.rs::every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit`
+requires, because it refuses a pool naming fewer than two -- cannot be
+measured at all. The corpus is host-local and never committed; it carries real
+prompts.
 
 macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.258, tested through 2.1.272, drain 250 ms; linux floor is 2.1.227, tested through 2.1.272, drain 250 ms. A first promotion on an OS with no shipped cell needs `--floor`.
 

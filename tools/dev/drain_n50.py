@@ -15,6 +15,7 @@ import argparse
 import json
 import pathlib
 import random
+import shutil
 import subprocess
 import sys
 import time
@@ -183,11 +184,55 @@ def measure_drain(corpus: pathlib.Path, version: str, host_os: str, host_arch: s
     return {"ok": True, "exit": 0, "measured": measured, "argv": argv[1:]}
 
 
+def keep_corpus(corpus: pathlib.Path, destination: pathlib.Path) -> dict[str, Any]:
+    """Copy this campaign's transcripts out before the sandbox is removed.
+
+    WHY THIS EXISTS. The corpus a campaign produces is the daemon's Path B
+    evidence mirror, which is a sibling of the socket
+    (`bin/pmuxd/src/main.rs::settings.evidence_dir`) and therefore lives inside
+    `Sandbox.root` -- which `Sandbox.remove()` deletes in this tool's `finally`.
+    So the transcripts are gone the moment the run ends and the receipt keeps
+    only summary numbers.
+
+    That is fine for a per-version campaign and fatal for a POOLED one. The
+    bound pmux ships is pooled over every version measured
+    (`docs/engineering/version-drift.md` P1), and
+    `compatibility.rs::every_promoted_drain_is_the_pooled_bound_and_not_a_per_version_fit`
+    refuses a pool that names fewer than two versions. Pooling two versions
+    means one `measure_transcript_drain.py` run over BOTH campaigns' corpora,
+    and no committed tool could produce that corpus because each campaign ate
+    its own.
+
+    This copies only `*.jsonl`, at the same relative paths, so the destination
+    is a corpus root `measure_transcript_drain.py` can be pointed at directly.
+    It is NOT evidence: it is host-local transcripts carrying real prompts, it
+    is never committed, and the receipt remains the durable artifact.
+    """
+
+    destination.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for source in sorted(corpus.rglob("*.jsonl")):
+        target = destination / source.relative_to(corpus)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        copied += 1
+    return {"root": str(destination), "jsonl_files": copied}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release-dir", type=pathlib.Path, required=True)
     parser.add_argument("--claude", type=pathlib.Path, required=True)
     parser.add_argument("--output", type=pathlib.Path, required=True)
+    parser.add_argument(
+        "--corpus-out",
+        type=pathlib.Path,
+        default=None,
+        help="copy this campaign's transcripts here before the sandbox is "
+        "removed, so a later measure_transcript_drain.py run can POOL this "
+        "version with another. Host-local and never committed: the files "
+        "carry real prompts.",
+    )
     parser.add_argument("--model", default="claude-sonnet-5")
     parser.add_argument("--effort", default="low")
     parser.add_argument("--seed", type=int, default=27250)
@@ -220,6 +265,7 @@ def main() -> int:
     turns: list[dict[str, Any]] = []
     drain: dict[str, Any] = {}
     census: dict[str, Any] = {}
+    kept: dict[str, Any] | None = None
     started = time.monotonic()
     try:
         census = wait_idle(binaries, sandbox, claude)
@@ -251,6 +297,8 @@ def main() -> int:
         daemon = None  # type: ignore[assignment]
         time.sleep(1)
         drain = measure_drain(corpus, version, host_os, host_arch)
+        if args.corpus_out is not None:
+            kept = keep_corpus(corpus, args.corpus_out)
     finally:
         if daemon is not None:
             daemon.stop()
@@ -284,6 +332,10 @@ def main() -> int:
             "per_version_recommendations_not_to_be_shipped"
         ),
         "elapsed_ms": round((time.monotonic() - started) * 1000.0, 1),
+        # Where this campaign's transcripts were kept, when they were kept. Not
+        # a measurement and not committed with the corpus: a pointer, so a
+        # pooled receipt taken later can be traced back to the run that fed it.
+        "corpus_kept": kept,
         "turns": turns,
     }
     encoded = json.dumps(portable_paths.render_document(receipt), indent=2, sort_keys=True)
@@ -298,6 +350,7 @@ def main() -> int:
                 "recommended": recommended,
                 "reachable": reachable,
                 "full_drain_binds_on": binds,
+                "corpus_kept": kept,
             },
             indent=2,
         )
