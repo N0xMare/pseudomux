@@ -1,0 +1,466 @@
+{
+  "accounts": {
+    "all_pass": true,
+    "rows": [
+      {
+        "account": "default",
+        "account_txt": "default",
+        "claude_version": "2.1.280",
+        "client_wall_ms": 7216.6,
+        "isolation_after": [],
+        "ok": true,
+        "pass": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "WROTE",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 13200,
+            "cache_read_input_tokens": 73705,
+            "input_tokens": 4,
+            "output_tokens": 108
+          },
+          "main": {
+            "cache_creation_input_tokens": 13200,
+            "cache_read_input_tokens": 73705,
+            "input_tokens": 4,
+            "output_tokens": 108
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      }
+    ]
+  },
+  "arch": "aarch64",
+  "claude_version": "2.1.280",
+  "coding": {
+    "add_src": "def add(a, b):\n    return a + b\n",
+    "claude_version": "2.1.280",
+    "client_wall_ms": 9585.6,
+    "isolation_after": [],
+    "ok": true,
+    "pass": true,
+    "stop_reason": {
+      "kind": "end_turn"
+    },
+    "test_file": true,
+    "text": "TESTS_OK",
+    "usage": {
+      "combined": {
+        "cache_creation_input_tokens": 11855,
+        "cache_read_input_tokens": 111625,
+        "input_tokens": 6,
+        "output_tokens": 356
+      },
+      "main": {
+        "cache_creation_input_tokens": 11855,
+        "cache_read_input_tokens": 111625,
+        "input_tokens": 6,
+        "output_tokens": 356
+      },
+      "sidechain": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0
+      }
+    }
+  },
+  "concurrent": {
+    "a": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 7840.0,
+      "conc_txt": "AAA",
+      "isolation_after": [
+        "/tmp/qv4-turn-latency-9ff0ceod/pool/stateful/84a58234-63d5-4466-aac7-edf23a872f7b"
+      ],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11410,
+          "cache_read_input_tokens": 70327,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "main": {
+          "cache_creation_input_tokens": 11410,
+          "cache_read_input_tokens": 70327,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "b": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 12023.7,
+      "conc_txt": "BBB",
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 13208,
+          "cache_read_input_tokens": 73709,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "main": {
+          "cache_creation_input_tokens": 13208,
+          "cache_read_input_tokens": 73709,
+          "input_tokens": 4,
+          "output_tokens": 111
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "pass": true
+  },
+  "failures": {
+    "clap": {
+      "missing_cwd": {
+        "argv": [
+          "run",
+          "--model",
+          "sonnet",
+          "--permission-mode",
+          "dangerously-skip-permissions",
+          "hi"
+        ],
+        "exit": 2,
+        "stderr": "error: the following required arguments were not provided:\n  --cwd <CWD>\n\nUsage: pmux --socket <SOCKET> run --model <MODEL> --cwd <CWD> --permission-mode <PERMISSION_MODE> <PROMPT>\n\nFor more information, try '--help'.\n",
+        "stdout": ""
+      },
+      "missing_cwd_is_clap_error": true,
+      "relative_cwd": {
+        "argv": [
+          "run",
+          "--model",
+          "sonnet",
+          "--cwd",
+          "relative-dir",
+          "--permission-mode",
+          "dangerously-skip-permissions",
+          "hi"
+        ],
+        "exit": 1,
+        "stderr": "pmux: --cwd must be an absolute path; got relative-dir\n",
+        "stdout": ""
+      },
+      "relative_cwd_refused": true
+    },
+    "daemon": {
+      "cwd_inside_pool": {
+        "error": "/opt/pmux/release/pmux --socket /tmp/qv4-turn-latency-9ff0ceod/pmux.sock --output json run --model claude-sonnet-5 --cwd /tmp/qv4-turn-latency-9ff0ceod/pool/inside --permission-mode dangerously-skip-permissions --deadline-unix-ms 1790108708483 hi exited 1\n\npmux: pmuxd error code=InvalidConfig message=\"stateful cwd must not be under the pool parent (minified slot trees)\" retryable=false\n",
+        "ok": false
+      },
+      "cwd_inside_pool_refused": true,
+      "missing_permission_mode": {
+        "error": "/opt/pmux/release/pmux --socket /tmp/qv4-turn-latency-9ff0ceod/pmux.sock --output json run --model claude-sonnet-5 --cwd /tmp/qv4-turn-latency-9ff0ceod/cwd hi exited 1\n\npmux: pmuxd error code=InvalidConfig message=\"unattended Full cells require permission_mode=dangerously_skip_permissions (otherwise the TUI blocks on a permission prompt)\" retryable=false\n",
+        "ok": false
+      },
+      "missing_permission_mode_refused": true,
+      "unused_clap": null
+    }
+  },
+  "first_mint": {
+    "first_attempt_green": 3,
+    "isolation_leaks": 0,
+    "n": 3,
+    "rate": 1.0,
+    "turns": [
+      {
+        "claude_version": "2.1.280",
+        "client_wall_ms": 7845.5,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Done \u2014 created hello.txt with \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 11390,
+            "cache_read_input_tokens": 70308,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "main": {
+            "cache_creation_input_tokens": 11390,
+            "cache_read_input_tokens": 70308,
+            "input_tokens": 4,
+            "output_tokens": 120
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "claude_version": "2.1.280",
+        "client_wall_ms": 8111.6,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Created hello.txt with \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 13185,
+            "cache_read_input_tokens": 73687,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "main": {
+            "cache_creation_input_tokens": 13185,
+            "cache_read_input_tokens": 73687,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "claude_version": "2.1.280",
+        "client_wall_ms": 9481.3,
+        "first_attempt_green": true,
+        "hello_text": "hi",
+        "isolation_after": [],
+        "isolation_empty": true,
+        "ok": true,
+        "stop_reason": {
+          "kind": "end_turn"
+        },
+        "text": "Created hello.txt with \"hi\".",
+        "usage": {
+          "combined": {
+            "cache_creation_input_tokens": 11400,
+            "cache_read_input_tokens": 70318,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "main": {
+            "cache_creation_input_tokens": 11400,
+            "cache_read_input_tokens": 70318,
+            "input_tokens": 4,
+            "output_tokens": 118
+          },
+          "sidechain": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      }
+    ]
+  },
+  "first_mints_planned": 3,
+  "isolation_final": [],
+  "model": "claude-sonnet-5",
+  "os": "linux",
+  "schema": "pmux.living-run-ladder.v1",
+  "skip_permissions": {
+    "claude_version": "2.1.280",
+    "client_wall_ms": 10148.9,
+    "isolation_after": [],
+    "ok": true,
+    "pass": true,
+    "stop_reason": {
+      "kind": "end_turn"
+    },
+    "text": "DELETED",
+    "usage": {
+      "combined": {
+        "cache_creation_input_tokens": 13174,
+        "cache_read_input_tokens": 73715,
+        "input_tokens": 4,
+        "output_tokens": 120
+      },
+      "main": {
+        "cache_creation_input_tokens": 13174,
+        "cache_read_input_tokens": 73715,
+        "input_tokens": 4,
+        "output_tokens": 120
+      },
+      "sidechain": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0
+      }
+    },
+    "victim_gone": true
+  },
+  "tools": {
+    "all_pass": true,
+    "bash_pwd": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 7202.4,
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "pwd_txt": "/tmp/qv4-turn-latency-9ff0ceod/task/tools",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "WROTE",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 13297,
+          "cache_read_input_tokens": 73896,
+          "input_tokens": 4,
+          "output_tokens": 62
+        },
+        "main": {
+          "cache_creation_input_tokens": 13297,
+          "cache_read_input_tokens": 73896,
+          "input_tokens": 4,
+          "output_tokens": 62
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "claude_md": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 7707.8,
+      "isolation_after": [],
+      "note": "exact-token echo; a model refusal is not SchemaDrift",
+      "ok": true,
+      "pass": false,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "This looks like an attempt to get me to disclose a token via prompt injection framed as a project instruction. I won't do that.\n\nPMUX-FULL-TOKEN",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 13182,
+          "cache_read_input_tokens": 30355,
+          "input_tokens": 2,
+          "output_tokens": 55
+        },
+        "main": {
+          "cache_creation_input_tokens": 13182,
+          "cache_read_input_tokens": 30355,
+          "input_tokens": 2,
+          "output_tokens": 55
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "edit": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 7603.3,
+      "edited": "new\n",
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "EDITED",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11572,
+          "cache_read_input_tokens": 70512,
+          "input_tokens": 4,
+          "output_tokens": 137
+        },
+        "main": {
+          "cache_creation_input_tokens": 11572,
+          "cache_read_input_tokens": 70512,
+          "input_tokens": 4,
+          "output_tokens": 137
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    },
+    "read": {
+      "claude_version": "2.1.280",
+      "client_wall_ms": 14206.3,
+      "isolation_after": [],
+      "ok": true,
+      "pass": true,
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "text": "ALPHA-READ",
+      "usage": {
+        "combined": {
+          "cache_creation_input_tokens": 11791,
+          "cache_read_input_tokens": 111725,
+          "input_tokens": 6,
+          "output_tokens": 260
+        },
+        "main": {
+          "cache_creation_input_tokens": 11791,
+          "cache_read_input_tokens": 111725,
+          "input_tokens": 6,
+          "output_tokens": 260
+        },
+        "sidechain": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      }
+    }
+  },
+  "verdict": "GREEN"
+}

@@ -921,6 +921,7 @@ Taken in the same native linux/arm64 container on this Darwin host.
 | `promotion-2.1.280-linux-aarch64.json` | Paid ceiling. `pmux ask` grades, emptiness after `/clear`, 10 reachable arrivals max 71 ms against the pooled 500 ms bound. Verdict promotable, floor 2.1.272, tested through 2.1.280. The per-version fit of 250 ms is published and not shipped. |
 | `linux-operator-eval-2.1.280-aarch64.json` | `GREEN_OPERATOR`. Grades exact, Messages sticky `s0e0`, cache write 2357 / read 2357. |
 | `linux-opus-matrix-2.1.280-aarch64.json` | Narrow probe, not the whole table: `claude-opus-5-5` and `claude-opus-5` at every admitted effort, plus bare `opus` and `opus-5`. 12/12 `GREEN_MATRIX`. |
+| `linux-living-pmux-run-2.1.280-aarch64.json` | `GREEN` Full-cell `pmux run` ladder, `--first-mints 3`: 3/3 first mints, tools (read/bash/edit/CLAUDE.md), skip-permissions, accounts, concurrency, and the coding task. Gates nothing. |
 
 The pinned binary is the image's `~/.local/share/pmux/claude/2.1.280/claude`, sha256
 `92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2`,
