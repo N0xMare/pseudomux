@@ -484,7 +484,7 @@ impl PromotedProfile {
 pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
     PromotedProfile {
         claude_version_floor: "2.1.258",
-        claude_version_tested_through: "2.1.272",
+        claude_version_tested_through: "2.1.280",
         os: "macos",
         arch: "aarch64",
         terminal_profile: TerminalProfile::Transparent,
@@ -497,11 +497,11 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        Priced: the full drain binds only on the 0 of 105 cli turns carrying no \
                        turn_duration marker. evidence/pooled-transcript-drain-macos-aarch64.json, \
                        tools/promotion/measure_transcript_drain.py",
-        range_provenance: "floor 2.1.258: previous macos ceiling (evidence/promotion-2.1.258-macos-aarch64.json, 5 reachable arrivals max 42 ms) pooled with 2.1.272 n=100 minified drain campaigns (max 20 ms) in evidence/pooled-transcript-drain-macos-aarch64.json; below 2.1.258 the 2.1.220 campaign max of 438 ms is historical and needs --tested-claude-profile. Tested through 2.1.272: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 5 reachable post-answer arrival(s) at this version, max 8 ms against the pooled 250 ms bound. NOT measured at 2.1.272: anything outside a minified cell on macos/aarch64.",
+        range_provenance: "floor 2.1.258: previous macos ceiling (evidence/promotion-2.1.258-macos-aarch64.json, 5 reachable arrivals max 42 ms) pooled with 2.1.272 n=100 minified drain campaigns (max 20 ms) in evidence/pooled-transcript-drain-macos-aarch64.json; below 2.1.258 the 2.1.220 campaign max of 438 ms is historical and needs --tested-claude-profile. Tested through 2.1.280: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 10 reachable post-answer arrival(s) at this version, max 46 ms against the pooled 250 ms bound. NOT measured at 2.1.280: anything outside a minified cell on macos/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
     },
     PromotedProfile {
         claude_version_floor: "2.1.227",
-        claude_version_tested_through: "2.1.272",
+        claude_version_tested_through: "2.1.280",
         os: "linux",
         arch: "x86_64",
         terminal_profile: TerminalProfile::Transparent,
@@ -516,22 +516,11 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        binds on 0 of 191 cli turns (every Path B turn carried a turn_duration \
                        marker). evidence/pooled-transcript-drain-linux-x86_64.json, \
                        tools/promotion/measure_transcript_drain.py",
-        range_provenance: "floor 2.1.227: first linux/x86_64 Path B drain receipt \
-                       (evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) \
-                       pooled with 2.1.232/2.1.233 in \
-                       evidence/pooled-transcript-drain-linux-x86_64.json; below it linux minified \
-                       cells were not measured as a promotion floor. Tested through 2.1.272: \
-                       promote_claude_version.py drove 5 minified-cell turns through `pmux run` at \
-                       claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite \
-                       answered across a `/clear` per turn, sidechain and cache zero on every result, \
-                       the pool never halted -- and measured 5 reachable post-answer arrival(s) at \
-                       this version, max 6 ms against the pooled 250 ms bound. NOT measured at \
-                       2.1.272: anything outside a minified cell on linux/x86_64, and the per-version \
-                       fit of 250 ms, which is published to be read and NOT shipped.",
+        range_provenance: "floor 2.1.227: first linux/x86_64 Path B drain receipt (evidence/promoted-profile-2.1.227-linux-x86_64.json, max reachable 46 ms) pooled with 2.1.232/2.1.233 in evidence/pooled-transcript-drain-linux-x86_64.json; below it linux minified cells were not measured as a promotion floor. Tested through 2.1.280: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 10 reachable post-answer arrival(s) at this version, max 29 ms against the pooled 250 ms bound. NOT measured at 2.1.280: anything outside a minified cell on linux/x86_64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
     },
     PromotedProfile {
         claude_version_floor: "2.1.272",
-        claude_version_tested_through: "2.1.272",
+        claude_version_tested_through: "2.1.280",
         os: "linux",
         arch: "aarch64",
         terminal_profile: TerminalProfile::Transparent,
@@ -550,7 +539,7 @@ pub const PROMOTED_PROFILES: &[PromotedProfile] = &[
                        and not a translation -- tools/dev/linux-arm64/README.md. \
                        evidence/pooled-transcript-drain-linux-aarch64.json, \
                        tools/promotion/measure_transcript_drain.py",
-        range_provenance: "floor 2.1.272: first promoted cell on linux/aarch64; the version with a drain receipt on this OS. Not macos Gate B, not another OS's floor. Tested through 2.1.272: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 10 reachable post-answer arrival(s) at this version, max 86 ms against the pooled 500 ms bound. NOT measured at 2.1.272: anything outside a minified cell on linux/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
+        range_provenance: "floor 2.1.272: first promoted cell on linux/aarch64; the version with a drain receipt on this OS. Not macos Gate B, not another OS's floor. Tested through 2.1.280: promote_claude_version.py drove 5 minified-cell turns through `pmux ask` at claude-sonnet-5 low/high -- every graded reply exact, the four-grade suite answered across a `/clear` per turn, sidechain and cache zero on every result, the pool never halted -- and measured 10 reachable post-answer arrival(s) at this version, max 71 ms against the pooled 500 ms bound. NOT measured at 2.1.280: anything outside a minified cell on linux/aarch64, and the per-version fit of 250 ms, which is published to be read and NOT shipped.",
     },
 ];
 

@@ -27,15 +27,15 @@ still send `x-pmux-conversation`. Without that, child POSTs 400.
 ## Models
 
 Effort is in the model id. `/model` lists the recommended warm-set
-families (`claude-opus-5-*`, `claude-sonnet-5-*`, `claude-fable-5-1-*`).
+families (`claude-opus-5-5-*`, `claude-sonnet-5-*`, `claude-fable-5-1-*`).
 `GET /v1/models` is the full pool table.
 
 Recommended warm set (at the owner-set cap of 15):
 
 ```text
 --pool-size 15
---pool-warm claude-opus-5/medium=12
---pool-warm claude-opus-5/xhigh=2
+--pool-warm claude-opus-5-5/medium=12
+--pool-warm claude-opus-5-5/xhigh=2
 --pool-warm claude-fable-5-1/xhigh=1
 ```
 

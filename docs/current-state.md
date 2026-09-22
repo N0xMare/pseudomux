@@ -6,7 +6,7 @@ third normative document.
 
 Shipped: minified pool + Messages + `pmux ask` / `run_stateless`; opt-in
 Full `pmux run` / `run_stateful` behind `pmuxd --stateful`. Promoted Claude
-Code 2.1.258 through 2.1.272 on macos/aarch64 and 2.1.227 through 2.1.272
+Code 2.1.258 through 2.1.280 on macos/aarch64 and 2.1.227 through 2.1.280
 on linux/x86_64, both `transcript_drain_ms` 250.
 
 The 3,618-line 2026-08 essay is [archive/current-state-2026-08.md](archive/current-state-2026-08.md).

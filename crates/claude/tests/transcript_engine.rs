@@ -4,7 +4,7 @@ use pretty_assertions::assert_eq;
 use pseudomux_claude::{
     CompleteLine, EngineWarning, IngestOutcome, JsonlParser, LogicalMessageKey, ParseMode,
     ParsedRow, RowKind, SourceLocation, StopReason, TerminalOutcome, TranscriptEngine,
-    TranscriptError, TurnStatus,
+    TranscriptError, TurnStatus, normalize_prompt,
 };
 
 /// MEASURED on Claude Code 2.1.257 linux/x86_64, `SessionCell::Minified`: the
@@ -2320,6 +2320,38 @@ fn api_error_overrides_end_turn_and_prompt_matching_is_exact_after_normalization
         0,
         "a mismatched first typed prompt must fail before graph mutation"
     );
+}
+
+/// MEASURED on Claude Code 2.1.280. A multi-line bracketed paste is recorded
+/// as `<pasted_content id="…">` around the submitted bytes, and the closing
+/// tag repeats the id. Messages flattens every turn onto several lines, so
+/// without this unwrap every Messages turn dies in `UnexpectedTypedPrompt`.
+/// A one-line `pmux ask` is still recorded bare.
+#[test]
+fn a_pasted_content_envelope_acknowledges_the_prompt_inside_it() {
+    let typed = "HISTORY:\nUSER:\nReply with exactly PING and nothing else.\n\nContinue as the assistant. Either answer in plain text or emit tool_call blocks.\n";
+    let recorded =
+        format!("\n\n<pasted_content id=\"f11d\">\n{typed}</pasted_content id=\"f11d\">\n");
+    assert_eq!(normalize_prompt(&recorded), normalize_prompt(typed));
+
+    let mut engine = TranscriptEngine::new(ParseMode::Strict);
+    engine.arm_turn(typed).unwrap();
+    assert!(matches!(
+        engine.ingest(parse(user(None, "u", &recorded))),
+        Ok(IngestOutcome::PromptAcknowledged(_))
+    ));
+
+    let mentioned = "keep the tag <pasted_content id=\"abcd\"> in the sentence";
+    assert_eq!(
+        normalize_prompt(mentioned),
+        "keep the tag <pasted_content id=\"abcd\"> in the sentence"
+    );
+    let mut bare = TranscriptEngine::new(ParseMode::Strict);
+    bare.arm_turn("one line").unwrap();
+    assert!(matches!(
+        bare.ingest(parse(user(None, "u2", "one line"))),
+        Ok(IngestOutcome::PromptAcknowledged(_))
+    ));
 }
 
 /// The prompt pmux typed and the prompt Claude recorded, MEASURED, byte for

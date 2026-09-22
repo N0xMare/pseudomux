@@ -33,7 +33,7 @@ beyond what `living_pmux_run.py`'s ladder covers.
 
 ## The Claude Code binaries
 
-Two official **linux-arm64 (glibc)** builds are installed at the path every
+Three official **linux-arm64 (glibc)** builds are installed at the path every
 tool in `tools/dev` expects,
 `$HOME/.local/share/pmux/claude/<version>/claude`. Each comes from the npm
 platform package `@anthropic-ai/claude-code-linux-arm64`, and
@@ -46,6 +46,7 @@ installed in the image.
 | ------- | ----------------- |
 | 2.1.258 | `43dc490af55262edcb3e9b1cb315de22cc09ccb08bd52a4c39bc5eabaa63100f` |
 | 2.1.272 | `214a90efdd16ee0ea81132ffecced588dba394d178cc494f285ba04b5288c8de` |
+| 2.1.280 | `92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2` |
 
 `run.sh versions` prints both digests and both `claude --version` lines from
 inside the container.

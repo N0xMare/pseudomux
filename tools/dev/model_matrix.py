@@ -45,7 +45,12 @@ from measure_turn_latency import (  # noqa: E402
     run_client,
 )
 from promote_claude_version import GRADES, _nonce  # noqa: E402
-from operator_eval import EvalDaemon, doctor, layer  # noqa: E402
+from operator_eval import (  # noqa: E402
+    EvalDaemon,
+    doctor,
+    layer,
+    require_securestorage_pin,
+)
 import portable_paths  # noqa: E402
 
 CLASS_RS = ROOT / "crates" / "service" / "src" / "pool" / "class.rs"
@@ -377,6 +382,8 @@ def execute(args: argparse.Namespace, rows: list[dict[str, Any]]) -> dict[str, A
             "version": version,
         },
     }
+    storage_pin = require_securestorage_pin(args.pool_securestorage_dir)
+    receipt["securestorage_dir"] = "empty" if storage_pin == "empty" else "configured"
     profile = {
         "claude_version": version,
         "os": host_os,
@@ -394,6 +401,7 @@ def execute(args: argparse.Namespace, rows: list[dict[str, Any]]) -> dict[str, A
         None,
         rows[0]["model"],
         rows[0]["effort"],
+        securestorage_dir=storage_pin,
     )
     probed: list[dict[str, Any]] = []
     try:
@@ -462,6 +470,11 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--keep-sandbox", action="store_true")
+    parser.add_argument(
+        "--pool-securestorage-dir",
+        default="empty",
+        help="empty (default, unsuffixed store) or an absolute credential pin",
+    )
     args = parser.parse_args(arguments)
     try:
         table = parse_model_table(CLASS_RS.read_text(encoding="utf-8"))

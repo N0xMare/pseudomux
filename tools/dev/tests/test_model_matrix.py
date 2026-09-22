@@ -215,6 +215,14 @@ class Describe(unittest.TestCase):
         self.assertNotIn("--effort max", text)
         self.assertNotIn("claude-sonnet-5", text)
 
+    def test_help_names_the_credential_pin(self) -> None:
+        stdout = io.StringIO()
+        with redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:
+                model_matrix.main(["--help"])
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("--pool-securestorage-dir", stdout.getvalue())
+
     def test_an_unknown_only_model_is_exit_2(self) -> None:
         stderr = io.StringIO()
         with redirect_stdout(io.StringIO()), redirect_stderr(stderr):

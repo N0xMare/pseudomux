@@ -823,19 +823,48 @@ cell's ceiling from 2.1.257 to 2.1.272. Parser admits five new
 | `linux-operator-eval-2.1.272-x86_64.json` | `GREEN_OPERATOR` pin confirmation for the 2.1.272 binary on this OS: grades all exact at sonnet-5 low and high, Messages sticky on the same cell `s0e0`, cache write 2328 / read 2328. Does not edit `PROMOTED_PROFILES`. |
 | `linux-operator-eval-2.1.272-x86_64-recheck.json` | Recheck on tars0 against the multi-account daemon with the empty (unsuffixed) pin: `GREEN_OPERATOR`, Messages sticky `s0e0`, cache write 2324 / read 2324. |
 
-`promotion-2.1.272-linux-x86_64.json` PREDATES the generator's current
-wording: `7ccf5c3` changed `promote_claude_version.py` from `pmux run` to
-`pmux ask` on 2026-09-15 and regenerated the macos receipt that day, but not
-this one, so the shipped linux/x86_64 `range_provenance` is a sentence the
-committed tool will no longer emit. The row and its receipt agree, which is
-the rule; the x86_64 and aarch64 rows describe the same procedure with
-different verbs because they were written by two versions of the same
-generator. Re-running the x86_64 promotion costs five real turns and is the
-only thing that would fix it; the receipt is not to be hand-edited.
+`promotion-2.1.272-linux-x86_64.json` predates the generator's switch from
+`pmux run` to `pmux ask`. It is historical. The shipped linux/x86_64
+`range_provenance` is the 2.1.280 receipt, which the current generator wrote
+with `pmux ask`. Do not hand-edit either receipt.
 
 The pinned 2.1.272 binary is `~/.local/share/pmux/claude/2.1.272/claude`
 (bundled linux-x64 ELF), sha256
 `d81396a668eb76fbddb49a2a5841f1b5d7af96b4c1f6500ced92f2c988f5bcd4`.
+That receipt stays historical. The shipped linux/x86_64 sentence is the
+2.1.280 receipt below, which the current generator wrote with `pmux ask`.
+
+## Linux 2026-09-22 Path B receipts (`x86_64`)
+
+The 2.1.280 ceiling. The pooled drain is unchanged
+(`pooled-transcript-drain-linux-x86_64.json`, 250 ms). Floor stays 2.1.227.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.280-linux-x86_64.json` | Paid linux/x86_64 ceiling. `pmux ask` grades, emptiness after `/clear`, 10 reachable arrivals max 29 ms against the pooled 250 ms bound. Verdict promotable, floor 2.1.227, tested through 2.1.280. |
+| `linux-operator-eval-2.1.280-x86_64.json` | `GREEN_OPERATOR` on the default store. Grades exact, Messages sticky `s0e0`, cache write 2353 / read 2353. |
+| `linux-opus-matrix-2.1.280-x86_64.json` | Narrow probe, not the whole table: `claude-opus-5-5` and `claude-opus-5` at every admitted effort, plus bare `opus` and `opus-5`. 12/12 `GREEN_MATRIX`. |
+
+The pinned binary is `~/.local/share/pmux/claude/2.1.280/claude`, sha256
+`1e08503dbdf3c2cb0d706d32f3408277388d1c76ef108673e8fe42c1b322925b`,
+233,709,640 bytes.
+
+## macos 2026-09-22 Path B receipts (`aarch64`)
+
+The 2.1.280 ceiling. The pooled drain is unchanged
+(`pooled-transcript-drain-macos-aarch64.json`, 250 ms). Floor stays 2.1.258.
+`MODEL_TABLE` gained `claude-opus-5-5` (bare `opus`); `opus-5` still names
+`claude-opus-5`.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.280-macos-aarch64.json` | Paid macos ceiling. `pmux ask` grades, emptiness after `/clear`, 10 reachable arrivals max 46 ms against the pooled 250 ms bound. Verdict promotable, floor 2.1.258, tested through 2.1.280. |
+| `macos-operator-eval-2.1.280-aarch64.json` | `GREEN_OPERATOR` on the `~/.claude-1` pin. Grades exact, Messages sticky `s0e0`, cache write 2337 / read 2337. |
+| `macos-opus-matrix-2.1.280-aarch64.json` | Narrow `model_matrix.py` probe, not the whole table: `claude-opus-5-5` at low/medium/high/xhigh/max plus bare `opus`, and `claude-opus-5` at the same tiers plus `opus-5`. 12/12 `GREEN_MATRIX`. `reported_model` stayed on the launched id. |
+
+The pinned binary is `~/.local/share/claude/versions/2.1.280`, sha256
+`387a5c5dcdbb815085edf0baf79591f9d8894efe922bceaf3d75b1b08055229d`,
+217,254,576 bytes.
 
 ## macos 2026-09-15 Path B receipts (`aarch64`)
 
@@ -880,6 +909,22 @@ billed `input_tokens: 498` with the Remote Control bridge auto-started
 `config_isolation.rs` seeded `remoteControlAtStartup:false` +
 `disableRemoteControl:true`, both read from the `pmux run --output json`
 `usage.main` block on 2026-09-01. No file here carries those two raw results.
+
+## Linux 2026-09-22 aarch64 ceiling (`aarch64`)
+
+The 2.1.280 ceiling. The pooled drain is unchanged
+(`pooled-transcript-drain-linux-aarch64.json`, 500 ms). Floor stays 2.1.272.
+Taken in the same native linux/arm64 container on this Darwin host.
+
+| File | What it is |
+| --- | --- |
+| `promotion-2.1.280-linux-aarch64.json` | Paid ceiling. `pmux ask` grades, emptiness after `/clear`, 10 reachable arrivals max 71 ms against the pooled 500 ms bound. Verdict promotable, floor 2.1.272, tested through 2.1.280. The per-version fit of 250 ms is published and not shipped. |
+| `linux-operator-eval-2.1.280-aarch64.json` | `GREEN_OPERATOR`. Grades exact, Messages sticky `s0e0`, cache write 2357 / read 2357. |
+| `linux-opus-matrix-2.1.280-aarch64.json` | Narrow probe, not the whole table: `claude-opus-5-5` and `claude-opus-5` at every admitted effort, plus bare `opus` and `opus-5`. 12/12 `GREEN_MATRIX`. |
+
+The pinned binary is the image's `~/.local/share/pmux/claude/2.1.280/claude`, sha256
+`92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2`,
+233,103,352 bytes.
 
 ## Linux 2026-09-17 first aarch64 cell (`aarch64`)
 

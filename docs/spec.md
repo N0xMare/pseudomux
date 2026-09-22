@@ -47,7 +47,7 @@ pool. Argv for a minified mint is built by pmux, not by the caller.
 ## 5. Compatibility
 
 See [spec/02-operator.md](spec/02-operator.md). Promoted cells: macos
-2.1.258 through 2.1.272 and linux 2.1.227 through 2.1.272, drain 250 ms.
+2.1.258 through 2.1.280 and linux/x86_64 2.1.227 through 2.1.280, drain 250 ms. linux/aarch64 is 2.1.272 through 2.1.280, drain 500 ms.
 
 ## 6. Transport
 

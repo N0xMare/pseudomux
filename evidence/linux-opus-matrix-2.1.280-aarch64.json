@@ -1,0 +1,514 @@
+{
+  "schema": "pmux.model-matrix.v1",
+  "kind": "model_effort_matrix",
+  "not_a_promotion": true,
+  "claude_version": "2.1.280",
+  "os": "linux",
+  "arch": "aarch64",
+  "pin": {
+    "path": "<HOME>/.local/share/pmux/claude/2.1.280/claude",
+    "sha256": "92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2",
+    "bytes": 233103352,
+    "version": "2.1.280"
+  },
+  "securestorage_dir": "empty",
+  "warm": {
+    "capacity": 3,
+    "clearing": 0,
+    "configured": true,
+    "conversation_leases": [],
+    "declared_warm": 1,
+    "halted": null,
+    "idle": 1,
+    "in_flight": 0,
+    "instance_terminals_present": 1,
+    "leaked": 0,
+    "leased": 0,
+    "live": 1,
+    "pool_size": 3,
+    "registered_instances": 1,
+    "reserved": 0,
+    "tearing_down": 0
+  },
+  "rows": [
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "claude-opus-5-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "5JLP",
+      "expected": "5JLP-89",
+      "text": "5JLP-89",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 495,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 495,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 2782.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "claude-opus-5-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "I0IK",
+      "expected": "I0IK-83",
+      "text": "I0IK-83",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 667,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 667,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6127.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "claude-opus-5-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "K6RD",
+      "expected": "K6RD-91",
+      "text": "K6RD-91",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 666,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 666,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 6211.0,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "claude-opus-5-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "T2JI",
+      "expected": "T2JI-56",
+      "text": "T2JI-56",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 666,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 666,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 4814.1,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "claude-opus-5-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "XCQD",
+      "expected": "XCQD-77",
+      "text": "XCQD-77",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 668,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 668,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5791.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5-5",
+      "spelling": "opus",
+      "alias_used": "opus",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "IK0Y",
+      "expected": "IK0Y-110",
+      "text": "IK0Y-110",
+      "answered": true,
+      "reported_model": "claude-opus-5-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 667,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 667,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5521.5,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "low",
+      "nonce": "0FKS",
+      "expected": "0FKS-80",
+      "text": "0FKS-80",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 488,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 488,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 4823.6,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "medium",
+      "nonce": "U4AS",
+      "expected": "U4AS-59",
+      "text": "U4AS-59",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 495,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 495,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 4408.2,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "high",
+      "nonce": "3CQ2",
+      "expected": "3CQ2-80",
+      "text": "3CQ2-80",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 662,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 662,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5612.9,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "xhigh",
+      "nonce": "I45G",
+      "expected": "I45G-87",
+      "text": "I45G-87",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 663,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 7,
+          "cache_creation_input_tokens": 663,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5705.0,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "claude-opus-5",
+      "alias_used": null,
+      "via_alias": false,
+      "effort": "max",
+      "nonce": "JFO6",
+      "expected": "JFO6-106",
+      "text": "JFO6-106",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 662,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 662,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5153.3,
+      "error": null
+    },
+    {
+      "model": "claude-opus-5",
+      "spelling": "opus-5",
+      "alias_used": "opus-5",
+      "via_alias": true,
+      "effort": "low",
+      "nonce": "BU5Q",
+      "expected": "BU5Q-73",
+      "text": "BU5Q-73",
+      "answered": true,
+      "reported_model": "claude-opus-5",
+      "reported_model_matches": true,
+      "claude_version": "2.1.280",
+      "stop_reason": {
+        "kind": "end_turn"
+      },
+      "usage": {
+        "main": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 664,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 2,
+          "output_tokens": 9,
+          "cache_creation_input_tokens": 664,
+          "cache_read_input_tokens": 0
+        }
+      },
+      "client_wall_ms": 5218.4,
+      "error": null
+    }
+  ],
+  "summary": {
+    "rows": 12,
+    "answered": 12,
+    "failed": 0,
+    "reported_model_mismatches": []
+  },
+  "pool_after": {
+    "halted": null,
+    "leaked": 0
+  },
+  "verdict": "GREEN_MATRIX"
+}

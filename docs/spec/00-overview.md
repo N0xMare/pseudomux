@@ -47,7 +47,7 @@ how to integrate.
 
 Shipped: minified pool + Messages + `run_stateless` / `pmux ask`; opt-in
 Full `run_stateful` / `pmux run` behind `pmuxd --stateful`; promoted Claude
-Code 2.1.258 through 2.1.272 on macos/aarch64 and 2.1.227 through 2.1.272
+Code 2.1.258 through 2.1.280 on macos/aarch64 and 2.1.227 through 2.1.280
 on linux/x86_64, both drain 250 ms.
 
 Not in this repository: a Harbor/Docker adapter. `pmux run` is the Full-cell

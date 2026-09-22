@@ -12,7 +12,7 @@ Three verbs:
    (aliases: `x-session-id`, `x-session-affinity`).
 2. **Release.** `POST /v1/conversations/{id}/release` on session end. That
    is when the cell `/clear`s. Idle TTL is only the backstop.
-3. **Class.** Effort is in the model id (`claude-opus-5-medium`) or in
+3. **Class.** Effort is in the model id (`claude-opus-5-5-medium`) or in
    `output_config.effort`. Account is `x-pmux-account` (omit for `default`).
    Compact, rewind, or a class change is a prefix break; the same pin
    reprimes. Account is a class selector, not a conversation pin.

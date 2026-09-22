@@ -20,7 +20,7 @@
 //! `StatelessResult::model` is what pmux ASKED for -- it is the class key,
 //! copied out of the request path. Asserting it equals the requested model
 //! proves nothing about which process answered: a pool that handed every
-//! `opus/max` call to a `haiku` instance would still publish `claude-opus-5`
+//! `opus/max` call to a `haiku` instance would still publish `claude-opus-5-5`
 //! in every result. Fungibility is therefore proven from the CHILD side, by
 //! joining two files the children write:
 //!
@@ -118,7 +118,7 @@ const CLASSES: &[ClassSpec] = &[
     ClassSpec {
         spelling: "OPUS",
         effort: Some(EffortLevel::Medium),
-        expected_model: "claude-opus-5",
+        expected_model: "claude-opus-5-5",
         expected_effort: Some("medium"),
     },
 ];

@@ -81,6 +81,16 @@ floor-receipt)
         --json
     ;;
 
+model-matrix)
+    version="${1:?usage: model-matrix <version> [extra args]}"
+    shift
+    exec python3 /src/tools/dev/model_matrix.py \
+        --release-dir "$RELEASE_DIR" \
+        --claude "$(claude_for "$version")" \
+        --output "/src/evidence/linux-model-matrix-${version}-${ARCH_TAG}.json" \
+        "$@"
+    ;;
+
 operator-eval)
     version="${1:?usage: operator-eval <version> [extra args]}"
     shift
@@ -117,7 +127,7 @@ shell)
 
 *)
     echo "unknown subcommand: $subcommand" >&2
-    echo "known: versions drain pool floor-receipt operator-eval living-run promote shell" >&2
+    echo "known: versions drain pool floor-receipt model-matrix operator-eval living-run promote shell" >&2
     exit 2
     ;;
 esac

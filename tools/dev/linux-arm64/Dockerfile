@@ -53,6 +53,10 @@ RUN /fetch/install-claude.sh 2.1.258 \
 RUN /fetch/install-claude.sh 2.1.272 \
         sha512-tpUGL+bDziPYaBplXrR018NdSE191nNvQGDHv9QluLB7u4h3t4iRSVnZ8e2KVJerAkER7JeS76sdRGoMPRSIfA== \
         214a90efdd16ee0ea81132ffecced588dba394d178cc494f285ba04b5288c8de
+# The ceiling candidate. The two above stay because the pooled receipt names them.
+RUN /fetch/install-claude.sh 2.1.280 \
+        sha512-zB4oqrFwimkV/FmBOkVxvv8iYgsuDSp7/MY8uYTns4SCE4DwdHz58X1cO1sgqLnCR96A0oU7Yirov1Uk3iGKAA== \
+        92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2
 
 
 FROM debian:bookworm-slim AS runtime

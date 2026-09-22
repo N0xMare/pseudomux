@@ -578,7 +578,7 @@ mod tests {
                 .expect("inline launch")
                 .model
                 .as_deref(),
-            Some("claude-opus-5")
+            Some("claude-opus-5-5")
         );
         assert_eq!(
             request.claude.as_ref().expect("inline launch").effort,

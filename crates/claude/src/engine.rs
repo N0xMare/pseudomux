@@ -1291,10 +1291,29 @@ fn checked_add(left: u64, right: u64, field: &'static str) -> Result<u64, Transc
 pub fn normalize_prompt(prompt: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
 
-    let composed: String = prompt
-        .replace("\r\n", "\n")
-        .replace('\r', "\n")
-        .nfc()
-        .collect();
+    let newlines = prompt.replace("\r\n", "\n").replace('\r', "\n");
+    // MEASURED on Claude Code 2.1.280: a bracketed paste of more than one line
+    // is recorded with this envelope around the bytes pmux submitted. A
+    // one-line prompt is recorded bare. The id is the paste-cache key.
+    let composed: String = unwrap_pasted_content_envelope(&newlines).nfc().collect();
     crate::composer_submitted_text(&composed).to_owned()
+}
+
+/// The whole recorded prompt, or its inner body when Claude wrapped a
+/// multi-line paste.
+///
+/// The wrapper is only removed when it is the entire string. A prompt that
+/// mentions the tag in passing is left alone.
+fn unwrap_pasted_content_envelope(prompt: &str) -> &str {
+    let Some(rest) = prompt.strip_prefix("\n\n<pasted_content id=\"") else {
+        return prompt;
+    };
+    let Some((id, after_open)) = rest.split_once("\">\n") else {
+        return prompt;
+    };
+    if id.is_empty() || !id.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return prompt;
+    }
+    let close = format!("\n</pasted_content id=\"{id}\">\n");
+    after_open.strip_suffix(&close).unwrap_or(prompt)
 }

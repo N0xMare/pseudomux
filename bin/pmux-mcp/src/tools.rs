@@ -306,7 +306,7 @@ fn run_stateless_schema() -> Value {
             "model": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Claude model alias or exact id, e.g. `opus`, `sonnet`, `claude-opus-5`. Required: it is half the pool's class key, so an absent model would partition the pool on whatever the daemon happens to default to."
+                "description": "Claude model alias or exact id, e.g. `opus`, `sonnet`, `claude-opus-5-5`. Required: it is half the pool's class key, so an absent model would partition the pool on whatever the daemon happens to default to."
             },
             "effort": {
                 "enum": ["low", "medium", "high", "xhigh", "max"],

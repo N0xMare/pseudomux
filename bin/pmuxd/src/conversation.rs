@@ -1045,14 +1045,14 @@ mod tests {
         );
         let second = fingerprint_body(
             &json!({
-                "model": "claude-opus-5",
+                "model": "claude-opus-5-5",
                 "messages": [
                     {"role":"user","content":"hello"},
                     {"role":"assistant","content":"hi"},
                     {"role":"user","content":"again"}
                 ]
             }),
-            "claude-opus-5",
+            "claude-opus-5-5",
             Some(EffortLevel::High),
         );
         assert_eq!(

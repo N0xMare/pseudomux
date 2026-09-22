@@ -59,9 +59,9 @@ child.
 
 `require_tested` is the default for pool mint and Full mint. The
 distribution ships one promoted range per os/arch: Claude Code 2.1.258
-through 2.1.272 on macos/aarch64, 2.1.227 through 2.1.272 on
+through 2.1.280 on macos/aarch64, 2.1.227 through 2.1.280 on
 linux/x86_64, both transparent/sdk at `transcript_drain_ms` 250, and
-2.1.272 on linux/aarch64, transparent/sdk at `transcript_drain_ms` 500.
+2.1.272 through 2.1.280 on linux/aarch64, transparent/sdk at `transcript_drain_ms` 500.
 A version outside those ranges needs `--tested-claude-profile`. Receipts
 live under `evidence/`. The linux/aarch64 cell is one version wide and was
 measured in a native linux/arm64 container (`tools/dev/linux-arm64/`); its

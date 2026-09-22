@@ -129,8 +129,12 @@ impl ModelEntry {
 /// `--model <M> --effort <E>` probe per cell, recorded with the version.
 /// Getting a row wrong makes an admitted request fail at launch, which is the
 /// diagnostic this table exists to eliminate. PROBED at Claude Code 2.1.257
-/// linux/x86_64 by `tools/dev/model_matrix.py`: every row at every admitted
-/// tier answered, `evidence/linux-model-matrix-2.1.257-x86_64.json`.
+/// linux/x86_64 by `tools/dev/model_matrix.py`: every row then in the table
+/// answered, `evidence/linux-model-matrix-2.1.257-x86_64.json`. The
+/// `claude-opus-5-5` row was added from the 2.1.280 catalogue. Probed on
+/// macos/aarch64 and linux/x86_64 by the same tool, both Opus rows only:
+/// `evidence/macos-opus-matrix-2.1.280-aarch64.json` and
+/// `evidence/linux-opus-matrix-2.1.280-x86_64.json`.
 ///
 /// The table is compile-time rather than protocol so a new Anthropic model is
 /// an operator change, not a three-language protocol event.
@@ -144,9 +148,18 @@ pub static MODEL_TABLE: &[ModelEntry] = &[
         aliases: &["fable", "fable-5-1", "fable-5.1"],
         efforts: EFFORTS_ALL,
     },
+    // Read from the Claude Code 2.1.280 baked catalogue: id `claude-opus-5-5`,
+    // capabilities `effort` / `max_effort` / `xhigh_effort`, default effort
+    // medium, and the bare `opus` alias's first-party default is this id.
+    // `opus-5` stays on `claude-opus-5`, which that catalogue still names.
+    ModelEntry {
+        canonical: "claude-opus-5-5",
+        aliases: &["opus", "opus-5-5", "opus-5.5"],
+        efforts: EFFORTS_ALL,
+    },
     ModelEntry {
         canonical: "claude-opus-5",
-        aliases: &["opus", "opus-5"],
+        aliases: &["opus-5"],
         efforts: EFFORTS_ALL,
     },
     ModelEntry {
@@ -670,6 +683,7 @@ mod tests {
         assert!(resolve_model_effort(Some("claude-opus-4-5"), Some(EffortLevel::Max)).is_err());
         assert!(resolve_model_effort(Some("claude-opus-4-6"), Some(EffortLevel::Max)).is_ok());
         assert!(resolve_model_effort(Some("claude-opus-5"), Some(EffortLevel::XHigh)).is_ok());
+        assert!(resolve_model_effort(Some("claude-opus-5-5"), Some(EffortLevel::Max)).is_ok());
         assert!(resolve_model_effort(Some("claude-sonnet-5"), Some(EffortLevel::Max)).is_ok());
     }
 
@@ -686,11 +700,19 @@ mod tests {
     #[test]
     fn two_spellings_of_one_model_resolve_to_one_class() {
         let (canonical, _) =
-            resolve_pool_class("claude-opus-5", Some(EffortLevel::High)).expect("canonical");
+            resolve_pool_class("claude-opus-5-5", Some(EffortLevel::High)).expect("canonical");
         let (alias, _) = resolve_pool_class("OPUS", Some(EffortLevel::High)).expect("alias");
+        let (dotted, _) =
+            resolve_pool_class("opus-5.5", Some(EffortLevel::High)).expect("dotted alias");
         assert_eq!(canonical, alias);
-        assert_eq!(canonical.canonical_model, "claude-opus-5");
+        assert_eq!(canonical, dotted);
+        assert_eq!(canonical.canonical_model, "claude-opus-5-5");
         assert_eq!(canonical.effort_argv, Some("high"));
+
+        let (previous, _) =
+            resolve_pool_class("opus-5", Some(EffortLevel::High)).expect("opus 5 spelling");
+        assert_eq!(previous.canonical_model, "claude-opus-5");
+        assert_ne!(canonical, previous, "bare opus is Opus 5.5, not Opus 5");
     }
 
     #[test]

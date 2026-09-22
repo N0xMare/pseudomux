@@ -1,0 +1,275 @@
+{
+  "schema": "pmux.operator-eval.v1",
+  "kind": "operator_compatibility",
+  "not_a_promotion": true,
+  "claude_version": "2.1.280",
+  "os": "linux",
+  "arch": "x86_64",
+  "pin": {
+    "path": "<HOME>/.local/share/pmux/claude/2.1.280/claude",
+    "sha256": "1e08503dbdf3c2cb0d706d32f3408277388d1c76ef108673e8fe42c1b322925b",
+    "bytes": 233709640,
+    "version": "2.1.280"
+  },
+  "promotion_status": {
+    "may_replace_operator_pin": true,
+    "may_ship_without_flag": false,
+    "requires_for_flagless": "evidence/pooled-transcript-drain-linux-x86_64.json and tools/dev/promote.py"
+  },
+  "operator_profile": {
+    "claude_version": "2.1.280",
+    "os": "linux",
+    "arch": "x86_64",
+    "terminal_profile": "transparent",
+    "input_transport": "sdk",
+    "transcript_drain_ms": 250
+  },
+  "launch_bundle_parses": {
+    "probed": {
+      "--session-id": "accepted",
+      "--model": "accepted",
+      "--effort": "accepted",
+      "--permission-mode": "accepted",
+      "--disallowedTools": "accepted",
+      "--strict-mcp-config": "accepted",
+      "--system-prompt-file": "accepted"
+    },
+    "rejected": {},
+    "negative_control_rejected": true,
+    "ok": true
+  },
+  "securestorage_dir": "empty",
+  "turns": [
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "low",
+      "nonce": "9OL4",
+      "expected": "9OL4-98",
+      "text": "9OL4-98",
+      "answered": true,
+      "client_wall_ms": 3431.7,
+      "claude_version": "2.1.280",
+      "usage": {
+        "main": {
+          "input_tokens": 559,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 559,
+          "output_tokens": 8,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "02-context-is-empty-after-clear",
+      "effort": "low",
+      "nonce": "N7IP",
+      "expected": "NONE",
+      "text": "NONE",
+      "answered": true,
+      "client_wall_ms": 2170.9,
+      "claude_version": "2.1.280",
+      "usage": {
+        "main": {
+          "input_tokens": 749,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 749,
+          "output_tokens": 5,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "03-unicode-echo",
+      "effort": "low",
+      "nonce": "JVOJ",
+      "expected": "JVOJ caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "text": "JVOJ caf\u00e9 \u2014 \u65e5\u672c\u8a9e \u2713",
+      "answered": true,
+      "client_wall_ms": 2406.1,
+      "claude_version": "2.1.280",
+      "usage": {
+        "main": {
+          "input_tokens": 844,
+          "output_tokens": 17,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 844,
+          "output_tokens": 17,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "04-ordered-long-reply",
+      "effort": "low",
+      "nonce": "X5E3",
+      "expected": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 X5E3",
+      "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 X5E3",
+      "answered": true,
+      "client_wall_ms": 2304.9,
+      "claude_version": "2.1.280",
+      "usage": {
+        "main": {
+          "input_tokens": 731,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 731,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    },
+    {
+      "grade": "01-arithmetic-nonce",
+      "effort": "high",
+      "nonce": "A931",
+      "expected": "A931-84",
+      "text": "A931-84",
+      "answered": true,
+      "client_wall_ms": 4751.9,
+      "claude_version": "2.1.280",
+      "usage": {
+        "main": {
+          "input_tokens": 723,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "sidechain": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "combined": {
+          "input_tokens": 723,
+          "output_tokens": 6,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    }
+  ],
+  "checks": {
+    "minified_cell_is_admitted": {
+      "ok": true,
+      "census": {
+        "capacity": 3,
+        "clearing": 0,
+        "configured": true,
+        "conversation_leases": [],
+        "declared_warm": 1,
+        "halted": null,
+        "idle": 1,
+        "in_flight": 0,
+        "instance_terminals_present": 1,
+        "leaked": 0,
+        "leased": 0,
+        "live": 1,
+        "pool_size": 3,
+        "registered_instances": 1,
+        "reserved": 0,
+        "tearing_down": 0
+      },
+      "doctor_status": "healthy"
+    },
+    "grades_answer": {
+      "ok": true,
+      "wrong": []
+    },
+    "context_did_not_survive_recycling": {
+      "ok": true,
+      "leaked": []
+    },
+    "no_tool_surface": {
+      "ok": true,
+      "offenders": []
+    },
+    "pool_never_halted": {
+      "ok": true,
+      "halted": null,
+      "leaked": 0
+    },
+    "messages_sticky": {
+      "ok": true,
+      "turn1": {
+        "status": 200,
+        "elapsed_s": 2.15,
+        "lease": "primed",
+        "cell": "s0e0",
+        "conversation": "operator-eval-1790105846",
+        "usage": {
+          "cache_creation_input_tokens": 2353,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 15
+        },
+        "text": "ACK Otter-Cache-5846",
+        "raw_head": "{\"content\":[{\"text\":\"ACK Otter-Cache-5846\",\"type\":\"text\"}],\"id\":\"msg_18d7bbc8e7ce8269\",\"model\":\"claude-sonnet-5-low\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":23"
+      },
+      "turn2": {
+        "status": 200,
+        "elapsed_s": 2.33,
+        "lease": "continued",
+        "cell": "s0e0",
+        "conversation": "operator-eval-1790105846",
+        "usage": {
+          "cache_creation_input_tokens": 173,
+          "cache_read_input_tokens": 2353,
+          "input_tokens": 2,
+          "output_tokens": 12
+        },
+        "text": "Otter-Cache-5846",
+        "raw_head": "{\"content\":[{\"text\":\"Otter-Cache-5846\",\"type\":\"text\"}],\"id\":\"msg_18d7bbc972a7863d\",\"model\":\"claude-sonnet-5-low\",\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"type\":\"message\",\"usage\":{\"cache_creation_input_tokens\":173,\"c"
+      },
+      "release_status": 200,
+      "release_body": "{\"conversation\":\"operator-eval-1790105846\",\"released\":true}",
+      "same_cell": true,
+      "cache_write_t1": 2353,
+      "cache_read_t2": 2353,
+      "cache_hit": true
+    }
+  },
+  "verdict": "GREEN_OPERATOR"
+}

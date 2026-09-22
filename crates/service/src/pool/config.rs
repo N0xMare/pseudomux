@@ -1206,7 +1206,7 @@ mod tests {
                 count: 1,
             },
             WarmClassSetting {
-                model: "claude-opus-5".to_owned(),
+                model: "claude-opus-5-5".to_owned(),
                 effort: Some(EffortLevel::High),
                 account: AccountName::DEFAULT,
                 count: 1,

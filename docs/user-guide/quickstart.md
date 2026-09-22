@@ -26,8 +26,8 @@ target/release/pmuxd serve \
 
 `--pool-claude` must be absolute. The binary's version must be in the
 [promoted table](../spec/02-operator.md) for this OS/arch, or you pass
-`--tested-claude-profile`. macos and linux PATH `claude` 2.1.272 are
-inside the shipped cells.
+`--tested-claude-profile`. macos PATH `claude` 2.1.280 is inside the macos
+cell. linux/x86_64 admits through 2.1.280; linux/aarch64 admits 2.1.272 through 2.1.280.
 
 ```bash
 export PMUX_SOCKET="$SOCKET"

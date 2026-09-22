@@ -3,7 +3,7 @@
  *
  * /model lists the recommended warm-set families (not the full pool table):
  *   claude-sonnet-5-{low,medium,high,xhigh,max}
- *   claude-opus-5-{low,medium,high,xhigh,max}
+ *   claude-opus-5-5-{low,medium,high,xhigh,max}
  *   claude-fable-5-1-{low,medium,high,xhigh,max}
  *
  * Effort is in the model id. The Messages facade splits it before the pool.
@@ -36,7 +36,7 @@ const messages = new PmuxMessages({ baseUrl: BASE_URL, apiKey: "pmux" });
 
 const FAMILIES = [
 	{ id: "claude-sonnet-5", name: "Sonnet 5" },
-	{ id: "claude-opus-5", name: "Opus 5" },
+	{ id: "claude-opus-5-5", name: "Opus 5.5" },
 	{ id: "claude-fable-5-1", name: "Fable 5.1" },
 ] as const;
 

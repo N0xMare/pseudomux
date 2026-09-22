@@ -32,8 +32,8 @@ Always: `cargo fmt --check`, clippy `-D warnings`, `cargo test --workspace`, Typ
 cargo build --release -p pmux -p pmuxd -p pmux-rmuxd -p pmux-launcher -p pmux-hook
 python3 tools/dev/operator_eval.py \
   --release-dir target/release \
-  --claude "$HOME/.local/share/pmux/claude/2.1.272/claude" \
-  --output evidence/linux-operator-eval-2.1.272-x86_64.json
+  --claude "$HOME/.local/share/pmux/claude/2.1.280/claude" \
+  --output evidence/linux-operator-eval-2.1.280-x86_64.json
 ```
 
 Spends real model turns. Does **not** read or write a pooled-drain receipt. Does **not** edit `PROMOTED_PROFILES`. A green receipt is `GREEN_OPERATOR` under schema `pmux.operator-eval.v1`. Product identity is Messages same-cell + cache hit, not a `pgrep` pid-set. `python3 tools/dev/operator_eval.py --describe` prints the check list without spending a turn.
@@ -43,11 +43,11 @@ Spends real model turns. Does **not** read or write a pooled-drain receipt. Does
 ```bash
 python3 tools/dev/promote.py \
   --release-dir target/release \
-  --claude "$HOME/.local/share/pmux/claude/2.1.272/claude" \
-  --output evidence/promotion-2.1.272-linux-x86_64.json
+  --claude "$HOME/.local/share/pmux/claude/2.1.280/claude" \
+  --output evidence/promotion-2.1.280-linux-x86_64.json
 ```
 
-On macos the pinned binary is `$HOME/.local/share/claude/versions/2.1.272` and the output is `evidence/promotion-2.1.272-macos-aarch64.json`.
+On macos the pinned binary is `$HOME/.local/share/claude/versions/2.1.280` and the output is `evidence/promotion-2.1.280-macos-aarch64.json`.
 On linux/aarch64 both the binary and the whole chain live in the container lane
 (`tools/dev/linux-arm64/`): `run.sh drain`, `run.sh pool`, `run.sh floor-receipt`,
 `run.sh operator-eval`, `run.sh living-run`, `run.sh promote`.
@@ -73,7 +73,7 @@ path inside the container, not a host path; the same is true of the
 test_drain_corpus.py` pins what the copy preserves: every `*.jsonl` under the
 source, at the same relative path, and nothing else.
 
-macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.258, tested through 2.1.272, drain 250 ms; linux floor is 2.1.227, tested through 2.1.272, drain 250 ms. A first promotion on an OS with no shipped cell needs `--floor`.
+macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 has `evidence/pooled-transcript-drain-linux-x86_64.json` (Path B campaign versions 2.1.227/2.1.232/2.1.233, max reachable 118 ms, bound 250 ms). macos floor is 2.1.258, tested through 2.1.280, drain 250 ms; linux/x86_64 floor is 2.1.227, tested through 2.1.280, drain 250 ms. linux/aarch64 floor is 2.1.272, tested through 2.1.280, drain 500 ms. A first promotion on an OS with no shipped cell needs `--floor`.
 
 ## model-matrix
 
@@ -81,8 +81,8 @@ macos has `evidence/pooled-transcript-drain-macos-aarch64.json`. linux/x86_64 ha
 cargo build --release -p pmux -p pmuxd -p pmux-rmuxd -p pmux-launcher -p pmux-hook
 python3 tools/dev/model_matrix.py \
   --release-dir target/release \
-  --claude "$HOME/.local/share/pmux/claude/2.1.272/claude" \
-  --output evidence/linux-model-matrix-2.1.272-x86_64.json
+  --claude "$HOME/.local/share/pmux/claude/2.1.280/claude" \
+  --output evidence/linux-model-matrix-2.1.280-x86_64.json
 ```
 
 `MODEL_TABLE` (`crates/service/src/pool/class.rs`) is CHOSEN, not MEASURED, and

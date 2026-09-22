@@ -48,8 +48,9 @@ binary are `--pool-account NAME=/absolute/pin` (this host's `claude-1` alias
 is `CLAUDE_CONFIG_DIR=~/.claude-1 claude`, not a second Mach-O). Callers
 select `NAME` via `run_stateless.account` or `x-pmux-account`; omitted is
 `default`. Isolated cells never hash the private config root.
-macos PATH `claude` 2.1.272 is inside the macos cell; linux PATH 2.1.272 is
-inside both linux cells. A version above either ceiling still needs the flag:
+macos PATH `claude` 2.1.280 is inside the macos cell. linux/x86_64 admits
+through 2.1.280; linux/aarch64 admits 2.1.272 through 2.1.280. A version above a
+cell's ceiling still needs the flag:
 
 ```bash
 --tested-claude-profile \
@@ -86,7 +87,7 @@ owns the cells. The Messages listener is three verbs:
    `x-session-id` and `x-session-affinity` are accepted aliases.
 2. **Release.** `POST /v1/conversations/{id}/release` on session end. That is
    when the cell `/clear`s. Idle TTL is only the backstop.
-3. **Name the class.** Effort is in the model id (`claude-opus-5-medium`) or
+3. **Name the class.** Effort is in the model id (`claude-opus-5-5-medium`) or
    in `output_config.effort`. Account is `x-pmux-account` (omit for
    `default`). Compact, rewind, or a class change is a prefix break; the
    same pin reprimes.
@@ -109,16 +110,14 @@ example):
 ```bash
 --messages-bind 127.0.0.1:8765 \
 --pool-size 15 \
---pool-warm claude-opus-5/medium=12 \
---pool-warm claude-opus-5/xhigh=2 \
+--pool-warm claude-opus-5-5/medium=12 \
+--pool-warm claude-opus-5-5/xhigh=2 \
 --pool-warm claude-fable-5-1/xhigh=1
 ```
 
 Pi is the reference adapter ([examples/pi](examples/pi/README.md)). It has
 been measured. TypeScript apps import `pmux-client` (`PmuxMessages` +
-`runStateless`). Rust apps use `pseudomux-client`. jcode can point at the listener
-([examples/jcode](examples/jcode/README.md)) but cannot pin or release per
-session; read that page before using it.
+`runStateless`). Rust apps use `pseudomux-client`.
 
 ```bash
 # The extension imports `pmux-client` (Messages pin/release).
@@ -130,7 +129,7 @@ cp examples/pi/pmux.ts ~/.pi/agent/extensions/pmux.ts
 ```
 
 `settings.json` sets `defaultProvider` to `pmux`, default model
-`claude-opus-5-medium`, and `packages: ["npm:pi-subagents"]`. One pool
+`claude-opus-5-5-medium`, and `packages: ["npm:pi-subagents"]`. One pool
 instance per live conversation when each conversation is its own process
 (the measured Pi subagent receipt used child processes). The contract itself is
 [examples/README.md](examples/README.md).
@@ -163,7 +162,8 @@ re-exec, so instances are fungible within a class and never across one.
 | model | aliases | admitted `--effort` |
 | --- | --- | --- |
 | `claude-fable-5-1` | `fable`, `fable-5-1`, `fable-5.1` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `claude-opus-5` | `opus`, `opus-5` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `claude-opus-5-5` | `opus`, `opus-5-5`, `opus-5.5` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `claude-opus-5` | `opus-5` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-8` | `opus-4-8`, `opus-4.8` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-7` | `opus-4-7`, `opus-4.7` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `claude-opus-4-6` | `opus-4-6`, `opus-4.6` | `low`, `medium`, `high`, `max` |
@@ -220,9 +220,9 @@ runs tools. A sidechain row on that cell is `schema_drift`.
 
 | Claude Code | platform | terminal / input | `transcript_drain_ms` |
 | --- | --- | --- | --- |
-| 2.1.258 through 2.1.272 | macos / aarch64 | transparent / sdk | 250 |
-| 2.1.227 through 2.1.272 | linux / x86_64 | transparent / sdk | 250 |
-| 2.1.272 only | linux / aarch64 | transparent / sdk | 500 |
+| 2.1.258 through 2.1.280 | macos / aarch64 | transparent / sdk | 250 |
+| 2.1.227 through 2.1.280 | linux / x86_64 | transparent / sdk | 250 |
+| 2.1.272 through 2.1.280 | linux / aarch64 | transparent / sdk | 500 |
 
 A version outside that table still needs `--tested-claude-profile` (see
 quickstart). Receipts live under `evidence/`.

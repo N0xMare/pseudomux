@@ -42,7 +42,7 @@ STORE="${PMUX_LANE_STORE:-${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64
 # committed, and deliberately OUTSIDE the checkout: these are real prompts.
 CORPUS="${PMUX_LANE_CORPUS_HOST:-${XDG_STATE_HOME:-$HOME/.local/state}/pmux-linux-arm64-corpus}"
 
-subcommand="${1:?usage: run.sh <build|preflight|versions|drain|pool|floor-receipt|operator-eval|living-run|promote|shell> ...}"
+subcommand="${1:?usage: run.sh <build|preflight|versions|drain|pool|floor-receipt|model-matrix|operator-eval|living-run|promote|shell> ...}"
 shift || true
 
 preflight() {
@@ -117,7 +117,7 @@ shell)
     in_container -it "$IMAGE" shell "$@"
     ;;
 
-versions | drain | operator-eval | living-run | promote)
+versions | drain | model-matrix | operator-eval | living-run | promote)
     preflight
     in_container "$IMAGE" "$subcommand" "$@"
     ;;
